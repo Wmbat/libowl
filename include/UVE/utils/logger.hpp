@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_UTILS_LOGGER_HPP
-#define LUCIOLE_UTILS_LOGGER_HPP
+#pragma once
 
 #include <spdlog/spdlog.h>
 
@@ -66,5 +65,3 @@ public:
 private:
    spdlog::logger log;
 };
-
-#endif // LUCIOLE_UTILS_LOGGER_HPP

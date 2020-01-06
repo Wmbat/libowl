@@ -16,8 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_UTILITIES_MESSAGE_HPP
-#define LUCIOLE_UTILITIES_MESSAGE_HPP
+#pragma once
 
 #include <UVE/utils/delegate.hpp>
 
@@ -40,5 +39,3 @@ public:
 private:
    std::vector<delegate<void( T )>> callbacks_;
 };
-
-#endif // LUCIOLE_UTILITIES_MESSAGE_HPP

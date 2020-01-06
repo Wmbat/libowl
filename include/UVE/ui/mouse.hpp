@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_WINDOW_MOUSE_HPP
-#define LUCIOLE_WINDOW_MOUSE_HPP
+#pragma once
 
 #include <cstdint>
 

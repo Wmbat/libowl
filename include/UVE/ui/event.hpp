@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_WINDOW_EVENT_HPP
-#define LUCIOLE_WINDOW_EVENT_HPP
+#pragma once
 
 #include <UVE/ui/keyboard.hpp>
 #include <UVE/ui/mouse.hpp>
@@ -58,5 +57,3 @@ using mouse_button_event_delg = delegate<void( const mouse_button_event& )>;
 using mouse_motion_event_delg = delegate<void( const mouse_motion_event& )>;
 using window_close_event_delg = delegate<void( const window_close_event& )>;
 using framebuffer_resize_event_delg = delegate<void( const framebuffer_resize_event& )>;
-
-#endif // LUCIOLE_WINDOW_EVENT_HPP

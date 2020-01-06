@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_UTILITIES_ENUM_OPERATORS
-#define LUCIOLE_UTILITIES_ENUM_OPERATORS
+#pragma once
 
 #include <type_traits>
 
@@ -117,5 +116,3 @@ typename std::enable_if_t<enable_bitmask_operators<T>::enable, T> operator^=( T&
 
    return lhs;
 }
-
-#endif // LUCIOLE_UTILITIES_ENUM_OPERATORS

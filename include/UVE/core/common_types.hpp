@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_CORE_COMMON_TYPES_HPP
-#define LUCIOLE_CORE_COMMON_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -28,5 +27,3 @@ namespace core
 
    using float32 = float;
 } // namespace core
-
-#endif // LUCIOLE_CORE_COMMON_TYPES_HPP

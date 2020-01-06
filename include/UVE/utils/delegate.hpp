@@ -3,8 +3,7 @@
  * https://codereview.stackexchange.com/questions/14730/impossibly-fast-delegate-in-c11
  */
 
-#ifndef LUCIOLE_UTILITIES_DELEGATES_H
-#define LUCIOLE_UTILITIES_DELEGATES_H
+#pragma once
 
 #include <cassert>
 #include <memory>
@@ -314,5 +313,3 @@ namespace std
       }
    };
 } // namespace std
-
-#endif // BAZAAR_UTILITIES_DELEGATES_H

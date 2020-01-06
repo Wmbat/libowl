@@ -1,5 +1,4 @@
-#ifndef LUCIOLE_UI_WINDOW_HPP
-#define LUCIOLE_UI_WINDOW_HPP
+#pragma once
 
 /* INCLUDES */
 #include <UVE/core/common_types.hpp>
@@ -119,5 +118,3 @@ namespace ui
    public:
    };    // class window
 } // namespace ui
-
-#endif // LUCIOLE_UI_WINDOW_HPP

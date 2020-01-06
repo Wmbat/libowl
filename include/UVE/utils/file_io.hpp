@@ -16,8 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_UTILITIES_FILE_IO_H
-#define LUCIOLE_UTILITIES_FILE_IO_H
+#pragma once
 
 #include <fstream>
 #include <string_view>
@@ -80,5 +79,3 @@ inline void write_to_file( const std::string& filepath, const std::string& data 
 
    file << data;
 }
-
-#endif // BAZAAR_UTILITIES_FILE_IO_HPP

@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LUCIOLE_WINDOW_KEYBOARD_HPP
-#define LUCIOLE_WINDOW_KEYBOARD_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -138,5 +137,3 @@ public:
       last = 256
    };
 };
-
-#endif // LUCIOLE_WINDOW_KEYBOARD_HPP
