@@ -49,5 +49,3 @@ public:
       last = 16
    };
 };
-
-#endif // LUCIOLE_WINDOW_MOUSE_HPP

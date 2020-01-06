@@ -104,6 +104,7 @@ target_link_libraries( UVE
 
 target_sources( UVE
    PRIVATE
+      "source/UVE/core/context.cpp"
       "source/UVE/ui/window.cpp"
       "source/UVE/utils/logger.cpp"
       "source/UVE/vk/defines.cpp"
