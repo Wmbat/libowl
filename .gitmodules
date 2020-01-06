@@ -1,0 +1,18 @@
+[submodule "external/volk"]
+	path = external/volk
+	url = https://github.com/zeux/volk
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "external/glslang"]
+	path = external/glslang
+	url = https://github.com/KhronosGroup/glslang
+[submodule "external/SPIRV-Cross"]
+	path = external/SPIRV-Cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross
+[submodule "external/nlohmann"]
+	path = external/nlohmann
+	url = https://github.com/nlohmann/json
+[submodule "external/glm"]
+	path = external/glm
+	url = https://github.com/g-truc/glm
