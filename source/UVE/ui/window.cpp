@@ -309,7 +309,7 @@ namespace ui
 #endif
    }
 
-   bool window::check_WSI_support( VkPhysicalDevice device, core::uint32 queue_family_index ) const
+   bool window::check_WSI_support( VkPhysicalDevice device, UVE::uint32 queue_family_index ) const
    {
 #if defined( VK_USE_PLATFORM_XCB_KHR )
       return vkGetPhysicalDeviceXcbPresentationSupportKHR( device, queue_family_index, p_xcb_connection.get( ), p_xcb_screen->root_visual );

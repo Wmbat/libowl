@@ -1,9 +1,24 @@
+#include <UVE/core/common_types.hpp>
 #include <UVE/core/context.hpp>
+#include <UVE/core/core.hpp>
 #include <UVE/utils/logger.hpp>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_messenger_callback( VkDebugUtilsMessageSeverityFlagBitsEXT message_severity_bits,
    VkDebugUtilsMessageTypeFlagBitsEXT message_type_bits, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data )
 {
+   if ( message_severity_bits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
+   {
+      spdlog::info( "{0}", p_callback_data->pMessage );
+   }
+   else if ( message_severity_bits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )
+   {
+      spdlog::warn( "{0}", p_callback_data->pMessage );
+   }
+   else if ( message_severity_bits == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
+   {
+      spdlog::error( "{0}", p_callback_data->pMessage );
+   }
+
    return VK_FALSE;
 }
 
@@ -21,6 +36,24 @@ namespace UVE
       p_logger( p_logger )
    {
       init_volk( );
+
+      uint32 api_version = 0;
+      vkEnumerateInstanceVersion( &api_version );
+
+      LOG_INFO_P( p_logger, "Vulkan API version: {1}, {2}, {3}", VK_VERSION_MAJOR( api_version ), VK_VERSION_MINOR( api_version ),
+         VK_VERSION_PATCH( api_version ) );
+
+      auto app_info = VkApplicationInfo{};
+      app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+      app_info.pNext = nullptr;
+      app_info.apiVersion = api_version;
+      app_info.engineVersion = VK_MAKE_VERSION( ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_PATCH );
+      app_info.pEngineName = ENGINE_NAME;
+      app_info.applicationVersion = VK_MAKE_VERSION( 0, 0, 0 );
+      app_info.pApplicationName = nullptr;
+
+      auto instance_create_info = VkInstanceCreateInfo{ };
+      instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
    }
 
    void context::init_volk( )
@@ -30,17 +63,11 @@ namespace UVE
          auto result = volkInitialize( );
          if ( result != VK_SUCCESS )
          {
-            if ( p_logger )
-            {
-               p_logger->error( "[{0}] Failed to initialize volk: {1}", __FUNCTION__, vk::result_to_string( result ) );
-            }
+            LOG_ERROR_P( p_logger, "Failed to initialize volk: {1}", vk::result_to_string( result ) );
          }
          else
          {
-            if ( p_logger )
-            {
-               p_logger->info( "[{0}] Volk initialized successfully", __FUNCTION__ );
-            }
+            LOG_INFO( p_logger, "Volk initialized successfully" );
          }
 
          IS_VOLK_INITIALIZED = true;

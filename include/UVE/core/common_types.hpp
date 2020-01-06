@@ -20,10 +20,10 @@
 
 #include <cstdint>
 
-namespace core
+namespace UVE
 {
    using int32 = std::int32_t;
    using uint32 = std::uint32_t;
 
    using float32 = float;
-} // namespace core
+} // namespace UVE

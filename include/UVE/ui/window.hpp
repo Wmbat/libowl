@@ -53,7 +53,7 @@ namespace ui
 
       void poll_events( );
 
-      bool check_WSI_support( VkPhysicalDevice, core::uint32 queue_family_index ) const;
+      bool check_WSI_support( VkPhysicalDevice, UVE::uint32 queue_family_index ) const;
 
       [[nodiscard]] VkSurfaceKHR create_surface( VkInstance instance ) const;
 

@@ -65,3 +65,75 @@ public:
 private:
    spdlog::logger log;
 };
+
+#define LOG_INFO( p_logger, message )                                                                                                      \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->info( buffer, __FUNCTION__ );                                                                                              \
+   }
+
+#define LOG_INFO_P( p_logger, message, ... )                                                                                               \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->info( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                 \
+   }
+
+#define LOG_DEBUG( p_logger, message )                                                                                                     \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->info( buffer, __FUNCTION__ )                                                                                               \
+   }
+
+#define LOG_DEBUG_P( p_logger, message, ... )                                                                                              \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->debug( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                \
+   }
+
+#define LOG_WARN( p_logger, message )                                                                                                      \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->warn( buffer, __FUNCTION__ )                                                                                               \
+   }
+
+#define LOG_WARN_P( p_logger, message, ... )                                                                                               \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->warn( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                 \
+   }
+
+#define LOG_ERROR( p_logger, message )                                                                                                     \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->error( buffer, __FUNCTION__ );                                                                                             \
+   }
+
+#define LOG_ERROR_P( p_logger, message, ... )                                                                                              \
+   if ( p_logger )                                                                                                                         \
+   {                                                                                                                                       \
+      std::string buffer = "[{0}] ";                                                                                                       \
+      buffer.append( message );                                                                                                            \
+                                                                                                                                           \
+      p_logger->error( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                \
+   }
