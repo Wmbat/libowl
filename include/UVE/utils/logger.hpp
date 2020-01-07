@@ -26,13 +26,34 @@ public:
    logger( );
    logger( std::string_view name );
 
-   void info( std::string const& msg ) { log.info( msg ); }
+   void info( std::string const& msg )
+   {
+      log.info( msg );
 
-   void debug( std::string const& msg ) { log.debug( msg ); }
+#ifndef NDEBUG
+      log.flush( );
+#endif
+   }
 
-   void warn( std::string const& msg ) { log.warn( msg ); }
+   void debug( std::string const& msg )
+   {
+#ifndef NDEBUG
+      log.debug( msg );
+      log.flush( );
+#endif
+   }
 
-   void error( std::string const& msg ) { log.error( msg ); }
+   void warn( std::string const& msg )
+   {
+      log.warn( msg );
+      log.flush( );
+   }
+
+   void error( std::string const& msg )
+   {
+      log.error( msg );
+      log.flush( );
+   }
 
    void flush( ) { log.flush( ); }
 
@@ -40,24 +61,33 @@ public:
    void info( std::string_view msg, _args const&... args )
    {
       log.info( msg, args... );
+
+#ifndef NDEBUG
+      log.flush( );
+#endif
    }
 
    template <typename... _args>
    void debug( std::string_view msg, _args const&... args )
    {
+#ifndef NDEBUG
       log.debug( msg, args... );
+      log.flush( );
+#endif
    }
 
    template <typename... _args>
    void warn( std::string_view msg, _args const&... args )
    {
       log.warn( msg, args... );
+      log.flush( );
    }
 
    template <typename... _args>
    void error( std::string_view msg, _args const&... args )
    {
       log.error( msg, args... );
+      log.flush( );
    }
 
    spdlog::logger& get_logger( );

@@ -2,11 +2,14 @@ cmake_minimum_required( VERSION 3.15 )
 project( UVE 
    VERSION 0.0.1 
    DESCRIPTION "A Vulkan based rendering engine"
-   LANGUAGES CXX )
+   LANGUAGES CXX 
+)
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
+
+option( UVE_BUILD_EXAMPLES "Build examples" ON )
 
 # nlohmann settings
 set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
@@ -109,3 +112,7 @@ target_sources( UVE
       "source/UVE/utils/logger.cpp"
       "source/UVE/vk/defines.cpp"
 )
+
+if ( UVE_BUILD_EXAMPLES )
+   add_subdirectory( examples/triangle_example )
+endif ( UVE_BUILD_EXAMPLES )

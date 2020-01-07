@@ -2,6 +2,8 @@
 
 #include <UVE/vk/core.hpp>
 
+#include <vector>
+
 class logger;
 
 namespace UVE
@@ -26,8 +28,8 @@ namespace UVE
 
       VkInstance instance;
       VkDebugUtilsMessengerEXT debug_messenger;
-      VkPhysicalDevice physical_device;
-      VkDevice logical_device;
+
+      std::vector<VkPhysicalDevice> available_physical_devices;
 
       logger* p_logger;
    }; // class context
