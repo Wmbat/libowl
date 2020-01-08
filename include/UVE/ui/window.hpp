@@ -2,13 +2,13 @@
 
 /* INCLUDES */
 #include <UVE/core/common_types.hpp>
+#include <UVE/gfx/render_target.hpp>
 #include <UVE/ui/event.hpp>
 #include <UVE/utils/delegate.hpp>
 #include <UVE/utils/message_handler.hpp>
 #include <UVE/vk/core.hpp>
 
 #include <glm/vec2.hpp>
-#include <spdlog/logger.h>
 
 #if defined( VK_USE_PLATFORM_XCB_KHR )
 #   include <xcb/xcb.h>
@@ -20,7 +20,7 @@
 
 class logger;
 
-namespace ui
+namespace UVE
 {
    struct window_create_info
    {
@@ -55,7 +55,7 @@ namespace ui
 
       bool check_WSI_support( VkPhysicalDevice, UVE::uint32 queue_family_index ) const;
 
-      [[nodiscard]] VkSurfaceKHR create_surface( VkInstance instance ) const;
+      [[nodiscard]] std::unique_ptr<render_target> create_surface( VkInstance instance ) const;
 
       template <class C>
       std::enable_if_t<std::is_same_v<C, key_event_delg>, void> add_callback( const C& callback )
@@ -116,5 +116,5 @@ namespace ui
       message_handler<const framebuffer_resize_event> framebuffer_resize_handler;
 
    public:
-   };    // class window
-} // namespace ui
+   }; // class window
+} // namespace UVE

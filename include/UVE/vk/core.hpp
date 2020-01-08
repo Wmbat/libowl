@@ -1,3 +1,5 @@
+#pragma once
+
 #include <UVE/vk/vma/vk_mem_alloc.h>
 
 #include <volk.h>

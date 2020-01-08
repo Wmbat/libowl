@@ -19,12 +19,14 @@
 #include <UVE/ui/window.hpp>
 #include <UVE/utils/logger.hpp>
 
+#include <UVE/gfx/xcb_render_target.hpp>
+
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <algorithm>
 
-namespace ui
+namespace UVE
 {
 
 #if defined( VK_USE_PLATFORM_XCB_KHR )
@@ -316,19 +318,10 @@ namespace ui
 #endif
    }
 
-   VkSurfaceKHR window::create_surface( VkInstance instance ) const
+   std::unique_ptr<render_target> window::create_surface( VkInstance instance ) const
    {
 #if defined( VK_USE_PLATFORM_XCB_KHR )
-      VkSurfaceKHR surface = VK_NULL_HANDLE;
-
-      VkXcbSurfaceCreateInfoKHR create_info{};
-      create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-      create_info.connection = p_xcb_connection.get( );
-      create_info.window = xcb_window;
-
-      vkCreateXcbSurfaceKHR( instance, &create_info, nullptr, &surface );
-
-      return surface;
+      return std::make_unique<xcb_render_target>( p_xcb_connection.get( ), xcb_window, instance, p_logger );
 #endif
    }
 

@@ -1,7 +1,9 @@
 #include <UVE/core/common_types.hpp>
 #include <UVE/core/context.hpp>
 #include <UVE/core/core.hpp>
+#include <UVE/gfx/render_target.hpp>
 #include <UVE/utils/logger.hpp>
+#include <UVE/ui/window.hpp>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback( VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
    VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data )
@@ -187,6 +189,19 @@ namespace UVE
       {
          vkDestroyInstance( instance, nullptr );
          instance = VK_NULL_HANDLE;
+      }
+   }
+
+   std::unique_ptr<render_target> context::create_render_target( window const& window )
+   {
+      return window.create_surface( instance );
+   }
+
+   void context::find_best_physical_device( std::unique_ptr<render_target> const& render_target )
+   {
+      for( auto const& physical_device : available_physical_devices )
+      {
+         auto capabilities = render_target->get_capabilities( physical_device );  
       }
    }
 
