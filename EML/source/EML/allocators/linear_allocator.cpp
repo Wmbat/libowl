@@ -1,8 +1,8 @@
-#include <UVE/memory/allocators/linear_allocator.hpp>
+#include <EML/allocators/linear_allocator.hpp>
 
 #include <cassert>
 
-namespace UVE
+namespace EML
 {
    linear_allocator::linear_allocator( std::size_t size )
    {

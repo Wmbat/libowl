@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace UVE
+namespace EML
 {
    class allocator_interface
    {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <UVE/memory/allocators/allocator_interface.hpp>
+#include <EML/allocators/allocator_interface.hpp>
 
-namespace UVE
+namespace EML
 {
    class linear_allocator : public allocator_interface
    {

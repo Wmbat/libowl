@@ -1,6 +1,6 @@
-#include <UVE/memory/allocators/stack_allocator.hpp>
+#include <EML/allocators/stack_allocator.hpp>
 
-namespace UVE
+namespace EML
 {
    stack_allocator::stack_allocator( std::size_t size )
    {

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UVE
+namespace EML
 {
    class memory_manager
    {
