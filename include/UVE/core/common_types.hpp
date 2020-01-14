@@ -26,4 +26,7 @@ namespace UVE
    using uint32 = std::uint32_t;
 
    using float32 = float;
+
+   using int64 = std::int64_t;
+   using uint64 = std::uint64_t;
 } // namespace UVE

@@ -110,6 +110,8 @@ target_sources( UVE
       "source/UVE/core/context.cpp"
       "source/UVE/gfx/render_target.cpp"
       "source/UVE/gfx/xcb_render_target.cpp"
+      "source/UVE/memory/allocators/linear_allocator.cpp"
+      "source/UVE/memory/allocators/stack_allocator.cpp"
       "source/UVE/ui/window.cpp"
       "source/UVE/utils/logger.cpp"
       "source/UVE/vk/defines.cpp"
