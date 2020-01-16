@@ -6,9 +6,14 @@ project( EML
 )
 
 if ( NOT CMAKE_BUILD_TYPE )
-   message( STATUS "Building in release mode" )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
+
+if ( CMAKE_BUILD_TYPE EQUAL Release )
+   message( STATUS "Building EML in release mode" )
+else ( )
+   message( STATUS "Building EML in debug mode" )
+endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )

@@ -36,6 +36,7 @@ add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )
 
 add_subdirectory( EML )
+add_subdirectory( EWL )
 
 add_library( UVE STATIC )
 
