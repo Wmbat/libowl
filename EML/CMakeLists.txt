@@ -5,6 +5,8 @@ project( EML
    LANGUAGES CXX
 )
 
+option( EML_BUILD_TESTS "Build EML's unit tests" OFF )
+
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
@@ -18,6 +20,13 @@ endif ( )
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 
+if ( EML_BUILD_TESTS )
+   enable_testing( )
+
+   add_subdirectory( ../external/googletest build )
+   add_subdirectory( tests )
+endif ( )
+
 add_library( EML STATIC )
 
 set_target_properties( EML
@@ -27,7 +36,7 @@ set_target_properties( EML
 
 target_compile_features( EML
    PRIVATE
-      cxx_std_17
+      cxx_std_20
 )
 
 target_compile_options( EML
@@ -46,7 +55,5 @@ target_include_directories( EML
 
 target_sources( EML
    PRIVATE
-      "source/EML/allocators/linear_allocator.cpp"
-      "source/EML/allocators/stack_allocator.cpp"
       "source/EML/memory_manager.cpp"
 )

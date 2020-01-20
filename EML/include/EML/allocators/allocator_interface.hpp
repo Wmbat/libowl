@@ -16,9 +16,16 @@ namespace EML
       virtual void free( std::byte* p_location ) = 0;
 
       template <class type_, class... args_>
-      type_* make_new( args_&&... args )
+      [[nodiscard]] type_* make_new( args_&&... args )
       {
-         return new ( allocate( sizeof( type_ ), alignof( type_ ) ) ) type_( args... );
+         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
+         {
+            return new ( p_alloc ) type_( args... );
+         }
+         else
+         {
+            return nullptr;
+         }
       }
 
       template <class type_>
@@ -27,7 +34,7 @@ namespace EML
          if ( p_type )
          {
             p_type->~type_( );
-            free( p_type );
+            free( reinterpret_cast<std::byte*>( p_type ) );
          }
       }
 
@@ -38,24 +45,25 @@ namespace EML
 
          return padding == aligment ? 0 : padding;
       }
-      constexpr std::size_t get_forward_padding( std::uintptr_t address, std::size_t aligment ) const noexcept
+      constexpr std::size_t get_forward_padding( std::uintptr_t address, std::size_t alignment ) const noexcept
       {
-         auto const padding = aligment - ( address & ( aligment - 1 ) );
+         auto const padding = alignment - ( address & ( alignment - 1 ) );
 
-         return padding == aligment ? 0 : padding;
+         return padding == alignment ? 0 : padding;
       }
 
-      constexpr std::size_t get_forward_padding( std::uintptr_t address, std::size_t aligment, std::size_t header_size ) const noexcept
+      constexpr std::size_t get_forward_padding( std::uintptr_t address, std::size_t alignment, std::size_t header_size ) const noexcept
       {
-         auto padding = get_forward_padding( address, aligment );
+         auto padding = get_forward_padding( address, alignment );
 
          if ( padding < header_size )
          {
             auto const needed_space = header_size - padding;
 
-            if ( needed_space % aligment > 0 )
+            padding += alignment * ( needed_space / alignment );
+            if ( needed_space % alignment > 0 )
             {
-               padding += aligment;
+               padding += alignment;
             }
          }
 
@@ -63,8 +71,7 @@ namespace EML
       }
 
    protected:
-      std::size_t total_size;
       std::size_t used_memory;
       std::size_t num_allocations;
    };
-} // namespace UVE
+} // namespace EML

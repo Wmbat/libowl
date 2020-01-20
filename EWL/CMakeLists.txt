@@ -36,6 +36,18 @@ target_compile_options( EWL
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 )
 
+if ( WIN32 )
+   target_compile_definitions( EWL PUBLIC VK_USE_PLATFORM_WIN32_KHR )
+elseif ( UNIX )
+   find_package( XCB REQUIRED )
+
+   if ( NOT XCB_FOUND )
+      message( FATAL_ERROR "XCB development package not found" )
+   endif ( )
+
+   target_compile_definitions( EWL PUBLIC VK_USE_PLATFORM_XCB_KHR )
+endif ( )
+
 target_include_directories( EWL
    PUBLIC
       $<INSTALL_INTERFACE:include>
@@ -44,7 +56,12 @@ target_include_directories( EWL
       ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
+target_link_libraries( EWL
+   PUBLIC
+      ${XCB_LIBRARY}
+)
+
 target_sources( EWL
    PRIVATE
-      "source/EWL/window.cpp"
+      "source/EWL/xcb_window.cpp"
 )

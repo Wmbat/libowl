@@ -2,19 +2,102 @@
 
 #include <EML/allocators/allocator_interface.hpp>
 
+#include <cassert>
+#include <utility>
+
 namespace EML
 {
+   template <std::size_t size_>
    class stack_allocator : public allocator_interface
    {
-   public:
-      stack_allocator( std::size_t size );
-
-      virtual std::byte* allocate( std::size_t size, std::size_t allignment ) override;
-      virtual void free( std::byte* p_address ) override;
+      static_assert( size_ > 0, "Size of allocator cannot be 0" );
 
    private:
-      std::byte* beg;
-      std::byte* end;
-      std::byte* top;
+      struct header
+      {
+         std::size_t adjustment;
+      };
+
+   public:
+      constexpr stack_allocator( ) 
+      {
+         p_start = new std::byte[MAX_SIZE];
+         p_top = p_start;
+
+         used_memory = 0;
+         num_allocations = 0;
+      }
+      constexpr stack_allocator( stack_allocator const& other ) = delete;
+      constexpr stack_allocator( stack_allocator&& other ) { *this = std::move( other ); }
+      ~stack_allocator( )
+      {
+         if ( p_start )
+         {
+            delete[] p_start;
+            p_start = nullptr;
+         }
+
+         p_top = nullptr;
+      }
+
+      constexpr stack_allocator& operator=( stack_allocator const& rhs ) = delete;
+      constexpr stack_allocator& operator=( stack_allocator&& rhs )
+      {
+         if ( this != &rhs )
+         {
+            used_memory = std::move( rhs.used_memory );
+            num_allocations = std::move( rhs.num_allocations );
+
+            p_start = rhs.p_start;
+            rhs.p_start = nullptr;
+
+            p_top = rhs.p_top;
+            rhs.p_top = nullptr;
+         }
+
+         return *this;
+      }
+
+      constexpr std::byte* allocate( std::size_t size, std::size_t alignment ) override
+      {
+         assert( size != 0 );
+
+         auto const padding = get_forward_padding( reinterpret_cast<std::uintptr_t>( p_top ), alignment, sizeof( header ) );
+
+         if ( padding + size + used_memory > MAX_SIZE )
+         {
+            return nullptr;
+         }
+
+         std::byte* aligned_address = p_top + padding;
+
+         auto* header_address = reinterpret_cast<header*>( aligned_address - sizeof( header ) );
+         header_address->adjustment = padding;
+
+         p_top = aligned_address + size;
+
+         used_memory += size + padding;
+         ++num_allocations;
+
+         return aligned_address;
+      }
+      constexpr void free( std::byte* p_address ) override
+      {
+         if ( p_address )
+         {
+            auto* header_address = reinterpret_cast<header*>( p_address - sizeof( header ) );
+            used_memory -= p_top - p_address + header_address->adjustment;
+
+            p_top = p_address - header_address->adjustment;
+
+            --num_allocations;
+         }
+      }
+
+   private:
+      static constexpr std::size_t MAX_SIZE = size_;
+
+      std::byte* p_start;
+      std::byte* p_top;
    };
-} // namespace UVE
+} // namespace EML

@@ -11,6 +11,8 @@ endif( )
 
 option( UVE_BUILD_EXAMPLES "Build examples" ON )
 
+set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
+
 # nlohmann settings
 set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
 
@@ -106,6 +108,7 @@ target_link_libraries( UVE
       spdlog_header_only
       nlohmann_json
       glm
+      EML
 )
 
 target_sources( UVE
