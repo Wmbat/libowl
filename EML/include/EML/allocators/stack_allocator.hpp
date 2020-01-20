@@ -19,7 +19,7 @@ namespace EML
       };
 
    public:
-      constexpr stack_allocator( ) 
+      stack_allocator( )
       {
          p_start = new std::byte[MAX_SIZE];
          p_top = p_start;
@@ -27,8 +27,8 @@ namespace EML
          used_memory = 0;
          num_allocations = 0;
       }
-      constexpr stack_allocator( stack_allocator const& other ) = delete;
-      constexpr stack_allocator( stack_allocator&& other ) { *this = std::move( other ); }
+      stack_allocator( stack_allocator const& other ) = delete;
+      stack_allocator( stack_allocator&& other ) { *this = std::move( other ); }
       ~stack_allocator( )
       {
          if ( p_start )
@@ -40,8 +40,8 @@ namespace EML
          p_top = nullptr;
       }
 
-      constexpr stack_allocator& operator=( stack_allocator const& rhs ) = delete;
-      constexpr stack_allocator& operator=( stack_allocator&& rhs )
+      stack_allocator& operator=( stack_allocator const& rhs ) = delete;
+      stack_allocator& operator=( stack_allocator&& rhs )
       {
          if ( this != &rhs )
          {
@@ -58,7 +58,7 @@ namespace EML
          return *this;
       }
 
-      constexpr std::byte* allocate( std::size_t size, std::size_t alignment ) override
+      std::byte* allocate( std::size_t size, std::size_t alignment ) override
       {
          assert( size != 0 );
 
@@ -81,7 +81,7 @@ namespace EML
 
          return aligned_address;
       }
-      constexpr void free( std::byte* p_address ) override
+      void free( std::byte* p_address ) override
       {
          if ( p_address )
          {

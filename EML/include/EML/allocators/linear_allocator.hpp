@@ -13,13 +13,13 @@ namespace EML
       static_assert( size_ > 0, "Size of allocator cannot be 0" );
 
    public:
-      constexpr linear_allocator( ) : p_start( new std::byte[MAX_SIZE] ), p_current_pos( p_start )
+      linear_allocator( ) : p_start( new std::byte[MAX_SIZE] ), p_current_pos( p_start )
       {
          used_memory = 0;
          num_allocations = 0;
       }
-      constexpr linear_allocator( linear_allocator const& other ) = delete;
-      constexpr linear_allocator( linear_allocator&& other ) { *this = std::move( other ); }
+      linear_allocator( linear_allocator const& other ) = delete;
+      linear_allocator( linear_allocator&& other ) { *this = std::move( other ); }
       ~linear_allocator( )
       {
          if ( p_start )
@@ -31,8 +31,8 @@ namespace EML
          p_current_pos = nullptr;
       }
 
-      constexpr linear_allocator& operator=( linear_allocator const& rhs ) = delete;
-      constexpr linear_allocator& operator=( linear_allocator&& rhs )
+      linear_allocator& operator=( linear_allocator const& rhs ) = delete;
+      linear_allocator& operator=( linear_allocator&& rhs )
       {
          if ( this != rhs )
          {
@@ -50,7 +50,7 @@ namespace EML
          return *this;
       }
 
-      [[nodiscard]] constexpr std::byte* allocate( std::size_t size, std::size_t alignment ) override
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) override
       {
          assert( size != 0 );
 
@@ -69,9 +69,9 @@ namespace EML
 
          return aligned_address;
       }
-      constexpr void free( std::byte* address ) override { assert( false && "Use clear() instead" ); }
+      void free( std::byte* address ) override { assert( false && "Use clear() instead" ); }
 
-      constexpr void clear( ) noexcept
+      void clear( ) noexcept
       {
          p_current_pos = p_start;
          used_memory = 0;
