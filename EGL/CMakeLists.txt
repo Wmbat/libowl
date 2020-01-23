@@ -1,0 +1,70 @@
+cmake_minimum_required( VERSION 3.15 )
+project( EGL
+   VERSION 0.0.1
+   DESCRIPTION "A Vulkan graphics library"
+   LANGUAGES CXX
+)
+
+if ( NOT CMAKE_BUILD_TYPE )
+   set( CMAKE_BUILD_TYPE Release )
+endif( )
+
+# compilation settings
+set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
+set( CLANG_RELEASE_FLAGS "-o3" )
+
+# spirv_cross settings
+set( SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE )
+
+# external dependencies
+add_subdirectory( external/volk )
+add_subdirectory( external/glslang )
+add_subdirectory( external/SPIRV-Cross )
+
+# local dependencies
+add_subdirectory( EML )
+
+add_library( EGL STATIC )
+
+set_target_properties( EGL
+   PROPERTIES
+      CXX_EXTENSIONS OFF
+)
+
+target_compile_features( EGL
+   PRIVATE
+      cxx_std_20
+)
+
+target_compile_options( EGL
+   PRIVATE
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+)
+
+target_include_directories( EGL 
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>    
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/source
+)
+
+target_link_libraries( EGL
+   PUBLIC
+     vulkan
+     volk_headers
+     glslang
+     SPIRV
+     EML
+)
+
+target_sources( EGL
+   PRIVATE
+      "source/EGL/render_manager.cpp"
+)
