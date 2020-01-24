@@ -62,6 +62,7 @@ target_link_libraries( EWL
    PUBLIC
       ${XCB_LIBRARY}
       ELL
+      EGL
 )
 
 target_sources( EWL

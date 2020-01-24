@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 3.15 )
-project( UVE 
+project( Epona
    VERSION 0.0.1 
    DESCRIPTION "A Vulkan based rendering engine"
    LANGUAGES CXX 
@@ -8,8 +8,6 @@ project( UVE
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
-
-option( UVE_BUILD_EXAMPLES "Build examples" ON )
 
 set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
 
@@ -30,14 +28,19 @@ add_subdirectory( ELL )
 add_subdirectory( EGL )
 add_subdirectory( EWL )
 
-add_library( UVE STATIC )
+add_executable( Epona )
 
-target_compile_features( UVE
-   PRIVATE
-      cxx_std_17
+set_target_properties( Epona
+   PROPERTIES
+      CXX_EXTENSIONS OFF
 )
 
-target_compile_options( UVE
+target_compile_features( Epona
+   PRIVATE
+      cxx_std_20
+)
+
+target_compile_options( Epona 
    PRIVATE
       $<$<PLATFORM_ID:UNIX>:-pthread>
 
@@ -45,64 +48,17 @@ target_compile_options( UVE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 )
 
-target_include_directories( UVE
-    PUBLIC 
-        $<INSTALL_INTERFACE:include>    
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
-
-if( WIN32 )
-   target_compile_definitions( UVE PUBLIC VK_USE_PLATFORM_WIN32_KHR )
-elseif( UNIX )
-   if( USE_WAYLAND_WSI )
-      find_package( Wayland REQUIRED )
-
-      if( NOT WAYLAND_FOUND )
-         message( FATAL_ERROR "Wayland development package not found" )
-      else( )
-         message( STATUS ${WAYLAND_CLIENT_LIBRARIES} )
-      endif( )
-
-      target_include_directories( UVE PUBLIC ${WAYLAND_INCLUDE_DIR} )
-      target_compile_definitions( UVE PUBLIC VK_USE_PLATFORM_WAYLAND_KHR )
-   else( )
-      find_package( XCB REQUIRED )
-
-      if( NOT XCB_FOUND )
-         message( FATAL_ERROR "XCB development package not found" )
-      else( )
-         message( STATUS "Using XCB Library" )
-      endif( )
-
-      target_compile_definitions( UVE PUBLIC VK_USE_PLATFORM_XCB_KHR )
-   endif()
-endif( )
-
-set_target_properties( UVE
-   PROPERTIES
-      CXX_EXTENSIONS OFF
-)
-
-
-target_link_libraries( UVE
+target_link_libraries( Epona
    PUBLIC
-      ${XCB_LIBRARY}
       nlohmann_json
       glm
       EML
+      ELL
       EGL
+      EWL
 )
 
-target_sources( UVE
+target_sources( Epona   
    PRIVATE
-      "source/UVE/core/context.cpp"
-      "source/UVE/gfx/render_target.cpp"
-      "source/UVE/gfx/xcb_render_target.cpp"
-      "source/UVE/ui/window.cpp"
+      "source/main.cpp"
 )
-
-if ( UVE_BUILD_EXAMPLES )
-   add_subdirectory( examples/triangle_example )
-endif ( UVE_BUILD_EXAMPLES )
