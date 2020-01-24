@@ -16,3 +16,6 @@
 [submodule "EGL/external/glslang"]
 	path = EGL/external/glslang
 	url = https://github.com/KhronosGroup/glslang
+[submodule "ELL/external/spdlog"]
+	path = ELL/external/spdlog
+	url = https://github.com/gabime/spdlog

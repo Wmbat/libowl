@@ -8,13 +8,15 @@ project( EML
 option( EML_BUILD_TESTS "Build EML's unit tests" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release )
+   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-if ( CMAKE_BUILD_TYPE EQUAL Release )
-   message( STATUS "Building EML version 0.0.1 in release mode" )
+message( STATUS "Build EML: 0.0.1" )
+
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "Build type: Release" )
 else ( )
-   message( STATUS "Building EML version 0.0.1 in debug mode" )
+   message( STATUS "Build type: Debug" )
 endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )

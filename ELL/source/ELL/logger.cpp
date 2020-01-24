@@ -23,34 +23,34 @@
 
 #include <memory>
 
-logger::logger( ) : log( "Luciole" )
+namespace ELL
 {
-   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
-   console_sink->set_level( spdlog::level::debug );
-   console_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
+   logger::logger( ) : log( "Luciole" )
+   {
+      auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
+      console_sink->set_level( spdlog::level::debug );
+      console_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-   auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( "logs.txt", true );
-   file_sink->set_level( spdlog::level::trace );
-   file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
+      auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( "logs.txt", true );
+      file_sink->set_level( spdlog::level::trace );
+      file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-   log = spdlog::logger( "Luciole", {console_sink, file_sink} );
-   log.set_level( spdlog::level::debug );
-}
+      log = spdlog::logger( "Luciole", {console_sink, file_sink} );
+      log.set_level( spdlog::level::debug );
+   }
 
-logger::logger( std::string_view name ) : log( std::string( name ) )
-{
-   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
-   console_sink->set_level( spdlog::level::debug );
-   console_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
+   logger::logger( std::string_view name ) : log( std::string( name ) )
+   {
+      auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
+      console_sink->set_level( spdlog::level::debug );
+      console_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-   auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( "logs.txt", true );
-   file_sink->set_level( spdlog::level::trace );
-   file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
+      auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( "logs.txt", true );
+      file_sink->set_level( spdlog::level::trace );
+      file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-   log = spdlog::logger( std::string( name ), {console_sink, file_sink} );
-}
+      log = spdlog::logger( std::string( name ), {console_sink, file_sink} );
+   }
 
-spdlog::logger& logger::get_logger( )
-{
-   return log;
-}
+   spdlog::logger& logger::get_logger( ) { return log; }
+} // namespace ELL

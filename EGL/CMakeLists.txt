@@ -6,7 +6,15 @@ project( EGL
 )
 
 if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release )
+   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
+endif( )
+
+message( STATUS "Build EGL: 0.0.1" )
+
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "Build type: Release" )
+else( )
+   message( STATUS "Build type: Debug" )
 endif( )
 
 # compilation settings
@@ -20,6 +28,7 @@ set( SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_ENABLE_MSL OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE )
+set( SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON CACHE BOOL "" FORCE )
 
 # external dependencies
 add_subdirectory( external/volk )
@@ -59,6 +68,7 @@ target_link_libraries( EGL
      glslang
      SPIRV
      EML
+     ELL
 )
 
 target_sources( EGL

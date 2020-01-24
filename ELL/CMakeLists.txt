@@ -6,17 +6,21 @@ project( ELL
 )
 
 if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release )
+   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-if ( CMAKE_BUILD_TYPE EQUAL Release )
-   message( STATUS "Building ELL version 0.0.1 in release mode" )
+message( STATUS "Build ELL: 0.0.1" )
+
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "Build type: Release" )
 else ( )
-   message( STATUS "Building EML version 0.0.1 in debug mode" )
+   message( STATUS "Build type: Debug" )
 endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
+
+add_subdirectory( external/spdlog )
 
 add_library( ELL STATIC )
 
@@ -42,6 +46,11 @@ target_include_directories( ELL
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/source
+)
+
+target_link_libraries( ELL
+   PUBLIC
+      spdlog_headers_only
 )
 
 target_sources( ELL

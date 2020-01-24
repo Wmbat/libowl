@@ -6,13 +6,15 @@ project( EWL
 )
 
 if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release )
+   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-if ( CMAKE_BUILD_TYPE EQUAL Release )
-   message( STATUS "Building EWL in release mode" )
+message( STATUS "Build EWL: 0.0.1" )
+
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "Build type: Release" )
 else ( )
-   message( STATUS "Building EWL in debug mode" )
+   message( STATUS "Build type: Debug" )
 endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
@@ -59,6 +61,7 @@ target_include_directories( EWL
 target_link_libraries( EWL
    PUBLIC
       ${XCB_LIBRARY}
+      ELL
 )
 
 target_sources( EWL

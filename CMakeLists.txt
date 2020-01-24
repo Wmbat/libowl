@@ -22,11 +22,11 @@ set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 
-add_subdirectory( external/spdlog )
 add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )
 
 add_subdirectory( EML )
+add_subdirectory( ELL )
 add_subdirectory( EGL )
 add_subdirectory( EWL )
 
@@ -42,7 +42,6 @@ target_compile_options( UVE
       $<$<PLATFORM_ID:UNIX>:-pthread>
 
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 )
 
@@ -90,7 +89,6 @@ set_target_properties( UVE
 target_link_libraries( UVE
    PUBLIC
       ${XCB_LIBRARY}
-      spdlog_header_only
       nlohmann_json
       glm
       EML
@@ -103,7 +101,6 @@ target_sources( UVE
       "source/UVE/gfx/render_target.cpp"
       "source/UVE/gfx/xcb_render_target.cpp"
       "source/UVE/ui/window.cpp"
-      "source/UVE/utils/logger.cpp"
 )
 
 if ( UVE_BUILD_EXAMPLES )

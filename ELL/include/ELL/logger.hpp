@@ -22,82 +22,81 @@
 
 namespace ELL
 {
-
-class logger
-{
-public:
-   logger( );
-   logger( std::string_view name );
-
-   void info( std::string const& msg )
+   class logger
    {
-      log.info( msg );
+   public:
+      logger( );
+      logger( std::string_view name );
+
+      void info( std::string const& msg )
+      {
+         log.info( msg );
 
 #ifndef NDEBUG
-      log.flush( );
+         log.flush( );
 #endif
-   }
+      }
 
-   void debug( std::string const& msg )
-   {
+      void debug( std::string const& msg )
+      {
 #ifndef NDEBUG
-      log.debug( msg );
-      log.flush( );
+         log.debug( msg );
+         log.flush( );
 #endif
-   }
+      }
 
-   void warn( std::string const& msg )
-   {
-      log.warn( msg );
-      log.flush( );
-   }
+      void warn( std::string const& msg )
+      {
+         log.warn( msg );
+         log.flush( );
+      }
 
-   void error( std::string const& msg )
-   {
-      log.error( msg );
-      log.flush( );
-   }
+      void error( std::string const& msg )
+      {
+         log.error( msg );
+         log.flush( );
+      }
 
-   void flush( ) { log.flush( ); }
+      void flush( ) { log.flush( ); }
 
-   template <typename... _args>
-   void info( std::string_view msg, _args const&... args )
-   {
-      log.info( msg, args... );
+      template <typename... _args>
+      void info( std::string_view msg, _args const&... args )
+      {
+         log.info( msg, args... );
 
 #ifndef NDEBUG
-      log.flush( );
+         log.flush( );
 #endif
-   }
+      }
 
-   template <typename... _args>
-   void debug( std::string_view msg, _args const&... args )
-   {
+      template <typename... _args>
+      void debug( std::string_view msg, _args const&... args )
+      {
 #ifndef NDEBUG
-      log.debug( msg, args... );
-      log.flush( );
+         log.debug( msg, args... );
+         log.flush( );
 #endif
-   }
+      }
 
-   template <typename... _args>
-   void warn( std::string_view msg, _args const&... args )
-   {
-      log.warn( msg, args... );
-      log.flush( );
-   }
+      template <typename... _args>
+      void warn( std::string_view msg, _args const&... args )
+      {
+         log.warn( msg, args... );
+         log.flush( );
+      }
 
-   template <typename... _args>
-   void error( std::string_view msg, _args const&... args )
-   {
-      log.error( msg, args... );
-      log.flush( );
-   }
+      template <typename... _args>
+      void error( std::string_view msg, _args const&... args )
+      {
+         log.error( msg, args... );
+         log.flush( );
+      }
 
-   spdlog::logger& get_logger( );
+      spdlog::logger& get_logger( );
 
-private:
-   spdlog::logger log;
-};
+   private:
+      spdlog::logger log;
+   };
 
 #define LOG_INFO( p_logger, message )                                                                                                      \
    if ( p_logger )                                                                                                                         \
@@ -170,4 +169,4 @@ private:
                                                                                                                                            \
       p_logger->error( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                \
    }
-}
+} // namespace ELL
