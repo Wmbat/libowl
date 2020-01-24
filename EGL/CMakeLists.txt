@@ -26,9 +26,6 @@ add_subdirectory( external/volk )
 add_subdirectory( external/glslang )
 add_subdirectory( external/SPIRV-Cross )
 
-# local dependencies
-add_subdirectory( EML )
-
 add_library( EGL STATIC )
 
 set_target_properties( EGL
@@ -67,4 +64,5 @@ target_link_libraries( EGL
 target_sources( EGL
    PRIVATE
       "source/EGL/render_manager.cpp"
+      "source/EGL/vk/defines.cpp"
 )

@@ -1,18 +1,16 @@
 cmake_minimum_required( VERSION 3.15 )
-project( EML
+project( ELL
    VERSION 0.0.1
-   DESCRIPTION "A memory management library"
+   DESCRIPTION "A Logging library"
    LANGUAGES CXX
 )
-
-option( EML_BUILD_TESTS "Build EML's unit tests" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
 
 if ( CMAKE_BUILD_TYPE EQUAL Release )
-   message( STATUS "Building EML version 0.0.1 in release mode" )
+   message( STATUS "Building ELL version 0.0.1 in release mode" )
 else ( )
    message( STATUS "Building EML version 0.0.1 in debug mode" )
 endif ( )
@@ -20,32 +18,25 @@ endif ( )
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 
-if ( EML_BUILD_TESTS )
-   enable_testing( )
+add_library( ELL STATIC )
 
-   add_subdirectory( ../external/googletest build )
-   add_subdirectory( tests )
-endif ( )
-
-add_library( EML STATIC )
-
-set_target_properties( EML
+set_target_properties( ELL
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( EML
+target_compile_features( ELL
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( EML
+target_compile_options( ELL
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 )
        
-target_include_directories( EML
+target_include_directories( ELL
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -53,7 +44,7 @@ target_include_directories( EML
         ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
-target_sources( EML
+target_sources( ELL
    PRIVATE
-      "source/EML/memory_manager.cpp"
+      "source/ELL/logger.cpp"
 )

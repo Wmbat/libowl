@@ -20,6 +20,9 @@
 
 #include <spdlog/spdlog.h>
 
+namespace ELL
+{
+
 class logger
 {
 public:
@@ -167,3 +170,4 @@ private:
                                                                                                                                            \
       p_logger->error( buffer, __FUNCTION__, __VA_ARGS__ );                                                                                \
    }
+}

@@ -22,14 +22,12 @@ set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 
-add_subdirectory( external/volk )
-add_subdirectory( external/glslang )
-add_subdirectory( external/SPIRV-Cross )
 add_subdirectory( external/spdlog )
 add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )
 
 add_subdirectory( EML )
+add_subdirectory( EGL )
 add_subdirectory( EWL )
 
 add_library( UVE STATIC )
@@ -92,15 +90,11 @@ set_target_properties( UVE
 target_link_libraries( UVE
    PUBLIC
       ${XCB_LIBRARY}
-      vulkan
-      volk_headers
-      SPIRV
-      glslang
-      spirv-cross-cpp
       spdlog_header_only
       nlohmann_json
       glm
       EML
+      EGL
 )
 
 target_sources( UVE
@@ -110,7 +104,6 @@ target_sources( UVE
       "source/UVE/gfx/xcb_render_target.cpp"
       "source/UVE/ui/window.cpp"
       "source/UVE/utils/logger.cpp"
-      "source/UVE/vk/defines.cpp"
 )
 
 if ( UVE_BUILD_EXAMPLES )
