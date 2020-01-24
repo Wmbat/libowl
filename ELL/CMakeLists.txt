@@ -50,7 +50,7 @@ target_include_directories( ELL
 
 target_link_libraries( ELL
    PUBLIC
-      spdlog_headers_only
+      spdlog_header_only
 )
 
 target_sources( ELL
