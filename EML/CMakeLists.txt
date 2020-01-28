@@ -29,33 +29,21 @@ if ( EML_BUILD_TESTS )
    add_subdirectory( tests )
 endif ( )
 
-add_library( EML STATIC )
+add_library( EML INTERFACE )
 
-set_target_properties( EML
-   PROPERTIES
-      CXX_EXTENSIONS OFF
-)
-
-target_compile_features( EML
-   PRIVATE
-      cxx_std_20
+target_compile_features( EML 
+   INTERFACE 
+      cxx_std_20 
 )
 
 target_compile_options( EML
-   PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+   INTERFACE
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
 )
        
 target_include_directories( EML
-    PUBLIC 
-        $<INSTALL_INTERFACE:include>    
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
-
-target_sources( EML
-   PRIVATE
-      "source/EML/memory_manager.cpp"
+   INTERFACE
+      $<INSTALL_INTERFACE:include>    
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )

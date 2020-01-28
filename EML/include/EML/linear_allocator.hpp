@@ -1,6 +1,7 @@
 #pragma once
 
-#include <EML/allocators/allocator_interface.hpp>
+#include <EML/allocator_utils.hpp>
+#include <EML/allocator_interface.hpp>
 
 #include <cassert>
 #include <utility>
@@ -8,16 +9,12 @@
 namespace EML
 {
    template <std::size_t size_>
-   class linear_allocator : public allocator_interface
+   class linear_allocator final : public allocator_interface
    {
       static_assert( size_ > 0, "Size of allocator cannot be 0" );
 
    public:
-      linear_allocator( ) : p_start( new std::byte[MAX_SIZE] ), p_current_pos( p_start )
-      {
-         used_memory = 0;
-         num_allocations = 0;
-      }
+      linear_allocator( ) : p_start( new std::byte[MAX_SIZE] ), used_memory( 0 ), num_allocations( 0 ), p_current_pos( p_start ) {}
       linear_allocator( linear_allocator const& other ) = delete;
       linear_allocator( linear_allocator&& other ) { *this = std::move( other ); }
       ~linear_allocator( )
@@ -69,7 +66,8 @@ namespace EML
 
          return aligned_address;
       }
-      void free( std::byte* address ) override { assert( false && "Use clear() instead" ); }
+
+      void free( std::byte* p_location) override { assert( false && "Use clear() instead"); }
 
       void clear( ) noexcept
       {
@@ -80,6 +78,9 @@ namespace EML
 
    private:
       static constexpr std::size_t MAX_SIZE = size_;
+
+      std::size_t used_memory;
+      std::size_t num_allocations;
 
       std::byte* p_start;
       std::byte* p_current_pos;

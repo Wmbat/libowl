@@ -4,6 +4,7 @@
 #include <xcb/xcb.h>
 #endif
 
+#include <EML/stack_allocator.hpp>
 #include <EGL/render_manager.hpp>
 
 namespace EWL
@@ -14,5 +15,10 @@ namespace EWL
       window( );
 
    private:
+      EML::stack_allocator<1024> allocator;
+
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+      xcb_connection_t* p_connection;
+#endif
    };
 }

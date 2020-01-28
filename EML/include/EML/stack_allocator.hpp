@@ -1,6 +1,7 @@
 #pragma once
 
-#include <EML/allocators/allocator_interface.hpp>
+#include <EML/allocator_interface.hpp>
+#include <EML/allocator_utils.hpp>
 
 #include <cassert>
 #include <utility>
@@ -8,7 +9,7 @@
 namespace EML
 {
    template <std::size_t size_>
-   class stack_allocator : public allocator_interface
+   class stack_allocator final : public allocator_interface
    {
       static_assert( size_ > 0, "Size of allocator cannot be 0" );
 

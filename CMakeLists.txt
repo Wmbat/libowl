@@ -9,6 +9,8 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
 
+message( STATUS "Compiling Epona with ${CMAKE_CXX_COMPILER_ID}" )
+
 set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
 
 # nlohmann settings
