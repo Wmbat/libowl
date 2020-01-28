@@ -1,7 +1,7 @@
 #pragma once
 
-#include <EML/allocator_utils.hpp>
 #include <EML/allocator_interface.hpp>
+#include <EML/allocator_utils.hpp>
 
 #include <cassert>
 #include <utility>
@@ -9,27 +9,28 @@
 namespace EML
 {
    template <std::size_t size_>
-   class linear_allocator final : public allocator_interface
+   class monotonic_allocator final : public allocator_interface
    {
       static_assert( size_ > 0, "Size of allocator cannot be 0" );
 
    public:
-      linear_allocator( ) : p_start( new std::byte[MAX_SIZE] ), used_memory( 0 ), num_allocations( 0 ), p_current_pos( p_start ) {}
-      linear_allocator( linear_allocator const& other ) = delete;
-      linear_allocator( linear_allocator&& other ) { *this = std::move( other ); }
-      ~linear_allocator( )
+      monotonic_allocator( ) noexcept : p_start( new std::byte[MAX_SIZE] ), used_memory( 0 ), num_allocations( 0 ), p_current_pos( p_start )
+      {}
+      monotonic_allocator( monotonic_allocator const& other ) noexcept = delete;
+      monotonic_allocator( monotonic_allocator&& other ) noexcept { *this = std::move( other ); }
+      ~monotonic_allocator( ) noexcept
       {
-         if ( p_start )
+         if ( p_start != nullptr )
          {
-            delete[] p_start;
+            delete [] p_start;
             p_start = nullptr;
          }
 
          p_current_pos = nullptr;
       }
 
-      linear_allocator& operator=( linear_allocator const& rhs ) = delete;
-      linear_allocator& operator=( linear_allocator&& rhs )
+      monotonic_allocator& operator=( monotonic_allocator const& rhs ) noexcept = delete;
+      monotonic_allocator& operator=( monotonic_allocator&& rhs ) noexcept
       {
          if ( this != rhs )
          {
@@ -47,7 +48,7 @@ namespace EML
          return *this;
       }
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) override
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override
       {
          assert( size != 0 );
 
@@ -67,7 +68,7 @@ namespace EML
          return aligned_address;
       }
 
-      void free( std::byte* p_location) override { assert( false && "Use clear() instead"); }
+      void free( std::byte* p_location ) noexcept override { assert( false && "Use clear() instead" ); }
 
       void clear( ) noexcept
       {

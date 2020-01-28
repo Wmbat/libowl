@@ -1,4 +1,4 @@
-#include <EML/allocators/stack_allocator.hpp>
+#include <EML/stack_allocator.hpp>
 
 #include <gtest/gtest.h>
 

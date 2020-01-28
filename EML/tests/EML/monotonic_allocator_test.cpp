@@ -1,15 +1,15 @@
-#include <EML/allocators/linear_allocator.hpp>
+#include <EML/monotonic_allocator.hpp>
 
 #include <gtest/gtest.h>
 
-struct linear_allocator_test : public testing::Test
+struct monotonic_allocator_test : public testing::Test
 {
-   linear_allocator_test( ) {}
+   monotonic_allocator_test( ) {}
 
-   EML::linear_allocator<1024> allocator;
+   EML::monotonic_allocator<1024> allocator;
 };
 
-TEST_F( linear_allocator_test, make_new_inplace_args_test )
+TEST_F( monotonic_allocator_test, make_new_inplace_args_test )
 {
    auto* test_alloc = allocator.make_new<int>( 10 );
 
@@ -17,7 +17,7 @@ TEST_F( linear_allocator_test, make_new_inplace_args_test )
    EXPECT_EQ( 10, *test_alloc );
 }
 
-TEST_F( linear_allocator_test, make_new_assigment_test )
+TEST_F( monotonic_allocator_test, make_new_assigment_test )
 {
    auto* test_alloc = allocator.make_new<int>( );
 
@@ -27,12 +27,12 @@ TEST_F( linear_allocator_test, make_new_assigment_test )
    EXPECT_EQ( 10, *test_alloc );
 }
 
-TEST_F( linear_allocator_test, over_capacity_test )
+TEST_F( monotonic_allocator_test, over_capacity_test )
 {
    EXPECT_EQ( nullptr, allocator.allocate( 1050, sizeof( std::size_t ) ) );
 }
 
-TEST_F( linear_allocator_test, clearing_test )
+TEST_F( monotonic_allocator_test, clearing_test )
 {
    allocator.clear( );
    

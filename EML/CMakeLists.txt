@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.15 )
 project( EML
-   VERSION 0.0.1
+   VERSION 0.0.2
    DESCRIPTION "A memory management library"
    LANGUAGES CXX
 )
@@ -11,7 +11,7 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-message( STATUS "Build EML: 0.0.1" )
+message( STATUS "Build ${PROJECT_NAME}: ${PROJECT_VERSION}" )
 
 if ( CMAKE_BUILD_TYPE MATCHES Release )
    message( STATUS "Build type: Release" )

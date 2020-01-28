@@ -30,7 +30,7 @@ target_compile_options( EML_test
 target_sources( EML_test
    PRIVATE
       "EML/main.cpp"
-      "EML/linear_allocator_test.cpp"
+      "EML/monotonic_allocator_test.cpp"
       "EML/stack_allocator_test.cpp"
 )
 
