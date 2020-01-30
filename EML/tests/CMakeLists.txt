@@ -31,6 +31,7 @@ target_sources( EML_test
    PRIVATE
       "EML/main.cpp"
       "EML/monotonic_allocator_test.cpp"
+      "EML/pool_allocator_test.cpp"
       "EML/stack_allocator_test.cpp"
 )
 
