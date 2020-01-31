@@ -29,21 +29,35 @@ if ( EML_BUILD_TESTS )
    add_subdirectory( tests )
 endif ( )
 
-add_library( EML INTERFACE )
+add_library( EML STATIC )
+
+set_target_properties( EML
+   PROPERTIES
+      CXX_EXTENSIONS OFF
+)
 
 target_compile_features( EML 
-   INTERFACE 
+   PRIVATE
       cxx_std_20 
 )
 
 target_compile_options( EML
-   INTERFACE
+   PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
 )
        
 target_include_directories( EML
-   INTERFACE
-      $<INSTALL_INTERFACE:include>    
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>    
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/source
+)
+
+target_sources( EML
+   PRIVATE
+      "source/EML/allocator_interface.cpp"
+      "source/EML/monotonic_allocator.cpp"
+      "source/EML/pool_allocator.cpp"
 )

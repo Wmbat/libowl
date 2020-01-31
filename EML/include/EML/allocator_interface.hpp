@@ -9,6 +9,7 @@ namespace EML
    {
    protected:
       allocator_interface( ) noexcept = default;
+      allocator_interface( std::size_t size ) noexcept;
       virtual ~allocator_interface( ) noexcept = default;
 
    public:
@@ -38,7 +39,10 @@ namespace EML
          }
       }
 
+      std::size_t max_size( ) const noexcept;
+
    protected:
+      std::size_t total_size;
       std::size_t used_memory;
       std::size_t num_allocations;
    };
