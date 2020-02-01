@@ -57,6 +57,8 @@ namespace EML
          p_first_free = rhs.p_first_free;
          rhs.p_first_free = nullptr;
       }
+
+      return *this;
    }
 
    std::byte* pool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept 
@@ -91,5 +93,10 @@ namespace EML
 
       used_memory -= block_size;
       --num_allocations;
+   }
+
+   void pool_allocator::clear( ) noexcept
+   {
+      
    }
 }

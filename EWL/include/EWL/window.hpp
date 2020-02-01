@@ -15,8 +15,6 @@ namespace EWL
       window( );
 
    private:
-      EML::stack_allocator<1024> allocator;
-
 #if defined(VK_USE_PLATFORM_XCB_KHR)
       xcb_connection_t* p_connection;
 #endif

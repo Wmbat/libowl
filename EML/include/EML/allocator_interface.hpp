@@ -16,6 +16,8 @@ namespace EML
       virtual std::byte* allocate( std::size_t size, std::size_t allignment = sizeof( std::size_t ) ) noexcept = 0;
       virtual void free( std::byte* p_location ) noexcept = 0;
 
+      virtual void clear( ) noexcept = 0;
+
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
       {

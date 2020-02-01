@@ -28,6 +28,8 @@ namespace EML
       [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
       void free( std::byte* p_location ) noexcept override;
 
+      void clear( ) noexcept override;
+
    private:
       std::size_t block_count = 0;
       std::size_t block_size = 0;
