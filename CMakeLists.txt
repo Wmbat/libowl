@@ -5,6 +5,8 @@ project( Epona
    LANGUAGES CXX 
 )
 
+cmake_policy(SET CMP0048 NEW)
+
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
