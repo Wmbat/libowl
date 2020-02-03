@@ -1,41 +1,12 @@
-#pragma once
-
 #include <EML/monotonic_allocator.hpp>
+
+#include <cassert>
 
 namespace EML
 {
    monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
-      allocator_interface( size ), p_start( new std::byte[size] ), p_current_pos( p_start )
+      allocator_interface( size ), p_memory( std::make_unique<std::byte[]>( size ) ), p_current_pos( p_memory.get( ) )
    {}
-   monotonic_allocator::monotonic_allocator( monotonic_allocator&& other ) noexcept { *this = std::move( other ); }
-   monotonic_allocator::~monotonic_allocator( ) noexcept
-   {
-      if ( p_start != nullptr )
-      {
-         delete[] p_start;
-         p_start = nullptr;
-      }
-
-      p_current_pos = nullptr;
-   }
-
-   monotonic_allocator& monotonic_allocator::operator=( monotonic_allocator&& rhs ) noexcept
-   {
-      if ( this != &rhs )
-      {
-         used_memory = std::move( rhs.used_memory );
-
-         num_allocations = std::move( rhs.num_allocations );
-
-         p_start = rhs.p_start;
-         rhs.p_start = nullptr;
-
-         p_current_pos = rhs.p_current_pos;
-         rhs.p_current_pos = nullptr;
-      }
-
-      return *this;
-   }
 
    std::byte* monotonic_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
    {
@@ -61,8 +32,8 @@ namespace EML
 
    void monotonic_allocator::clear( ) noexcept
    {
-      p_current_pos = p_start;
+      p_current_pos = p_memory.get( );
       used_memory = 0;
       num_allocations = 0;
    }
-}
+} // namespace EML

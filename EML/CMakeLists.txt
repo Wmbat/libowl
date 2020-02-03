@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.15 )
 project( EML
-   VERSION 0.0.3
+   VERSION 0.1.0
    DESCRIPTION "A memory management library"
    LANGUAGES CXX
 )
@@ -60,4 +60,5 @@ target_sources( EML
       "source/EML/allocator_interface.cpp"
       "source/EML/monotonic_allocator.cpp"
       "source/EML/pool_allocator.cpp"
+      "source/EML/stack_allocator.cpp"
 )
