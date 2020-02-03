@@ -12,9 +12,9 @@ namespace EML
    class pool_allocator final : public allocator_interface
    {
    private:
-      struct header
+      struct block_header
       {
-         header* p_next;
+         block_header* p_next;
       };
 
    public:
@@ -30,6 +30,6 @@ namespace EML
       std::size_t block_size = 0;
 
       std::unique_ptr<std::byte[]> p_memory;
-      header* p_first_free = nullptr;
+      block_header* p_first_free = nullptr;
    };
 } // namespace EML

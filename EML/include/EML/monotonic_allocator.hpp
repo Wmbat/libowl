@@ -20,5 +20,5 @@ namespace EML
    private:
       std::unique_ptr<std::byte[]> p_memory;
       std::byte* p_current_pos;
-   }; // class linear_allocator
+   }; 
 } // namespace EML

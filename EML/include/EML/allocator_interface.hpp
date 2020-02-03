@@ -42,6 +42,7 @@ namespace EML
       }
 
       std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
 
    protected:
       std::size_t total_size;
