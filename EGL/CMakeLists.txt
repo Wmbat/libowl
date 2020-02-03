@@ -5,8 +5,6 @@ project( EGL
    LANGUAGES CXX
 )
 
-cmake_policy(SET CMP0048 OLD)
-
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
