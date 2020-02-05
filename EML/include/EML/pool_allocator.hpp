@@ -50,6 +50,4 @@ namespace EML
       std::unique_ptr<std::byte[]> p_memory;
       block_header* p_first_free = nullptr;
    };
-
-   ENABLE_UPTR( pool_allocator );
 } // namespace EML
