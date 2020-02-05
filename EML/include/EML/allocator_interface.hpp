@@ -1,7 +1,12 @@
 #pragma once
 
+#include <EML/allocator_utils.hpp>
+
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <memory>
 
 namespace EML
 {
@@ -49,4 +54,7 @@ namespace EML
       std::size_t used_memory;
       std::size_t num_allocations;
    };
+
+   template <class type_>
+   using uptr = std::unique_ptr<type_, std::function<void(type_*)>>;
 } // namespace EML

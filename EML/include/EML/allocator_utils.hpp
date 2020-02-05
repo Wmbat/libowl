@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace EML
-{ 
+{
    constexpr std::size_t get_backward_padding( std::uintptr_t address, std::size_t aligment ) noexcept
    {
       auto const padding = address & ( aligment - 1 );
@@ -36,4 +36,4 @@ namespace EML
 
       return padding;
    }
-}
+} // namespace EML

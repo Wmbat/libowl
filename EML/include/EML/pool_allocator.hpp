@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 namespace EML
@@ -25,6 +26,23 @@ namespace EML
 
       void clear( ) noexcept override;
 
+      template <class type_, class... args_>
+      [[nodiscard]] uptr<type_> make_unique( args_&&... args ) noexcept
+      {
+         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
+         {
+            return uptr<type_>( new ( p_alloc ) type_( args... ), [this]( type_* p_type ) {
+               this->make_delete( p_type );
+            } );
+         }
+         else
+         {
+            return uptr<type_>( nullptr, [this]( type_* p_type ) {
+               this->make_delete( p_type );
+            } );
+         }
+      }
+
    private:
       std::size_t block_count = 0;
       std::size_t block_size = 0;
@@ -32,4 +50,6 @@ namespace EML
       std::unique_ptr<std::byte[]> p_memory;
       block_header* p_first_free = nullptr;
    };
+
+   ENABLE_UPTR( pool_allocator );
 } // namespace EML

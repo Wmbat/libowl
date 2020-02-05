@@ -1,8 +1,8 @@
 #include <EML/allocator_interface.hpp>
 #include <EML/allocator_utils.hpp>
 
-#include <utility>
 #include <memory>
+#include <utility>
 
 namespace EML
 {
@@ -21,6 +21,12 @@ namespace EML
          block* p_next;
       };
 
+      struct allocation_header
+      {
+         std::size_t size;
+         std::size_t adjustment;
+      };
+
    public:
       free_list_allocator( std::size_t const size, policy placement_policy ) noexcept;
 
@@ -29,17 +35,27 @@ namespace EML
 
       void clear( ) noexcept override;
 
+      template <class type_, class... args_>
+      [[nodiscard]] uptr<type_> make_unique( args_&&... args ) noexcept
+      {
+         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
+         {
+            return uptr<type_>( new ( p_alloc ) type_( args... ), [this]( type_* p_type ) {
+               this->make_delete( p_type );
+            } );
+         }
+         else
+         {
+            return uptr<type_>( nullptr, [this]( type_* p_type ) {
+               this->make_delete( p_type );
+            } );
+         }
+      }
+
    private:
       std::unique_ptr<std::byte[]> p_memory;
       block* p_free_blocks;
 
       policy placement_policy;
-
-   private:
-      struct allocation_header
-      {
-         std::size_t size;
-         std::size_t adjustment;
-      };
    };
-}
+} // namespace EML

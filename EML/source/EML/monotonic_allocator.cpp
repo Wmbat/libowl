@@ -18,10 +18,10 @@ namespace EML
       {
          return nullptr;
       }
-
+      
       std::byte* aligned_address = p_current_pos + padding;
       p_current_pos = aligned_address + size;
-
+      
       used_memory += size + padding;
       ++num_allocations;
 
