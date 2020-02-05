@@ -56,5 +56,5 @@ namespace EML
    };
 
    template <class type_>
-   using uptr = std::unique_ptr<type_, std::function<void(type_*)>>;
+   using uptr = std::unique_ptr<type_, std::function<void( type_* )>>;
 } // namespace EML

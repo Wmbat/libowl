@@ -28,7 +28,7 @@ namespace EML
    std::byte* pool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept 
    {
       assert( size != 0 && "Allocation size cannot be zero" );
-      assert( size == 1024 && "Allocation size does not match pool block size" );
+      assert( alignment != 0 && "Allocation alignment cannot be zero" );
 
       if ( p_first_free )
       {
