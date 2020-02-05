@@ -53,6 +53,10 @@ namespace EML
       }
 
    private:
+      std::size_t find_best_fit( std::size_t size, std::size_t alignment, block* p_prev_block, block* p_new_block ) const noexcept;
+      std::size_t find_first_fit( std::size_t size, std::size_t alignment, block* p_prev_block, block* p_new_block ) const noexcept;
+
+   private:
       std::unique_ptr<std::byte[]> p_memory;
       block* p_free_blocks;
 
