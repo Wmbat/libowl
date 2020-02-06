@@ -63,7 +63,6 @@ target_link_libraries( EML
 target_sources( EML
    PRIVATE
       "source/EML/allocator_interface.cpp"
-      "source/EML/free_list_allocator.cpp"
       "source/EML/monotonic_allocator.cpp"   
       "source/EML/pool_allocator.cpp"
       "source/EML/stack_allocator.cpp"

@@ -6,7 +6,8 @@ namespace EML
 {
    pool_allocator::pool_allocator( std::size_t const block_count, std::size_t const block_size ) noexcept :
       allocator_interface( block_count * block_size ), block_count( block_count ), block_size( block_size ),
-      p_memory( std::make_unique<std::byte[]>( block_count * block_size * sizeof( block_header ) ) ), p_first_free( nullptr )
+      p_memory( std::make_unique<std::byte[]>( block_count * ( block_size + sizeof( block_header ) ) ) ),
+      p_first_free( nullptr )
    {
       assert( block_count != 0 && "Cannot have no blocks in memory pool" );
       assert( block_size != 0 && "Cannot have a block size of zero" );
@@ -25,7 +26,7 @@ namespace EML
       }
    }
 
-   std::byte* pool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept 
+   std::byte* pool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
    {
       assert( size != 0 && "Allocation size cannot be zero" );
       assert( alignment != 0 && "Allocation alignment cannot be zero" );
@@ -59,8 +60,5 @@ namespace EML
       --num_allocations;
    }
 
-   void pool_allocator::clear( ) noexcept
-   {
-      
-   }
-}
+   void pool_allocator::clear( ) noexcept {}
+} // namespace EML
