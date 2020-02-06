@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-echo Building Luciole in Debug mode with Tests.
+echo Building Epona in Debug mode with Tests.
 
 echo Creating build folder.
 mkdir ../build -p
