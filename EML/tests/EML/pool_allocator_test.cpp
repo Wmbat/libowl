@@ -30,7 +30,7 @@ TEST_F( pool_allocator_test, over_allocation_test )
 }
 
 TEST_F( pool_allocator_test, simple_free_test )
-{        
+{
    auto* p_first_alloc = my_allocator.allocate( alloc_size, alignof( EML::pool_allocator ) );
    auto* p_second_alloc = my_allocator.allocate( alloc_size, alignof( std::vector<float> ) );
 
@@ -43,4 +43,25 @@ TEST_F( pool_allocator_test, simple_free_test )
    auto* p_third_alloc = my_allocator.allocate( alloc_size, alignof( bool[2] ) );
 
    EXPECT_NE( nullptr, p_third_alloc );
+}
+
+TEST_F( pool_allocator_test, unique_ptr_alloc_test )
+{
+   auto p_first_alloc = my_allocator.make_unique<int>( 3 );
+
+   EXPECT_NE( nullptr, p_first_alloc.get( ) );
+
+   {
+      auto p_second_alloc = my_allocator.make_unique<int>( 3 );
+
+      EXPECT_NE( nullptr, p_second_alloc.get( ) );
+
+      auto p_third_alloc = my_allocator.make_unique<int>( 3 );
+
+      EXPECT_EQ( nullptr, p_third_alloc.get( ) );
+   }
+
+   auto p_fourth_alloc = my_allocator.make_unique<int>( 3 );
+
+   EXPECT_NE( nullptr, p_fourth_alloc.get( ) );
 }
