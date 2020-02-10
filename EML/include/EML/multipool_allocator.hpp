@@ -16,7 +16,7 @@ namespace EML
       };
 
    public:
-      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 0 ) noexcept;
+      multipool_allocator( std::size_t const block_count, std::size_t const block_size, std::size_t const pool_depth = 1 ) noexcept;
 
       std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
       void free( std::byte* p_alloc ) noexcept override;

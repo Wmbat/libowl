@@ -19,9 +19,6 @@ echo Building Luciole in Release mode.
 echo Creating build folder.
 mkdir ../build -p
 
-export CC=/usr/bin/clang
-export CXX=/usr/bin/clang++
-
 git submodule update --init --recursive ../
 
 cmake ../ -B ../build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF

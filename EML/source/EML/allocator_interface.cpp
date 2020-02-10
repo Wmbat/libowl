@@ -6,4 +6,5 @@ namespace EML
 
    std::size_t allocator_interface::max_size( ) const noexcept { return total_size; }
    std::size_t allocator_interface::memory_usage( ) const noexcept { return used_memory; }
+   std::size_t allocator_interface::allocation_count( ) const noexcept { return num_allocations; }
 }

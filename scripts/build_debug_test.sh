@@ -19,9 +19,6 @@ echo Building Luciole in Debug mode with Tests.
 echo Creating build folder.
 mkdir ../build -p
 
-export CC=/usr/bin/clang
-export CXX=/usr/bin/clang++
-
 git submodule update --init --recursive ../
 
 cmake ../ -B ../build -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON

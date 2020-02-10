@@ -21,6 +21,8 @@ endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
+set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror -fconcepts" )
+set( GNU_RELEASE_FLAGS "-o3 -fconcepts" )
 
 if ( EML_BUILD_TESTS )
    enable_testing( )
@@ -38,13 +40,16 @@ set_target_properties( EML
 
 target_compile_features( EML 
    PRIVATE
-      cxx_std_20 
+      cxx_std_20
 )
 
 target_compile_options( EML
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
+
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
        
 target_include_directories( EML
@@ -64,14 +69,15 @@ target_sources( EML
    PRIVATE
       "source/EML/allocator_interface.cpp"
       "source/EML/monotonic_allocator.cpp"   
+      "source/EML/multipool_allocator.cpp"
       "source/EML/pool_allocator.cpp"
       "source/EML/stack_allocator.cpp"
 )
 
-if ( EML_BUILD_TESTS )
-   add_custom_command( 
-      TARGET EML
-      POST_BUILD
-      COMMAND ctest --output-on-failure
-   )
-endif ( )
+#if ( EML_BUILD_TESTS )
+#   add_custom_command( 
+#      TARGET EML
+#      POST_BUILD
+#      COMMAND ctest --verbose
+#   )
+#endif ( )

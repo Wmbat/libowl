@@ -20,6 +20,8 @@ endif( )
 # compilation settings
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
+set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
+set( GNU_RELEASE_FLAGS "-o3" )
 
 # spirv_cross settings
 set( SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE )
@@ -51,6 +53,9 @@ target_compile_options( EGL
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
 target_include_directories( EGL 
