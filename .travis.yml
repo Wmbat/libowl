@@ -1,15 +1,13 @@
 language: cpp
-
 compiler: 
   - clang
-  - gcc
-
-addons:
-    apt:
-        packages:
-            - clang-9.2
-            - g++-9
-            - gcc-9
+apt:
+sources:
+  - llvm-toolchain-trusty
+  - ubuntu-toolchain-r-test
+packages:
+  - clang-9
+  - cmake
 
 script:
   - bash build_debug_test.sh
