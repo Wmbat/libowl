@@ -4,6 +4,13 @@ compiler:
   - clang
   - gcc
 
+addons:
+    apt:
+        packages:
+            - clang-9.2
+            - g++-9
+            - gcc-9
+
 script:
-  - bash scripts/build_debug_test.sh
+  - bash build_debug_test.sh
    
