@@ -17,16 +17,13 @@
 echo Building Epona in Debug mode with Tests.
 
 echo Creating build folder.
-mkdir ./../build -p
+mkdir ./build -p
 
 export CC=/usr/bin/clang
 export CXX=/usr/bin/clang++
 
-git submodule update --init --recursive ./../
+git submodule update --init --recursive ./
 
-cmake ./../ -B ./../build -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+cmake ./ -B ./build -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
 
-echo Copying compile_commands.json to project root.
-cp ./../build/compile_commands.json ./../
-
-make -C ./../build/
+make -C ./build/
