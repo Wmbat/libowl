@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.15 )
 project( EML
-   VERSION 0.1.6
+   VERSION 0.1.7
    DESCRIPTION "A memory management library"
    LANGUAGES CXX
 )
