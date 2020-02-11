@@ -28,3 +28,5 @@ cmake ../ -B ../build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 
 echo Copying compile_commands.json to project root.
 cp ../build/compile_commands.json ../
+
+make -C ../build/
