@@ -12,7 +12,12 @@ before_install:
    - sudo apt-get -y install python3
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
    - sudo apt-get -y install clang-9
-   - sudo apt-get -y install vulkan-sdk
+
+install:
+   - export VK_VERSION=1.2.131.1
+   - wget -O vulkansdk-linux-x86_64-$VK_VERSION.tar.gz https://sdk.lunarg.com/sdk/download/$VK_VERSION/linux/vulkansdk-linux-x86_64-$VK_VERSION.tar.gz
+   - tar zxf vulkansdk-linux-x86_64-$VK_VERSION.tar.gz
+   - export VULKAN_SDK=$TRAVIS_BUILD_DIR/$VK_VERSION/x86_64
 
 script:
    - mkdir build
