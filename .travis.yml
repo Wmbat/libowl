@@ -1,0 +1,8 @@
+language: cpp
+
+install:
+  - cd scripts
+
+compiler: 
+  - clang
+  - gcc
