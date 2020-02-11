@@ -5,7 +5,5 @@ compiler:
   - gcc
 
 script:
-  - bash scripts/build_debug.sh
   - bash scripts/build_debug_test.sh
-  - bash scripts/build_release.sh
    
