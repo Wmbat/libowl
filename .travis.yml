@@ -1,13 +1,19 @@
 language: cpp
+sudo: required
+
+os:
+   - linux
+
 compiler: 
-  - clang
+   - clang
+
 apt:
-sources:
-  - llvm-toolchain-trusty
-  - ubuntu-toolchain-r-test
-packages:
-  - clang-9
-  - cmake
+   sources:
+      - llvm-toolchain-trusty
+      - ubuntu-toolchain-r-test
+   packages:
+      - clang-9
+      - cmake
 
 script:
   - bash build_debug_test.sh
