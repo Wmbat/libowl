@@ -7,14 +7,10 @@ os:
 compiler: 
    - clang
 
-apt:
-   sources:
-      - llvm-toolchain-trusty
-      - ubuntu-toolchain-r-test
-   packages:
-      - clang-9
-      - cmake
-      - python3
+before_install:
+   - sudo apt-get update
+   - sudo apt-get -y install python3
+   - sudo apt-get -y install clang-9
 
 script:
    - mkdir build
