@@ -60,3 +60,19 @@ TEST_F( stack_allocator_test, deletion_test )
 
    my_allocator.make_delete( p_alloc_2 );
 }
+
+TEST_F( stack_allocator_test, array_creation_test )
+{
+   std::size_t elem_count = 20;
+   auto* p_array = my_allocator.make_array<int>( elem_count );
+
+   EXPECT_NE( p_array, nullptr );
+
+   for ( int i = 0; i < elem_count; ++i )
+   {
+      p_array[i] = 10;
+      EXPECT_EQ( p_array[i], 10 );
+   }
+
+   my_allocator.make_delete( p_array );
+}

@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <utility>
+#include <cassert>
 
 namespace EML
 {
@@ -38,6 +39,12 @@ namespace EML
 
       [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
       void free( std::byte* p_address ) noexcept;
+
+      void clear( ) noexcept;
+
+      std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
+      std::size_t allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
@@ -62,11 +69,23 @@ namespace EML
          }
       }
 
-      void clear( ) noexcept;
+      template <class type_>
+      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot allocate zero elements" );
+         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
+   
+         auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
 
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
+
+         for( std::size_t i = 0; i < element_count; ++i )
+         {
+            new ( p_alloc ) type_( );
+            p_alloc += sizeof( type_ );
+         }
+
+         return reinterpret_cast<type_*>( p_alloc );
+      }
 
    private:
       std::size_t total_size;
