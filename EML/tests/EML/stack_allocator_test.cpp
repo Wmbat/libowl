@@ -74,5 +74,5 @@ TEST_F( stack_allocator_test, array_creation_test )
       EXPECT_EQ( p_array[i], 10 );
    }
 
-   my_allocator.make_delete( p_array );
+   my_allocator.make_delete( p_array, elem_count );
 }

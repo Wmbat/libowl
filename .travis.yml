@@ -12,12 +12,17 @@ before_install:
    - sudo apt-get -y install python3
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
    - sudo apt-get -y install clang-9
+   - sudo apt-get -y install cppcheck
 
 script:
    - export VULKAN_SDK=$PWD/EGL/external/Vulkan-Headers
    - mkdir build
    - cd build
    - cmake ../ -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+   - mv ./compile_commands.json ../
+   - cd ../
+   - cppcheck --project=compile_commands.json
+   - cd build
    - make
    - cd EML/tests
    - ./EML_test

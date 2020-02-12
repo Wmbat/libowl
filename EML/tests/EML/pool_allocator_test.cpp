@@ -89,3 +89,23 @@ TEST_F( pool_allocator_test, unique_ptr_alloc_test )
 
    EXPECT_NE( nullptr, p_fourth_alloc.get( ) );
 }
+
+TEST_F( pool_allocator_test, array_alloc_test )
+{
+   std::size_t const elem_count = 10;
+   auto* p_array = my_allocator.make_array<int>( elem_count );
+
+   EXPECT_NE( p_array, nullptr );
+
+   for ( std::size_t i = 0; i < elem_count; ++i )
+   {
+      p_array[i] = 10;
+      EXPECT_EQ( p_array[i], 10 );
+   }
+
+   EXPECT_EQ( my_allocator.allocation_count( ), 1 );
+
+   my_allocator.make_delete( p_array, elem_count );
+
+   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
+}

@@ -26,9 +26,9 @@
 
 #include <EML/allocator_utils.hpp>
 
+#include <cassert>
 #include <memory>
 #include <type_traits>
-#include <cassert>
 
 namespace EML
 {
@@ -57,16 +57,15 @@ namespace EML
       {
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
-   
-         auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
 
-         for( std::size_t i = 0;i < element_count; ++i )
+         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
          {
-            new ( p_alloc ) type_( );
-            p_alloc += sizeof( type_ );
+            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
          }
 
-         return p_alloc;
+         return reinterpret_cast<type_*>( p_alloc );
       }
 
       void clear( ) noexcept;

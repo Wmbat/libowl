@@ -26,6 +26,7 @@
 
 #include <EML/allocator_utils.hpp>
 
+#include <cassert>
 #include <memory>
 
 namespace EML
@@ -51,6 +52,12 @@ namespace EML
       pointer<std::byte> allocate( std::size_t size, std::size_t alignment ) noexcept;
       void free( pointer<std::byte> alloc ) noexcept;
 
+      void clear( ) noexcept;
+
+      std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
+      std::size_t allocation_count( ) const noexcept;
+
       template <class type_, class... args_>
       [[nodiscard]] pointer<type_> make_new( args_&&... args ) noexcept
       {
@@ -66,13 +73,42 @@ namespace EML
       }
 
       template <class type_>
+      [[nodiscard]] pointer<type_> make_array( std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot allocate zero elements" );
+         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
+
+         auto alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            new ( alloc.p_data + ( sizeof( type_ ) * i ) ) type_( );
+         }
+
+         return {reinterpret_cast<type_*>( alloc.p_data ), alloc.index};
+      }
+
+      template <class type_>
       void make_delete( pointer<type_> type ) noexcept
       {
          if ( type.p_data )
          {
             type.p_data->~type_( );
-            free( type );
+            free( {reinterpret_cast<std::byte*>( type.p_data ), type.index} );
          }
+      }
+
+      template <class type_>
+      void make_delete( pointer<type_> type, std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot free zero elements" );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            type.p_data[i].~type_( );
+         }
+
+         free( {reinterpret_cast<std::byte*>( type.p_data ), type.index} );
       }
 
       template <class type_, class... args_>
@@ -82,12 +118,6 @@ namespace EML
             this->make_delete( type );
          } );
       }
-
-      void clear( ) noexcept;
-
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
 
    private:
       std::size_t block_count;

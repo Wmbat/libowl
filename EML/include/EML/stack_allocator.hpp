@@ -26,9 +26,9 @@
 
 #include <EML/allocator_utils.hpp>
 
+#include <cassert>
 #include <memory>
 #include <utility>
-#include <cassert>
 
 namespace EML
 {
@@ -60,6 +60,22 @@ namespace EML
       }
 
       template <class type_>
+      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot allocate zero elements" );
+         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
+
+         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
+         }
+
+         return reinterpret_cast<type_*>( p_alloc );
+      }
+
+      template <class type_>
       void make_delete( type_* p_type ) noexcept
       {
          if ( p_type )
@@ -70,21 +86,16 @@ namespace EML
       }
 
       template <class type_>
-      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      void make_delete( type_* p_type, std::size_t element_count ) noexcept
       {
-         assert( element_count != 0 && "cannot allocate zero elements" );
-         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
-   
-         auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
+         assert( element_count != 0 && "cannot free zero elements" );
 
-
-         for( std::size_t i = 0; i < element_count; ++i )
+         for ( std::size_t i = 0; i < element_count; ++i )
          {
-            new ( p_alloc ) type_( );
-            p_alloc += sizeof( type_ );
+            p_type->~type_( );
          }
 
-         return reinterpret_cast<type_*>( p_alloc );
+         free( reinterpret_cast<std::byte*>( p_type ) );
       }
 
    private:
