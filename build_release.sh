@@ -14,19 +14,13 @@
 # GNU General Public License for more details.
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+git submodule update --init --recursive ./
+
+export VULKAN_SDK=${PWD}/EGL/external/Vulkan-Headers
+
 echo Building Epona in Release mode.
 
 echo Creating build folder.
-mkdir ../build -p
+mkdir ./build -p
 
-export CC=/usr/bin/clang
-export CXX=/usr/bin/clang++
-
-git submodule update --init --recursive ../
-
-cmake ../ -B ../build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
-
-echo Copying compile_commands.json to project root.
-cp ../build/compile_commands.json ../
-
-make -C ../build/
+cmake ./ -B ./build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF

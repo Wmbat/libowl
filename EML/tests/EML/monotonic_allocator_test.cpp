@@ -1,3 +1,27 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2020 Wmbat
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include <EML/monotonic_allocator.hpp>
 
 #include <gtest/gtest.h>
@@ -9,40 +33,55 @@ struct monotonic_allocator_test : public testing::Test
    EML::monotonic_allocator my_allocator;
 };
 
-TEST_F( monotonic_allocator_test, make_new_inplace_args_test )
+TEST_F( monotonic_allocator_test, size_test )
 {
-   auto* test_alloc = my_allocator.make_new<int>( 10 );
-
-   EXPECT_NE( nullptr, test_alloc );
-   EXPECT_EQ( 10, *test_alloc );
+   EXPECT_EQ( my_allocator.max_size( ), 1024 );
 }
 
-TEST_F( monotonic_allocator_test, make_new_assigment_test )
+TEST_F( monotonic_allocator_test, basic_alloc_n_assign_test )
 {
-   auto* test_alloc = my_allocator.make_new<int>( );
+   auto* p_alloc = my_allocator.allocate( 1024, alignof( int ) );
 
-   EXPECT_NE( nullptr, test_alloc );
+   EXPECT_NE( p_alloc, nullptr );
 
-   *test_alloc = 10;
-   EXPECT_EQ( 10, *test_alloc );
+   auto* p_data = new ( p_alloc ) int( 10 );
+
+   EXPECT_NE( p_data, nullptr );
+   EXPECT_EQ( *p_data, 10 );
 }
 
-TEST_F( monotonic_allocator_test, over_capacity_test )
+TEST_F( monotonic_allocator_test, over_allocation_test )
 {
-   EXPECT_EQ( nullptr, my_allocator.allocate( 1050, sizeof( std::size_t ) ) );
+   auto* p_alloc = my_allocator.allocate( 2000, alignof( int ) );
+
+   EXPECT_EQ( p_alloc, nullptr );
 }
 
-TEST_F( monotonic_allocator_test, clearing_test )
+TEST_F( monotonic_allocator_test, make_new_test )
 {
+   auto* p_data = my_allocator.make_new<int>( 10 );
+
+   EXPECT_NE( p_data, nullptr );
+   EXPECT_EQ( *p_data, 10 );
+}
+
+TEST_F( monotonic_allocator_test, allocation_count_test )
+{
+   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
+
+   auto* p_data = my_allocator.make_new<int>( 10 );
+
+   EXPECT_NE( p_data, nullptr );
+   EXPECT_EQ( *p_data, 10 );
+   EXPECT_EQ( my_allocator.allocation_count( ), 1 );
+
+   auto* p_data_two = my_allocator.make_new<int>( 10 );
+
+   EXPECT_NE( p_data_two, nullptr );
+   EXPECT_EQ( *p_data_two, 10 );
+   EXPECT_EQ( my_allocator.allocation_count( ), 2 );
+
    my_allocator.clear( );
-   
-   auto* test_alloc_1 = my_allocator.allocate( 1000, alignof( std::size_t ) );
 
-   EXPECT_NE( nullptr, test_alloc_1 );
-
-   my_allocator.clear( );
-
-   auto* test_alloc_2 = my_allocator.allocate( 1000, alignof( std::size_t ) );
-
-   EXPECT_NE( nullptr, test_alloc_2 );
+   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
 }
