@@ -1,0 +1,22 @@
+language: cpp
+sudo: required
+dist: bionic
+os:
+   - linux
+
+compiler: 
+   - clang
+
+before_install:
+   - sudo apt-get update
+   - sudo apt-get -y install python3
+   - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+   - sudo apt-get -y install clang-9
+
+script:
+   - export VULKAN_SDK=$PWD/EGL/external/Vulkan-Headers
+   - mkdir build
+   - cd build
+   - cmake ../ -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+   - make
+   

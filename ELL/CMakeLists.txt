@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.15 )
+cmake_minimum_required( VERSION 3.12 )
 project( ELL
    VERSION 0.0.1
    DESCRIPTION "A Logging library"
