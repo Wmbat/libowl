@@ -35,19 +35,18 @@ namespace EML
    public:
       struct block_header
       {
-         block_header* p_next;
+         block_header* p_next = nullptr;
       };
 
       template <class type_>
       struct pointer
       {
-         type_* p_data;
-         std::size_t const index;
+         type_* p_data = nullptr;
+         std::size_t const index = 0;
       };
 
    public:
-      multipool_allocator(
-         std::size_t const block_count, std::size_t const block_size, std::size_t const pool_depth = 1 ) noexcept;
+      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
 
       pointer<std::byte> allocate( std::size_t size, std::size_t alignment ) noexcept;
       void free( pointer<std::byte> alloc ) noexcept;

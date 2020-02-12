@@ -31,7 +31,7 @@
 namespace EML
 {
    multipool_allocator::multipool_allocator(
-      std::size_t const block_count, std::size_t const block_size, std::size_t const pool_depth ) noexcept :
+      std::size_t block_count, std::size_t block_size, std::size_t pool_depth ) noexcept :
       block_count( block_count ),
       block_size( block_size ), pool_depth( pool_depth ), total_size( block_count * block_size * pool_depth ),
       used_memory( 0 ), num_allocations( 0 )
