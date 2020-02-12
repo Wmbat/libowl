@@ -75,6 +75,14 @@ namespace EML
          }
       }
 
+      template <class type_, class... args_>
+      [[nodiscard]] auto_ptr<pointer<type_>> make_unique( args_&&... args ) noexcept
+      {
+         return auto_ptr<pointer<type_>>( make_new<pointer<type_>>( args... ), [this]( pointer<type_> type ) {
+            this->make_delete( type );
+         } );
+      }
+
       void clear( ) noexcept;
 
       std::size_t max_size( ) const noexcept;

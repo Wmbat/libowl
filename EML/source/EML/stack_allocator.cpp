@@ -29,14 +29,16 @@
 namespace EML
 {
    stack_allocator::stack_allocator( std::size_t const size ) noexcept :
-      allocator_interface( size ), p_memory( std::make_unique<std::byte[]>( size ) ), p_top( p_memory.get( ) )
+      total_size( size ), used_memory( 0 ), num_allocations( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),
+      p_top( p_memory.get( ) )
    {}
 
    std::byte* stack_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
    {
       assert( size != 0 );
 
-      auto const padding = get_forward_padding( reinterpret_cast<std::uintptr_t>( p_top ), alignment, sizeof( header ) );
+      auto const padding =
+         get_forward_padding( reinterpret_cast<std::uintptr_t>( p_top ), alignment, sizeof( header ) );
 
       if ( padding + size + used_memory > total_size )
       {
@@ -74,4 +76,8 @@ namespace EML
       used_memory = 0;
       num_allocations = 0;
    }
+
+   std::size_t stack_allocator::max_size( ) const noexcept { return total_size; }
+   std::size_t stack_allocator::memory_usage( ) const noexcept { return used_memory; }
+   std::size_t stack_allocator::allocation_count( ) const noexcept { return num_allocations; }
 } // namespace EML

@@ -89,17 +89,8 @@ target_link_libraries( EML
 
 target_sources( EML
    PRIVATE
-      "source/EML/allocator_interface.cpp"
       "source/EML/monotonic_allocator.cpp"   
       "source/EML/multipool_allocator.cpp"
       "source/EML/pool_allocator.cpp"
       "source/EML/stack_allocator.cpp"
 )
-
-#if ( EML_BUILD_TESTS )
-#   add_custom_command( 
-#      TARGET EML
-#      POST_BUILD
-#      COMMAND ctest --verbose
-#   )
-#endif ( )

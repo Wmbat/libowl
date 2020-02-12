@@ -26,9 +26,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <functional>
 
 namespace EML
 {
+   template <class type_>
+   using auto_ptr = std::unique_ptr<type_, std::function<void( type_* )>>;
+
    constexpr std::size_t get_backward_padding( std::uintptr_t address, std::size_t aligment ) noexcept
    {
       auto const padding = address & ( aligment - 1 );

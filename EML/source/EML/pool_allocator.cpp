@@ -29,7 +29,8 @@
 namespace EML
 {
    pool_allocator::pool_allocator( std::size_t const block_count, std::size_t const block_size ) noexcept :
-      allocator_interface( block_count * block_size ), block_count( block_count ), block_size( block_size ),
+      total_size( block_count * block_size ), used_memory( 0 ), num_allocations( 0 ), block_count( block_count ),
+      block_size( block_size ),
       p_memory( std::make_unique<std::byte[]>( block_count * ( block_size + sizeof( block_header ) ) ) ),
       p_first_free( nullptr )
    {
@@ -85,4 +86,8 @@ namespace EML
    }
 
    void pool_allocator::clear( ) noexcept {}
+
+   std::size_t pool_allocator::max_size( ) const noexcept { return total_size; }
+   std::size_t pool_allocator::memory_usage( ) const noexcept { return used_memory; }
+   std::size_t pool_allocator::allocation_count( ) const noexcept { return num_allocations; }
 } // namespace EML
