@@ -19,3 +19,6 @@
 [submodule "ELL/external/spdlog"]
 	path = ELL/external/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "EGL/external/Vulkan-Headers"]
+	path = EGL/external/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers
