@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.15 )
+cmake_minimum_required( VERSION 3.12 )
 project( EML
    VERSION 0.1.7
    DESCRIPTION "A memory management library"

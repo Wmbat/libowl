@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.15 )
+cmake_minimum_required( VERSION 3.12 )
 project( EGL
    VERSION 0.0.1
    DESCRIPTION "A Vulkan graphics library"
@@ -33,6 +33,7 @@ set( SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON CACHE BOOL "" FORCE )
 
 # external dependencies
+add_subdirectory( external/Vulkan-Headers )
 add_subdirectory( external/volk )
 add_subdirectory( external/glslang )
 add_subdirectory( external/SPIRV-Cross )
@@ -59,21 +60,21 @@ target_compile_options( EGL
 )
 
 target_include_directories( EGL 
-    PUBLIC 
-        $<INSTALL_INTERFACE:include>    
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
+   PUBLIC 
+      $<INSTALL_INTERFACE:include>    
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+   PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
 target_link_libraries( EGL
    PUBLIC
-     vulkan
-     volk_headers
-     glslang
-     SPIRV
-     EML
-     ELL
+      Vulkan-Headers
+      volk_headers
+      glslang
+      SPIRV
+      EML
+      ELL
 )
 
 target_sources( EGL

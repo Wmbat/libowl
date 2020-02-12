@@ -14,14 +14,19 @@
 # GNU General Public License for more details.
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-echo Building Epona in Release mode.
+export CC=/usr/bin/clang
+export CXX=/usr/bin/clang++
+
+echo Building Epona in Debug mode with Tests.
 
 echo Creating build folder.
 mkdir ../build -p
 
 git submodule update --init --recursive ../
 
-cmake ../ -B ../build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+echo Building Epona in Debug mode with Tests.
 
-echo Copying compile_commands.json to project root.
-cp ../build/compile_commands.json ../
+echo Creating build folder.
+mkdir ./build
+
+cmake ./ -B ./build -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
