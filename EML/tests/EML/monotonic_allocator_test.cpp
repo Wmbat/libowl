@@ -85,3 +85,25 @@ TEST_F( monotonic_allocator_test, allocation_count_test )
 
    EXPECT_EQ( my_allocator.allocation_count( ), 0 );
 }
+
+TEST_F( monotonic_allocator_test, array_alloc_test )
+{
+   std::size_t const elem_count = 10;
+   auto* p_array = my_allocator.make_array<int>( elem_count );
+
+   EXPECT_NE( p_array, nullptr );
+
+   for ( std::size_t i = 0; i < elem_count; ++i )
+   {
+      p_array[i] = 10;
+      EXPECT_EQ( p_array[i], 10 );
+   }
+
+   EXPECT_EQ( my_allocator.allocation_count( ), 1 );
+   EXPECT_EQ( my_allocator.memory_usage( ), sizeof( int ) * elem_count );
+
+   my_allocator.clear( );
+
+   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
+   EXPECT_EQ( my_allocator.memory_usage( ), 0 );
+}

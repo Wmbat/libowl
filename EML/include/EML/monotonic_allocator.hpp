@@ -26,7 +26,9 @@
 
 #include <EML/allocator_utils.hpp>
 
+#include <cassert>
 #include <memory>
+#include <type_traits>
 
 namespace EML
 {
@@ -48,6 +50,22 @@ namespace EML
          {
             return nullptr;
          }
+      }
+
+      template <class type_>
+      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot allocate zero elements" );
+         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
+
+         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
+         }
+
+         return reinterpret_cast<type_*>( p_alloc );
       }
 
       void clear( ) noexcept;

@@ -133,3 +133,21 @@ TEST_F( multipool_allocator_test, clear_test )
    EXPECT_EQ( my_allocator.allocation_count( ), 1 );
    EXPECT_EQ( my_allocator.memory_usage( ), sizeof( my_data ) );
 }
+
+TEST_F( multipool_allocator_test, array_alloc_test )
+{
+   auto arr = my_allocator.make_array<std::size_t>( 16 );
+
+   EXPECT_NE( arr.p_data, nullptr );
+   EXPECT_EQ( my_allocator.allocation_count( ), 1 );
+
+   for ( std::size_t i = 0; i < 16; ++i )
+   {
+      arr.p_data[i] = 10;
+      EXPECT_EQ( arr.p_data[i], 10 );
+   }
+
+   my_allocator.make_delete( arr, 16 );
+
+   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
+}
