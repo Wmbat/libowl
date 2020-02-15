@@ -38,6 +38,7 @@ namespace ESL
       monotonic_allocator( std::size_t size ) noexcept;
 
       [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
+      void free( std::byte* p_alloc ) noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept

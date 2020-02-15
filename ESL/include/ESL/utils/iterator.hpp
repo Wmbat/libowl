@@ -24,23 +24,10 @@
 
 #pragma once
 
-#include <ESL/allocators/pool_allocator.hpp>
-
-#include <cstdint>
-#include <cassert>
-
 namespace ESL
 {
-   template <typename type_>
-   class heap_array
+   template<typename type_>
+   class iterator
    {
-   public:
-      heap_array( std::size_t size ) 
-      {
-         assert( size != 0 && "Array size cannot be zero" );  
-      }
-
-   private:
-      type_* p_alloc;
    };
-} // namespace ESL
+}

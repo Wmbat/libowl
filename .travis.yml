@@ -24,6 +24,6 @@ script:
    - cppcheck --project=compile_commands.json
    - cd build
    - make -j13
-   - cd EML/tests
-   - ./EML_test
+   - cd ESL/tests
+   - ./ESL_test
    
