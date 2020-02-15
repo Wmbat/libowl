@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <EML/monotonic_allocator.hpp>
+#include <ESL/allocators/monotonic_allocator.hpp>
 
 #include <gtest/gtest.h>
 
@@ -30,7 +30,7 @@ struct monotonic_allocator_test : public testing::Test
 {
    monotonic_allocator_test( ) : my_allocator( 1024 ) {}
 
-   EML::monotonic_allocator my_allocator;
+   ESL::monotonic_allocator my_allocator;
 };
 
 TEST_F( monotonic_allocator_test, size_test )

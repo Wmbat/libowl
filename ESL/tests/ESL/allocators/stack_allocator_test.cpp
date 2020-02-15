@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <EML/stack_allocator.hpp>
+#include <ESL/allocators/stack_allocator.hpp>
 
 #include <gtest/gtest.h>
 
@@ -30,7 +30,7 @@ struct stack_allocator_test : public testing::Test
 {
    stack_allocator_test( ) : my_allocator( 1024 ) {}
 
-   EML::stack_allocator my_allocator;
+   ESL::stack_allocator my_allocator;
 };
 
 TEST_F( stack_allocator_test, make_new_inplace_args_test )

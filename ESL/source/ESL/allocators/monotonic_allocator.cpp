@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <EML/monotonic_allocator.hpp>
+#include <ESL/allocators/monotonic_allocator.hpp>
 
 #include <cassert>
 
-namespace EML
+namespace ESL
 {
    monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
       total_size( size ), num_allocations( 0 ), used_memory( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),
@@ -53,6 +53,8 @@ namespace EML
       return aligned_address;
    }
 
+   void monotonic_allocator::free( std::byte* p_alloc ) noexcept {}
+
    void monotonic_allocator::clear( ) noexcept
    {
       p_current_pos = p_memory.get( );
@@ -63,4 +65,4 @@ namespace EML
    std::size_t monotonic_allocator::max_size( ) const noexcept { return total_size; }
    std::size_t monotonic_allocator::memory_usage( ) const noexcept { return used_memory; }
    std::size_t monotonic_allocator::allocation_count( ) const noexcept { return num_allocations; }
-} // namespace EML
+} // namespace ESL

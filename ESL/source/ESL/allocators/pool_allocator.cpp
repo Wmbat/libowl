@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <EML/pool_allocator.hpp>
+#include <ESL/allocators/pool_allocator.hpp>
 
 #include <utility>
 
-namespace EML
+namespace ESL
 {
    pool_allocator::pool_allocator( std::size_t const block_count, std::size_t const block_size ) noexcept :
       total_size( block_count * block_size ), used_memory( 0 ), num_allocations( 0 ), block_count( block_count ),

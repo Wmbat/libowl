@@ -24,35 +24,44 @@
 
 #pragma once
 
-#include <EML/allocator_utils.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
-#include <cstdint>
-#include <functional>
 #include <memory>
 
-namespace EML
+namespace ESL
 {
-   class pool_allocator final
+   class multipool_allocator final
    {
-   private:
+   public:
       struct block_header
       {
-         block_header* p_next;
+         block_header* p_next = nullptr;
+         std::size_t depth_index = 0;
+      };
+
+      struct access_header
+      {
+         block_header* p_first_free = nullptr;
       };
 
    public:
-      pool_allocator( std::size_t const block_count, std::size_t const block_size ) noexcept;
+      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( std::byte* p_location ) noexcept;
+      std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
+      void free( std::byte* p_alloc ) noexcept;
 
       void clear( ) noexcept;
+
+      std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
+      std::size_t allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
       {
-         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
+         std::byte* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
+         if ( p_alloc )
          {
             return new ( p_alloc ) type_( args... );
          }
@@ -68,7 +77,7 @@ namespace EML
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
 
-         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+         std::byte* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
@@ -95,7 +104,7 @@ namespace EML
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
-            p_type->~type_( );
+            p_type[i].~type_( );
          }
 
          free( reinterpret_cast<std::byte*>( p_type ) );
@@ -109,19 +118,16 @@ namespace EML
          } );
       }
 
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
-
    private:
+      std::size_t block_count;
+      std::size_t block_size;
+      std::size_t pool_depth;
+
       std::size_t total_size;
       std::size_t used_memory;
       std::size_t num_allocations;
 
-      std::size_t block_count = 0;
-      std::size_t block_size = 0;
-
       std::unique_ptr<std::byte[]> p_memory;
-      block_header* p_first_free = nullptr;
+      access_header* p_access_headers;
    };
-} // namespace EML
+} // namespace ESL

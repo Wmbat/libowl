@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <EML/multipool_allocator.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
 
 #include <gtest/gtest.h>
 
@@ -32,7 +32,7 @@ struct multipool_allocator_test : public testing::Test
 
    multipool_allocator_test( ) : my_allocator( 1, max_size, 2 ) {}
 
-   EML::multipool_allocator my_allocator;
+   ESL::multipool_allocator my_allocator;
 };
 
 TEST_F( multipool_allocator_test, size_test )
@@ -42,11 +42,11 @@ TEST_F( multipool_allocator_test, size_test )
 
 TEST_F( multipool_allocator_test, basic_alloc_n_assign_test )
 {
-   auto alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_alloc = my_allocator.allocate( max_size, alignof( int ) );
 
-   EXPECT_NE( nullptr, alloc.p_data );
+   EXPECT_NE( nullptr, p_alloc );
 
-   auto* p_data = new ( alloc.p_data ) int( 10 );
+   auto* p_data = new ( p_alloc ) int( 10 );
 
    EXPECT_NE( nullptr, p_data );
    EXPECT_EQ( 10, *p_data );
@@ -54,31 +54,31 @@ TEST_F( multipool_allocator_test, basic_alloc_n_assign_test )
 
 TEST_F( multipool_allocator_test, max_alloc_test )
 {
-   auto first_alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_first_alloc = my_allocator.allocate( max_size, alignof( int ) );
 
    EXPECT_EQ( 1, my_allocator.allocation_count( ) );
 
-   auto second_alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_second_alloc = my_allocator.allocate( max_size, alignof( int ) );
 
    EXPECT_EQ( 1, my_allocator.allocation_count( ) );
 
-   auto third_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
+   auto* p_third_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
 
    EXPECT_EQ( 2, my_allocator.allocation_count( ) );
 
-   auto fourth_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
+   auto* p_fourth_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
 
    EXPECT_EQ( 3, my_allocator.allocation_count( ) );
 
-   auto fifth_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
+   auto* p_fifth_alloc = my_allocator.allocate( max_size / 2, alignof( int ) );
 
    EXPECT_EQ( 3, my_allocator.allocation_count( ) );
 
-   EXPECT_NE( nullptr, first_alloc.p_data );
-   EXPECT_EQ( nullptr, second_alloc.p_data );
-   EXPECT_NE( nullptr, third_alloc.p_data );
-   EXPECT_NE( nullptr, fourth_alloc.p_data );
-   EXPECT_EQ( nullptr, fifth_alloc.p_data );
+   EXPECT_NE( nullptr, p_first_alloc );
+   EXPECT_EQ( nullptr, p_second_alloc );
+   EXPECT_NE( nullptr, p_third_alloc );
+   EXPECT_NE( nullptr, p_fourth_alloc );
+   EXPECT_EQ( nullptr, p_fifth_alloc );
 }
 
 TEST_F( multipool_allocator_test, make_new_test )
@@ -88,26 +88,24 @@ TEST_F( multipool_allocator_test, make_new_test )
       std::size_t data[16];
    };
 
-   auto data = my_allocator.make_new<my_data>( );
+   auto* p_data = my_allocator.make_new<my_data>( );
 
-   EXPECT_NE( nullptr, data.p_data );
-   EXPECT_GE( data.index, 0 );
-   EXPECT_LE( data.index, 1 );
+   EXPECT_NE( nullptr, p_data );
 }
 
 TEST_F( multipool_allocator_test, free_test )
 {
-   auto first_alloc = my_allocator.allocate( max_size, alignof( int ) );
-   auto null_alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_first_alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_null_alloc = my_allocator.allocate( max_size, alignof( int ) );
 
-   EXPECT_NE( nullptr, first_alloc.p_data );
-   EXPECT_EQ( nullptr, null_alloc.p_data );
+   EXPECT_NE( nullptr, p_first_alloc );
+   EXPECT_EQ( nullptr, p_null_alloc );
 
-   my_allocator.free( first_alloc );
+   my_allocator.free( p_first_alloc );
 
-   auto second_alloc = my_allocator.allocate( max_size, alignof( int ) );
+   auto* p_second_alloc = my_allocator.allocate( max_size, alignof( int ) );
 
-   EXPECT_NE( nullptr, second_alloc.p_data );
+   EXPECT_NE( nullptr, p_second_alloc );
 }
 
 TEST_F( multipool_allocator_test, clear_test )
@@ -127,27 +125,27 @@ TEST_F( multipool_allocator_test, clear_test )
    EXPECT_EQ( my_allocator.allocation_count( ), 0 );
    EXPECT_EQ( my_allocator.memory_usage( ), 0 );
 
-   auto data_two = my_allocator.make_new<my_data>( );
+   auto* p_data_two = my_allocator.make_new<my_data>( );
 
-   EXPECT_NE( data_two.p_data, nullptr );
+   EXPECT_NE( p_data_two, nullptr );
    EXPECT_EQ( my_allocator.allocation_count( ), 1 );
    EXPECT_EQ( my_allocator.memory_usage( ), sizeof( my_data ) );
 }
 
 TEST_F( multipool_allocator_test, array_alloc_test )
 {
-   auto arr = my_allocator.make_array<std::size_t>( 16 );
+   auto p_arr = my_allocator.make_array<std::size_t>( 16 );
 
-   EXPECT_NE( arr.p_data, nullptr );
+   EXPECT_NE( p_arr, nullptr );
    EXPECT_EQ( my_allocator.allocation_count( ), 1 );
 
    for ( std::size_t i = 0; i < 16; ++i )
    {
-      arr.p_data[i] = 10;
-      EXPECT_EQ( arr.p_data[i], 10 );
+      p_arr[i] = 10;
+      EXPECT_EQ( p_arr[i], 10 );
    }
 
-   my_allocator.make_delete( arr, 16 );
+   my_allocator.make_delete( p_arr, 16 );
 
    EXPECT_EQ( my_allocator.allocation_count( ), 0 );
 }

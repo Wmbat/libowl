@@ -21,46 +21,76 @@
 # SOFTWARE.
 
 cmake_minimum_required( VERSION 3.12 )
+project( ESL
+   VERSION 0.2.1
+   DESCRIPTION "A standard library"
+   LANGUAGES CXX
+)
+
+option( ESL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
+
+if ( NOT CMAKE_BUILD_TYPE )
+   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
+endif( )
+
+message( STATUS "Build ${PROJECT_NAME}: ${PROJECT_VERSION}" )
+
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "Build type: Release" )
+else ( )
+   message( STATUS "Build type: Debug" )
+endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
-set( GNU_RELEASE_FLAGS "-o3" )
+set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror -fconcepts" )
+set( GNU_RELEASE_FLAGS "-o3 -fconcepts" )
 
-add_executable( EML_test )
+if ( EML_BUILD_TESTS )
+   enable_testing( )
 
-target_link_libraries( EML_test
-   PUBLIC
-      EML
-      gtest
-)
+   add_subdirectory( ../external/googletest build )
+   add_subdirectory( tests )
+endif ( )
 
-set_target_properties( EML_test
+add_library( ESL STATIC )
+
+set_target_properties( ESL
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( EML_test
+target_compile_features( ESL 
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( EML_test
+target_compile_options( ESL
    PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
-
-target_sources( EML_test
-   PRIVATE
-      "EML/main.cpp"
-      "EML/monotonic_allocator_test.cpp"
-      "EML/multipool_allocator_test.cpp"
-      "EML/pool_allocator_test.cpp"
-      "EML/stack_allocator_test.cpp"
+       
+target_include_directories( ESL
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>    
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
-add_test( NAME EML_test COMMAND EML_test )
+target_link_libraries( ESL
+   PUBLIC
+      ELL
+)
+
+target_sources( ESL
+   PRIVATE
+      "source/ESL/allocators/monotonic_allocator.cpp"   
+      "source/ESL/allocators/multipool_allocator.cpp"
+      "source/ESL/allocators/pool_allocator.cpp"
+      "source/ESL/allocators/stack_allocator.cpp"
+)

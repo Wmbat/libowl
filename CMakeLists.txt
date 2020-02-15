@@ -5,13 +5,17 @@ project( Epona
    LANGUAGES CXX 
 )
 
+option( BUILD_TESTS "Build unit tests" OFF )
+
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
 
 message( STATUS "Compiling Epona with ${CMAKE_CXX_COMPILER_ID}" )
 
-set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
+if ( BUILD_TESTS )
+   set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
+endif ( )
 
 # nlohmann settings
 set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
@@ -27,7 +31,7 @@ set( GNU_RELEASE_FLAGS "-o3" )
 add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )
 
-add_subdirectory( EML )
+add_subdirectory( ESL )
 add_subdirectory( ELL )
 add_subdirectory( EGL )
 add_subdirectory( EWL )
@@ -59,7 +63,7 @@ target_link_libraries( Epona
    PUBLIC
       nlohmann_json
       glm
-      EML
+      ESL
       ELL
       EGL
       EWL

@@ -24,27 +24,21 @@
 
 #pragma once
 
-#include <EML/allocator_utils.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
 #include <memory>
-#include <utility>
+#include <type_traits>
 
-namespace EML
+namespace ESL
 {
-   class stack_allocator final
+   class monotonic_allocator final
    {
    public:
-      stack_allocator( std::size_t const size ) noexcept;
+      monotonic_allocator( std::size_t size ) noexcept;
 
       [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( std::byte* p_address ) noexcept;
-
-      void clear( ) noexcept;
-
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
+      void free( std::byte* p_alloc ) noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
@@ -75,28 +69,11 @@ namespace EML
          return reinterpret_cast<type_*>( p_alloc );
       }
 
-      template <class type_>
-      void make_delete( type_* p_type ) noexcept
-      {
-         if ( p_type )
-         {
-            p_type->~type_( );
-            free( reinterpret_cast<std::byte*>( p_type ) );
-         }
-      }
+      void clear( ) noexcept;
 
-      template <class type_>
-      void make_delete( type_* p_type, std::size_t element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot free zero elements" );
-
-         for ( std::size_t i = 0; i < element_count; ++i )
-         {
-            p_type->~type_( );
-         }
-
-         free( reinterpret_cast<std::byte*>( p_type ) );
-      }
+      std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
+      std::size_t allocation_count( ) const noexcept;
 
    private:
       std::size_t total_size;
@@ -104,12 +81,6 @@ namespace EML
       std::size_t num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
-      std::byte* p_top;
-
-   private:
-      struct header
-      {
-         std::size_t adjustment;
-      };
+      std::byte* p_current_pos;
    };
 } // namespace EML

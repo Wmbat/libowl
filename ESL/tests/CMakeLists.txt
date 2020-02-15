@@ -21,76 +21,46 @@
 # SOFTWARE.
 
 cmake_minimum_required( VERSION 3.12 )
-project( EML
-   VERSION 0.2.1
-   DESCRIPTION "A memory management library"
-   LANGUAGES CXX
-)
-
-option( EML_BUILD_TESTS "Build EML's unit tests" OFF )
-
-if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release CACHE FORCE )
-endif( )
-
-message( STATUS "Build ${PROJECT_NAME}: ${PROJECT_VERSION}" )
-
-if ( CMAKE_BUILD_TYPE MATCHES Release )
-   message( STATUS "Build type: Release" )
-else ( )
-   message( STATUS "Build type: Debug" )
-endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror -fconcepts" )
-set( GNU_RELEASE_FLAGS "-o3 -fconcepts" )
+set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
+set( GNU_RELEASE_FLAGS "-o3" )
 
-if ( EML_BUILD_TESTS )
-   enable_testing( )
+add_executable( ESL_test )
 
-   add_subdirectory( ../external/googletest build )
-   add_subdirectory( tests )
-endif ( )
+target_link_libraries( ESL_test
+   PUBLIC
+      ESL
+      gtest
+)
 
-add_library( EML STATIC )
-
-set_target_properties( EML
+set_target_properties( ESL_test
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( EML 
+target_compile_features( ESL_test
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( EML
+target_compile_options( ESL_test
    PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
-       
-target_include_directories( EML
-    PUBLIC 
-        $<INSTALL_INTERFACE:include>    
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
 
-target_link_libraries( EML
-   PUBLIC
-      ELL
-)
-
-target_sources( EML
+target_sources( ESL_test
    PRIVATE
-      "source/EML/monotonic_allocator.cpp"   
-      "source/EML/multipool_allocator.cpp"
-      "source/EML/pool_allocator.cpp"
-      "source/EML/stack_allocator.cpp"
+      "ESL/main.cpp"
+      "ESL/allocators/monotonic_allocator_test.cpp"
+      "ESL/allocators/multipool_allocator_test.cpp"
+      "ESL/allocators/pool_allocator_test.cpp"
+      "ESL/allocators/stack_allocator_test.cpp"
 )
+
+add_test( NAME ESL_test COMMAND ESL_test )

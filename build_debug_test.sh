@@ -24,3 +24,5 @@ echo Creating build folder.
 mkdir ./build -p
 
 cmake ./ -B ./build -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+
+mv build/compile_commands.json ./
