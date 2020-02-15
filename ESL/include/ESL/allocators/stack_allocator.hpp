@@ -24,33 +24,21 @@
 
 #pragma once
 
-#include <EML/allocator_utils.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
 #include <memory>
+#include <utility>
 
-namespace EML
+namespace ESL
 {
-   class multipool_allocator final
+   class stack_allocator final
    {
    public:
-      struct block_header
-      {
-         block_header* p_next = nullptr;
-      };
+      stack_allocator( std::size_t const size ) noexcept;
 
-      template <class type_>
-      struct pointer
-      {
-         type_* p_data = nullptr;
-         std::size_t const index = 0;
-      };
-
-   public:
-      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
-
-      pointer<std::byte> allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( pointer<std::byte> alloc ) noexcept;
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
+      void free( std::byte* p_address ) noexcept;
 
       void clear( ) noexcept;
 
@@ -59,76 +47,69 @@ namespace EML
       std::size_t allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
-      [[nodiscard]] pointer<type_> make_new( args_&&... args ) noexcept
+      [[nodiscard]] type_* make_new( args_&&... args ) noexcept
       {
-         auto const alloc = allocate( sizeof( type_ ), alignof( type_ ) );
-         if ( alloc.p_data )
+         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
          {
-            return {new ( alloc.p_data ) type_( args... ), alloc.index};
+            return new ( p_alloc ) type_( args... );
          }
          else
          {
-            return {nullptr, 0};
+            return nullptr;
          }
       }
 
       template <class type_>
-      [[nodiscard]] pointer<type_> make_array( std::size_t element_count ) noexcept
+      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
       {
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
 
-         auto alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
-            new ( alloc.p_data + ( sizeof( type_ ) * i ) ) type_( );
+            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
          }
 
-         return {reinterpret_cast<type_*>( alloc.p_data ), alloc.index};
+         return reinterpret_cast<type_*>( p_alloc );
       }
 
       template <class type_>
-      void make_delete( pointer<type_> type ) noexcept
+      void make_delete( type_* p_type ) noexcept
       {
-         if ( type.p_data )
+         if ( p_type )
          {
-            type.p_data->~type_( );
-            free( {reinterpret_cast<std::byte*>( type.p_data ), type.index} );
+            p_type->~type_( );
+            free( reinterpret_cast<std::byte*>( p_type ) );
          }
       }
 
       template <class type_>
-      void make_delete( pointer<type_> type, std::size_t element_count ) noexcept
+      void make_delete( type_* p_type, std::size_t element_count ) noexcept
       {
          assert( element_count != 0 && "cannot free zero elements" );
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
-            type.p_data[i].~type_( );
+            p_type->~type_( );
          }
 
-         free( {reinterpret_cast<std::byte*>( type.p_data ), type.index} );
-      }
-
-      template <class type_, class... args_>
-      [[nodiscard]] auto_ptr<pointer<type_>> make_unique( args_&&... args ) noexcept
-      {
-         return auto_ptr<pointer<type_>>( make_new<pointer<type_>>( args... ), [this]( pointer<type_> type ) {
-            this->make_delete( type );
-         } );
+         free( reinterpret_cast<std::byte*>( p_type ) );
       }
 
    private:
-      std::size_t block_count;
-      std::size_t block_size;
-      std::size_t pool_depth;
-
       std::size_t total_size;
       std::size_t used_memory;
       std::size_t num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
-      block_header* p_depth_header;
+      std::byte* p_top;
+
+   private:
+      struct header
+      {
+         std::size_t adjustment;
+      };
    };
 } // namespace EML

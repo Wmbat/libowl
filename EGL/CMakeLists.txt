@@ -73,7 +73,7 @@ target_link_libraries( EGL
       volk_headers
       glslang
       SPIRV
-      EML
+      ESL
       ELL
 )
 

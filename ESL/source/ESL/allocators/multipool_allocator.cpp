@@ -22,13 +22,13 @@
  * SOFTWARE.
  */
 
-#include <EML/multipool_allocator.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-namespace EML
+namespace ESL
 {
    multipool_allocator::multipool_allocator(
       std::size_t block_count, std::size_t block_size, std::size_t pool_depth ) noexcept :
@@ -50,32 +50,32 @@ namespace EML
          true_alloc_size += depth_block_count * ( sizeof( block_header ) + depth_block_size );
       }
 
-      p_memory = std::make_unique<std::byte[]>( true_alloc_size + ( ( pool_depth + 1 ) * sizeof( block_header ) ) );
+      p_memory = std::make_unique<std::byte[]>( true_alloc_size + ( ( pool_depth + 1 ) * sizeof( access_header ) ) );
 
-      p_depth_header = reinterpret_cast<block_header*>( p_memory.get( ) );
+      p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
       for ( int i = 0; i < pool_depth; ++i )
       {
          std::size_t const depth_pow = std::pow( 2, i );
          std::size_t const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
          std::size_t const pool_offset = block_count * block_size * i;
 
-         p_depth_header[i].p_next = reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
+         p_access_headers[i].p_first_free =
+            reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
 
-         auto* p_base_cpy = p_depth_header[i].p_next;
+         block_header* p_first_free = p_access_headers[i].p_first_free;
          for ( int j = 1; j < block_count * depth_pow; ++j )
          {
             std::size_t const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
 
             auto* p_new = reinterpret_cast<block_header*>( p_memory.get( ) + offset + depth_offset + pool_offset );
-            p_base_cpy->p_next = p_new;
-            p_base_cpy = p_new;
-            p_base_cpy->p_next = nullptr;
+            p_first_free->p_next = p_new;
+            p_first_free = p_new;
+            p_first_free->p_next = nullptr;
          }
       }
    }
 
-   multipool_allocator::pointer<std::byte> multipool_allocator::allocate(
-      std::size_t size, std::size_t alignment ) noexcept
+   std::byte* multipool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
    {
       assert( size != 0 && "Allocation size cannot be zero" );
       assert( size <= block_size && "Allocation size cannot be greater than max pool size" );
@@ -83,31 +83,30 @@ namespace EML
 
       auto const depth_index = std::clamp( block_size / size, std::size_t{1}, pool_depth ) - 1;
 
-      if ( p_depth_header[depth_index].p_next )
+      if ( p_access_headers[depth_index].p_first_free )
       {
-         std::byte* p_chunk_header = reinterpret_cast<std::byte*>( p_depth_header[depth_index].p_next );
+         std::byte* p_chunk_header = reinterpret_cast<std::byte*>( p_access_headers[depth_index].p_first_free );
 
-         p_depth_header[depth_index].p_next = p_depth_header[depth_index].p_next->p_next;
+         p_access_headers[depth_index].p_first_free = p_access_headers[depth_index].p_first_free->p_next;
 
          used_memory += block_size;
          ++num_allocations;
 
-         return {reinterpret_cast<std::byte*>( p_chunk_header + sizeof( block_header ) ), depth_index};
+         return reinterpret_cast<std::byte*>( p_chunk_header + sizeof( block_header ) );
       }
       else
       {
-         return {nullptr, depth_index};
+         return nullptr;
       }
    }
 
-   void multipool_allocator::free( pointer<std::byte> alloc ) noexcept
+   void multipool_allocator::free( std::byte* p_alloc ) noexcept
    {
-      assert( alloc.p_data != nullptr && "cannot free a nullptr" );
-      assert( alloc.index >= 0 && "Cannot have a depth index below 1" );
+      assert( p_alloc != nullptr && "cannot free a nullptr" );
 
-      auto* p_header = reinterpret_cast<block_header*>( alloc.p_data - sizeof( block_header ) );
-      p_header->p_next = p_depth_header[alloc.index].p_next;
-      p_depth_header[alloc.index].p_next = p_header;
+      auto* p_header = reinterpret_cast<block_header*>( p_alloc - sizeof( block_header ) );
+      p_header->p_next = p_access_headers[p_header->depth_index].p_first_free;
+      p_access_headers[p_header->depth_index].p_first_free = p_header;
 
       used_memory -= block_size;
       --num_allocations;
@@ -115,16 +114,17 @@ namespace EML
 
    void multipool_allocator::clear( ) noexcept
    {
-      p_depth_header = reinterpret_cast<block_header*>( p_memory.get( ) );
+      p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
       for ( int i = 0; i < pool_depth; ++i )
       {
          std::size_t const depth_pow = std::pow( 2, i );
          std::size_t const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
          std::size_t const pool_offset = block_count * block_size * i;
 
-         p_depth_header[i].p_next = reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
+         p_access_headers[i].p_first_free =
+            reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
 
-         auto* p_base_cpy = p_depth_header[i].p_next;
+         auto* p_base_cpy = p_access_headers[i].p_first_free;
          for ( int j = 1; j < block_count * depth_pow; ++j )
          {
             std::size_t const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
@@ -143,4 +143,4 @@ namespace EML
    std::size_t multipool_allocator::max_size( ) const noexcept { return total_size; }
    std::size_t multipool_allocator::memory_usage( ) const noexcept { return used_memory; }
    std::size_t multipool_allocator::allocation_count( ) const noexcept { return num_allocations; }
-} // namespace EML
+} // namespace ESL

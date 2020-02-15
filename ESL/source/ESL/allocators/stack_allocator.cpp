@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <EML/stack_allocator.hpp>
+#include <ESL/allocators/stack_allocator.hpp>
 
 #include <cassert>
 
-namespace EML
+namespace ESL
 {
    stack_allocator::stack_allocator( std::size_t const size ) noexcept :
       total_size( size ), used_memory( 0 ), num_allocations( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),

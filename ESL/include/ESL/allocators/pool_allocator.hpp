@@ -24,14 +24,14 @@
 
 #pragma once
 
-#include <EML/allocator_utils.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
 #include <cstdint>
 #include <functional>
 #include <memory>
 
-namespace EML
+namespace ESL
 {
    class pool_allocator final
    {

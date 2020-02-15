@@ -29,7 +29,7 @@
 #include <memory>
 #include <functional>
 
-namespace EML
+namespace ESL
 {
    template <class type_>
    using auto_ptr = std::unique_ptr<type_, std::function<void( type_* )>>;

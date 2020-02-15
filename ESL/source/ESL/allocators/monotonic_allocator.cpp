@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <EML/monotonic_allocator.hpp>
+#include <ESL/allocators/monotonic_allocator.hpp>
 
 #include <cassert>
 
-namespace EML
+namespace ESL
 {
    monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
       total_size( size ), num_allocations( 0 ), used_memory( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),

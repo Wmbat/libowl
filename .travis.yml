@@ -23,7 +23,7 @@ script:
    - cd ../
    - cppcheck --project=compile_commands.json
    - cd build
-   - make
+   - make -j13
    - cd EML/tests
    - ./EML_test
    

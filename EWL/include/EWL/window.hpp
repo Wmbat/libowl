@@ -4,7 +4,6 @@
 #include <xcb/xcb.h>
 #endif
 
-#include <EML/stack_allocator.hpp>
 #include <EGL/render_manager.hpp>
 
 namespace EWL

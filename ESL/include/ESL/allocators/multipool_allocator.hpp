@@ -24,25 +24,44 @@
 
 #pragma once
 
-#include <EML/allocator_utils.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
 #include <memory>
-#include <type_traits>
 
-namespace EML
+namespace ESL
 {
-   class monotonic_allocator final
+   class multipool_allocator final
    {
    public:
-      monotonic_allocator( std::size_t size ) noexcept;
+      struct block_header
+      {
+         block_header* p_next = nullptr;
+         std::size_t depth_index = 0;
+      };
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
+      struct access_header
+      {
+         block_header* p_first_free = nullptr;
+      };
+
+   public:
+      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
+
+      std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
+      void free( std::byte* p_alloc ) noexcept;
+
+      void clear( ) noexcept;
+
+      std::size_t max_size( ) const noexcept;
+      std::size_t memory_usage( ) const noexcept;
+      std::size_t allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
       {
-         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
+         auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
+         if ( p_alloc )
          {
             return new ( p_alloc ) type_( args... );
          }
@@ -68,18 +87,47 @@ namespace EML
          return reinterpret_cast<type_*>( p_alloc );
       }
 
-      void clear( ) noexcept;
+      template <class type_>
+      void make_delete( type_* p_type ) noexcept
+      {
+         if ( p_type )
+         {
+            p_type->~type_( );
+            free( reinterpret_cast<std::byte*>( p_type ) );
+         }
+      }
 
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
+      template <class type_>
+      void make_delete( type_* p_type, std::size_t element_count ) noexcept
+      {
+         assert( element_count != 0 && "cannot free zero elements" );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            p_type[i].~type_( );
+         }
+
+         free( reinterpret_cast<std::byte*>( p_type ) );
+      }
+
+      template <class type_, class... args_>
+      [[nodiscard]] auto_ptr<type_> make_unique( args_&&... args ) noexcept
+      {
+         return auto_ptr<type_>( make_new<type_>( args... ), [this]( type_* p_type ) {
+            this->make_delete( p_type );
+         } );
+      }
 
    private:
+      std::size_t block_count;
+      std::size_t block_size;
+      std::size_t pool_depth;
+
       std::size_t total_size;
       std::size_t used_memory;
       std::size_t num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
-      std::byte* p_current_pos;
+      access_header* p_access_headers;
    };
-} // namespace EML
+} // namespace ESL
