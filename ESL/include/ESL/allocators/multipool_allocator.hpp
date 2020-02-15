@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
@@ -31,7 +32,7 @@
 
 namespace ESL
 {
-   class multipool_allocator final
+   class multipool_allocator final : public allocation_interface
    {
    public:
       struct block_header
@@ -48,8 +49,8 @@ namespace ESL
    public:
       multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
 
-      std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( std::byte* p_alloc ) noexcept;
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
+      void free( std::byte* p_alloc ) noexcept override;
 
       void clear( ) noexcept;
 

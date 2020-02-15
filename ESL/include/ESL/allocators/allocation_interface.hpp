@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,27 +24,14 @@
 
 #pragma once
 
-#include <ESL/allocators/pool_allocator.hpp>
-#include <ESL/utils/iterator.hpp>
-
-#include <cassert>
-#include <cstdint>
-#include <iterator>
+#include <cstddef>
 
 namespace ESL
 {
-   template <typename type_>
-   class heap_array
+   class allocation_interface
    {
    public:
-      using const_iterator = iterator<type_ const>;
-      using iterator = iterator<type_>;
-
-   public:
-      heap_array( std::size_t size ) { assert( size != 0 && "Array size cannot be zero" ); }
-
-   private:
-      type_* p_alloc;
-      std::size_t size;
+      virtual std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept = 0;
+      virtual void free( std::byte* p_alloc ) noexcept = 0;
    };
-} // namespace ESL
+}
