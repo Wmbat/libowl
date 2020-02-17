@@ -24,15 +24,10 @@
 
 #pragma once
 
-#include <EGL/vk/extension.hpp>
-
 namespace EGL
 {
-   class context
+   struct extension
    {
-   public:
-
-   private:
-
+      char const* p_name = nullptr;
    };
 }
