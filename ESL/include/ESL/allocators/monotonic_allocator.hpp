@@ -84,4 +84,4 @@ namespace ESL
       std::unique_ptr<std::byte[]> p_memory;
       std::byte* p_current_pos;
    };
-} // namespace EML
+} // namespace ESL

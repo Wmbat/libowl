@@ -30,11 +30,11 @@
 namespace ESL
 {
    template <typename type_>
-   class iterator
+   class ra_iterator
    {
    public:
       using iterator_category = std::random_access_iterator_tag;
-      using self_type = iterator;
+      using self_type = ra_iterator;
       using value_type = type_;
       using reference = type_&;
       using const_reference = type_ const&;
@@ -43,7 +43,7 @@ namespace ESL
       using difference_type = std::ptrdiff_t;
 
    public:
-      iterator( pointer p_type ) : p_type( p_type ) {}
+      ra_iterator( pointer p_type ) : p_type( p_type ) {}
 
       bool operator==( self_type rhs ) { return p_type == rhs.p_type; }
       bool operator!=( self_type rhs ) { return p_type != rhs.p_type; }
@@ -119,7 +119,7 @@ namespace ESL
       reference operator[]( difference_type diff ) { return *( *this + diff ); }
       const_reference operator[]( difference_type diff ) const { *( *this + diff ); }
 
-      void swap( self_type& rhs ) { std::swap( p_type, rhs.get_ptr() );}
+      void swap( self_type& rhs ) { std::swap( p_type, rhs.get_ptr( ) ); }
 
    private:
       pointer get_ptr( ) { return p_type; }

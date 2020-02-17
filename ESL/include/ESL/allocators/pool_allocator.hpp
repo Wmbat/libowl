@@ -26,6 +26,7 @@
 
 #include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
+#include <ESL/containers/heap_array.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -125,4 +126,4 @@ namespace ESL
       std::unique_ptr<std::byte[]> p_memory;
       block_header* p_first_free = nullptr;
    };
-} // namespace EML
+} // namespace ESL
