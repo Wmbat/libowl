@@ -22,3 +22,6 @@
 [submodule "EGL/external/Vulkan-Headers"]
 	path = EGL/external/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
+[submodule "EWL/external/glfw"]
+	path = EWL/external/glfw
+	url = https://github.com/glfw/glfw
