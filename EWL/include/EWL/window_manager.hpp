@@ -24,22 +24,15 @@
 
 #pragma once
 
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-#include <xcb/xcb.h>
-#endif
-
-#include <EGL/render_manager.hpp>
+#include <EWL/window.hpp>
 
 namespace EWL
 {
-   class window
+   class window_manager
    {
    public:
-      window( );
+       window create_window( );
 
    private:
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      xcb_connection_t* p_connection;
-#endif
    };
-}
+} // namespace EWL
