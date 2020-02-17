@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
@@ -32,13 +33,13 @@
 
 namespace ESL
 {
-   class stack_allocator final
+   class stack_allocator final : public allocation_interface
    {
    public:
       stack_allocator( std::size_t const size ) noexcept;
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( std::byte* p_address ) noexcept;
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
+      void free( std::byte* p_address ) noexcept override;
 
       void clear( ) noexcept;
 
@@ -112,4 +113,4 @@ namespace ESL
          std::size_t adjustment;
       };
    };
-} // namespace EML
+} // namespace ESL

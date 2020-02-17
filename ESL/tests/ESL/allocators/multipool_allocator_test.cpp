@@ -134,18 +134,13 @@ TEST_F( multipool_allocator_test, clear_test )
 
 TEST_F( multipool_allocator_test, array_alloc_test )
 {
-   auto p_arr = my_allocator.make_array<std::size_t>( 16 );
+   auto arr = my_allocator.make_array<std::size_t>( 16 );
 
-   EXPECT_NE( p_arr, nullptr );
    EXPECT_EQ( my_allocator.allocation_count( ), 1 );
 
-   for ( std::size_t i = 0; i < 16; ++i )
+   for ( auto it : arr )
    {
-      p_arr[i] = 10;
-      EXPECT_EQ( p_arr[i], 10 );
+      it = 10;
+      EXPECT_EQ( it, 10 );
    }
-
-   my_allocator.make_delete( p_arr, 16 );
-
-   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
 }

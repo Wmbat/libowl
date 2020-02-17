@@ -24,7 +24,9 @@
 
 #pragma once
 
+#include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
+#include <ESL/containers/heap_array.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -33,7 +35,7 @@
 
 namespace ESL
 {
-   class pool_allocator final
+   class pool_allocator final : public allocation_interface
    {
    private:
       struct block_header
@@ -44,8 +46,8 @@ namespace ESL
    public:
       pool_allocator( std::size_t const block_count, std::size_t const block_size ) noexcept;
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept;
-      void free( std::byte* p_location ) noexcept;
+      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
+      void free( std::byte* p_location ) noexcept override;
 
       void clear( ) noexcept;
 
@@ -124,4 +126,4 @@ namespace ESL
       std::unique_ptr<std::byte[]> p_memory;
       block_header* p_first_free = nullptr;
    };
-} // namespace EML
+} // namespace ESL
