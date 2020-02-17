@@ -24,11 +24,9 @@
 
 #pragma once
 
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-#include <xcb/xcb.h>
-#endif
-
 #include <EGL/render_manager.hpp>
+
+#include <GLFW/glfw3.h>
 
 namespace EWL
 {
@@ -38,8 +36,5 @@ namespace EWL
       window( );
 
    private:
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      xcb_connection_t* p_connection;
-#endif
    };
 }

@@ -63,5 +63,5 @@ target_link_libraries( EWL
 
 target_sources( EWL
    PRIVATE
-      "source/EWL/xcb_window.cpp"
+      "source/EWL/window.cpp"
 )
