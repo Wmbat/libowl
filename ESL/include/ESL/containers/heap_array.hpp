@@ -28,8 +28,7 @@
 #include <ESL/utils/iterator.hpp>
 
 #include <cassert>
-#include <cstdint>
-#include <iterator>
+#include <stdexcept>
 #include <type_traits>
 
 namespace ESL
@@ -39,10 +38,18 @@ namespace ESL
    {
       static_assert( std::is_base_of_v<allocation_interface, allocator_>,
          "allocator_ type must be a child of allocation_interface" );
+      static_assert( std::is_default_constructible_v<type_>, "type_ must be default constructible" );
 
    public:
       using iterator = ra_iterator<type_>;
       using const_iterator = ra_iterator<type_ const>;
+
+      using self_type = heap_array;
+      using value_type = type_;
+      using reference = type_&;
+      using const_reference = type_ const&;
+      using pointer = type_*;
+      using const_pointer = type_ const*;
 
    public:
       heap_array( std::size_t size, allocator_* p_allocator ) : p_allocator( p_allocator ), arr_size( size )
@@ -64,26 +71,40 @@ namespace ESL
          p_allocator = nullptr;
       }
 
-      type_& front( ) { return p_alloc[0]; }
-      type_ const& front( ) const { return p_alloc[0]; }
+      allocator_* get_allocator( ) noexcept { return p_allocator; }
 
-      type_& back( ) { return p_alloc[arr_size - 1]; }
-      type_ const& back( ) const { return p_alloc[arr_size - 1]; }
+      reference front( ) { return p_alloc[0]; }
+      const_reference front( ) const { return p_alloc[0]; }
 
-      type_* data( ) { return p_alloc; }
-      type_ const* data( ) const { return p_alloc; }
+      reference back( ) { return p_alloc[arr_size - 1]; }
+      const_reference back( ) const { return p_alloc[arr_size - 1]; }
 
-      bool empty( ) { return arr_size == 0; }
-      std::size_t size( ) { return size; }
+      pointer data( ) { return p_alloc; }
+      const_pointer data( ) const { return p_alloc; }
 
-      type_& operator( )( std::size_t index )
+      bool empty( ) noexcept { return arr_size == 0; }
+      std::size_t size( ) noexcept { return size; }
+
+      reference at( std::size_t index )
+      {
+         if ( index < 0 || index >= arr_size )
+         {
+            throw new std::out_of_range( "Index array " + std::to_string( index ) + "out of bounds" );
+         }
+         else
+         {
+            return p_alloc[index];
+         }
+      }
+
+      reference operator[]( std::size_t index )
       {
          assert( index <= 0 && "Index cannot be less than zero" );
          assert( index >= arr_size && "Index cannot be more than array size" );
 
          return p_alloc[index];
       }
-      type_ const& operator( )( std::size_t index ) const
+      const_reference operator[]( std::size_t index ) const
       {
          assert( index <= 0 && "Index cannot be less than zero" );
          assert( index >= arr_size && "Index cannot be more than array size" );
