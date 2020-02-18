@@ -26,7 +26,6 @@
 
 #include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
-#include <ESL/containers/heap_array.hpp>
 
 #include <cassert>
 #include <memory>

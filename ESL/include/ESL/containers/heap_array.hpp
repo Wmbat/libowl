@@ -45,7 +45,7 @@ namespace ESL
       using const_iterator = ra_iterator<type_ const>;
 
    public:
-      heap_array( std::size_t size, allocator_* p_allocator ) : p_allocator( p_allocator ), size( size )
+      heap_array( std::size_t size, allocator_* p_allocator ) : p_allocator( p_allocator ), arr_size( size )
       {
          assert( size != 0 && "Array size cannot be zero" );
          assert( p_allocator != nullptr && "Cannot have a nullptr allocator" );
@@ -64,17 +64,29 @@ namespace ESL
          p_allocator = nullptr;
       }
 
-      type_& operator=( std::size_t index )
+      type_& front( ) { return p_alloc[0]; }
+      type_ const& front( ) const { return p_alloc[0]; }
+
+      type_& back( ) { return p_alloc[arr_size - 1]; }
+      type_ const& back( ) const { return p_alloc[arr_size - 1]; }
+
+      type_* data( ) { return p_alloc; }
+      type_ const* data( ) const { return p_alloc; }
+
+      bool empty( ) { return arr_size == 0; }
+      std::size_t size( ) { return size; }
+
+      type_& operator( )( std::size_t index )
       {
          assert( index <= 0 && "Index cannot be less than zero" );
-         assert( index >= size && "Index cannot be more than array size" );
+         assert( index >= arr_size && "Index cannot be more than array size" );
 
          return p_alloc[index];
       }
-      type_ const& operator=( std::size_t index ) const
+      type_ const& operator( )( std::size_t index ) const
       {
          assert( index <= 0 && "Index cannot be less than zero" );
-         assert( index >= size && "Index cannot be more than array size" );
+         assert( index >= arr_size && "Index cannot be more than array size" );
 
          return p_alloc[index];
       }
@@ -91,7 +103,7 @@ namespace ESL
             p_alloc = rhs.p_alloc;
             rhs.p_alloc = nullptr;
 
-            size = rhs.size;
+            arr_size = rhs.size;
             rhs.size = 0;
          }
 
@@ -99,15 +111,15 @@ namespace ESL
       }
 
       iterator begin( ) { return iterator{p_alloc}; }
-      iterator end( ) { return iterator{p_alloc + size}; }
+      iterator end( ) { return iterator{p_alloc + arr_size}; }
 
       const_iterator cbegin( ) const { return const_iterator{p_alloc}; }
-      const_iterator cend( ) const { return const_iterator{p_alloc + size}; }
+      const_iterator cend( ) const { return const_iterator{p_alloc + arr_size}; }
 
    private:
       allocator_* p_allocator;
 
       type_* p_alloc;
-      std::size_t size;
+      std::size_t arr_size;
    };
 } // namespace ESL
