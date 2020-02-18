@@ -24,22 +24,18 @@
 
 #pragma once
 
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-#include <xcb/xcb.h>
-#endif
+
+#include <EWL/widget.hpp>
 
 #include <EGL/render_manager.hpp>
 
 namespace EWL
 {
-   class window
+   class window : public widget
    {
    public:
       window( );
 
    private:
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      xcb_connection_t* p_connection;
-#endif
    };
 }
