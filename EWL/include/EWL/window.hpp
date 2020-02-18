@@ -24,10 +24,11 @@
 
 #pragma once
 
-
 #include <EWL/widget.hpp>
 
 #include <EGL/render_manager.hpp>
+
+#include <GLFW/glfw3.h>
 
 namespace EWL
 {
