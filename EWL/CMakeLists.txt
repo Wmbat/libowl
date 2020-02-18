@@ -22,6 +22,8 @@ set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
 set( GNU_RELEASE_FLAGS "-o3" )
 
+add_subdirectory( external/glfw )
+
 add_library( EWL STATIC )
 
 set_target_properties( EWL
@@ -43,18 +45,6 @@ target_compile_options( EWL
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
-if ( WIN32 )
-   target_compile_definitions( EWL PUBLIC VK_USE_PLATFORM_WIN32_KHR )
-elseif ( UNIX )
-   find_package( XCB REQUIRED )
-
-   if ( NOT XCB_FOUND )
-      message( FATAL_ERROR "XCB development package not found" )
-   endif ( )
-
-   target_compile_definitions( EWL PUBLIC VK_USE_PLATFORM_XCB_KHR )
-endif ( )
-
 target_include_directories( EWL
    PUBLIC
       $<INSTALL_INTERFACE:include>
@@ -65,7 +55,7 @@ target_include_directories( EWL
 
 target_link_libraries( EWL
    PUBLIC
-      ${XCB_LIBRARY}
+      glfw
       ELL
       ESL
       EGL
