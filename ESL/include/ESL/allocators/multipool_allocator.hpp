@@ -74,12 +74,19 @@ namespace ESL
       }
 
       template <class type_>
-      [[nodiscard]] heap_array<type_, multipool_allocator> make_array( std::size_t element_count ) noexcept
+      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
       {
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
 
-         return heap_array<type_, multipool_allocator>( element_count, this );
+         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+
+         for ( std::size_t i = 0; i < element_count; ++i )
+         {
+            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
+         }
+
+         return reinterpret_cast<type_*>( p_alloc );
       }
 
       template <class type_>
