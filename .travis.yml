@@ -27,8 +27,6 @@ script:
    - cd ../
    - cppcheck --project=compile_commands.json
    - cd build
-   - ./configure --enable-gcov && make -j13 && make check
-
-after_success:
-   - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
-   
+   - make -j13
+   - cd ESL/tests
+   - ./ESL_tests 
