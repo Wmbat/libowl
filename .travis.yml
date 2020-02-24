@@ -29,4 +29,5 @@ script:
    - cd build
    - make -j13
    - cd ESL/tests
-   - ./ESL_tests 
+   - ./ESL_test
+   - cd ../../
