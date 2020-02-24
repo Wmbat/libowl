@@ -10,11 +10,12 @@ compiler:
 before_install:
    - sudo apt-get update
    - sudo apt-get -y install python3
+   - sudo apt-get -y install python3-pip
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
    - sudo apt-get -y install clang-9
    - sudo apt-get -y install cppcheck
    - sudo apt-get -y install xorg-dev libglu1-mesa-dev
-   - sudo pip install cpp_coveralls
+   - sudo pip3 install cpp_coveralls
 
 script:
    - export VULKAN_SDK=$PWD/EGL/external/Vulkan-Headers
