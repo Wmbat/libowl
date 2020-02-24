@@ -15,7 +15,8 @@ before_install:
    - sudo apt-get -y install clang-9
    - sudo apt-get -y install cppcheck
    - sudo apt-get -y install xorg-dev libglu1-mesa-dev
-   - sudo pip3 install cpp_coveralls
+   - pip3 install setuptools
+   - pip3 install cpp_coveralls
 
 script:
    - export VULKAN_SDK=$PWD/EGL/external/Vulkan-Headers
