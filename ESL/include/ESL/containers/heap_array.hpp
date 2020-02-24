@@ -25,7 +25,7 @@
 #pragma once
 
 #include <ESL/allocators/allocation_interface.hpp>
-#include <ESL/utils/iterator.hpp>
+#include <ESL/utils/random_access_iterator.hpp>
 
 #include <cassert>
 #include <stdexcept>
@@ -41,8 +41,10 @@ namespace ESL
       static_assert( std::is_default_constructible_v<type_>, "type_ must be default constructible" );
 
    public:
-      using iterator = ra_iterator<type_>;
-      using const_iterator = ra_iterator<type_ const>;
+      using iterator = random_access_iterator<type_>;
+      using const_iterator = random_access_iterator<type_ const>;
+      using reverse_iterator = std::reverse_iterator<iterator>;
+      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
       using self_type = heap_array;
       using value_type = type_;
@@ -50,14 +52,21 @@ namespace ESL
       using const_reference = type_ const&;
       using pointer = type_*;
       using const_pointer = type_ const*;
+      using size_type = std::size_t;
 
    public:
-      heap_array( std::size_t size, allocator_* p_allocator ) : p_allocator( p_allocator ), arr_size( size )
+      heap_array( size_type size, allocator_* p_allocator ) :
+         p_allocator( p_allocator ), p_alloc( nullptr ), arr_size( size )
       {
          assert( size != 0 && "Array size cannot be zero" );
          assert( p_allocator != nullptr && "Cannot have a nullptr allocator" );
 
-         p_alloc = reinterpret_cast<type_*>( p_allocator->allocate( size, alignof( type_ ) ) );
+         p_alloc = reinterpret_cast<pointer>( p_allocator->allocate( size, alignof( value_type ) ) );
+
+         for ( size_type i = 0; i < size; ++i )
+         {
+            new ( p_alloc[i] ) value_type( );
+         }
       }
       heap_array( heap_array const& rhs ) = delete;
       heap_array( heap_array&& rhs ) { *this = std::move( rhs ); }
@@ -82,14 +91,27 @@ namespace ESL
       pointer data( ) { return p_alloc; }
       const_pointer data( ) const { return p_alloc; }
 
-      bool empty( ) noexcept { return arr_size == 0; }
-      std::size_t size( ) noexcept { return size; }
+      [[nodiscard]] bool empty( ) const noexcept { return arr_size == 0; }
+      size_type size( ) const noexcept { return size; }
+      size_type max_size( ) noexcept { return size; };
+      size_type max_size( ) const noexcept { return size; };
 
-      reference at( std::size_t index )
+      reference at( size_type index )
       {
          if ( index < 0 || index >= arr_size )
          {
-            throw new std::out_of_range( "Index array " + std::to_string( index ) + "out of bounds" );
+            throw std::out_of_range( "Index array " + std::to_string( index ) + "out of bounds" );
+         }
+         else
+         {
+            return p_alloc[index];
+         }
+      }
+      const_reference at( size_type index ) const
+      {
+         if ( index < 0 || index >= arr_size )
+         {
+            throw std::out_of_range( "Index array " + std::to_string( index ) + "out of bounds" );
          }
          else
          {
@@ -97,14 +119,14 @@ namespace ESL
          }
       }
 
-      reference operator[]( std::size_t index )
+      reference operator[]( size_type index )
       {
          assert( index <= 0 && "Index cannot be less than zero" );
          assert( index >= arr_size && "Index cannot be more than array size" );
 
          return p_alloc[index];
       }
-      const_reference operator[]( std::size_t index ) const
+      const_reference operator[]( size_type index ) const
       {
          assert( index <= 0 && "Index cannot be less than zero" );
          assert( index >= arr_size && "Index cannot be more than array size" );
@@ -131,16 +153,22 @@ namespace ESL
          return *this;
       }
 
-      iterator begin( ) { return iterator{p_alloc}; }
-      iterator end( ) { return iterator{p_alloc + arr_size}; }
+      constexpr iterator begin( ) noexcept { return iterator{p_alloc}; }
+      constexpr iterator end( ) noexcept { return iterator{p_alloc + arr_size}; }
 
-      const_iterator cbegin( ) const { return const_iterator{p_alloc}; }
-      const_iterator cend( ) const { return const_iterator{p_alloc + arr_size}; }
+      constexpr const_iterator cbegin( ) const noexcept { return const_iterator{p_alloc}; }
+      constexpr const_iterator cend( ) const noexcept { return const_iterator{p_alloc + arr_size}; }
+
+      constexpr reverse_iterator rbegin( ) noexcept { return reverse_iterator{p_alloc}; }
+      constexpr reverse_iterator rend( ) noexcept { return reverse_iterator{p_alloc + arr_size}; }
+
+      constexpr const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{p_alloc}; }
+      constexpr const_reverse_iterator crend( ) const noexcept { return const_reverse_iterator{p_alloc + arr_size}; }
 
    private:
       allocator_* p_allocator;
 
-      type_* p_alloc;
-      std::size_t arr_size;
+      pointer p_alloc;
+      size_type arr_size;
    };
 } // namespace ESL

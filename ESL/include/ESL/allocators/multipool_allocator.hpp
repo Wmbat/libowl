@@ -131,4 +131,7 @@ namespace ESL
       std::unique_ptr<std::byte[]> p_memory;
       access_header* p_access_headers;
    };
+
+   ENABLE_REALLOCATION( ESL::multipool_allocator );
 } // namespace ESL
+

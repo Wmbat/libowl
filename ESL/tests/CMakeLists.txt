@@ -61,6 +61,7 @@ target_sources( ESL_test
       "ESL/allocators/multipool_allocator_test.cpp"
       "ESL/allocators/pool_allocator_test.cpp"
       "ESL/allocators/stack_allocator_test.cpp"
+      "ESL/containers/vector_test.cpp"
 )
 
 add_test( NAME ESL_test COMMAND ESL_test )

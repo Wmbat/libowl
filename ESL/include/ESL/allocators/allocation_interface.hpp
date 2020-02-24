@@ -25,6 +25,7 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
 
 namespace ESL
 {
@@ -34,4 +35,23 @@ namespace ESL
       virtual std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept = 0;
       virtual void free( std::byte* p_alloc ) noexcept = 0;
    };
-}
+
+   template <class allocator_>
+   struct enable_reallocation
+   {
+      static_assert( std::is_base_of_v<allocation_interface, allocator_>,
+         "allocator_ type must be a child of allocation_interface" );
+
+      static constexpr bool enable = false;
+   };
+
+#define ENABLE_REALLOCATION( allocator_class )                                                                         \
+   template <>                                                                                                         \
+   struct enable_reallocation<allocator_class>                                                                         \
+   {                                                                                                                   \
+      static_assert( std::is_base_of_v<allocation_interface, allocator_class>,                                         \
+         "allocator_ type must be a child of allocation_interface" );                                                  \
+                                                                                                                       \
+      static constexpr bool enable = true;                                                                             \
+   };
+} // namespace ESL

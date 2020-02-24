@@ -30,11 +30,11 @@
 namespace ESL
 {
    template <typename type_>
-   class ra_iterator
+   class random_access_iterator
    {
    public:
       using iterator_category = std::random_access_iterator_tag;
-      using self_type = ra_iterator;
+      using self_type = random_access_iterator;
       using value_type = type_;
       using reference = type_&;
       using const_reference = type_ const&;
@@ -43,42 +43,42 @@ namespace ESL
       using difference_type = std::ptrdiff_t;
 
    public:
-      ra_iterator( pointer p_type ) : p_type( p_type ) {}
+      constexpr explicit random_access_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
 
-      bool operator==( self_type rhs ) { return p_type == rhs.p_type; }
-      bool operator!=( self_type rhs ) { return p_type != rhs.p_type; }
+      constexpr bool operator==( self_type rhs ) noexcept { return p_type == rhs.p_type; }
+      constexpr bool operator!=( self_type rhs ) noexcept { return p_type != rhs.p_type; }
 
-      bool operator<( self_type rhs ) { return p_type < rhs.p_type; }
-      bool operator>( self_type rhs ) { return p_type > rhs.p_type; }
-      bool operator<=( self_type rhs ) { return p_type <= rhs.p_type; }
-      bool operator>=( self_type rhs ) { return p_type >= rhs.p_type; }
+      constexpr bool operator<( self_type rhs ) noexcept { return p_type < rhs.p_type; }
+      constexpr bool operator>( self_type rhs ) noexcept { return p_type > rhs.p_type; }
+      constexpr bool operator<=( self_type rhs ) noexcept { return p_type <= rhs.p_type; }
+      constexpr bool operator>=( self_type rhs ) noexcept { return p_type >= rhs.p_type; }
 
-      reference operator*( ) { return *p_type; }
-      const_reference operator*( ) const { return *p_type; }
-      pointer operator->( ) { return p_type; }
-      const_pointer operator->( ) const { return p_type; };
+      constexpr reference operator*( ) noexcept { return *p_type; }
+      constexpr const_reference operator*( ) const noexcept { return *p_type; }
+      constexpr pointer operator->( ) noexcept { return p_type; }
+      constexpr const_pointer operator->( ) const noexcept { return p_type; };
 
-      self_type& operator++( )
+      constexpr self_type& operator++( ) noexcept
       {
          ++p_type;
 
          return *this;
       }
-      self_type& operator--( )
+      constexpr self_type& operator--( ) noexcept
       {
          --p_type;
 
          return *this;
       }
 
-      self_type operator++( int )
+      constexpr self_type operator++( int ) noexcept
       {
          self_type it = *this;
          ++*this;
 
          return it;
       }
-      self_type operator--( int )
+      constexpr self_type operator--( int ) noexcept
       {
          self_type it = *this;
          --*this;
@@ -86,27 +86,27 @@ namespace ESL
          return it;
       }
 
-      self_type& operator+=( difference_type diff )
+      constexpr self_type& operator+=( difference_type diff ) noexcept
       {
          *this += diff;
 
          return *this;
       }
-      self_type& operator-=( difference_type diff )
+      constexpr self_type& operator-=( difference_type diff ) noexcept
       {
          *this -= diff;
 
          return *this;
       }
 
-      self_type operator+( difference_type rhs ) const
+      constexpr self_type operator+( difference_type rhs ) const noexcept
       {
          self_type it = *this;
          it += rhs;
 
          return it;
       }
-      self_type operator-( difference_type rhs ) const
+      constexpr self_type operator-( difference_type rhs ) const noexcept
       {
          self_type it = *this;
          it -= rhs;
@@ -114,16 +114,17 @@ namespace ESL
          return it;
       }
 
-      difference_type operator-( self_type& it ) const { return std::distance( p_type, it ); }
+      constexpr difference_type operator+( self_type const& it ) const noexcept { return p_type + it.p_type; }
+      constexpr difference_type operator-( self_type const& it ) const noexcept { return p_type - it.p_type; }
 
-      reference operator[]( difference_type diff ) { return *( *this + diff ); }
-      const_reference operator[]( difference_type diff ) const { *( *this + diff ); }
+      constexpr reference operator[]( difference_type diff ) noexcept { return *( *this + diff ); }
+      constexpr const_reference operator[]( difference_type diff ) const noexcept { *( *this + diff ); }
 
-      void swap( self_type& rhs ) { std::swap( p_type, rhs.get_ptr( ) ); }
+      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.get_ptr( ) ); }
 
    private:
-      pointer get_ptr( ) { return p_type; }
-      const_pointer get_ptr( ) const { return p_type; }
+      constexpr pointer get_ptr( ) noexcept { return p_type; }
+      constexpr const_pointer get_ptr( ) const noexcept { return p_type; }
 
    private:
       pointer p_type;

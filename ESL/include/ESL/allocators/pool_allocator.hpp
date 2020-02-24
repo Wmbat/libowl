@@ -126,4 +126,6 @@ namespace ESL
       std::unique_ptr<std::byte[]> p_memory;
       block_header* p_first_free = nullptr;
    };
+
+   ENABLE_REALLOCATION( ESL::pool_allocator )
 } // namespace ESL
