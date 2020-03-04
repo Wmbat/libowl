@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
@@ -32,13 +31,16 @@
 
 namespace ESL
 {
-   class multipool_allocator final : public allocation_interface
+   class multipool_allocator final
    {
    public:
+      using pointer = std::byte*;
+      using size_type = std::size_t;
+
       struct block_header
       {
          block_header* p_next = nullptr;
-         std::size_t depth_index = 0;
+         size_type depth_index = 0;
       };
 
       struct access_header
@@ -47,22 +49,25 @@ namespace ESL
       };
 
    public:
-      multipool_allocator( std::size_t block_count, std::size_t block_size, std::size_t pool_depth = 1 ) noexcept;
+      multipool_allocator( size_type block_count, size_type block_size, size_type pool_depth = 1 ) noexcept;
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
-      void free( std::byte* p_alloc ) noexcept override;
+      [[nodiscard]] std::byte* allocate( size_type size, size_type alignment ) noexcept;
+      void free( std::byte* p_alloc ) noexcept;
+
+      [[nodiscard]] std::byte* reallocate( ) noexcept;
+
+      [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
 
       void clear( ) noexcept;
 
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
+      size_type max_size( ) const noexcept;
+      size_type memory_usage( ) const noexcept;
+      size_type allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
       {
-         std::byte* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) );
-         if ( p_alloc )
+         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
          {
             return new ( p_alloc ) type_( args... );
          }
@@ -73,12 +78,16 @@ namespace ESL
       }
 
       template <class type_>
-      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      [[nodiscard]] type_* make_array( size_type element_count ) noexcept
       {
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
 
          auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+         if ( !p_alloc )
+         {
+            return nullptr;
+         }
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
@@ -94,21 +103,21 @@ namespace ESL
          if ( p_type )
          {
             p_type->~type_( );
-            free( reinterpret_cast<std::byte*>( p_type ) );
+            free( TO_BYTE_PTR( p_type ) );
          }
       }
 
       template <class type_>
-      void make_delete( type_* p_type, std::size_t element_count ) noexcept
+      void make_delete( type_* p_type, size_type element_count ) noexcept
       {
          assert( element_count != 0 && "cannot free zero elements" );
 
-         for ( std::size_t i = 0; i < element_count; ++i )
+         for ( size_type i = 0; i < element_count; ++i )
          {
             p_type[i].~type_( );
          }
 
-         free( reinterpret_cast<std::byte*>( p_type ) );
+         free( TO_BYTE_PTR( p_type ) );
       }
 
       template <class type_, class... args_>
@@ -120,18 +129,16 @@ namespace ESL
       }
 
    private:
-      std::size_t block_count;
-      std::size_t block_size;
-      std::size_t pool_depth;
+      size_type block_count;
+      size_type block_size;
+      size_type pool_depth;
 
-      std::size_t total_size;
-      std::size_t used_memory;
-      std::size_t num_allocations;
+      size_type total_size;
+      size_type used_memory;
+      size_type num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
       access_header* p_access_headers;
    };
-
-   ENABLE_REALLOCATION( ESL::multipool_allocator );
 } // namespace ESL
 

@@ -28,10 +28,13 @@
 #include <cassert>
 #include <cmath>
 
+#define TO_ACCESS_HEADER_PTR( ptr ) reinterpret_cast<access_header*>( ptr )
+#define TO_BLOCK_HEADER_PTR( ptr ) reinterpret_cast<block_header*>( ptr )
+
 namespace ESL
 {
    multipool_allocator::multipool_allocator(
-      std::size_t block_count, std::size_t block_size, std::size_t pool_depth ) noexcept :
+      size_type block_count, size_type block_size, size_type pool_depth ) noexcept :
       block_count( block_count ),
       block_size( block_size ), pool_depth( pool_depth ), total_size( block_count * block_size * pool_depth ),
       used_memory( 0 ), num_allocations( 0 )
@@ -40,34 +43,33 @@ namespace ESL
       assert( block_size != 0 && "Cannot have a block size of zero" );
       assert( pool_depth != 0 && "Cannot have a pool depth of zero" );
 
-      std::size_t true_alloc_size = 0;
+      size_type true_alloc_size = 0;
       for ( int i = 0; i < pool_depth; ++i )
       {
-         std::size_t const depth_pow = std::pow( 2, i );
-         std::size_t const depth_block_count = block_count * depth_pow;
-         std::size_t const depth_block_size = block_size / depth_pow;
+         size_type const depth_pow = std::pow( 2, i );
+         size_type const depth_block_count = block_count * depth_pow;
+         size_type const depth_block_size = block_size / depth_pow;
 
          true_alloc_size += depth_block_count * ( sizeof( block_header ) + depth_block_size );
       }
 
       p_memory = std::make_unique<std::byte[]>( true_alloc_size + ( ( pool_depth + 1 ) * sizeof( access_header ) ) );
 
-      p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
+      p_access_headers = TO_ACCESS_HEADER_PTR( p_memory.get( ) );
       for ( int i = 0; i < pool_depth; ++i )
       {
-         std::size_t const depth_pow = std::pow( 2, i );
-         std::size_t const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
-         std::size_t const pool_offset = block_count * block_size * i;
+         size_type const depth_pow = std::pow( 2, i );
+         size_type const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
+         size_type const pool_offset = block_count * block_size * i;
 
-         p_access_headers[i].p_first_free =
-            reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
+         p_access_headers[i].p_first_free = TO_BLOCK_HEADER_PTR( p_memory.get( ) + depth_offset + pool_offset );
 
          block_header* p_first_free = p_access_headers[i].p_first_free;
          for ( int j = 1; j < block_count * depth_pow; ++j )
          {
-            std::size_t const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
+            size_type const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
 
-            auto* p_new = reinterpret_cast<block_header*>( p_memory.get( ) + offset + depth_offset + pool_offset );
+            auto* p_new = TO_BLOCK_HEADER_PTR( p_memory.get( ) + offset + depth_offset + pool_offset );
             p_first_free->p_next = p_new;
             p_first_free = p_new;
             p_first_free->p_next = nullptr;
@@ -75,24 +77,24 @@ namespace ESL
       }
    }
 
-   std::byte* multipool_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
+   std::byte* multipool_allocator::allocate( size_type size, size_type alignment ) noexcept
    {
       assert( size != 0 && "Allocation size cannot be zero" );
       assert( size <= block_size && "Allocation size cannot be greater than max pool size" );
       assert( alignment != 0 && "Allocation alignment cannot be zero" );
 
-      auto const depth_index = std::clamp( block_size / size, std::size_t{1}, pool_depth ) - 1;
+      auto const depth_index = std::clamp( block_size / size, size_type{1}, pool_depth ) - 1;
 
       if ( p_access_headers[depth_index].p_first_free )
       {
-         std::byte* p_chunk_header = reinterpret_cast<std::byte*>( p_access_headers[depth_index].p_first_free );
+         std::byte* p_chunk_header = TO_BYTE_PTR( p_access_headers[depth_index].p_first_free );
 
          p_access_headers[depth_index].p_first_free = p_access_headers[depth_index].p_first_free->p_next;
 
          used_memory += block_size;
          ++num_allocations;
 
-         return reinterpret_cast<std::byte*>( p_chunk_header + sizeof( block_header ) );
+         return TO_BYTE_PTR( p_chunk_header + sizeof( block_header ) );
       }
       else
       {
@@ -112,24 +114,34 @@ namespace ESL
       --num_allocations;
    }
 
+   bool multipool_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   {
+      assert( size != 0 && "Size cannot be zero." );
+      assert( size <= block_size && "Size cannot be greater than max pool size" );
+      assert( alignment != 0 && "Alignment cannot be zero" );
+
+      auto const depth_index = std::clamp( block_size / size, size_type{1}, pool_depth ) - 1;
+
+      return p_access_headers[depth_index].p_first_free != nullptr;
+   }
+
    void multipool_allocator::clear( ) noexcept
    {
       p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
       for ( int i = 0; i < pool_depth; ++i )
       {
-         std::size_t const depth_pow = std::pow( 2, i );
-         std::size_t const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
-         std::size_t const pool_offset = block_count * block_size * i;
+         size_type const depth_pow = std::pow( 2, i );
+         size_type const depth_offset = ( pool_depth + 1 ) * sizeof( block_header );
+         size_type const pool_offset = block_count * block_size * i;
 
-         p_access_headers[i].p_first_free =
-            reinterpret_cast<block_header*>( p_memory.get( ) + depth_offset + pool_offset );
+         p_access_headers[i].p_first_free = TO_BLOCK_HEADER_PTR( p_memory.get( ) + depth_offset + pool_offset );
 
          auto* p_base_cpy = p_access_headers[i].p_first_free;
          for ( int j = 1; j < block_count * depth_pow; ++j )
          {
-            std::size_t const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
+            size_type const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
 
-            auto* p_new = reinterpret_cast<block_header*>( p_memory.get( ) + offset + depth_offset + pool_offset );
+            auto* p_new = TO_BLOCK_HEADER_PTR( p_memory.get( ) + offset + depth_offset + pool_offset );
             p_base_cpy->p_next = p_new;
             p_base_cpy = p_new;
             p_base_cpy->p_next = nullptr;
@@ -140,7 +152,10 @@ namespace ESL
       num_allocations = 0;
    }
 
-   std::size_t multipool_allocator::max_size( ) const noexcept { return total_size; }
-   std::size_t multipool_allocator::memory_usage( ) const noexcept { return used_memory; }
-   std::size_t multipool_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   multipool_allocator::size_type multipool_allocator::max_size( ) const noexcept { return total_size; }
+   multipool_allocator::size_type multipool_allocator::memory_usage( ) const noexcept { return used_memory; }
+   multipool_allocator::size_type multipool_allocator::allocation_count( ) const noexcept { return num_allocations; }
 } // namespace ESL
+
+#undef TO_BLOCK_HEADER_PTR
+#undef TO_ACCESS_HEADER_PTR

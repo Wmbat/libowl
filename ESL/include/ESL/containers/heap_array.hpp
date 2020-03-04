@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <ESL/allocators/allocation_interface.hpp>
+#include <ESL/allocators/allocator_utils.hpp>
 #include <ESL/utils/random_access_iterator.hpp>
 
 #include <cassert>
@@ -36,8 +36,6 @@ namespace ESL
    template <typename type_, class allocator_>
    class heap_array
    {
-      static_assert( std::is_base_of_v<allocation_interface, allocator_>,
-         "allocator_ type must be a child of allocation_interface" );
       static_assert( std::is_default_constructible_v<type_>, "type_ must be default constructible" );
 
    public:

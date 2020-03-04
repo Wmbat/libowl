@@ -26,6 +26,8 @@
 
 #include <cassert>
 
+#define TO_UINT_PTR( ptr ) reinterpret_cast<std::uintptr_t>( ptr )
+
 namespace ESL
 {
    monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
@@ -37,7 +39,7 @@ namespace ESL
    {
       assert( size != 0 );
 
-      auto const padding = get_forward_padding( reinterpret_cast<std::uintptr_t>( p_current_pos ), alignment );
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
 
       if ( padding + size + used_memory > total_size )
       {
@@ -53,7 +55,14 @@ namespace ESL
       return aligned_address;
    }
 
-   void monotonic_allocator::free( std::byte* p_alloc ) noexcept {}
+   bool monotonic_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   {
+      assert( size != 0 );
+
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
+
+      return ( padding + size + used_memory ) > total_size;
+   }
 
    void monotonic_allocator::clear( ) noexcept
    {

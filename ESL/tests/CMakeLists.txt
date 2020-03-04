@@ -22,9 +22,9 @@
 
 cmake_minimum_required( VERSION 3.12 )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
+set( CLANG_DEBUG_FLAGS "-o0 -g" )
 set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
+set( GNU_DEBUG_FLAGS "-o0, -g" )
 set( GNU_RELEASE_FLAGS "-o3" )
 
 add_executable( ESL_test )

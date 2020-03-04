@@ -26,8 +26,11 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <functional>
+#include <memory>
+#include <type_traits>
+
+#define TO_BYTE_PTR( ptr ) reinterpret_cast<std::byte*>( ptr )
 
 namespace ESL
 {
@@ -66,4 +69,58 @@ namespace ESL
 
       return padding;
    }
-} // namespace EML
+
+   namespace allocator_type
+   {
+      template <typename type_, typename = void>
+      struct has_allocate : std::false_type
+      {
+      };
+
+      template <typename type_>
+      struct has_allocate<type_,
+         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).allocate(
+                                                     std::declval<std::size_t>( ), std::declval<std::size_t>( ) ) ),
+            std::byte*>>> : std::true_type
+      {
+      };
+
+      template <typename type_, typename = void>
+      struct has_free : std::false_type
+      {
+      };
+
+      template <typename type_>
+      struct has_free<type_,
+         typename std::enable_if_t<
+            std::is_same_v<decltype( std::declval<type_>( ).free( std::declval<std::byte*>( ) ) ), void>>> :
+         std::true_type
+      {
+      };
+
+      template <typename type_, typename = void>
+      struct has_reallocate : std::false_type
+      {
+      };
+
+      template <typename type_, typename = void>
+      struct has_can_allocate : std::false_type
+      {
+      };
+
+      template <typename type_>
+      struct has_can_allocate<type_,
+         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).can_allocate(
+                                                     std::declval<std::size_t>( ), std::declval<std::size_t>( ) ) ),
+            bool>>> : std::true_type
+      {
+      };
+
+      template <typename type_>
+      struct has_reallocate<type_,
+         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).reallocate( ) ), std::byte*>>> :
+         std::true_type
+      {
+      };
+   } // namespace allocator_type
+} // namespace ESL
