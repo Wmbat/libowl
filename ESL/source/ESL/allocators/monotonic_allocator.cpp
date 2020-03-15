@@ -35,7 +35,7 @@ namespace ESL
       p_current_pos( p_memory.get( ) )
    {}
 
-   std::byte* monotonic_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
+   auto monotonic_allocator::allocate( size_type size, size_type alignment ) noexcept -> pointer
    {
       assert( size != 0 );
 
@@ -71,7 +71,7 @@ namespace ESL
       num_allocations = 0;
    }
 
-   std::size_t monotonic_allocator::max_size( ) const noexcept { return total_size; }
-   std::size_t monotonic_allocator::memory_usage( ) const noexcept { return used_memory; }
-   std::size_t monotonic_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   auto monotonic_allocator::max_size( ) const noexcept -> size_type { return total_size; }
+   auto monotonic_allocator::memory_usage( ) const noexcept -> size_type { return used_memory; }
+   auto monotonic_allocator::allocation_count( ) const noexcept -> size_type { return num_allocations; }
 } // namespace ESL

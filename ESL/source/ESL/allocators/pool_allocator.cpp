@@ -75,7 +75,7 @@ namespace ESL
       }
    }
 
-   void pool_allocator::free( std::byte* p_location ) noexcept
+   void pool_allocator::free( pointer p_location ) noexcept
    {
       assert( p_location != nullptr && "cannot free a nullptr" );
 
@@ -94,6 +94,8 @@ namespace ESL
 
       return p_first_free != nullptr;
    }
+
+   pool_allocator::size_type pool_allocator::allocation_capacity( pointer alloc ) const noexcept { return block_size; }
 
    void pool_allocator::clear( ) noexcept {}
 

@@ -1,23 +1,19 @@
-#include <ESL/allocators/pool_allocator.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
-
-struct copyable
-{
-   copyable( ) = default;
-   copyable( int i ) : i( i ) {}
-
-   int i = 0;
-};
 
 int main( )
 {
-   using vector = ESL::vector<copyable, ESL::pool_allocator>;
+   auto pool = ESL::multipool_allocator{1, 1024, 1};
+   auto vec = ESL::vector<int, decltype( pool )>{&pool};
+   vec.emplace_back( 1 );
+   vec.emplace_back( 2 );
+   vec.emplace_back( 3 );
+   vec.emplace_back( 4 );
+   vec.emplace_back( 5 );
 
-   ESL::pool_allocator main_pool( 2, 2048 );
+   vec.erase( vec.cbegin( ) + 2 );
 
-   copyable test{20};
-
-   auto [vec_opt, err_code] = vector::make( 10, test, &main_pool );
+   auto i = *( vec.begin( ) );
 
    return 0;
 }

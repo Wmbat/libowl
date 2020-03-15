@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <tuple>
 #include <type_traits>
 
 #define TO_BYTE_PTR( ptr ) reinterpret_cast<std::byte*>( ptr )
@@ -99,11 +100,6 @@ namespace ESL
       };
 
       template <typename type_, typename = void>
-      struct has_reallocate : std::false_type
-      {
-      };
-
-      template <typename type_, typename = void>
       struct has_can_allocate : std::false_type
       {
       };
@@ -116,9 +112,15 @@ namespace ESL
       {
       };
 
+      template <typename type_, typename = void>
+      struct has_allocation_capacity : std::false_type
+      {
+      };
+
       template <typename type_>
-      struct has_reallocate<type_,
-         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).reallocate( ) ), std::byte*>>> :
+      struct has_allocation_capacity<type_,
+         typename std::enable_if_t<std::is_same_v<
+            decltype( std::declval<type_>( ).allocation_capacity( std::declval<std::byte*>( ) ) ), std::size_t>>> :
          std::true_type
       {
       };

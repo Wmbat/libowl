@@ -52,9 +52,9 @@ namespace ESL
       [[nodiscard]] pointer allocate( size_type size, size_type alignment ) noexcept;
       void free( pointer p_location ) noexcept;
 
-      [[nodiscard]] std::byte* reallocate( ) noexcept;
-
       [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
+
+      size_type allocation_capacity( pointer alloc ) const noexcept;
 
       void clear( ) noexcept;
 

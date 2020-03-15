@@ -65,6 +65,8 @@ namespace ESL
          p_access_headers[i].p_first_free = TO_BLOCK_HEADER_PTR( p_memory.get( ) + depth_offset + pool_offset );
 
          block_header* p_first_free = p_access_headers[i].p_first_free;
+         p_first_free->depth_index = i;
+
          for ( int j = 1; j < block_count * depth_pow; ++j )
          {
             size_type const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
@@ -77,24 +79,31 @@ namespace ESL
       }
    }
 
-   std::byte* multipool_allocator::allocate( size_type size, size_type alignment ) noexcept
+   auto multipool_allocator::allocate( size_type size, size_type alignment ) noexcept -> pointer
    {
       assert( size != 0 && "Allocation size cannot be zero" );
       assert( size <= block_size && "Allocation size cannot be greater than max pool size" );
       assert( alignment != 0 && "Allocation alignment cannot be zero" );
 
-      auto const depth_index = std::clamp( block_size / size, size_type{1}, pool_depth ) - 1;
+      size_type depth_index = 0;
+      for ( int i = 0; i < pool_depth; ++i )
+      {
+         if ( block_size / std::pow( 2, i ) == size )
+         {
+            depth_index = i;
+            break;
+         }
+      }
 
       if ( p_access_headers[depth_index].p_first_free )
       {
-         std::byte* p_chunk_header = TO_BYTE_PTR( p_access_headers[depth_index].p_first_free );
-
-         p_access_headers[depth_index].p_first_free = p_access_headers[depth_index].p_first_free->p_next;
+         block_header* p_block_header = p_access_headers[depth_index].p_first_free;
+         p_access_headers[depth_index].p_first_free = p_block_header->p_next;
 
          used_memory += block_size;
          ++num_allocations;
 
-         return TO_BYTE_PTR( p_chunk_header + sizeof( block_header ) );
+         return TO_BYTE_PTR( ++p_block_header );
       }
       else
       {
@@ -102,7 +111,7 @@ namespace ESL
       }
    }
 
-   void multipool_allocator::free( std::byte* p_alloc ) noexcept
+   void multipool_allocator::free( pointer p_alloc ) noexcept
    {
       assert( p_alloc != nullptr && "cannot free a nullptr" );
 
@@ -117,12 +126,22 @@ namespace ESL
    bool multipool_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
    {
       assert( size != 0 && "Size cannot be zero." );
-      assert( size <= block_size && "Size cannot be greater than max pool size" );
+      assert( size <= block_size && "Sblock_size / depth_powize cannot be greater than max pool size" );
       assert( alignment != 0 && "Alignment cannot be zero" );
 
       auto const depth_index = std::clamp( block_size / size, size_type{1}, pool_depth ) - 1;
 
       return p_access_headers[depth_index].p_first_free != nullptr;
+   }
+
+   auto multipool_allocator::allocation_capacity( pointer p_alloc ) const noexcept -> size_type
+   {
+      assert( p_alloc != nullptr && "Cannot access nullptr" );
+
+      auto* p_header = TO_BLOCK_HEADER_PTR( p_alloc );
+      --p_header;
+
+      return block_size / std::pow( 2, p_header->depth_index );
    }
 
    void multipool_allocator::clear( ) noexcept
@@ -152,9 +171,9 @@ namespace ESL
       num_allocations = 0;
    }
 
-   multipool_allocator::size_type multipool_allocator::max_size( ) const noexcept { return total_size; }
-   multipool_allocator::size_type multipool_allocator::memory_usage( ) const noexcept { return used_memory; }
-   multipool_allocator::size_type multipool_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   auto multipool_allocator::max_size( ) const noexcept -> size_type { return total_size; }
+   auto multipool_allocator::memory_usage( ) const noexcept -> size_type { return used_memory; }
+   auto multipool_allocator::allocation_count( ) const noexcept -> size_type { return num_allocations; }
 } // namespace ESL
 
 #undef TO_BLOCK_HEADER_PTR

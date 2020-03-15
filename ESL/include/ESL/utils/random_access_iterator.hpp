@@ -88,13 +88,13 @@ namespace ESL
 
       constexpr self_type& operator+=( difference_type diff ) noexcept
       {
-         *this += diff;
+         this->p_type += diff;
 
          return *this;
       }
       constexpr self_type& operator-=( difference_type diff ) noexcept
       {
-         *this -= diff;
+         this->p_type -= diff;
 
          return *this;
       }
@@ -120,11 +120,7 @@ namespace ESL
       constexpr reference operator[]( difference_type diff ) noexcept { return *( *this + diff ); }
       constexpr const_reference operator[]( difference_type diff ) const noexcept { *( *this + diff ); }
 
-      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.get_ptr( ) ); }
-
-   private:
-      constexpr pointer get_ptr( ) noexcept { return p_type; }
-      constexpr const_pointer get_ptr( ) const noexcept { return p_type; }
+      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.p_type ); }
 
    private:
       pointer p_type;

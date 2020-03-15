@@ -71,80 +71,79 @@ TEST_F( vector_test, default_ctor )
 
 TEST_F( vector_test, count_value_ctor )
 {
-   using vector = ESL::vector<copyable, ESL::pool_allocator>;
+   try
+   {
+      using vector = ESL::vector<copyable, ESL::pool_allocator>;
 
-   copyable test{20};
+      copyable test{20};
 
-   auto [vec_opt, err_code] = vector::make( 10, test, &main_pool_alloc );
-   if ( !vec_opt )
+      auto my_vec = vector( 10, test, &main_pool_alloc );
+
+      EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_EQ( my_vec.capacity( ), 10 );
+
+      for ( auto const& it : my_vec )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
+   }
+   catch ( std::bad_alloc& e )
    {
       FAIL( );
-   }
-
-   EXPECT_EQ( vec_opt->get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( vec_opt->size( ), 10 );
-   EXPECT_EQ( vec_opt->capacity( ), 10 );
-
-   for ( auto const& it : vec_opt.value( ) )
-   {
-      EXPECT_EQ( it.i, 20 );
    }
 }
 
 TEST_F( vector_test, count_ctor )
 {
-   using vector = ESL::vector<copyable, ESL::pool_allocator>;
+   try
+   {
+      using vector = ESL::vector<copyable, ESL::pool_allocator>;
 
-   auto [vec_opt, err_code] = vector::make( 10, &main_pool_alloc );
-   if ( !vec_opt )
+      auto my_vec = vector( 10, &main_pool_alloc );
+
+      EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_EQ( my_vec.capacity( ), 10 );
+   }
+   catch ( std::bad_alloc& e )
    {
       FAIL( );
    }
-
-   vector my_vec = std::move( vec_opt.value( ) );
-
-   EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec.size( ), 10 );
-   EXPECT_EQ( my_vec.capacity( ), 10 );
 }
 
 TEST_F( vector_test, iterator_range_ctor )
 {
    using vector = ESL::vector<copyable, ESL::pool_allocator>;
 
-   auto [vec_opt, err_code] = vector::make( 10, &main_pool_alloc );
-   if ( !vec_opt )
+   try
+   {
+      auto my_vec = vector{10, &main_pool_alloc};
+
+      EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_EQ( my_vec.capacity( ), 10 );
+
+      for ( auto& it : my_vec )
+      {
+         it.i = 20;
+         EXPECT_EQ( it.i, 20 );
+      }
+
+      auto my_vec2 = vector{my_vec.cbegin( ), my_vec.cend( ), &main_pool_alloc};
+
+      EXPECT_EQ( my_vec2.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec2.size( ), 10 );
+      EXPECT_EQ( my_vec2.capacity( ), 10 );
+
+      for ( auto const& it : my_vec2 )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
+   }
+   catch ( ... )
    {
       FAIL( );
-   }
-
-   vector my_vec = std::move( vec_opt.value( ) );
-
-   EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec.size( ), 10 );
-   EXPECT_EQ( my_vec.capacity( ), 10 );
-
-   for ( auto& it : my_vec )
-   {
-      it.i = 20;
-      EXPECT_EQ( it.i, 20 );
-   }
-
-   auto [vec_opt_2, err_code_2] = vector::make( my_vec.begin( ), my_vec.end( ), &main_pool_alloc );
-   if ( !vec_opt_2 )
-   {
-      FAIL( );
-   }
-
-   vector my_vec2( std::move( vec_opt_2.value( ) ) );
-
-   EXPECT_EQ( my_vec2.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec2.size( ), 10 );
-   EXPECT_EQ( my_vec2.capacity( ), 10 );
-
-   for ( auto const& it : my_vec2 )
-   {
-      EXPECT_EQ( it.i, 20 );
    }
 }
 
@@ -153,65 +152,68 @@ TEST_F( vector_test, copy_ctor )
    using vector = ESL::vector<copyable, ESL::pool_allocator>;
 
    copyable test{20};
-   auto [opt_1, ec_1] = vector::make( 10, test, &main_pool_alloc );
-   if ( !opt_1 )
+   try
+   {
+      auto my_vec = vector{10, test, &main_pool_alloc};
+
+      EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_EQ( my_vec.capacity( ), 10 );
+
+      for ( auto const& it : my_vec )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
+
+      auto my_vec_2 = vector{my_vec};
+
+      EXPECT_EQ( my_vec_2.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec_2.size( ), 10 );
+      EXPECT_EQ( my_vec_2.capacity( ), 10 );
+
+      for ( auto const& it : my_vec_2 )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
+   }
+   catch ( ... )
    {
       FAIL( );
-   }
-
-   vector my_vec = std::move( opt_1.value() );
-
-   EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec.size( ), 10 );
-   EXPECT_EQ( my_vec.capacity( ), 10 );
-
-   for ( auto const& it : my_vec )
-   {
-      EXPECT_EQ( it.i, 20 );
-   }
-
-   auto [opt_2, ec_2] = vector::make( my_vec );
-   if ( !opt_2)
-   {
-      FAIL( );
-   }
-
-   vector my_vec_2 = std::move( opt_2.value() );
-
-   EXPECT_EQ( my_vec_2.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec_2.size( ), 10 );
-   EXPECT_EQ( my_vec_2.capacity( ), 10 );
-
-   for ( auto const& it : my_vec_2 )
-   {
-      EXPECT_EQ( it.i, 20 );
    }
 }
 
-/*
 TEST_F( vector_test, copy_new_allocator_ctor )
 {
+   using vector = ESL::vector<copyable, ESL::pool_allocator>;
+
    copyable test{20};
-   ESL::vector<copyable, ESL::pool_allocator> my_vec{10, test, &main_pool_alloc};
-
-   EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
-   EXPECT_EQ( my_vec.size( ), 10 );
-   EXPECT_EQ( my_vec.capacity( ), 10 );
-
-   for ( auto const& it : my_vec )
+   try
    {
-      EXPECT_EQ( it.i, 20 );
+      auto my_vec = vector{10, test, &main_pool_alloc};
+
+      EXPECT_EQ( my_vec.get_allocator( ), &main_pool_alloc );
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_EQ( my_vec.capacity( ), 10 );
+
+      for ( auto const& it : my_vec )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
+
+      auto my_vec2 = vector{my_vec, &backup_pool_alloc};
+
+      EXPECT_EQ( my_vec2.get_allocator( ), &backup_pool_alloc );
+      EXPECT_EQ( my_vec2.size( ), 10 );
+      EXPECT_EQ( my_vec2.capacity( ), 10 );
+
+      for ( auto const& it : my_vec2 )
+      {
+         EXPECT_EQ( it.i, 20 );
+      }
    }
-
-   decltype( my_vec ) my_vec2( my_vec, &backup_pool_alloc );
-
-   EXPECT_EQ( my_vec2.get_allocator( ), &backup_pool_alloc );
-   EXPECT_EQ( my_vec2.size( ), 10 );
-   EXPECT_EQ( my_vec2.capacity( ), 10 );
-
-   for ( auto const& it : my_vec2 )
+   catch ( ... )
    {
-      EXPECT_EQ( it.i, 20 );
+      FAIL( );
    }
 }
 
@@ -269,4 +271,99 @@ TEST_F( vector_test, init_list_ctor )
       EXPECT_EQ( my_vec[i], i + 1 );
    }
 }
-*/
+
+TEST_F( vector_test, init_list_copy_assign )
+{
+   ESL::vector<int, ESL::pool_allocator> my_vec{&main_pool_alloc};
+   EXPECT_EQ( my_vec.size( ), 0 );
+
+   my_vec = {1, 2, 3};
+
+   EXPECT_EQ( my_vec.size( ), 3 );
+   EXPECT_EQ( my_vec[0], 1 );
+   EXPECT_EQ( my_vec[1], 2 );
+   EXPECT_EQ( my_vec[2], 3 );
+}
+
+TEST_F( vector_test, clear_empty_test )
+{
+   using vector = ESL::vector<copyable, ESL::pool_allocator>;
+
+   try
+   {
+      auto my_vec = vector{10, &main_pool_alloc};
+
+      EXPECT_EQ( my_vec.size( ), 10 );
+      EXPECT_FALSE( my_vec.empty( ) );
+
+      for ( auto i : my_vec )
+      {
+         EXPECT_EQ( i.i, 0 );
+      }
+
+      my_vec.clear( );
+
+      EXPECT_EQ( my_vec.size( ), 0 );
+      EXPECT_TRUE( my_vec.empty( ) );
+   }
+   catch ( ... )
+   {
+      FAIL( );
+   }
+}
+
+TEST_F( vector_test, single_erase_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>{&main_pool_alloc};
+   for ( int i = 0; i < 5; ++i )
+   {
+      my_vec.emplace_back( i + 1 );
+   }
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+
+   auto it = my_vec.erase( my_vec.cbegin( ) );
+   EXPECT_EQ( it->i, 2 );
+   EXPECT_EQ( my_vec[0].i, 2 );
+   EXPECT_EQ( my_vec[1].i, 3 );
+   EXPECT_EQ( my_vec[2].i, 4 );
+   EXPECT_EQ( my_vec[3].i, 5 );
+   EXPECT_EQ( my_vec.size( ), 4 );
+
+   my_vec.erase( my_vec.cend( ) - 1 );
+   EXPECT_EQ( my_vec[0].i, 2 );
+   EXPECT_EQ( my_vec[1].i, 3 );
+   EXPECT_EQ( my_vec[2].i, 4 );
+   EXPECT_EQ( my_vec.size( ), 3 );
+}
+
+TEST_F( vector_test, emplace_back_success_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   try
+   {
+      auto const& result = my_vec.emplace_back( 10 );
+
+      EXPECT_EQ( result.i, 10 );
+   }
+   catch ( ... )
+   {
+      FAIL( );
+   }
+
+   EXPECT_EQ( my_vec[0].i, 10 );
+
+   try
+   {
+      auto const& result = my_vec.emplace_back( 20 );
+
+      EXPECT_EQ( result.i, 20 );
+   }
+   catch ( ... )
+   {
+      FAIL( );
+   }
+
+   EXPECT_EQ( my_vec[1].i, 20 );
+}

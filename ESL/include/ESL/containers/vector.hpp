@@ -29,6 +29,7 @@
 #include <ESL/utils/input_iterator.hpp>
 #include <ESL/utils/random_access_iterator.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <memory>
@@ -45,9 +46,9 @@ namespace ESL
    class vector
    {
       static_assert( allocator_type::has_allocate<allocator_>::value, "allocator type does not support reallocation" );
-      static_assert( allocator_type::has_reallocate<allocator_>::value, "allocator type does not support allocate" );
       static_assert( allocator_type::has_free<allocator_>::value, "allocator type does not support free" );
       static_assert( allocator_type::has_can_allocate<allocator_>::value, "allocator does not support can_allocate" );
+      static_assert( allocator_type::has_allocation_capacity<allocator_>::value );
 
    public:
       using iterator = random_access_iterator<type_>;
@@ -69,6 +70,131 @@ namespace ESL
       {
          assert( p_allocator != nullptr && "Cannot have a nullptr allocator" );
       }
+      explicit vector( size_type count, const_reference value, allocator_* p_allocator ) :
+         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
+      {
+         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
+
+         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         for ( size_type i = 0; i < current_size; ++i )
+         {
+            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( value );
+         }
+      }
+      explicit vector( size_type count, allocator_* p_allocator ) :
+         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
+      {
+         static_assert( std::is_default_constructible_v<value_type>, "value type must be default constructible" );
+
+         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         for ( size_type i = 0; i < current_size; ++i )
+         {
+            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
+         }
+      }
+      template <class input_it_>
+      explicit vector( input_it_ first, input_it_ last, allocator_* p_allocator ) :
+         p_allocator( p_allocator ), current_capacity( last - first ), current_size( current_capacity )
+      {
+         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
+
+         assert( p_allocator != nullptr && "Allocator cannot be nullptr" );
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         for ( size_type i = 0; first != last; ++i, ++first )
+         {
+            p_alloc[i] = *first;
+         }
+      }
+      vector( std::initializer_list<type_> init, allocator_* p_allocator ) : p_allocator( p_allocator )
+      {
+         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
+
+         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
+
+         current_capacity = init.size( );
+         current_size = init.size( );
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         for ( size_type index = 0; auto& it : init )
+         {
+            p_alloc[index++] = it;
+         }
+      }
+      vector( vector const& other )
+      {
+         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
+
+         p_allocator = other.p_allocator;
+         current_size = other.current_size;
+         current_capacity = other.current_capacity;
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         for ( size_type i = 0; i < current_size; ++i )
+         {
+            p_alloc[i] = other[i];
+         }
+      }
+      vector( vector const& other, allocator_* p_allocator ) : p_allocator( p_allocator )
+      {
+         static_assert( std::is_copy_constructible_v<value_type>, "value type is copy constructible" );
+         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
+
+         if ( !p_allocator )
+         {
+            p_allocator = other.p_allocator;
+         }
+
+         current_size = other.size( );
+         current_capacity = other.size( );
+
+         auto const size_in_bytes = current_capacity * sizeof( value_type );
+         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         if ( !p_alloc )
+         {
+            throw std::bad_alloc( );
+         }
+
+         std::copy( other.cbegin( ), other.cend( ), p_alloc );
+      }
       vector( vector&& other ) noexcept
       {
          p_allocator = other.p_allocator;
@@ -87,6 +213,14 @@ namespace ESL
       {
          if ( p_allocator && p_alloc )
          {
+            if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
+            {
+               for ( size_type i = 0; i < current_size; ++i )
+               {
+                  p_alloc[i].~type_( );
+               }
+            }
+
             p_allocator->free( TO_BYTE_PTR( p_alloc ) );
             p_alloc = nullptr;
          }
@@ -94,6 +228,32 @@ namespace ESL
          p_allocator = nullptr;
       }
 
+      vector& operator=( vector const& other )
+      {
+         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
+
+         if ( this != &other )
+         {
+            p_allocator = other.p_allocator;
+            current_size = other.current_size;
+            current_capacity = other.current_capacity;
+
+            auto const size_in_bytes = current_capacity * sizeof( value_type );
+            p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+            if ( !p_alloc )
+            {
+               throw std::bad_alloc( );
+            }
+
+            for ( size_type i = 0; i < current_size; ++i )
+            {
+               p_alloc[i] = other[i];
+            }
+         }
+
+         return *this;
+      }
       vector& operator=( vector&& other ) noexcept
       {
          if ( this != &other )
@@ -113,163 +273,37 @@ namespace ESL
 
          return *this;
       }
-
-   private:
-      explicit vector( size_type count, const_reference value, allocator_* p_allocator ) noexcept :
-         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
-      {
-         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
-
-         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( value );
-         }
-      }
-      explicit vector( size_type count, allocator_* p_allocator ) noexcept :
-         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
-      {
-         static_assert( std::is_default_constructible_v<value_type>, "value type must be default constructible" );
-
-         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
-         }
-      }
-      template <class input_it_>
-      vector( input_it_ first, input_it_ last, allocator_* p_allocator ) noexcept :
-         p_allocator( p_allocator ), current_capacity( last - first ), current_size( current_capacity )
-      {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
-         assert( p_allocator != nullptr && "Allocator cannot be nullptr" );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type i = 0; first < last; ++i, ++first )
-         {
-            p_alloc[i] = *first;
-         }
-      }
-      vector( std::initializer_list<type_> init, allocator_* p_allocator ) noexcept : p_allocator( p_allocator )
-      {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
-         assert( p_allocator != nullptr && "allocator cannot be nullptr" );
-
-         current_capacity = init.size( );
-         current_size = init.size( );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type index = 0; auto& it : init )
-         {
-            p_alloc[index++] = it;
-         }
-      }
-      vector( vector const& other ) noexcept
-      {
-         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
-
-         p_allocator = other.p_allocator;
-         current_size = other.current_size;
-         current_capacity = other.current_capacity;
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            p_alloc[i] = other[i];
-         }
-      }
-      vector( vector const& other, allocator_* p_allocator ) noexcept : p_allocator( p_allocator )
-      {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
-         if ( !p_allocator )
-         {
-            p_allocator = other.p_allocator;
-         }
-
-         current_size = other.size( );
-         current_capacity = other.size( );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            p_alloc[i] = other[i];
-         }
-      }
-
-      vector& operator=( vector const& other ) noexcept
-      {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
-         if ( this != &other )
-         {
-            p_allocator = other.p_allocator;
-            current_size = other.current_size;
-            current_capacity = other.current_capacity;
-
-            auto const size_in_bytes = current_capacity * sizeof( value_type );
-            p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
-
-            for ( size_type i = 0; i < current_size; ++i )
-            {
-               p_alloc[i] = other[i];
-            }
-         }
-
+      vector& operator=(std::initializer_list<value_type> init)
+      {   
          return *this;
       }
 
-   public:
       allocator_* get_allocator( ) noexcept { return p_allocator; }
       allocator_ const* get_allocator( ) const noexcept { return p_allocator; }
 
-      ret_err<reference> at( size_type index )
+      // element access
+      reference at( size_type index )
       {
          if ( index < 0 && index >= current_size )
          {
-            return ret_err<reference>{std::nullopt, basic_error::e_out_of_bounds};
+            throw std::out_of_range{"Index: " + std::to_string( index ) + " is out of bounds"};
          }
          else
          {
-            return ret_err<reference>{p_alloc[index], basic_error::e_none};
+            return p_alloc[index];
          }
       }
-      ret_err<const_reference> at( size_type index ) const noexcept
+      const_reference at( size_type index ) const
       {
          if ( index < 0 && index >= current_size )
          {
-            return ret_err<reference>{std::nullopt, basic_error::e_out_of_bounds};
+            throw std::out_of_range{"Index: " + std::to_string( index ) + " is out of bounds"};
          }
          else
          {
-            return ret_err<reference>{p_alloc[index], basic_error::e_none};
+            return p_alloc[index];
          }
       }
-
       reference operator[]( size_type index ) noexcept
       {
          assert( index >= 0 && "Index cannot be less than zero" );
@@ -284,8 +318,6 @@ namespace ESL
 
          return p_alloc[index];
       }
-
-      // element access
       reference front( ) noexcept { return p_alloc[0]; }
       const_reference front( ) const noexcept { return p_alloc[0]; }
 
@@ -315,7 +347,7 @@ namespace ESL
       constexpr bool empty( ) const noexcept { return current_size == 0; }
       constexpr size_type size( ) const noexcept { return current_size; }
       constexpr size_type max_size( ) const noexcept { return std::numeric_limits<std::uintptr_t>::max( ); }
-      std::error_condition reserve( size_type new_capacity ) noexcept
+      void reserve( size_type new_capacity )
       {
          if ( new_capacity > max_size( ) )
          {
@@ -327,7 +359,7 @@ namespace ESL
             auto* p_temp = reinterpret_cast<pointer>( p_allocator->allocate( new_capacity, alignof( value_type ) ) );
             if ( !p_temp )
             {
-               return basic_error::e_bad_alloc;
+               throw std::bad_alloc{};
             }
 
             for ( size_type i = 0; i < current_size; ++i )
@@ -335,126 +367,104 @@ namespace ESL
                p_temp[i] = std::move( p_alloc[i] );
             }
 
-            p_allocator->free( reinterpret_cast<std::byte*>( p_alloc ) );
+            p_allocator->free( TO_BYTE_PTR( p_alloc ) );
             current_capacity = new_capacity;
          }
-
-         return basic_error::e_none;
       }
       constexpr size_type capacity( ) const noexcept { return current_capacity; };
 
+      // modifiers
       void clear( ) noexcept
       {
-         for ( size_type i = 0; i < current_size; ++i )
+         if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
          {
-            p_alloc[i].~type_( );
+            for ( size_type i = 0; i < current_size; ++i )
+            {
+               p_alloc[i].~type_( );
+            }
          }
 
          current_size = 0;
       }
+      iterator erase( const_iterator pos ) noexcept
+      {
+         assert( pos != cend( ) && "Iterator pos cannot be equal to the end" );
+
+         auto it = iterator{&p_alloc[( &( *pos ) - p_alloc )]};
+         for ( auto curr = it; curr != end( ) - 1; ++curr )
+         {
+            std::iter_swap( curr, curr + 1 );
+         }
+
+         if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
+         {
+            ( end( ) - 1 )->~value_type( );
+         }
+
+         --current_size;
+
+         return it;
+      }
+      iterator erase( const_iterator first, const_iterator last ) noexcept {}
 
       template <class... args_>
-      ret_err<reference> emplace_back( args_&&... args ) noexcept
+      reference emplace_back( args_&&... args )
       {
-         size_type new_size = current_size + 1;
-         if ( new_size > current_capacity )
+         size_type const new_size = current_size + 1;
+         if ( current_capacity == 0 )
          {
-            if ( !p_allocator->can_allocate( new_size * sizeof( value_type ), alignof( value_type ) ) )
+            p_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
+            if ( !p_alloc )
             {
-               return ret_err<reference>{std::nullopt, basic_error::e_bad_alloc};
+               throw std::bad_alloc{};
             }
 
-            pointer new_alloc =
-               TO_TYPE_PTR( p_allocator->allocate( new_size * sizeof( value_type ), alignof( value_type ) ) );
+            new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
 
-            for ( value_type i = 0; i < current_size; ++i )
+            current_size = new_size;
+            current_capacity = new_size;
+
+            return p_alloc[current_size - 1];
+         }
+         else if ( new_size > current_capacity )
+         {
+            size_type const max_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) );
+            if ( current_capacity < max_capacity )
             {
-               new_alloc[i] = p_alloc[i];
+               new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
+
+               current_size = new_size;
+               current_capacity = max_capacity;
+
+               return p_alloc[current_size - 1];
             }
+            else
+            {
+               pointer p_new_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
+               if ( !p_new_alloc )
+               {
+                  throw std::bad_alloc{};
+               }
 
-            new ( new_alloc + new_size ) value_type( args... );
+               std::copy( cbegin( ), cend( ), p_new_alloc );
+               p_alloc = p_new_alloc;
 
-            p_alloc = new_alloc;
-         }
-      }
+               new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
 
-   public:
-      using vector_data = std::tuple<std::optional<vector>, std::error_condition>;
+               current_size = new_size;
 
-      static vector_data make( size_type count, const_reference value, allocator_* p_allocator ) noexcept
-      {
-         if ( !p_allocator->can_allocate( count * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple{std::nullopt, basic_error::e_bad_alloc};
+               return p_alloc[current_size - 1];
+            }
          }
          else
          {
-            return std::tuple{vector( count, value, p_allocator ), basic_error::e_none};
+            new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
+
+            current_size = new_size;
+
+            return p_alloc[current_size - 1];
          }
       }
-
-      static vector_data make( size_type count, allocator_* p_allocator ) noexcept
-      {
-         if ( !p_allocator->can_allocate( count * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple( std::nullopt, basic_error::e_bad_alloc );
-         }
-         else
-         {
-            return std::tuple( vector( count, p_allocator ), basic_error::e_none );
-         }
-      }
-
-      template <class input_it_>
-      static vector_data make( input_it_ first, input_it_ last, allocator_* p_allocator ) noexcept
-      {
-         if ( !p_allocator->can_allocate( ( last - first ) * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple( std::nullopt, basic_error::e_bad_alloc );
-         }
-         else
-         {
-            return std::tuple( vector( first, last, p_allocator ), basic_error::e_none );
-         }
-      }
-
-      static vector_data make( std::initializer_list<type_> init, allocator_* p_allocator ) noexcept
-      {
-         if ( !p_allocator->can_allocate( init.size( ) * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple( std::nullopt, basic_error::e_bad_alloc );
-         }
-         else
-         {
-            return std::tuple( vector( init, p_allocator ), basic_error::e_none );
-         }
-      }
-
-      static vector_data make( vector const& other ) noexcept
-      {
-         if ( !other.get_allocator( )->can_allocate( other.size( ) * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple( std::nullopt, basic_error::e_bad_alloc );
-         }
-         else
-         {
-            return std::tuple( vector( other ), basic_error::e_none );
-         }
-      }
-
-      static vector_data make( vector const& other, allocator_* p_allocator ) noexcept
-      {
-         if ( !p_allocator->can_allocate( other.size( ) * sizeof( value_type ), alignof( value_type ) ) )
-         {
-            return std::tuple( std::nullopt, basic_error::e_bad_alloc );
-         }
-         else
-         {
-            return std::tuple( vector( other, p_allocator ), basic_error::e_none );
-         }
-      }
-
-      static vector_data copy( vector const& other ) noexcept { return make( other ); }
 
    private:
       allocator_* p_allocator{nullptr};
