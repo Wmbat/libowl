@@ -43,7 +43,7 @@ endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address" )
+set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )
 
 set( GNU_CONCEPTS "-fconcepts" )
@@ -93,6 +93,7 @@ target_link_libraries( ESL
 
    PRIVATE
       $<$<CXX_COMPILER_ID:GNU>:-lasan>
+      $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
 
 target_sources( ESL
