@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/allocators/pool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
 
@@ -276,14 +277,54 @@ TEST_F( vector_test, init_list_copy_assign )
 {
    ESL::vector<int, ESL::pool_allocator> my_vec{&main_pool_alloc};
    EXPECT_EQ( my_vec.size( ), 0 );
-
-   my_vec = {1, 2, 3};
+   try
+   {
+      my_vec = {1, 2, 3};
+   }
+   catch ( ... )
+   {
+      FAIL( );
+   }
 
    EXPECT_EQ( my_vec.size( ), 3 );
    EXPECT_EQ( my_vec[0], 1 );
    EXPECT_EQ( my_vec[1], 2 );
    EXPECT_EQ( my_vec[2], 3 );
 }
+
+TEST_F( vector_test, assign_count_value )
+{
+   auto multipool = ESL::multipool_allocator{1, 2048, 2};
+   ESL::vector<int, ESL::multipool_allocator> my_vec{2048 / sizeof( int ), 10, &multipool};
+
+   EXPECT_EQ( my_vec.get_allocator( ), &multipool );
+   EXPECT_EQ( my_vec.size( ), 2048 / sizeof( int ) );
+
+   std::for_each( my_vec.cbegin( ), my_vec.cend( ), []( int i ) {
+      EXPECT_EQ( i, 10 );
+   } );
+
+   my_vec.assign( 20, 20 );
+   EXPECT_EQ( my_vec.size( ), 20 );
+
+   std::for_each( my_vec.cbegin( ), my_vec.cend( ), []( int i ) {
+      EXPECT_EQ( i, 20 );
+   } );
+
+   ESL::vector<int, ESL::multipool_allocator> my_vec2{1024 / sizeof( int ), 10, &multipool};
+   EXPECT_EQ( my_vec2.get_allocator( ), &multipool );
+   EXPECT_EQ( my_vec2.size( ), 1024 / sizeof( int ) );
+
+   std::for_each( my_vec2.cbegin( ), my_vec2.cend( ), []( int i ) {
+      EXPECT_EQ( i, 10 );
+   } );
+
+   EXPECT_THROW( my_vec2.assign( 2048 / sizeof( int ), 20 ), std::bad_alloc );
+}
+
+TEST_F( vector_test, assign_iterator_range ) {}
+
+TEST_F( vector_test, assign_init_list ) {}
 
 TEST_F( vector_test, clear_empty_test )
 {

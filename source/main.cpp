@@ -1,19 +1,17 @@
 #include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
 
+#include <vector>
+
 int main( )
 {
-   auto pool = ESL::multipool_allocator{1, 1024, 1};
-   auto vec = ESL::vector<int, decltype( pool )>{&pool};
-   vec.emplace_back( 1 );
-   vec.emplace_back( 2 );
-   vec.emplace_back( 3 );
-   vec.emplace_back( 4 );
-   vec.emplace_back( 5 );
+   auto multipool = ESL::multipool_allocator{1, 2048, 2};
+   ESL::vector<int, ESL::multipool_allocator> my_vec{2048 / sizeof( int ), 10, &multipool};
 
-   vec.erase( vec.cbegin( ) + 2 );
+   my_vec.assign( 20, 20 );
 
-   auto i = *( vec.begin( ) );
+   ESL::vector<int, ESL::multipool_allocator> my_vec2{1024 / sizeof( int ), 10, &multipool};
+   my_vec2.assign( 2048 / sizeof( int ), 40 );
 
    return 0;
 }

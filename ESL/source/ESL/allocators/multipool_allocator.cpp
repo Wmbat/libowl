@@ -72,6 +72,7 @@ namespace ESL
             size_type const offset = j * ( block_size / depth_pow + sizeof( block_header ) );
 
             auto* p_new = TO_BLOCK_HEADER_PTR( p_memory.get( ) + offset + depth_offset + pool_offset );
+            p_new->depth_index = i;
             p_first_free->p_next = p_new;
             p_first_free = p_new;
             p_first_free->p_next = nullptr;
@@ -98,6 +99,7 @@ namespace ESL
       if ( p_access_headers[depth_index].p_first_free )
       {
          block_header* p_block_header = p_access_headers[depth_index].p_first_free;
+         p_block_header->depth_index = depth_index;
          p_access_headers[depth_index].p_first_free = p_block_header->p_next;
 
          used_memory += block_size;

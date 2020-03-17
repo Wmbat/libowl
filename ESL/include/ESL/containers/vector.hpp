@@ -50,6 +50,10 @@ namespace ESL
       static_assert( allocator_type::has_can_allocate<allocator_>::value, "allocator does not support can_allocate" );
       static_assert( allocator_type::has_allocation_capacity<allocator_>::value );
 
+      using is_int = std::is_integral<type_>;
+      using is_float = std::is_floating_point<type_>;
+      using is_ptr = std::is_pointer<type_>;
+
    public:
       using iterator = random_access_iterator<type_>;
       using const_iterator = random_access_iterator<type_ const>;
@@ -213,7 +217,7 @@ namespace ESL
       {
          if ( p_allocator && p_alloc )
          {
-            if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
+            if constexpr ( !( is_int::value || is_float::value || is_ptr::value ) )
             {
                for ( size_type i = 0; i < current_size; ++i )
                {
@@ -273,10 +277,80 @@ namespace ESL
 
          return *this;
       }
-      vector& operator=(std::initializer_list<value_type> init)
-      {   
+      vector& operator=( std::initializer_list<value_type> init )
+      {
+         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
+         if ( current_capacity < init.size( ) || !p_alloc )
+         {
+            if ( !p_allocator->can_allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) )
+            {
+               throw std::bad_alloc{};
+            }
+         }
+
+         if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+         {
+            std::for_each( begin( ), end( ), []( value_type& type ) {
+               type.~value_type( );
+            } );
+         }
+
+         if ( current_capacity < init.size( ) || !p_alloc )
+         {
+            p_alloc =
+               TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) );
+         }
+
+         current_size = init.size( );
+         current_capacity = init.size( );
+
+         for ( size_type index = 0; auto& it : init )
+         {
+            p_alloc[index++] = it;
+         }
+
          return *this;
       }
+
+      void assign( size_type count, value_type const& value )
+      {
+         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
+         if ( count > current_capacity || !p_alloc )
+         {
+            if ( !p_allocator->can_allocate( sizeof( value_type ) * count, alignof( value_type ) ) )
+            {
+               throw std::bad_alloc{};
+            }
+
+            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+            {
+               std::for_each( begin( ), end( ), []( value_type& type ) {
+                  type.~value_type( );
+               } );
+            }
+
+            p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * count, alignof( value_type ) ) );
+            current_capacity = count;
+         }
+         else
+         {
+            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+            {
+               std::for_each( begin( ), end( ), []( value_type& type ) {
+                  type.~value_type( );
+               } );
+            }
+         }
+
+         current_size = count;
+         std::for_each( begin( ), end( ), [&value]( value_type& i ) {
+            i = value;
+         } );
+      }
+      template <typename T>
+      void assign( input_iterator<T> first, input_iterator<T> last )
+      {}
+      void assign( std::initializer_list<value_type> init ) {}
 
       allocator_* get_allocator( ) noexcept { return p_allocator; }
       allocator_ const* get_allocator( ) const noexcept { return p_allocator; }
@@ -324,6 +398,7 @@ namespace ESL
       reference back( ) noexcept { return p_alloc[current_size - 1]; }
       const_reference back( ) const noexcept { return p_alloc[current_size - 1]; }
 
+      // data access
       pointer data( ) noexcept { return p_alloc; }
       const_pointer data( ) const noexcept { return p_alloc; }
 
@@ -428,13 +503,13 @@ namespace ESL
          }
          else if ( new_size > current_capacity )
          {
-            size_type const max_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) );
-            if ( current_capacity < max_capacity )
+            size_type const max_cap = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
+            if ( current_capacity < max_cap )
             {
                new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
 
                current_size = new_size;
-               current_capacity = max_capacity;
+               current_capacity = max_cap;
 
                return p_alloc[current_size - 1];
             }

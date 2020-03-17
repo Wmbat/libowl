@@ -43,8 +43,10 @@ endif ( )
 
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror -fconcepts" )
-set( GNU_RELEASE_FLAGS "-o3 -fconcepts" )
+set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fsanitize=address" )
+set( GNU_RELEASE_FLAGS "-o3" )
+
+set( GNU_CONCEPTS "-fconcepts" )
 
 if ( EML_BUILD_TESTS )
    enable_testing( )
@@ -72,6 +74,9 @@ target_compile_options( ESL
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
+
+   PUBLIC
+      $<$<CXX_COMPILER_ID:GNU>:${GNU_CONCEPTS}>
 )
        
 target_include_directories( ESL
@@ -85,6 +90,9 @@ target_include_directories( ESL
 target_link_libraries( ESL
    PUBLIC
       ELL
+
+   PRIVATE
+      $<$<CXX_COMPILER_ID:GNU>:-lasan>
 )
 
 target_sources( ESL
