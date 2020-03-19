@@ -40,7 +40,7 @@ namespace ESL
    public:
       monotonic_allocator( std::size_t size ) noexcept;
 
-      [[nodiscard]] pointer allocate( size_type size, size_type alignment ) noexcept;
+      [[nodiscard("Memory will go to waste")]] pointer allocate( size_type size, size_type alignment ) noexcept;
       [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
 
       void clear( ) noexcept;

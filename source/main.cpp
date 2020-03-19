@@ -1,17 +1,25 @@
-#include <ESL/allocators/multipool_allocator.hpp>
+
+#include <ESL/allocators/pool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
 
-#include <vector>
+struct copyable
+{
+   int i;
+};
 
 int main( )
 {
-   auto multipool = ESL::multipool_allocator{1, 2048, 2};
-   ESL::vector<int, ESL::multipool_allocator> my_vec{2048 / sizeof( int ), 10, &multipool};
+   auto main_pool_alloc = ESL::pool_allocator{ 2, 2048 };
+   ESL::vector<copyable, ESL::pool_allocator> my_cpy_vec{ &main_pool_alloc };
 
-   my_vec.assign( 20, 20 );
+   copyable test{ 10 };
+   my_cpy_vec.assign( 10, test );
 
-   ESL::vector<int, ESL::multipool_allocator> my_vec2{1024 / sizeof( int ), 10, &multipool};
-   my_vec2.assign( 2048 / sizeof( int ), 40 );
+   ESL::vector<copyable, ESL::pool_allocator> my_vec{ &main_pool_alloc };
+   my_vec.assign( my_cpy_vec.cbegin( ), my_cpy_vec.cend( ) );
+
+   ESL::vector<copyable, ESL::pool_allocator> my_vec2{ &main_pool_alloc };
+   my_vec2.assign( my_vec.cbegin( ), my_vec.cend( ) );
 
    return 0;
 }

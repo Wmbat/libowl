@@ -25,13 +25,11 @@
 #pragma once
 
 #include <ESL/allocators/allocator_utils.hpp>
-#include <ESL/utils/errors.hpp>
-#include <ESL/utils/input_iterator.hpp>
-#include <ESL/utils/random_access_iterator.hpp>
+#include <ESL/utils/iterators/input_iterator.hpp>
+#include <ESL/utils/iterators/random_access_iterator.hpp>
 
 #include <algorithm>
 #include <cassert>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <system_error>
@@ -42,14 +40,9 @@
 
 namespace ESL
 {
-   template <class type_, class allocator_>
+   template <class type_, allocator allocator_>
    class vector
    {
-      static_assert( allocator_type::has_allocate<allocator_>::value, "allocator type does not support reallocation" );
-      static_assert( allocator_type::has_free<allocator_>::value, "allocator type does not support free" );
-      static_assert( allocator_type::has_can_allocate<allocator_>::value, "allocator does not support can_allocate" );
-      static_assert( allocator_type::has_allocation_capacity<allocator_>::value );
-
       using is_int = std::is_integral<type_>;
       using is_float = std::is_floating_point<type_>;
       using is_ptr = std::is_pointer<type_>;
@@ -113,8 +106,7 @@ namespace ESL
             new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
          }
       }
-      template <class input_it_>
-      explicit vector( input_it_ first, input_it_ last, allocator_* p_allocator ) :
+      explicit vector( std::input_iterator auto first, std::input_iterator auto last, allocator_* p_allocator ) :
          p_allocator( p_allocator ), current_capacity( last - first ), current_size( current_capacity )
       {
          static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
@@ -284,7 +276,7 @@ namespace ESL
          {
             if ( !p_allocator->can_allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) )
             {
-               throw std::bad_alloc{};
+               throw std::bad_alloc{ };
             }
          }
 
@@ -314,12 +306,15 @@ namespace ESL
 
       void assign( size_type count, value_type const& value )
       {
+         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
+         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
+
          current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
          if ( count > current_capacity || !p_alloc )
          {
             if ( !p_allocator->can_allocate( sizeof( value_type ) * count, alignof( value_type ) ) )
             {
-               throw std::bad_alloc{};
+               throw std::bad_alloc{ };
             }
 
             if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
@@ -343,13 +338,47 @@ namespace ESL
          }
 
          current_size = count;
-         std::for_each( begin( ), end( ), [&value]( value_type& i ) {
+         std::for_each( begin( ), end( ), [&value, this]( value_type& i ) {
             i = value;
          } );
       }
-      template <typename T>
-      void assign( input_iterator<T> first, input_iterator<T> last )
-      {}
+      void assign( std::input_iterator auto first, std::input_iterator auto last )
+      {
+         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
+         auto const count = std::distance( first, last );
+         if ( count > current_capacity || !p_alloc )
+         {
+            if ( !p_allocator->can_allocate( sizeof( value_type ) * count, alignof( value_type ) ) )
+            {
+               throw std::bad_alloc{ };
+            }
+
+            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+            {
+               std::for_each( begin( ), end( ), []( value_type& type ) {
+                  type.~value_type( );
+               } );
+            }
+
+            p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * count, alignof( value_type ) ) );
+            current_capacity = count;
+         }
+         else
+         {
+            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+            {
+               std::for_each( begin( ), end( ), []( value_type& type ) {
+                  type.~value_type( );
+               } );
+            }
+         }
+
+         current_size = count;
+         for ( size_type i = 0; first != last; ++i, ++first )
+         {
+            p_alloc[i] = *first;
+         }
+      }
       void assign( std::initializer_list<value_type> init ) {}
 
       allocator_* get_allocator( ) noexcept { return p_allocator; }
@@ -360,7 +389,7 @@ namespace ESL
       {
          if ( index < 0 && index >= current_size )
          {
-            throw std::out_of_range{"Index: " + std::to_string( index ) + " is out of bounds"};
+            throw std::out_of_range{ "Index: " + std::to_string( index ) + " is out of bounds" };
          }
          else
          {
@@ -371,7 +400,7 @@ namespace ESL
       {
          if ( index < 0 && index >= current_size )
          {
-            throw std::out_of_range{"Index: " + std::to_string( index ) + " is out of bounds"};
+            throw std::out_of_range{ "Index: " + std::to_string( index ) + " is out of bounds" };
          }
          else
          {
@@ -403,19 +432,19 @@ namespace ESL
       const_pointer data( ) const noexcept { return p_alloc; }
 
       // iterators
-      constexpr iterator begin( ) noexcept { return iterator{p_alloc}; }
-      constexpr const_iterator cbegin( ) const noexcept { return const_iterator{p_alloc}; }
+      constexpr iterator begin( ) noexcept { return iterator{ p_alloc }; }
+      constexpr const_iterator cbegin( ) const noexcept { return const_iterator{ p_alloc }; }
 
-      constexpr iterator end( ) noexcept { return iterator{p_alloc + current_size}; }
-      constexpr const_iterator cend( ) const noexcept { return const_iterator{p_alloc + current_size}; }
+      constexpr iterator end( ) noexcept { return iterator{ p_alloc + current_size }; }
+      constexpr const_iterator cend( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
 
-      constexpr reverse_iterator rbegin( ) noexcept { return reverse_iterator{p_alloc}; }
-      constexpr const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{p_alloc}; }
+      constexpr reverse_iterator rbegin( ) noexcept { return reverse_iterator{ p_alloc }; }
+      constexpr const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
 
-      constexpr reverse_iterator rend( ) noexcept { return reverse_iterator{p_alloc + current_size}; }
+      constexpr reverse_iterator rend( ) noexcept { return reverse_iterator{ p_alloc + current_size }; }
       constexpr const_reverse_iterator crend( ) const noexcept
       {
-         return const_reverse_iterator{p_alloc + current_size};
+         return const_reverse_iterator{ p_alloc + current_size };
       }
 
       // capacity
@@ -426,7 +455,7 @@ namespace ESL
       {
          if ( new_capacity > max_size( ) )
          {
-            throw std::length_error{"number of elements " + std::to_string( new_capacity ) + " is too big"};
+            throw std::length_error{ "number of elements " + std::to_string( new_capacity ) + " is too big" };
          }
 
          if ( new_capacity > current_capacity )
@@ -434,7 +463,7 @@ namespace ESL
             auto* p_temp = reinterpret_cast<pointer>( p_allocator->allocate( new_capacity, alignof( value_type ) ) );
             if ( !p_temp )
             {
-               throw std::bad_alloc{};
+               throw std::bad_alloc{ };
             }
 
             for ( size_type i = 0; i < current_size; ++i )
@@ -465,7 +494,7 @@ namespace ESL
       {
          assert( pos != cend( ) && "Iterator pos cannot be equal to the end" );
 
-         auto it = iterator{&p_alloc[( &( *pos ) - p_alloc )]};
+         auto it = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
          for ( auto curr = it; curr != end( ) - 1; ++curr )
          {
             std::iter_swap( curr, curr + 1 );
@@ -491,7 +520,7 @@ namespace ESL
             p_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
             if ( !p_alloc )
             {
-               throw std::bad_alloc{};
+               throw std::bad_alloc{ };
             }
 
             new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
@@ -518,7 +547,7 @@ namespace ESL
                pointer p_new_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
                if ( !p_new_alloc )
                {
-                  throw std::bad_alloc{};
+                  throw std::bad_alloc{ };
                }
 
                std::copy( cbegin( ), cend( ), p_new_alloc );
@@ -542,11 +571,11 @@ namespace ESL
       }
 
    private:
-      allocator_* p_allocator{nullptr};
+      allocator_* p_allocator{ nullptr };
 
-      pointer p_alloc{nullptr};
-      size_type current_capacity{0};
-      size_type current_size{0};
+      pointer p_alloc{ nullptr };
+      size_type current_capacity{ 0 };
+      size_type current_size{ 0 };
    };
 } // namespace ESL
 

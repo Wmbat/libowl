@@ -17,6 +17,8 @@ if ( BUILD_TESTS )
    set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
 
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
+
 # nlohmann settings
 set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
 

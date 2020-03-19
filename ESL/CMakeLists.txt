@@ -74,9 +74,6 @@ target_compile_options( ESL
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
-
-   PUBLIC
-      $<$<CXX_COMPILER_ID:GNU>:${GNU_CONCEPTS}>
 )
        
 target_include_directories( ESL

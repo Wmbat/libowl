@@ -43,6 +43,7 @@ namespace ESL
       using difference_type = std::ptrdiff_t;
 
    public:
+      constexpr random_access_iterator( ) noexcept = default;
       constexpr explicit random_access_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
 
       constexpr bool operator==( self_type rhs ) noexcept { return p_type == rhs.p_type; }
@@ -123,6 +124,6 @@ namespace ESL
       constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.p_type ); }
 
    private:
-      pointer p_type;
+      pointer p_type{ nullptr };
    };
 } // namespace ESL

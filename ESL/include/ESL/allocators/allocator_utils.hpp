@@ -24,12 +24,12 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <tuple>
-#include <type_traits>
 
 #define TO_BYTE_PTR( ptr ) reinterpret_cast<std::byte*>( ptr )
 
@@ -71,58 +71,29 @@ namespace ESL
       return padding;
    }
 
-   namespace allocator_type
+   template <typename allocator_t>
+   concept basic_allocator = requires( allocator_t a, std::byte* ptr, std::size_t s )
    {
-      template <typename type_, typename = void>
-      struct has_allocate : std::false_type
       {
-      };
+         a.allocate( s, s )
+      }
+      ->std::same_as<std::byte*>;
+      {
+         a.free( ptr )
+      }
+      ->std::same_as<void>;
+   };
 
-      template <typename type_>
-      struct has_allocate<type_,
-         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).allocate(
-                                                     std::declval<std::size_t>( ), std::declval<std::size_t>( ) ) ),
-            std::byte*>>> : std::true_type
+   template <typename allocator_t>
+   concept allocator = basic_allocator<allocator_t>&& requires( allocator_t a, std::byte* ptr, std::size_t s )
+   {
       {
-      };
-
-      template <typename type_, typename = void>
-      struct has_free : std::false_type
+         a.can_allocate( s, s )
+      }
+      ->std::same_as<bool>;
       {
-      };
-
-      template <typename type_>
-      struct has_free<type_,
-         typename std::enable_if_t<
-            std::is_same_v<decltype( std::declval<type_>( ).free( std::declval<std::byte*>( ) ) ), void>>> :
-         std::true_type
-      {
-      };
-
-      template <typename type_, typename = void>
-      struct has_can_allocate : std::false_type
-      {
-      };
-
-      template <typename type_>
-      struct has_can_allocate<type_,
-         typename std::enable_if_t<std::is_same_v<decltype( std::declval<type_>( ).can_allocate(
-                                                     std::declval<std::size_t>( ), std::declval<std::size_t>( ) ) ),
-            bool>>> : std::true_type
-      {
-      };
-
-      template <typename type_, typename = void>
-      struct has_allocation_capacity : std::false_type
-      {
-      };
-
-      template <typename type_>
-      struct has_allocation_capacity<type_,
-         typename std::enable_if_t<std::is_same_v<
-            decltype( std::declval<type_>( ).allocation_capacity( std::declval<std::byte*>( ) ) ), std::size_t>>> :
-         std::true_type
-      {
-      };
-   } // namespace allocator_type
+         a.allocation_capacity( ptr )
+      }
+      ->std::same_as<std::size_t>;
+   };
 } // namespace ESL

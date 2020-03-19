@@ -51,7 +51,7 @@ namespace ESL
    public:
       multipool_allocator( size_type block_count, size_type block_size, size_type pool_depth = 1 ) noexcept;
 
-      [[nodiscard]] pointer allocate( size_type size, size_type alignment ) noexcept;
+      [[nodiscard("Allocation will never be freed")]] pointer allocate( size_type size, size_type alignment ) noexcept;
       void free( pointer p_alloc ) noexcept;
 
       [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
