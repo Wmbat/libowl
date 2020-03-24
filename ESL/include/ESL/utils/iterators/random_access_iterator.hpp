@@ -54,10 +54,30 @@ namespace ESL
       constexpr bool operator<=( self_type rhs ) noexcept { return p_type <= rhs.p_type; }
       constexpr bool operator>=( self_type rhs ) noexcept { return p_type >= rhs.p_type; }
 
-      constexpr reference operator*( ) noexcept { return *p_type; }
-      constexpr const_reference operator*( ) const noexcept { return *p_type; }
-      constexpr pointer operator->( ) noexcept { return p_type; }
-      constexpr const_pointer operator->( ) const noexcept { return p_type; };
+      constexpr reference operator*( ) noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return *p_type;
+      }
+      constexpr const_reference operator*( ) const noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return *p_type;
+      }
+      constexpr pointer operator->( ) noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return p_type;
+      }
+      constexpr const_pointer operator->( ) const noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return p_type;
+      };
 
       constexpr self_type& operator++( ) noexcept
       {
@@ -118,8 +138,18 @@ namespace ESL
       constexpr difference_type operator+( self_type const& it ) const noexcept { return p_type + it.p_type; }
       constexpr difference_type operator-( self_type const& it ) const noexcept { return p_type - it.p_type; }
 
-      constexpr reference operator[]( difference_type diff ) noexcept { return *( *this + diff ); }
-      constexpr const_reference operator[]( difference_type diff ) const noexcept { *( *this + diff ); }
+      constexpr reference operator[]( difference_type diff ) noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return *( *this + diff );
+      }
+      constexpr const_reference operator[]( difference_type diff ) const noexcept
+      {
+         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+
+         return *( *this + diff );
+      }
 
       constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.p_type ); }
 

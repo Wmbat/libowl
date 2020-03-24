@@ -2,24 +2,41 @@
 #include <ESL/allocators/pool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
 
+#include <ESL/utils/logger.hpp>
+
+#include <vector>
+
+struct moveable
+{
+   moveable( ) = default;
+   explicit moveable( int i ) : i( i ) {}
+   moveable( moveable const& other ) = delete;
+   moveable( moveable&& other ) { i = std::move( other.i ); }
+
+   moveable& operator=( moveable const& other ) = delete;
+   moveable& operator=( moveable&& other )
+   {
+      i = std::move( other.i );
+      return *this;
+   }
+
+   int i = 0;
+};
+
 struct copyable
 {
-   int i;
+   int i = 0;
 };
 
 int main( )
 {
-   auto main_pool_alloc = ESL::pool_allocator{ 2, 2048 };
-   ESL::vector<copyable, ESL::pool_allocator> my_cpy_vec{ &main_pool_alloc };
+   std::size_t size = 4096 * 4;
 
-   copyable test{ 10 };
-   my_cpy_vec.assign( 10, test );
+   ESL::pool_allocator my_pool{ 1, size };
+   ESL::vector<copyable, ESL::pool_allocator> my_vec{ &my_pool };
 
-   ESL::vector<copyable, ESL::pool_allocator> my_vec{ &main_pool_alloc };
-   my_vec.assign( my_cpy_vec.cbegin( ), my_cpy_vec.cend( ) );
-
-   ESL::vector<copyable, ESL::pool_allocator> my_vec2{ &main_pool_alloc };
-   my_vec2.assign( my_vec.cbegin( ), my_vec.cend( ) );
+   copyable a{ 20 };
+   auto it = my_vec.insert( my_vec.cbegin( ), 5, a );
 
    return 0;
 }

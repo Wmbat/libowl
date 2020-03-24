@@ -34,7 +34,6 @@ add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )
 
 add_subdirectory( ESL )
-add_subdirectory( ELL )
 add_subdirectory( EGL )
 add_subdirectory( EWL )
 
@@ -65,8 +64,6 @@ target_link_libraries( Epona
    PUBLIC
       nlohmann_json
       glm
-      ESL
-      ELL
       EGL
       EWL
 )

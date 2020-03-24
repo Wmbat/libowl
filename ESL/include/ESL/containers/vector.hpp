@@ -25,6 +25,7 @@
 #pragma once
 
 #include <ESL/allocators/allocator_utils.hpp>
+#include <ESL/utils/concepts.hpp>
 #include <ESL/utils/iterators/input_iterator.hpp>
 #include <ESL/utils/iterators/random_access_iterator.hpp>
 
@@ -43,13 +44,12 @@ namespace ESL
    template <class type_, allocator allocator_>
    class vector
    {
-      using is_int = std::is_integral<type_>;
-      using is_float = std::is_floating_point<type_>;
       using is_ptr = std::is_pointer<type_>;
 
    public:
       using iterator = random_access_iterator<type_>;
       using const_iterator = random_access_iterator<type_ const>;
+
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -67,8 +67,11 @@ namespace ESL
       {
          assert( p_allocator != nullptr && "Cannot have a nullptr allocator" );
       }
-      explicit vector( size_type count, const_reference value, allocator_* p_allocator ) :
-         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
+      explicit vector(
+         size_type count, const_reference value, allocator_* p_allocator ) requires std::copyable<value_type> :
+         p_allocator( p_allocator ),
+         current_capacity( count ),
+         current_size( count )
       {
          static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
          static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
@@ -84,14 +87,14 @@ namespace ESL
 
          for ( size_type i = 0; i < current_size; ++i )
          {
-            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( value );
+            new ( TO_BYTE_PTR( p_alloc + i ) ) value_type( value );
          }
       }
-      explicit vector( size_type count, allocator_* p_allocator ) :
-         p_allocator( p_allocator ), current_capacity( count ), current_size( count )
+      explicit vector( size_type count, allocator_* p_allocator ) requires std::default_initializable<value_type> :
+         p_allocator( p_allocator ),
+         current_capacity( count ),
+         current_size( count )
       {
-         static_assert( std::is_default_constructible_v<value_type>, "value type must be default constructible" );
-
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
          auto const size_in_bytes = current_capacity * sizeof( value_type );
@@ -106,12 +109,12 @@ namespace ESL
             new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
          }
       }
-      explicit vector( std::input_iterator auto first, std::input_iterator auto last, allocator_* p_allocator ) :
-         p_allocator( p_allocator ), current_capacity( last - first ), current_size( current_capacity )
+      explicit vector( std::input_iterator auto first, std::input_iterator auto last,
+         allocator_* p_allocator ) requires std::copyable<value_type> :
+         p_allocator( p_allocator ),
+         current_capacity( last - first ),
+         current_size( current_capacity )
       {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
          assert( p_allocator != nullptr && "Allocator cannot be nullptr" );
 
          auto const size_in_bytes = current_capacity * sizeof( value_type );
@@ -126,11 +129,9 @@ namespace ESL
             p_alloc[i] = *first;
          }
       }
-      vector( std::initializer_list<type_> init, allocator_* p_allocator ) : p_allocator( p_allocator )
+      vector( std::initializer_list<type_> init, allocator_* p_allocator ) requires std::copyable<value_type> :
+         p_allocator( p_allocator )
       {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
          current_capacity = init.size( );
@@ -148,11 +149,8 @@ namespace ESL
             p_alloc[index++] = it;
          }
       }
-      vector( vector const& other )
+      vector( vector const& other ) requires std::copyable<value_type>
       {
-         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
-
          p_allocator = other.p_allocator;
          current_size = other.current_size;
          current_capacity = other.current_capacity;
@@ -169,11 +167,9 @@ namespace ESL
             p_alloc[i] = other[i];
          }
       }
-      vector( vector const& other, allocator_* p_allocator ) : p_allocator( p_allocator )
+      vector( vector const& other, allocator_* p_allocator ) requires std::copyable<value_type> :
+         p_allocator( p_allocator )
       {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
          if ( !p_allocator )
          {
             p_allocator = other.p_allocator;
@@ -205,11 +201,11 @@ namespace ESL
          p_alloc = other.p_alloc;
          other.p_alloc = nullptr;
       }
-      ~vector( ) noexcept
+      ~vector( )
       {
          if ( p_allocator && p_alloc )
          {
-            if constexpr ( !( is_int::value || is_float::value || is_ptr::value ) )
+            if constexpr ( basic_type<value_type> )
             {
                for ( size_type i = 0; i < current_size; ++i )
                {
@@ -224,11 +220,8 @@ namespace ESL
          p_allocator = nullptr;
       }
 
-      vector& operator=( vector const& other )
+      vector& operator=( vector const& other ) requires std::copyable<value_type>
       {
-         static_assert( std::is_copy_constructible_v<value_type>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<value_type>, "value type is not copy assignable" );
-
          if ( this != &other )
          {
             p_allocator = other.p_allocator;
@@ -269,7 +262,7 @@ namespace ESL
 
          return *this;
       }
-      vector& operator=( std::initializer_list<value_type> init )
+      vector& operator=( std::initializer_list<value_type> init ) requires std::copyable<value_type>
       {
          current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
          if ( current_capacity < init.size( ) || !p_alloc )
@@ -280,7 +273,7 @@ namespace ESL
             }
          }
 
-         if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
+         if constexpr ( basic_type<value_type> )
          {
             std::for_each( begin( ), end( ), []( value_type& type ) {
                type.~value_type( );
@@ -304,74 +297,21 @@ namespace ESL
          return *this;
       }
 
-      void assign( size_type count, value_type const& value )
+      void assign( size_type count, value_type const& value ) requires std::copyable<value_type>
       {
-         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
-
-         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
-         if ( count > current_capacity || !p_alloc )
-         {
-            if ( !p_allocator->can_allocate( sizeof( value_type ) * count, alignof( value_type ) ) )
-            {
-               throw std::bad_alloc{ };
-            }
-
-            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
-            {
-               std::for_each( begin( ), end( ), []( value_type& type ) {
-                  type.~value_type( );
-               } );
-            }
-
-            p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * count, alignof( value_type ) ) );
-            current_capacity = count;
-         }
-         else
-         {
-            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
-            {
-               std::for_each( begin( ), end( ), []( value_type& type ) {
-                  type.~value_type( );
-               } );
-            }
-         }
+         reallocate( count );
 
          current_size = count;
-         std::for_each( begin( ), end( ), [&value, this]( value_type& i ) {
-            i = value;
-         } );
+         for ( size_type i = 0; i < current_size; ++i )
+         {
+            p_alloc[i] = value;
+         }
       }
-      void assign( std::input_iterator auto first, std::input_iterator auto last )
+      void assign( std::input_iterator auto first, std::input_iterator auto last ) requires std::copyable<value_type>
       {
-         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
-         auto const count = std::distance( first, last );
-         if ( count > current_capacity || !p_alloc )
-         {
-            if ( !p_allocator->can_allocate( sizeof( value_type ) * count, alignof( value_type ) ) )
-            {
-               throw std::bad_alloc{ };
-            }
+         size_type const count = std::distance( first, last );
 
-            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
-            {
-               std::for_each( begin( ), end( ), []( value_type& type ) {
-                  type.~value_type( );
-               } );
-            }
-
-            p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * count, alignof( value_type ) ) );
-            current_capacity = count;
-         }
-         else
-         {
-            if constexpr ( !( is_int::value && is_float::value && is_ptr::value ) )
-            {
-               std::for_each( begin( ), end( ), []( value_type& type ) {
-                  type.~value_type( );
-               } );
-            }
-         }
+         reallocate( count );
 
          current_size = count;
          for ( size_type i = 0; first != last; ++i, ++first )
@@ -379,7 +319,16 @@ namespace ESL
             p_alloc[i] = *first;
          }
       }
-      void assign( std::initializer_list<value_type> init ) {}
+      void assign( std::initializer_list<value_type> init ) requires std::copyable<value_type>
+      {
+         reallocate( init.size( ) );
+
+         current_size = init.size( );
+         for ( size_type i = 0; auto& it : init )
+         {
+            p_alloc[i++] = it;
+         }
+      }
 
       allocator_* get_allocator( ) noexcept { return p_allocator; }
       allocator_ const* get_allocator( ) const noexcept { return p_allocator; }
@@ -480,7 +429,7 @@ namespace ESL
       // modifiers
       void clear( ) noexcept
       {
-         if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
+         if constexpr ( !basic_type<value_type> )
          {
             for ( size_type i = 0; i < current_size; ++i )
             {
@@ -490,6 +439,207 @@ namespace ESL
 
          current_size = 0;
       }
+      iterator insert( const_iterator pos, const value_type& value ) requires std::copyable<value_type>
+      {
+         size_type const new_size = current_size + 1;
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size++ == 0 )
+         {
+            p_alloc[0] = value;
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
+            for ( auto last = end( ) - 1; last != beg; --last )
+            {
+               std::iter_swap( last, last - 1 );
+            }
+
+            *beg = value;
+
+            return beg;
+         }
+      }
+      iterator insert( const_iterator pos, value_type&& value ) requires std::movable<value_type>
+      {
+         size_type const new_size = current_size + 1;
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size++ == 0 )
+         {
+            p_alloc[0] = std::move( value );
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
+            for ( auto last = end( ) - 1; last != beg; --last )
+            {
+               std::iter_swap( last, last - 1 );
+            }
+
+            *beg = std::move( value );
+
+            return beg;
+         }
+      }
+      iterator insert( const_iterator pos, size_type count, const value_type& value ) requires std::copyable<value_type>
+      {
+         size_type const new_size = current_size + count;
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size == 0 )
+         {
+            for ( size_type i = 0; i < new_size; ++i )
+            {
+               p_alloc[i] = value;
+            }
+
+            current_size = new_size;
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[&( *pos ) - p_alloc] };
+
+            current_size = new_size;
+
+            for ( auto last = end( ) - count - 1; last >= beg; --last )
+            {
+               std::iter_swap( last, last + count );
+            }
+
+            for ( auto last = beg + count - 1; last >= beg; --last )
+            {
+               *last = value;
+            }
+
+            return beg;
+         }
+      }
+      iterator insert( const_iterator pos, std::input_iterator auto first,
+         std::input_iterator auto last ) requires std::copyable<value_type>
+      {
+         size_type const count = last - first;
+         size_type const new_size = current_size + count;
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size == 0 )
+         {
+            for ( size_type i = 0; first != last; ++first, ++i )
+            {
+               p_alloc[i] = *first;
+            }
+
+            current_size = new_size;
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[&( *pos ) - p_alloc] };
+
+            current_size = new_size;
+
+            for ( auto last = end( ) - count - 1; last >= beg; --last )
+            {
+               std::iter_swap( last, last + count );
+            }
+
+            for ( auto last = beg + count - 1; last >= beg; --last, ++first )
+            {
+               *last = *first;
+            }
+
+            return beg;
+         }
+      }
+      iterator insert( const_iterator pos, std::initializer_list<value_type> init ) requires std::copyable<value_type>
+      {
+         size_type const new_size = current_size + init.size( );
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size == 0 )
+         {
+            current_size = new_size;
+
+            for ( size_type i = 0; auto& it : init )
+            {
+               p_alloc[i++] = it;
+            }
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[&( *pos ) - p_alloc] };
+
+            current_size = new_size;
+
+            for ( auto last = end( ) - init.size( ) - 1; last >= beg; --last )
+            {
+               std::iter_swap( last, last + init.size( ) );
+            }
+
+            auto last = beg + init.size( ) - 1;
+            auto init_l = init.end( ) - 1;
+            for ( ; last >= beg; --last, --init_l )
+            {
+               *last = *init_l;
+            }
+
+            return beg;
+         }
+      }
+      template <class... args_>
+      iterator emplace( const_iterator pos, args_&&... args ) requires std::constructible_from<value_type, args_...>
+      {
+         size_type const new_size = current_size + 1;
+
+         assert( new_size < max_size( ) );
+
+         reallocate( new_size );
+
+         if ( current_size++ == 0 )
+         {
+            new ( TO_BYTE_PTR( p_alloc ) ) value_type( args... );
+
+            return begin( );
+         }
+         else
+         {
+            auto beg = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
+            for ( auto last = end( ) - 1; last != beg; --last )
+            {
+               std::iter_swap( last, last - 1 );
+            }
+
+            new ( TO_TYPE_PTR( &( *beg ) ) ) value_type( args... );
+
+            return beg;
+         }
+      }
+
       iterator erase( const_iterator pos ) noexcept
       {
          assert( pos != cend( ) && "Iterator pos cannot be equal to the end" );
@@ -500,7 +650,7 @@ namespace ESL
             std::iter_swap( curr, curr + 1 );
          }
 
-         if constexpr ( !std::is_integral_v<value_type> && !std::is_floating_point_v<value_type> )
+         if constexpr ( basic_type<value_type> )
          {
             ( end( ) - 1 )->~value_type( );
          }
@@ -509,64 +659,112 @@ namespace ESL
 
          return it;
       }
-      iterator erase( const_iterator first, const_iterator last ) noexcept {}
+      iterator erase( const_iterator first, const_iterator last ) noexcept
+      {
+         size_type const count = std::distance( first, last );
+      }
+
+      void push_back( const_reference value ) requires std::copyable<value_type>
+      {
+         assert( current_size + 1 < max_size( ) );
+
+         reallocate( current_size + 1 );
+
+         p_alloc[current_size++] = value;
+      }
+      void push_back( value_type&& value ) requires std::movable<value_type>
+      {
+         assert( current_size + 1 < max_size( ) );
+
+         reallocate( current_size + 1 );
+
+         p_alloc[current_size++] = std::move( value );
+      }
 
       template <class... args_>
-      reference emplace_back( args_&&... args )
+      reference emplace_back( args_&&... args ) requires std::constructible_from<value_type, args_...>
       {
-         size_type const new_size = current_size + 1;
-         if ( current_capacity == 0 )
+         assert( current_size + 1 < max_size( ) );
+
+         reallocate( current_size + 1 );
+
+         new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
+
+         return p_alloc[current_size++];
+      }
+
+      void pop_back( )
+      {
+         if constexpr ( !basic_type<value_type> )
          {
-            p_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
-            if ( !p_alloc )
+            ( end( ) - 1 )->~value_type( );
+         }
+
+         --current_size;
+      }
+
+      void resize( size_type count ) requires std::default_initializable<value_type>
+      {
+         assert( count != 0 );
+         assert( count <= max_size( ) );
+      }
+      void resize( size_type count, const_reference value ) requires std::copyable<value_type>
+      {
+         assert( count != 0 );
+         assert( count <= max_size( ) );
+      }
+
+   private:
+      void reallocate( size_type new_size )
+      {
+         if ( !p_alloc )
+         {
+            if ( !p_allocator->can_allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) )
             {
                throw std::bad_alloc{ };
             }
-
-            new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
-
-            current_size = new_size;
-            current_capacity = new_size;
-
-            return p_alloc[current_size - 1];
+            else
+            {
+               p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
+               current_capacity = new_size;
+            }
          }
          else if ( new_size > current_capacity )
          {
-            size_type const max_cap = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
-            if ( current_capacity < max_cap )
-            {
-               new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
+            current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
 
-               current_size = new_size;
-               current_capacity = max_cap;
-
-               return p_alloc[current_size - 1];
-            }
-            else
+            if ( new_size > current_capacity )
             {
-               pointer p_new_alloc = TO_TYPE_PTR( p_allocator->allocate( new_size, alignof( value_type ) ) );
-               if ( !p_new_alloc )
+               if ( !p_allocator->can_allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) )
                {
                   throw std::bad_alloc{ };
                }
+               else
+               {
+                  pointer p_temp =
+                     TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
 
-               std::copy( cbegin( ), cend( ), p_new_alloc );
-               p_alloc = p_new_alloc;
+                  for ( size_type i = 0; i < current_size; ++i )
+                  {
+                     if constexpr ( std::movable<value_type> )
+                     {
+                        p_temp[i] = std::move( p_alloc[i] );
+                     }
+                     else
+                     {
+                        p_temp[i] = p_alloc[i];
+                     }
 
-               new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
+                     if constexpr ( basic_type<value_type> )
+                     {
+                        p_alloc[i].~value_type( );
+                     }
+                  }
 
-               current_size = new_size;
-
-               return p_alloc[current_size - 1];
+                  p_alloc = p_temp;
+                  current_capacity = new_size;
+               }
             }
-         }
-         else
-         {
-            new ( TO_BYTE_PTR( p_alloc + current_size ) ) value_type( args... );
-
-            current_size = new_size;
-
-            return p_alloc[current_size - 1];
          }
       }
 
@@ -576,7 +774,32 @@ namespace ESL
       pointer p_alloc{ nullptr };
       size_type current_capacity{ 0 };
       size_type current_size{ 0 };
-   };
+   }; // namespace ESL
+
+   template <std::equality_comparable any_, allocator first_, allocator second_ = first_>
+   constexpr bool operator==( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
+   {
+      if ( lhs.size( ) != rhs.size( ) )
+      {
+         return false;
+      }
+      else
+      {
+         for ( size_t i = 0; i < lhs.size( ); ++i )
+         {
+            if ( lhs[i] != rhs[i] )
+            {
+               return false;
+            }
+         }
+
+         return true;
+      }
+   }
+
+   template <class any_, allocator first_, allocator second_ = first_>
+   void swap( )
+   {}
 } // namespace ESL
 
 #undef TO_TYPE_PTR

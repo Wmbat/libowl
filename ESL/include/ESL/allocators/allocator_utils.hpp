@@ -74,26 +74,14 @@ namespace ESL
    template <typename allocator_t>
    concept basic_allocator = requires( allocator_t a, std::byte* ptr, std::size_t s )
    {
-      {
-         a.allocate( s, s )
-      }
-      ->std::same_as<std::byte*>;
-      {
-         a.free( ptr )
-      }
-      ->std::same_as<void>;
+      { a.allocate( s, s ) } -> std::same_as<std::byte*>;
+      { a.free( ptr ) } -> std::same_as<void>;
    };
 
    template <typename allocator_t>
    concept allocator = basic_allocator<allocator_t>&& requires( allocator_t a, std::byte* ptr, std::size_t s )
    {
-      {
-         a.can_allocate( s, s )
-      }
-      ->std::same_as<bool>;
-      {
-         a.allocation_capacity( ptr )
-      }
-      ->std::same_as<std::size_t>;
+      { a.can_allocate( s, s ) } -> std::same_as<bool>;
+      { a.allocation_capacity( ptr ) } -> std::same_as<std::size_t>;
    };
 } // namespace ESL

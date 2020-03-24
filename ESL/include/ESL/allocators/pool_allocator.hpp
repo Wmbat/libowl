@@ -25,7 +25,6 @@
 #pragma once
 
 #include <ESL/allocators/allocator_utils.hpp>
-#include <ESL/containers/heap_array.hpp>
 
 #include <cassert>
 #include <cstdint>

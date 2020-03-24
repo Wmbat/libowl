@@ -49,8 +49,18 @@ namespace ESL
       constexpr bool operator==( self_type rhs ) noexcept { return p_type == rhs.p_type; }
       constexpr bool operator!=( self_type rhs ) noexcept { return p_type != rhs.p_type; }
 
-      constexpr const_reference operator*( ) const noexcept { return *p_type; }
-      constexpr const_pointer operator->( ) const noexcept { return p_type; };
+      constexpr const_reference operator*( ) const noexcept
+      {
+         assert( p_type != nullptr && "Cannot derefence a nullptr" );
+
+         return *p_type;
+      }
+      constexpr const_pointer operator->( ) const noexcept
+      {
+         assert( p_type != nullptr && "Cannot derefence a nullptr" );
+
+         return p_type;
+      };
 
       constexpr self_type& operator++( ) noexcept
       {

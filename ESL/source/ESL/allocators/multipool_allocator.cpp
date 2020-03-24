@@ -128,12 +128,18 @@ namespace ESL
    bool multipool_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
    {
       assert( size != 0 && "Size cannot be zero." );
-      assert( size <= block_size && "Sblock_size / depth_powize cannot be greater than max pool size" );
       assert( alignment != 0 && "Alignment cannot be zero" );
 
-      auto const depth_index = std::clamp( block_size / size, size_type{1}, pool_depth ) - 1;
+      auto const depth_index = std::clamp( block_size / size, size_type{ 1 }, pool_depth ) - 1;
 
-      return p_access_headers[depth_index].p_first_free != nullptr;
+      if ( depth_index >= pool_depth )
+      {
+         return false;
+      }
+      else
+      {
+         return p_access_headers[depth_index].p_first_free != nullptr;
+      }
    }
 
    auto multipool_allocator::allocation_capacity( pointer p_alloc ) const noexcept -> size_type

@@ -95,7 +95,17 @@ namespace ESL
       return p_first_free != nullptr;
    }
 
-   pool_allocator::size_type pool_allocator::allocation_capacity( pointer alloc ) const noexcept { return block_size; }
+   pool_allocator::size_type pool_allocator::allocation_capacity( pointer p_alloc ) const noexcept
+   {
+      if ( p_alloc )
+      {
+         return block_size;
+      }
+      else
+      {
+         return 0;
+      }
+   }
 
    void pool_allocator::clear( ) noexcept {}
 
