@@ -42,6 +42,8 @@ struct copyable
    copyable( ) = default;
    copyable( int i ) : i( i ) {}
 
+   bool operator==(copyable const& other) const = default;
+
    int i = 0;
 };
 
@@ -934,5 +936,41 @@ TEST_F( vector_test, resize_value_test )
    for ( int i = 0; i < my_vec.size( ); ++i )
    {
       EXPECT_EQ( my_vec[i].i, i );
+   }
+}
+
+TEST_F( vector_test, equal_operator_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec.emplace_back( 0 );
+   my_vec.emplace_back( 1 );
+   my_vec.emplace_back( 2 );
+   my_vec.emplace_back( 3 );
+   my_vec.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   auto my_vec2 = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec2.emplace_back( 0 );
+   my_vec2.emplace_back( 1 );
+   my_vec2.emplace_back( 2 );
+   my_vec2.emplace_back( 3 );
+   my_vec2.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec2.size( ), 5 );
+   for ( int i = 0; i < my_vec2.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec2[i].i, i );
+   }
+
+   if ( my_vec == my_vec2 )
+   {
+      FAIL( );
    }
 }

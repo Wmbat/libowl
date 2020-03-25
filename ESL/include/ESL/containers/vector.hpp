@@ -291,6 +291,19 @@ namespace ESL
          return *this;
       }
 
+      template <allocator other_ = allocator_>
+      constexpr bool operator==( vector<type_, other_> const& rhs ) const requires std::equality_comparable<type_>
+      {
+         return std::equal( cbegin( ), cbegin( ), rhs.cbegin( ), rhs.cend( ) );
+      }
+
+      template <allocator other_ = allocator_>
+      constexpr auto operator<=>( vector<type_, other_> const& rhs )
+      {
+         return std::lexicographical_compare_three_way(
+            cbegin( ), cend( ), rhs.cbegin( ), rhs.cend( ), synth_three_way );
+      }
+
       void assign( size_type count, value_type const& value ) requires std::copyable<value_type>
       {
          reallocate( count );
@@ -419,7 +432,6 @@ namespace ESL
          }
       }
       constexpr size_type capacity( ) const noexcept { return current_capacity; };
-      void shrink_to_fit( ) {}
 
       // modifiers
       void clear( ) noexcept
@@ -842,22 +854,6 @@ namespace ESL
       size_type current_capacity{ 0 };
       size_type current_size{ 0 };
    }; // namespace ESL
-
-   template <std::equality_comparable any_, allocator first_, allocator second_ = first_>
-   constexpr bool operator==( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
-   {
-      return std::equal( lhs.cbegin( ), lhs.cbegin( ), rhs.cbegin( ), rhs.cend( ) );
-   }
-
-   template <class any_, allocator first_, allocator second_ = first_>
-   constexpr auto operator<=>( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
-   {
-      return std::lexicographical_compare_three_way( lhs.cbegin( ), lhs.cend( ), rhs.cbegin( ), rhs.cend( ), synth_three_way );
-   }
-
-   template <class any_, allocator first_, allocator second_ = first_>
-   void swap( )
-   {}
 } // namespace ESL
 
 #undef TO_TYPE_PTR
