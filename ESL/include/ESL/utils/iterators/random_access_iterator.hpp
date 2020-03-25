@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include <iterator>
+#include <compare>
 
 namespace ESL
 {
@@ -46,13 +47,8 @@ namespace ESL
       constexpr random_access_iterator( ) noexcept = default;
       constexpr explicit random_access_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
 
-      constexpr bool operator==( self_type rhs ) noexcept { return p_type == rhs.p_type; }
-      constexpr bool operator!=( self_type rhs ) noexcept { return p_type != rhs.p_type; }
-
-      constexpr bool operator<( self_type rhs ) noexcept { return p_type < rhs.p_type; }
-      constexpr bool operator>( self_type rhs ) noexcept { return p_type > rhs.p_type; }
-      constexpr bool operator<=( self_type rhs ) noexcept { return p_type <= rhs.p_type; }
-      constexpr bool operator>=( self_type rhs ) noexcept { return p_type >= rhs.p_type; }
+      constexpr bool operator==( self_type const& rhs ) const noexcept = default;
+      constexpr std::strong_ordering operator<=>( self_type const& rhs ) const noexcept = default;
 
       constexpr reference operator*( ) noexcept
       {

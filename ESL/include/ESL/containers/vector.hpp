@@ -26,15 +26,11 @@
 
 #include <ESL/allocators/allocator_utils.hpp>
 #include <ESL/utils/concepts.hpp>
-#include <ESL/utils/iterators/input_iterator.hpp>
 #include <ESL/utils/iterators/random_access_iterator.hpp>
 
 #include <algorithm>
 #include <cassert>
-#include <memory>
-#include <optional>
-#include <system_error>
-#include <tuple>
+#include <compare>
 #include <type_traits>
 
 #define TO_TYPE_PTR( ptr ) reinterpret_cast<pointer>( ptr )
@@ -425,6 +421,7 @@ namespace ESL
          }
       }
       constexpr size_type capacity( ) const noexcept { return current_capacity; };
+      void shrink_to_fit( ) {}
 
       // modifiers
       void clear( ) noexcept
@@ -642,26 +639,49 @@ namespace ESL
 
       iterator erase( const_iterator pos ) noexcept
       {
-         assert( pos != cend( ) && "Iterator pos cannot be equal to the end" );
-
-         auto it = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
-         for ( auto curr = it; curr != end( ) - 1; ++curr )
+         if ( pos == cend( ) )
          {
-            std::iter_swap( curr, curr + 1 );
+            return end( );
          }
-
-         if constexpr ( basic_type<value_type> )
+         else
          {
-            ( end( ) - 1 )->~value_type( );
+            auto it = iterator{ &p_alloc[( &( *pos ) - p_alloc )] };
+            for ( auto curr = it; curr != end( ) - 1; ++curr )
+            {
+               std::iter_swap( curr, curr + 1 );
+            }
+
+            if constexpr ( basic_type<value_type> )
+            {
+               ( end( ) - 1 )->~value_type( );
+            }
+
+            --current_size;
+
+            return it;
          }
-
-         --current_size;
-
-         return it;
       }
       iterator erase( const_iterator first, const_iterator last ) noexcept
       {
          size_type const count = std::distance( first, last );
+
+         auto it = iterator{ &p_alloc[( &( *first ) - p_alloc )] };
+         for ( auto curr = it; curr + count != end( ); ++curr )
+         {
+            std::iter_swap( curr, curr + count );
+         }
+
+         if constexpr ( !basic_type<value_type> )
+         {
+            for ( auto beg = end( ) - count; beg != end( ); ++beg )
+            {
+               beg->~value_type( );
+            }
+         }
+
+         current_size = current_size - count;
+
+         return it;
       }
 
       void push_back( const_reference value ) requires std::copyable<value_type>
@@ -707,11 +727,59 @@ namespace ESL
       {
          assert( count != 0 );
          assert( count <= max_size( ) );
+
+         if ( count < current_size )
+         {
+            if constexpr ( !basic_type<value_type> )
+            {
+               for ( int i = count; i < current_size; ++i )
+               {
+                  p_alloc[i].~value_type( );
+               }
+            }
+
+            current_size = count;
+         }
+         else if ( count > current_size )
+         {
+            reallocate( count );
+
+            for ( int i = current_size; i < count; ++i )
+            {
+               new ( TO_BYTE_PTR( p_alloc + i ) ) value_type( );
+            }
+
+            current_size = count;
+         }
       }
       void resize( size_type count, const_reference value ) requires std::copyable<value_type>
       {
          assert( count != 0 );
          assert( count <= max_size( ) );
+
+         if ( count < current_size )
+         {
+            if constexpr ( !basic_type<value_type> )
+            {
+               for ( int i = count; i < current_size; ++i )
+               {
+                  p_alloc[i].~value_type( );
+               }
+            }
+
+            current_size = count;
+         }
+         else if ( count > current_size )
+         {
+            reallocate( count );
+
+            for ( int i = current_size; i < count; ++i )
+            {
+               new ( TO_BYTE_PTR( p_alloc + i ) ) value_type( value );
+            }
+
+            current_size = count;
+         }
       }
 
    private:
@@ -735,6 +803,7 @@ namespace ESL
 
             if ( new_size > current_capacity )
             {
+
                if ( !p_allocator->can_allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) )
                {
                   throw std::bad_alloc{ };
@@ -795,6 +864,12 @@ namespace ESL
 
          return true;
       }
+   }
+
+   template <class any_, allocator first_, allocator second_ = first_>
+   constexpr auto operator<=>( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
+   {
+      return std::lexicographical_compare_three_way( lhs.cbegin( ), lhs.cend( ), rhs.cbegin( ), rhs.cend( ) );
    }
 
    template <class any_, allocator first_, allocator second_ = first_>

@@ -25,6 +25,7 @@
 #include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/allocators/pool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
+#include <ESL/utils/iterators/random_access_iterator.hpp>
 
 #include <gtest/gtest.h>
 
@@ -659,6 +660,37 @@ TEST_F( vector_test, single_erase_test )
    EXPECT_EQ( my_vec[1].i, 3 );
    EXPECT_EQ( my_vec[2].i, 4 );
    EXPECT_EQ( my_vec.size( ), 3 );
+
+   ESL::random_access_iterator new_it = my_vec.erase( my_vec.cend( ) );
+   if ( new_it != my_vec.end( ) )
+   {
+      FAIL( );
+   }
+}
+
+TEST_F( vector_test, range_erase_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>{ &main_pool_alloc };
+   for ( int i = 0; i < 5; ++i )
+   {
+      my_vec.emplace_back( i + 1 );
+   }
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+
+   auto it = my_vec.erase( my_vec.cbegin( ), my_vec.cbegin( ) + 2 );
+   EXPECT_EQ( my_vec[0].i, 3 );
+   EXPECT_EQ( my_vec[1].i, 4 );
+   EXPECT_EQ( my_vec[2].i, 5 );
+   EXPECT_EQ( my_vec.size( ), 3 );
+
+   it = my_vec.erase( my_vec.cbegin( ), my_vec.cend( ) );
+   EXPECT_EQ( it, my_vec.end( ) );
+   EXPECT_EQ( my_vec.size( ), 0 );
+
+   it = my_vec.erase( my_vec.cbegin( ), my_vec.cend( ) );
+   EXPECT_EQ( it, my_vec.end( ) );
+   EXPECT_EQ( my_vec.size( ), 0 );
 }
 
 TEST_F( vector_test, push_back_cpy )
@@ -745,9 +777,162 @@ TEST_F( vector_test, push_back_move )
    EXPECT_THROW( my_vec3.push_back( moveable{ 10 } ), std::bad_alloc );
 }
 
-TEST_F( vector_test, emplace_back_success_test )
+TEST_F( vector_test, emplace_back_test )
 {
    auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec.emplace_back( 0 );
+   my_vec.emplace_back( 1 );
+   my_vec.emplace_back( 2 );
+   my_vec.emplace_back( 3 );
+   my_vec.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   auto my_vec2 = decltype( my_vec ){ my_vec.cbegin( ), my_vec.cend( ), &main_pool_alloc };
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec2.emplace_back( 5 );
+
+   EXPECT_EQ( my_vec2.size( ), 6 );
+   for ( int i = 0; i < my_vec2.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec2[i].i, i );
+   }
+
+   auto my_vec3 = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+   EXPECT_THROW( my_vec3.emplace_back( 0 ), std::bad_alloc );
 }
 
-TEST_F( vector_test, pop_back_test ) {}
+TEST_F( vector_test, pop_back_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec.emplace_back( 0 );
+   my_vec.emplace_back( 1 );
+   my_vec.emplace_back( 2 );
+   my_vec.emplace_back( 3 );
+   my_vec.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.pop_back( );
+
+   EXPECT_EQ( my_vec.size( ), 4 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.pop_back( );
+
+   EXPECT_EQ( my_vec.size( ), 3 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+}
+
+TEST_F( vector_test, resize_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec.emplace_back( 0 );
+   my_vec.emplace_back( 1 );
+   my_vec.emplace_back( 2 );
+   my_vec.emplace_back( 3 );
+   my_vec.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.resize( 10 );
+
+   EXPECT_EQ( my_vec.size( ), 10 );
+   for ( int i = 0; i < 5; ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   for ( int i = 5; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, 0 );
+   }
+
+   my_vec.resize( 5 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.resize( 5 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+}
+
+TEST_F( vector_test, resize_value_test )
+{
+   auto my_vec = ESL::vector<copyable, ESL::pool_allocator>( &main_pool_alloc );
+
+   my_vec.emplace_back( 0 );
+   my_vec.emplace_back( 1 );
+   my_vec.emplace_back( 2 );
+   my_vec.emplace_back( 3 );
+   my_vec.emplace_back( 4 );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.resize( 10, copyable{ 10 } );
+
+   EXPECT_EQ( my_vec.size( ), 10 );
+   for ( int i = 0; i < 5; ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   for ( int i = 5; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, 10 );
+   }
+
+   my_vec.resize( 5, copyable{ 10 } );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+
+   my_vec.resize( 5, copyable{ 10 } );
+
+   EXPECT_EQ( my_vec.size( ), 5 );
+   for ( int i = 0; i < my_vec.size( ); ++i )
+   {
+      EXPECT_EQ( my_vec[i].i, i );
+   }
+}
