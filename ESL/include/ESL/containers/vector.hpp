@@ -25,6 +25,7 @@
 #pragma once
 
 #include <ESL/allocators/allocator_utils.hpp>
+#include <ESL/utils/compare.hpp>
 #include <ESL/utils/concepts.hpp>
 #include <ESL/utils/iterators/random_access_iterator.hpp>
 
@@ -69,9 +70,6 @@ namespace ESL
          current_capacity( count ),
          current_size( count )
       {
-         static_assert( std::is_copy_constructible_v<type_>, "value type is not copy constructible" );
-         static_assert( std::is_copy_assignable_v<type_>, "value type is not copy assignable" );
-
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
          auto const size_in_bytes = current_capacity * sizeof( value_type );
@@ -848,28 +846,13 @@ namespace ESL
    template <std::equality_comparable any_, allocator first_, allocator second_ = first_>
    constexpr bool operator==( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
    {
-      if ( lhs.size( ) != rhs.size( ) )
-      {
-         return false;
-      }
-      else
-      {
-         for ( size_t i = 0; i < lhs.size( ); ++i )
-         {
-            if ( lhs[i] != rhs[i] )
-            {
-               return false;
-            }
-         }
-
-         return true;
-      }
+      return std::equal( lhs.cbegin( ), lhs.cbegin( ), rhs.cbegin( ), rhs.cend( ) );
    }
 
    template <class any_, allocator first_, allocator second_ = first_>
    constexpr auto operator<=>( vector<any_, first_> const& lhs, vector<any_, second_> const& rhs )
    {
-      return std::lexicographical_compare_three_way( lhs.cbegin( ), lhs.cend( ), rhs.cbegin( ), rhs.cend( ) );
+      return std::lexicographical_compare_three_way( lhs.cbegin( ), lhs.cend( ), rhs.cbegin( ), rhs.cend( ), synth_three_way );
    }
 
    template <class any_, allocator first_, allocator second_ = first_>
