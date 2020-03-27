@@ -28,6 +28,7 @@ project( ESL
 )
 
 option( ESL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
+option( ESL_BUILD_PERF_TESTS "Build ${PROJECT_NAME}'s performance tests" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
@@ -41,35 +42,38 @@ else ( )
    message( STATUS "Build type: Debug" )
 endif ( )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
+set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )
 
-set( GNU_CONCEPTS "-fconcepts" )
-
 if ( EML_BUILD_TESTS )
    enable_testing( )
 
-   add_subdirectory( ../external/googletest build )
+   add_subdirectory( ../external/googletest ${CMAKE_BINARY_DIR}/googletest )
    add_subdirectory( tests )
+endif ( )
+
+if ( EML_BUILD_PERF_TESTS )
+   add_subdirectory( ../external/easy_profiler ${CMAKE_BINARY_DIR}/easy_profiler )
+   add_subdirectory( profiling )
 endif ( )
 
 add_subdirectory( external/spdlog )
 
-add_library( ESL STATIC )
+add_library( ${PROJECT_NAME} STATIC )
 
-set_target_properties( ESL
+set_target_properties( ${PROJECT_NAME}
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( ESL 
+target_compile_features( ${PROJECT_NAME}
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( ESL
+target_compile_options( ${PROJECT_NAME}
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
@@ -78,7 +82,7 @@ target_compile_options( ESL
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
        
-target_include_directories( ESL
+target_include_directories( ${PROJECT_NAME}
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -86,19 +90,16 @@ target_include_directories( ESL
         ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
-target_link_libraries( ESL
+target_link_libraries( ${PROJECT_NAME}
    PUBLIC
       spdlog_header_only
 
    PRIVATE
       $<$<CXX_COMPILER_ID:GNU>:-lasan>
       $<$<CXX_COMPILER_ID:GNU>:-lubsan>
-
-      $<$<CXX_COMPILER_ID:Clang>:-lasan>
-      $<$<CXX_COMPILER_ID:Clang>:-lubsan>
 )
 
-target_sources( ESL
+target_sources( ${PROJECT_NAME}
    PRIVATE
       "source/ESL/allocators/monotonic_allocator.cpp"   
       "source/ESL/allocators/multipool_allocator.cpp"

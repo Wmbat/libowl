@@ -6,6 +6,7 @@ project( Epona
 )
 
 option( BUILD_TESTS "Build unit tests" OFF )
+option( BUILD_PERF_TESTS "Build performance tests" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
@@ -16,6 +17,10 @@ message( STATUS "Compiling Epona with ${CMAKE_CXX_COMPILER_ID}" )
 if ( BUILD_TESTS )
    set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
+
+if ( BUILD_PERF_TESTS )
+   set( EML_BUILD_PERF_TESTS ON CACHE BOOL "" FORCE )
+endif( )
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
 
@@ -37,19 +42,19 @@ add_subdirectory( ESL )
 add_subdirectory( EGL )
 add_subdirectory( EWL )
 
-add_executable( Epona )
+add_executable( ${PROJECT_NAME} )
 
-set_target_properties( Epona
+set_target_properties( ${PROJECT_NAME}
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( Epona
+target_compile_features( ${PROJECT_NAME}
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( Epona 
+target_compile_options( ${PROJECT_NAME}
    PRIVATE
       $<$<PLATFORM_ID:UNIX>:-pthread>
 
@@ -60,7 +65,7 @@ target_compile_options( Epona
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
-target_link_libraries( Epona
+target_link_libraries( ${PROJECT_NAME}
    PUBLIC
       nlohmann_json
       glm
@@ -68,7 +73,7 @@ target_link_libraries( Epona
       EWL
 )
 
-target_sources( Epona   
+target_sources( ${PROJECT_NAME}
    PRIVATE
       "source/main.cpp"
 )

@@ -53,7 +53,7 @@ namespace ESL
       }
    }
 
-   pool_allocator::pointer pool_allocator::allocate( size_type size, size_type alignment ) noexcept
+   auto pool_allocator::allocate( size_type size, size_type alignment ) noexcept -> pointer
    {
       assert( size != 0 && "Allocation size cannot be zero" );
       assert( alignment != 0 && "Allocation alignment cannot be zero" );
@@ -95,7 +95,7 @@ namespace ESL
       return p_first_free != nullptr;
    }
 
-   pool_allocator::size_type pool_allocator::allocation_capacity( pointer p_alloc ) const noexcept
+   auto pool_allocator::allocation_capacity( pointer p_alloc ) const noexcept -> size_type
    {
       if ( p_alloc )
       {
@@ -107,11 +107,9 @@ namespace ESL
       }
    }
 
-   void pool_allocator::clear( ) noexcept {}
-
-   pool_allocator::size_type pool_allocator::max_size( ) const noexcept { return total_size; }
-   pool_allocator::size_type pool_allocator::memory_usage( ) const noexcept { return used_memory; }
-   pool_allocator::size_type pool_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   auto pool_allocator::max_size( ) const noexcept -> size_type { return total_size; }
+   auto pool_allocator::memory_usage( ) const noexcept -> size_type { return used_memory; }
+   auto pool_allocator::allocation_count( ) const noexcept -> size_type { return num_allocations; }
 } // namespace ESL
 
 #undef TO_BLOCK_HEAD_PTR

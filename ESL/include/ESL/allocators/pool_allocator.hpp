@@ -35,15 +35,14 @@ namespace ESL
 {
    class pool_allocator final
    {
-   public:
-      using pointer = std::byte*;
-      using size_type = std::size_t;
-
-   private:
       struct block_header
       {
          block_header* p_next;
       };
+
+   public:
+      using pointer = std::byte*;
+      using size_type = std::size_t;
 
    public:
       pool_allocator( size_type const block_count, size_type const block_size ) noexcept;
@@ -55,7 +54,9 @@ namespace ESL
 
       size_type allocation_capacity( pointer alloc ) const noexcept;
 
-      void clear( ) noexcept;
+      size_type max_size( ) const noexcept;
+      size_type memory_usage( ) const noexcept;
+      size_type allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] auto_ptr<type_> make_unique( args_&&... args ) noexcept
@@ -66,7 +67,7 @@ namespace ESL
       }
 
       template <class type_, class... args_>
-      [[nodiscard]] type_* make_new( args_&&... args ) noexcept
+      [[nodiscard]] type_* make_new( args_&&... args ) noexcept requires std::constructible_from<type_, args_...>
       {
          if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
          {
@@ -79,26 +80,6 @@ namespace ESL
       }
 
       template <class type_>
-      [[nodiscard]] type_* make_array( size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot allocate zero elements" );
-         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
-
-         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
-         if ( !p_alloc )
-         {
-            return nullptr;
-         }
-
-         for ( std::size_t i = 0; i < element_count; ++i )
-         {
-            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
-         }
-
-         return reinterpret_cast<type_*>( p_alloc );
-      }
-
-      template <class type_>
       void make_delete( type_* p_type ) noexcept
       {
          if ( p_type )
@@ -107,23 +88,6 @@ namespace ESL
             free( TO_BYTE_PTR( p_type ) );
          }
       }
-
-      template <class type_>
-      void make_delete( type_* p_type, size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot free zero elements" );
-
-         for ( size_type i = 0; i < element_count; ++i )
-         {
-            p_type[i].~type_( );
-         }
-
-         free( TO_BYTE_PTR( p_type ) );
-      }
-
-      size_type max_size( ) const noexcept;
-      size_type memory_usage( ) const noexcept;
-      size_type allocation_count( ) const noexcept;
 
    private:
       size_type total_size;

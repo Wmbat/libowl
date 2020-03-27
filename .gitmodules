@@ -25,3 +25,6 @@
 [submodule "ESL/external/spdlog"]
 	path = ESL/external/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "external/easy_profiler"]
+	path = external/easy_profiler
+	url = https://github.com/yse/easy_profiler

@@ -71,17 +71,26 @@ namespace ESL
       return padding;
    }
 
-   template <typename allocator_t>
-   concept basic_allocator = requires( allocator_t a, std::byte* ptr, std::size_t s )
+   template<class allocator_>
+   concept basic_allocator = requires( allocator_ a, std::byte* ptr, std::size_t s )
    {
       { a.allocate( s, s ) } -> std::same_as<std::byte*>;
       { a.free( ptr ) } -> std::same_as<void>;
+      { a.max_size() } -> std::convertible_to<std::size_t>;
+      { a.memory_usage( ) } -> std::convertible_to<std::size_t>;
+      { a.allocation_count() } -> std::convertible_to<std::size_t>;
    };
 
-   template <typename allocator_t>
-   concept allocator = basic_allocator<allocator_t>&& requires( allocator_t a, std::byte* ptr, std::size_t s )
+   template<class allocator_>
+   concept allocator = basic_allocator<allocator_>&& requires( allocator_ a, std::byte* ptr, std::size_t s )
    {
       { a.can_allocate( s, s ) } -> std::same_as<bool>;
-      { a.allocation_capacity( ptr ) } -> std::same_as<std::size_t>;
+      { a.allocation_capacity( ptr ) } -> std::convertible_to<std::size_t>;
+   };
+
+   template<class allocator_, class any_, class... args_>
+   concept complex_allocator = allocator<allocator_> && requires( allocator_ a, args_&&... args )
+   {
+      { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
    };
 } // namespace ESL
