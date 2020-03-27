@@ -9,7 +9,6 @@ compiler:
 
 before_install:
    - sudo apt-get update
-   - sudo apt-get lndir
    - sudo apt-get -y install python3
    - sudo apt-get -y install python3-pip
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
@@ -17,6 +16,7 @@ before_install:
    - mkdir llvm-project/build && cd llvm-project/build
    - cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=Off -DLLVM_ENABLE_PROJECTS='clang;libcxx;libcxxabi;clang-tools-extra;lld;compiler-rt' ../llvm 
    - ninja install
+   - cd ~/ && lndir llvm-project
    - sudo apt-get -y install cppcheck
    - sudo apt-get -y install xorg-dev libglu1-mesa-dev
    - pip3 install setuptools
