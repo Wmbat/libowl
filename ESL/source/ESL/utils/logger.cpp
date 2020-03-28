@@ -16,14 +16,14 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ELL/logger.hpp>
+#include <ESL/utils/logger.hpp>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <memory>
 
-namespace ELL
+namespace ESL
 {
    logger::logger( ) : log( "Luciole" )
    {
@@ -35,7 +35,7 @@ namespace ELL
       file_sink->set_level( spdlog::level::trace );
       file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-      log = spdlog::logger( "Luciole", {console_sink, file_sink} );
+      log = spdlog::logger( "Luciole", { console_sink, file_sink } );
       log.set_level( spdlog::level::debug );
    }
 
@@ -49,8 +49,8 @@ namespace ELL
       file_sink->set_level( spdlog::level::trace );
       file_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
-      log = spdlog::logger( std::string( name ), {console_sink, file_sink} );
+      log = spdlog::logger( std::string( name ), { console_sink, file_sink } );
    }
 
    spdlog::logger& logger::get_logger( ) { return log; }
-} // namespace ELL
+} // namespace ESL

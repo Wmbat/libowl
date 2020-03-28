@@ -24,14 +24,32 @@
 
 #pragma once
 
-#include <cstddef>
+#include <compare>
+#include <concepts>
 
 namespace ESL
 {
-   class allocation_interface
+   template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
+   auto synth_three_way( lhs_ const& lhs, rhs_ const& rhs )
    {
-   public:
-      virtual std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept = 0;
-      virtual void free( std::byte* p_alloc ) noexcept = 0;
-   };
-}
+      if constexpr ( std::three_way_comparable_with<lhs_, rhs_> )
+      {
+         return lhs <=> rhs;
+      }
+      else
+      {
+         if ( lhs == rhs )
+         {
+            return std::strong_ordering::equal;
+         }
+         else if ( lhs < rhs )
+         {
+            return std::strong_ordering::less;
+         }
+         else
+         {
+            return std::strong_ordering::greater;
+         }
+      }
+   }
+} // namespace ESL
