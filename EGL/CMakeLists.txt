@@ -74,7 +74,6 @@ target_link_libraries( EGL
       glslang
       SPIRV
       ESL
-      ELL
 )
 
 target_sources( EGL

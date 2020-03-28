@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <ESL/allocators/allocation_interface.hpp>
 #include <ESL/allocators/allocator_utils.hpp>
 
 #include <cassert>
@@ -33,19 +32,25 @@
 
 namespace ESL
 {
-   class stack_allocator final : public allocation_interface
+   class stack_allocator final
    {
    public:
-      stack_allocator( std::size_t const size ) noexcept;
+      using pointer = std::byte*;
+      using size_type = std::size_t;
 
-      [[nodiscard]] std::byte* allocate( std::size_t size, std::size_t alignment ) noexcept override;
-      void free( std::byte* p_address ) noexcept override;
+   public:
+      stack_allocator( size_type const size ) noexcept;
+
+      [[nodiscard]] pointer allocate( size_type size, size_type alignment ) noexcept;
+      void free( pointer p_address ) noexcept;
+
+      [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
 
       void clear( ) noexcept;
 
-      std::size_t max_size( ) const noexcept;
-      std::size_t memory_usage( ) const noexcept;
-      std::size_t allocation_count( ) const noexcept;
+      size_type max_size( ) const noexcept;
+      size_type memory_usage( ) const noexcept;
+      size_type allocation_count( ) const noexcept;
 
       template <class type_, class... args_>
       [[nodiscard]] type_* make_new( args_&&... args ) noexcept
@@ -61,12 +66,16 @@ namespace ESL
       }
 
       template <class type_>
-      [[nodiscard]] type_* make_array( std::size_t element_count ) noexcept
+      [[nodiscard]] type_* make_array( size_type element_count ) noexcept
       {
          assert( element_count != 0 && "cannot allocate zero elements" );
          static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
 
          auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
+         if ( !p_alloc )
+         {
+            return nullptr;
+         }
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
@@ -82,35 +91,35 @@ namespace ESL
          if ( p_type )
          {
             p_type->~type_( );
-            free( reinterpret_cast<std::byte*>( p_type ) );
+            free( TO_BYTE_PTR( p_type ) );
          }
       }
 
       template <class type_>
-      void make_delete( type_* p_type, std::size_t element_count ) noexcept
+      void make_delete( type_* p_type, size_type element_count ) noexcept
       {
          assert( element_count != 0 && "cannot free zero elements" );
 
-         for ( std::size_t i = 0; i < element_count; ++i )
+         for ( size_type i = 0; i < element_count; ++i )
          {
-            p_type->~type_( );
+            p_type[i].~type_( );
          }
 
-         free( reinterpret_cast<std::byte*>( p_type ) );
+         free( TO_BYTE_PTR( p_type ) );
       }
 
    private:
-      std::size_t total_size;
-      std::size_t used_memory;
-      std::size_t num_allocations;
+      size_type total_size;
+      size_type used_memory;
+      size_type num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
-      std::byte* p_top;
+      pointer p_top;
 
    private:
       struct header
       {
-         std::size_t adjustment;
+         size_type adjustment;
       };
    };
 } // namespace ESL

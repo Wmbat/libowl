@@ -26,19 +26,21 @@
 
 #include <cassert>
 
+#define TO_UINT_PTR( ptr ) reinterpret_cast<std::uintptr_t>( ptr )
+#define TO_HEADER_PTR( ptr ) reinterpret_cast<header*>( ptr )
+
 namespace ESL
 {
-   stack_allocator::stack_allocator( std::size_t const size ) noexcept :
+   stack_allocator::stack_allocator( size_type const size ) noexcept :
       total_size( size ), used_memory( 0 ), num_allocations( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),
       p_top( p_memory.get( ) )
    {}
 
-   std::byte* stack_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
+   std::byte* stack_allocator::allocate( size_type size, size_type alignment ) noexcept
    {
       assert( size != 0 );
 
-      auto const padding =
-         get_forward_padding( reinterpret_cast<std::uintptr_t>( p_top ), alignment, sizeof( header ) );
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_top ), alignment, sizeof( header ) );
 
       if ( padding + size + used_memory > total_size )
       {
@@ -47,7 +49,7 @@ namespace ESL
 
       std::byte* aligned_address = p_top + padding;
 
-      auto* header_address = reinterpret_cast<header*>( aligned_address - sizeof( header ) );
+      auto* header_address = TO_HEADER_PTR( aligned_address - sizeof( header ) );
       header_address->adjustment = padding;
 
       p_top = aligned_address + size;
@@ -70,6 +72,15 @@ namespace ESL
       --num_allocations;
    }
 
+   bool stack_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   {
+      assert( size != 0 && "Size cannot be zero" );
+      assert( alignment != 0 && "Alignment cannot be zero" );
+
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_top ), alignment, sizeof( header ) );
+      return ( padding + size + used_memory ) > total_size;
+   }
+
    void stack_allocator::clear( ) noexcept
    {
       p_top = p_memory.get( );
@@ -77,7 +88,10 @@ namespace ESL
       num_allocations = 0;
    }
 
-   std::size_t stack_allocator::max_size( ) const noexcept { return total_size; }
-   std::size_t stack_allocator::memory_usage( ) const noexcept { return used_memory; }
-   std::size_t stack_allocator::allocation_count( ) const noexcept { return num_allocations; }
-} // namespace EML
+   stack_allocator::size_type stack_allocator::max_size( ) const noexcept { return total_size; }
+   stack_allocator::size_type stack_allocator::memory_usage( ) const noexcept { return used_memory; }
+   stack_allocator::size_type stack_allocator::allocation_count( ) const noexcept { return num_allocations; }
+} // namespace ESL
+
+#undef TO_UINT_PTR
+#undef TO_HEADER_PTR

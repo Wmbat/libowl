@@ -24,10 +24,14 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <functional>
+#include <memory>
+#include <tuple>
+
+#define TO_BYTE_PTR( ptr ) reinterpret_cast<std::byte*>( ptr )
 
 namespace ESL
 {
@@ -66,4 +70,27 @@ namespace ESL
 
       return padding;
    }
-} // namespace EML
+
+   template<class allocator_>
+   concept basic_allocator = requires( allocator_ a, std::byte* ptr, std::size_t s )
+   {
+      { a.allocate( s, s ) } -> std::same_as<std::byte*>;
+      { a.free( ptr ) } -> std::same_as<void>;
+      { a.max_size() } -> std::convertible_to<std::size_t>;
+      { a.memory_usage( ) } -> std::convertible_to<std::size_t>;
+      { a.allocation_count() } -> std::convertible_to<std::size_t>;
+   };
+
+   template<class allocator_>
+   concept allocator = basic_allocator<allocator_>&& requires( allocator_ a, std::byte* ptr, std::size_t s )
+   {
+      { a.can_allocate( s, s ) } -> std::same_as<bool>;
+      { a.allocation_capacity( ptr ) } -> std::convertible_to<std::size_t>;
+   };
+
+   template<class allocator_, class any_, class... args_>
+   concept complex_allocator = allocator<allocator_> && requires( allocator_ a, args_&&... args )
+   {
+      { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
+   };
+} // namespace ESL

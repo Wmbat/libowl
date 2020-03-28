@@ -22,30 +22,34 @@
 
 cmake_minimum_required( VERSION 3.12 )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g" )
-set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g" )
-set( GNU_RELEASE_FLAGS "-o3" )
+set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
+set( CLANG_RELEASE_FLAGS "-o0" )
+set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
+set( GNU_RELEASE_FLAGS "-o0" )
 
-add_executable( ESL_test )
+add_executable( ESL_profiling )
 
-target_link_libraries( ESL_test
+target_link_libraries( ESL_profiling
    PUBLIC
       ESL
-      gtest
+      easy_profiler
+
+   PRIVATE
+      $<$<CXX_COMPILER_ID:GNU>:-lasan>
+      $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
 
-set_target_properties( ESL_test
+set_target_properties( ESL_profiling
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( ESL_test
+target_compile_features( ESL_profiling
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( ESL_test
+target_compile_options( ESL_profiling
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
@@ -54,14 +58,7 @@ target_compile_options( ESL_test
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
-target_sources( ESL_test
+target_sources( ESL_profiling
    PRIVATE
       "ESL/main.cpp"
-      "ESL/allocators/monotonic_allocator_test.cpp"
-      "ESL/allocators/multipool_allocator_test.cpp"
-      "ESL/allocators/pool_allocator_test.cpp"
-      "ESL/allocators/stack_allocator_test.cpp"
-      "ESL/containers/vector_test.cpp"
 )
-
-add_test( NAME ESL_test COMMAND ESL_test )

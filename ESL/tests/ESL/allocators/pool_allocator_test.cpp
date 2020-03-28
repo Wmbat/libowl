@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -87,24 +87,4 @@ TEST_F( pool_allocator_test, unique_ptr_alloc_test )
    auto p_fourth_alloc = my_allocator.make_unique<int>( 3 );
 
    EXPECT_NE( nullptr, p_fourth_alloc.get( ) );
-}
-
-TEST_F( pool_allocator_test, array_alloc_test )
-{
-   std::size_t const elem_count = 10;
-   auto* p_array = my_allocator.make_array<int>( elem_count );
-
-   EXPECT_NE( p_array, nullptr );
-
-   for ( std::size_t i = 0; i < elem_count; ++i )
-   {
-      p_array[i] = 10;
-      EXPECT_EQ( p_array[i], 10 );
-   }
-
-   EXPECT_EQ( my_allocator.allocation_count( ), 1 );
-
-   my_allocator.make_delete( p_array, elem_count );
-
-   EXPECT_EQ( my_allocator.allocation_count( ), 0 );
 }
