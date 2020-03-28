@@ -12,6 +12,7 @@ before_install:
    - sudo apt-get -y install python3
    - sudo apt-get -y install python3-pip
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+   - sudo apt-get -y install ninja-build
    - git clone https://github.com/llvm/llvm-project
    - mkdir llvm-project/build && cd llvm-project/build
    - cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=Off -DLLVM_ENABLE_PROJECTS='clang;libcxx;libcxxabi;clang-tools-extra;lld;compiler-rt' ../llvm 
