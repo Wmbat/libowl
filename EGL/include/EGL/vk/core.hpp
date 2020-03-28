@@ -38,6 +38,11 @@ namespace EGL
    static constexpr bool ENABLE_VALIDATION_LAYERS = true;
 #endif
 
+   static constexpr std::uint64_t kilobyte = 1024;
+   static constexpr std::uint64_t megabyte = kilobyte * kilobyte;
+   constexpr std::size_t operator"" _KB( unsigned long long size ) { return size * kilobyte; }
+   constexpr std::size_t operator"" _MB( unsigned long long size ) { return size * megabyte; }
+
    inline static std::string result_to_string( VkResult result )
    {
       switch ( result )

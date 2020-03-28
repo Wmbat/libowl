@@ -24,15 +24,38 @@
 
 #pragma once
 
-#include <EGL/vk/extension.hpp>
+#include <EGL/vk/core.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
+#include <ESL/containers/vector.hpp>
+
+#include <string>
+#include <string_view>
 
 namespace EGL
 {
    class context
    {
    public:
+      context( std::string_view app_name_in );
+      context( context const& other ) = delete;
+      context( context&& other );
+      ~context( );
+
+      context& operator=( context const& rhs ) = delete;
+      context& operator=( context&& rhs );
 
    private:
+      ESL::vector<char const*, ESL::multipool_allocator> get_instance_extensions( );
 
+   private:
+      ESL::multipool_allocator main_allocator;
+
+      std::string app_name;
+
+      VkInstance instance;
+
+      ESL::vector<char const*, ESL::multipool_allocator> instance_extensions;
+
+      inline static bool IS_VOLK_INIT = false;
    };
-}
+} // namespace EGL

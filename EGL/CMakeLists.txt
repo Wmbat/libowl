@@ -79,5 +79,6 @@ target_link_libraries( EGL
 target_sources( EGL
    PRIVATE
       "source/EGL/render_manager.cpp"
+      "source/EGL/vk/context.cpp"
       "source/EGL/vk/defines.cpp"
 )
