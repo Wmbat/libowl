@@ -1,50 +1,37 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2020 Wmbat
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include <ESL/allocators/allocator_utils.hpp>
-#include <ESL/allocators/pool_allocator.hpp>
-#include <ESL/containers/vector.hpp>
-
-#include <ESL/utils/logger.hpp>
-
-#include <vector>
-
-struct moveable
-{
-   moveable( ) = default;
-   explicit moveable( int i ) : i( i ) {}
-   moveable( moveable const& other ) = delete;
-   moveable( moveable&& other ) { i = std::move( other.i ); }
-
-   moveable& operator=( moveable const& other ) = delete;
-   moveable& operator=( moveable&& other )
-   {
-      i = std::move( other.i );
-      return *this;
-   }
-
-   int i = 0;
-};
-
-struct copyable
-{
-   int i = 0;
-};
-
-void test( ESL::complex_allocator<int> auto& t )
-{
-
-}
+#include <EWL/window.hpp>
 
 int main( )
 {
-   std::size_t size = 4096 * 4;
+   auto wnd = EWL::window{ "My Test Window", 1080u, 720u };
 
-   ESL::pool_allocator my_pool{ 1, size };
-   ESL::vector<copyable, ESL::pool_allocator> my_vec{ &my_pool };
-
-   test( my_pool );
-
-   copyable a{ 20 };
-   auto it = my_vec.insert( my_vec.cbegin( ), 5, a );
+   while ( wnd.is_open( ) )
+   {
+      glfwPollEvents( );
+   }
 
    return 0;
 }

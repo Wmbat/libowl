@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,23 +22,16 @@
  * SOFTWARE.
  */
 
-#include <EWL/window.hpp>
-
-#if defined( VK_USE_PLATFORM_XCB_KHR )
-#   include <xcb/xproto.h>
+#include <EWL/widget.hpp>
 
 namespace EWL
 {
-   window::window( ) : p_connection( xcb_connect( nullptr, nullptr ) )
+   widget& widget::setParent( widget* p_parent_in )
    {
-      xcb_setup_t const* p_setup = xcb_get_setup( p_connection );
-      xcb_screen_iterator_t it = xcb_setup_roots_iterator( p_setup );
-      xcb_screen_t* p_screen = it.data;
+      p_parent = p_parent_in;
 
-      xcb_window_t window = xcb_generate_id( p_connection );
-      xcb_create_window( p_connection, XCB_COPY_FROM_PARENT, window, p_screen->root, 0, 0, 100, 100, 10, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-         p_screen->root_visual, 0, NULL );
+      return *this;
    }
-} // namespace EWL
 
-#endif
+   widget* widget::getParent( ) { return p_parent; }
+} // namespace EWL

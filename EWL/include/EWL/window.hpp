@@ -30,13 +30,29 @@
 
 #include <GLFW/glfw3.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+
 namespace EWL
 {
    class window : public widget
    {
+      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void( GLFWwindow* )>>;
+
    public:
-      window( );
+      window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in );
+
+      bool is_open( );
 
    private:
+      std::string title;
+      std::uint32_t width;
+      std::uint32_t height;
+
+      wnd_ptr p_wnd;
+
+      inline static bool IS_GLFW_INITIALIZED = false;
    };
-}
+} // namespace EWL
