@@ -10,16 +10,24 @@ compiler:
 before_install:
    - sudo apt-get update
    - sudo apt-get -y install python3
+   - sudo apt-get -y install python3-pip
    - sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-   - sudo apt-get -y install clang-9
+   - sudo apt-get -y install ninja-build
+   - git clone https://github.com/llvm/llvm-project
+   - mkdir llvm-project/build && cd llvm-project/build
+   - cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=Off -DLLVM_ENABLE_PROJECTS='clang;libcxx;libcxxabi;clang-tools-extra;lld;compiler-rt' ../llvm 
+   - ninja install
+   - cd ~/ && lndir llvm-project
    - sudo apt-get -y install cppcheck
    - sudo apt-get -y install xorg-dev libglu1-mesa-dev
+   - pip3 install setuptools
+   - pip3 install cpp_coveralls
 
 script:
    - export VULKAN_SDK=$PWD/EGL/external/Vulkan-Headers
    - mkdir build
    - cd build
-   - cmake ../ -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+   - cmake ../ -DCMAKE_C_COMPILER=/usr/bin/clang++ -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
    - mv ./compile_commands.json ../
    - cd ../
    - cppcheck --project=compile_commands.json
@@ -27,4 +35,4 @@ script:
    - make -j13
    - cd ESL/tests
    - ./ESL_test
-   
+   - cd ../../

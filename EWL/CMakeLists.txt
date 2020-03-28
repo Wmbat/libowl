@@ -56,7 +56,6 @@ target_include_directories( EWL
 target_link_libraries( EWL
    PUBLIC
       glfw
-      ELL
       ESL
       EGL
 )

@@ -26,6 +26,8 @@
 
 #include <cassert>
 
+#define TO_UINT_PTR( ptr ) reinterpret_cast<std::uintptr_t>( ptr )
+
 namespace ESL
 {
    monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
@@ -33,11 +35,11 @@ namespace ESL
       p_current_pos( p_memory.get( ) )
    {}
 
-   std::byte* monotonic_allocator::allocate( std::size_t size, std::size_t alignment ) noexcept
+   auto monotonic_allocator::allocate( size_type size, size_type alignment ) noexcept -> pointer
    {
       assert( size != 0 );
 
-      auto const padding = get_forward_padding( reinterpret_cast<std::uintptr_t>( p_current_pos ), alignment );
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
 
       if ( padding + size + used_memory > total_size )
       {
@@ -53,7 +55,14 @@ namespace ESL
       return aligned_address;
    }
 
-   void monotonic_allocator::free( std::byte* p_alloc ) noexcept {}
+   bool monotonic_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   {
+      assert( size != 0 );
+
+      auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
+
+      return ( padding + size + used_memory ) > total_size;
+   }
 
    void monotonic_allocator::clear( ) noexcept
    {
@@ -62,7 +71,7 @@ namespace ESL
       num_allocations = 0;
    }
 
-   std::size_t monotonic_allocator::max_size( ) const noexcept { return total_size; }
-   std::size_t monotonic_allocator::memory_usage( ) const noexcept { return used_memory; }
-   std::size_t monotonic_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   auto monotonic_allocator::max_size( ) const noexcept -> size_type { return total_size; }
+   auto monotonic_allocator::memory_usage( ) const noexcept -> size_type { return used_memory; }
+   auto monotonic_allocator::allocation_count( ) const noexcept -> size_type { return num_allocations; }
 } // namespace ESL
