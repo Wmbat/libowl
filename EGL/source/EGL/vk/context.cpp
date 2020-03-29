@@ -23,37 +23,63 @@
  */
 
 #include <EGL/vk/context.hpp>
+
 #include <alloca.h>
 
 namespace EGL
 {
-   context::context( std::string_view app_name_in ) :
-      app_name( app_name_in ), main_allocator( 1, 5_KB, 10 ), instance_extensions( &main_allocator )
+   context::context( ) : main_allocator( 1, 1_KB ), instance_extensions( &main_allocator )
    {
-      if ( !IS_VOLK_INIT )
+      api_version = volkGetInstanceVersion( );
+   }
+   context::context( std::string_view app_name_in, ESL::logger* p_log ) :
+      p_log( p_log ), app_name( app_name_in ), main_allocator( 1, 5_KB, 10 ), instance_extensions( &main_allocator )
+   {
+      api_version = volkGetInstanceVersion( );
+   }
+   context::context( context&& other ) :
+      main_allocator( std::move( other.main_allocator ) ),
+      instance_extensions( std::move( other.instance_extensions ) ), app_name( std::move( other.app_name ) )
+   {
+      instance = other.instance;
+      other.instance = VK_NULL_HANDLE;
+   }
+   context::~context( )
+   {
+      if ( instance != VK_NULL_HANDLE )
       {
-         if ( volkInitialize( ) != VK_SUCCESS )
-         {
-            throw;
-         }
-         else
-         {
-            IS_VOLK_INIT = true;
-         }
+         vkDestroyInstance( instance, nullptr );
+      }
+   }
+
+   context& context::operator=( context&& rhs )
+   {
+      if ( this != &rhs )
+      {
+         main_allocator = std::move( rhs.main_allocator );
+         app_name = std::move( rhs.app_name );
+         instance_extensions = std::move( rhs.instance_extensions );
+
+         instance = rhs.instance;
+         rhs.instance = VK_NULL_HANDLE;
       }
 
-      std::uint32_t api_version = volkGetInstanceVersion( );
+      return *this;
+   }
 
+   context&& context::create_instance( )
+   {
       VkApplicationInfo app_info = { };
       app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
       app_info.pNext = nullptr;
       app_info.pApplicationName = app_name.c_str( );
       app_info.applicationVersion = VK_MAKE_VERSION( 0, 0, 0 );
       app_info.pEngineName = "EGL";
-      app_info.engineVersion = VK_MAKE_VERSION( 0, 0, 1 );
+      app_info.engineVersion = VK_MAKE_VERSION( EGL_VERSION_MAJOR, EGL_VERSION_MINOR, EGL_VERSION_PATCH );
       app_info.apiVersion = api_version;
 
-      instance_extensions = get_instance_extensions( );
+      std::uint32_t glfw_ext_count = 0;
+      char const** glfw_ext = glfwGetRequiredInstanceExtensions( &glfw_ext_count );
 
       VkInstanceCreateInfo instance_create_info = { };
       instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -62,20 +88,17 @@ namespace EGL
       instance_create_info.pApplicationInfo = &app_info;
       instance_create_info.enabledLayerCount = 0;
       instance_create_info.ppEnabledLayerNames = nullptr;
-      instance_create_info.enabledExtensionCount = instance_extensions.size( );
-      instance_create_info.ppEnabledExtensionNames = instance_extensions.data( );
+      instance_create_info.enabledExtensionCount = glfw_ext_count;
+      instance_create_info.ppEnabledExtensionNames = glfw_ext;
 
       if ( vkCreateInstance( &instance_create_info, nullptr, &instance ) != VK_SUCCESS )
       {
-         // handle error
+         throw;
       }
 
       volkLoadInstance( instance );
+      return std::move( *this );
    }
-   context::context( context&& other ) : { *this = std::move( other ); }
-   context::~context( ) {}
-
-   context& context::operator=( context&& rhs ) {}
 
    ESL::vector<char const*, ESL::multipool_allocator> context::get_instance_extensions( )
    {

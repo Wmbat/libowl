@@ -22,21 +22,25 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <EGL/gui/window.hpp>
+#include <memory>
 
-#include <concepts>
-
-namespace EWL
+namespace EGL
 {
-   class widget
+   window::window( )
    {
-   public:
-      widget( ) = default;
+      glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
+      glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+      p_wnd = wnd_ptr( glfwCreateWindow( width, height, title.c_str( ), nullptr, nullptr ), glfwDestroyWindow );
+   }
 
-      widget& setParent( widget* p_parent_in );
-      widget* getParent( );
+   window::window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in ) :
+      title( title_in ), width( width_in ), height( height_in )
+   {
+      glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
+      glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+      p_wnd = wnd_ptr( glfwCreateWindow( width, height, title.c_str( ), nullptr, nullptr ), glfwDestroyWindow );
+   }
 
-   private:
-      widget* p_parent{ nullptr };
-   };
-} // namespace EWL
+   bool window::is_open( ) { return !glfwWindowShouldClose( p_wnd.get( ) ); }
+} // namespace EGL

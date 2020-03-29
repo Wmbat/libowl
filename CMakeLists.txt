@@ -40,7 +40,6 @@ add_subdirectory( external/glm )
 
 add_subdirectory( ESL )
 add_subdirectory( EGL )
-add_subdirectory( EWL )
 
 add_executable( ${PROJECT_NAME} )
 
@@ -70,7 +69,6 @@ target_link_libraries( ${PROJECT_NAME}
       nlohmann_json
       glm
       EGL
-      EWL
 )
 
 target_sources( ${PROJECT_NAME}

@@ -27,6 +27,7 @@
 #include <EGL/vk/core.hpp>
 #include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/containers/vector.hpp>
+#include <ESL/utils/logger.hpp>
 
 #include <string>
 #include <string_view>
@@ -36,7 +37,8 @@ namespace EGL
    class context
    {
    public:
-      context( std::string_view app_name_in );
+      context( );
+      context( std::string_view app_name_in, ESL::logger* p_log = nullptr );
       context( context const& other ) = delete;
       context( context&& other );
       ~context( );
@@ -44,15 +46,19 @@ namespace EGL
       context& operator=( context const& rhs ) = delete;
       context& operator=( context&& rhs );
 
+      context&& create_instance( );
+
    private:
       ESL::vector<char const*, ESL::multipool_allocator> get_instance_extensions( );
 
    private:
+      ESL::logger* p_log{ nullptr };
       ESL::multipool_allocator main_allocator;
 
-      std::string app_name;
+      std::uint32_t api_version{ 0 };
+      std::string app_name{ };
 
-      VkInstance instance;
+      VkInstance instance{ VK_NULL_HANDLE };
 
       ESL::vector<char const*, ESL::multipool_allocator> instance_extensions;
 

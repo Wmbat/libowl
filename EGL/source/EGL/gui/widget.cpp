@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,37 +22,16 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include <EGL/gui/widget.hpp>
 
-#include <EWL/widget.hpp>
-
-#include <EGL/render_manager.hpp>
-
-#include <GLFW/glfw3.h>
-
-#include <functional>
-#include <memory>
-#include <string>
-#include <string_view>
-
-namespace EWL
+namespace EGL
 {
-   class window : public widget
+   widget& widget::setParent( widget* p_parent_in )
    {
-      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void( GLFWwindow* )>>;
+      p_parent = p_parent_in;
 
-   public:
-      window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in );
+      return *this;
+   }
 
-      bool is_open( );
-
-   private:
-      std::string title;
-      std::uint32_t width;
-      std::uint32_t height;
-
-      wnd_ptr p_wnd;
-
-      inline static bool IS_GLFW_INITIALIZED = false;
-   };
-} // namespace EWL
+   widget* widget::getParent( ) { return p_parent; }
+} // namespace EGL

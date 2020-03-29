@@ -22,15 +22,20 @@
  * SOFTWARE.
  */
 
-#include <EWL/window.hpp>
+#include <EGL/render_manager.hpp>
+#include <ESL/utils/logger.hpp>
 
 int main( )
 {
-   auto wnd = EWL::window{ "My Test Window", 1080u, 720u };
+   auto main_logger = ESL::logger( "main_logger" );
 
-   while ( wnd.is_open( ) )
+   auto render_manager = EGL::render_manager( &main_logger )
+      .set_app_name( "My App" )
+      .create_context( );
+
+   while ( render_manager.is_running( ) )
    {
-      glfwPollEvents( );
+      render_manager.render( );
    }
 
    return 0;

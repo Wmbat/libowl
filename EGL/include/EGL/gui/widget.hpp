@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,16 +22,21 @@
  * SOFTWARE.
  */
 
-#include <EWL/widget.hpp>
+#pragma once
 
-namespace EWL
+#include <concepts>
+
+namespace EGL
 {
-   widget& widget::setParent( widget* p_parent_in )
+   class widget
    {
-      p_parent = p_parent_in;
+   public:
+      widget( ) = default;
 
-      return *this;
-   }
+      widget& setParent( widget* p_parent_in );
+      widget* getParent( );
 
-   widget* widget::getParent( ) { return p_parent; }
-} // namespace EWL
+   private:
+      widget* p_parent{ nullptr };
+   };
+} // namespace EGL
