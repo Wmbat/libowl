@@ -3,7 +3,8 @@
 
 namespace EGL
 {
-   render_manager::render_manager( ESL::logger* p_logger ) : p_logger( p_logger )
+   render_manager::render_manager( ESL::logger* p_logger ) :
+      p_logger( p_logger ), main_allocator( 2, 5_KB, 5 ), context( &main_allocator )
    {
       if ( !IS_GRAPHIC_ENV_SETUP )
       {
@@ -17,7 +18,7 @@ namespace EGL
          }
          else
          {
-            LOG_INFO( p_logger, "Graphic environment setup" )
+            LOG_INFO( p_logger, "Graphical environment setup" )
 
             IS_GRAPHIC_ENV_SETUP = true;
          }
@@ -32,8 +33,10 @@ namespace EGL
 
    render_manager&& render_manager::create_context( )
    {
-      context = EGL::context( app_name, p_logger ).create_instance( );
+      context = EGL::context( app_name, &main_allocator, p_logger ).create_instance( );
       main_window = EGL::window( app_name, 1080u, 720u );
+
+      LOG_INFO( p_logger, "Basic graphical context setup" );
 
       return std::move( *this );
    }

@@ -37,8 +37,8 @@ namespace EGL
    class context
    {
    public:
-      context( );
-      context( std::string_view app_name_in, ESL::logger* p_log = nullptr );
+      context( ESL::multipool_allocator* p_main_allocator );
+      context( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log = nullptr );
       context( context const& other ) = delete;
       context( context&& other );
       ~context( );
@@ -49,19 +49,22 @@ namespace EGL
       context&& create_instance( );
 
    private:
+      bool check_validation_layer_support( );
+
       ESL::vector<char const*, ESL::multipool_allocator> get_instance_extensions( );
 
    private:
       ESL::logger* p_log{ nullptr };
-      ESL::multipool_allocator main_allocator;
+      ESL::multipool_allocator* p_main_allocator;
 
       std::uint32_t api_version{ 0 };
       std::string app_name{ };
 
       VkInstance instance{ VK_NULL_HANDLE };
+      VkDebugUtilsMessengerEXT debug_messenger{ VK_NULL_HANDLE };
 
-      ESL::vector<char const*, ESL::multipool_allocator> instance_extensions;
-
-      inline static bool IS_VOLK_INIT = false;
+      ESL::vector<char const*, ESL::multipool_allocator> const validation_layer{
+         1, "VK_LAYER_KHRONOS_validation", p_main_allocator };
+      ESL::vector<char const*, ESL::multipool_allocator> instance_extensions{ p_main_allocator };
    };
 } // namespace EGL

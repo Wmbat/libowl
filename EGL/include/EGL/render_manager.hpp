@@ -21,6 +21,8 @@ namespace EGL
    private:
       ESL::logger* p_logger{ nullptr };
 
+      ESL::multipool_allocator main_allocator;
+
       std::string app_name{ "EGL default app" };
 
       context context;
@@ -29,4 +31,3 @@ namespace EGL
       inline static bool IS_GRAPHIC_ENV_SETUP = false;
    };
 } // namespace EGL
-
