@@ -24,22 +24,19 @@
 
 #pragma once
 
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-#include <xcb/xcb.h>
-#endif
+#include <concepts>
 
-#include <EGL/render_manager.hpp>
-
-namespace EWL
+namespace EGL
 {
-   class window
+   class widget
    {
    public:
-      window( );
+      widget( ) = default;
+
+      widget& setParent( widget* p_parent_in );
+      widget* getParent( );
 
    private:
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      xcb_connection_t* p_connection;
-#endif
+      widget* p_parent{ nullptr };
    };
-}
+} // namespace EGL

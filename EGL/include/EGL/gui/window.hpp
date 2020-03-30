@@ -24,15 +24,32 @@
 
 #pragma once
 
-#include <EWL/window.hpp>
+#include <EGL/gui/widget.hpp>
 
-namespace EWL
+#include <EGL/vk/core.hpp>
+
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+
+namespace EGL
 {
-   class window_manager
+   class window : public widget
    {
+      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void( GLFWwindow* )>>;
+
    public:
-       window create_window( );
+      window( );
+      window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in );
+
+      bool is_open( );
 
    private:
+      std::string title{ "EGL standard window" };
+      std::uint32_t width{ 1080u };
+      std::uint32_t height{ 720u };
+
+      wnd_ptr p_wnd;
    };
-} // namespace EWL
+} // namespace EGL

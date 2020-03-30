@@ -89,10 +89,9 @@ namespace ESL
       size_type depth_index = 0;
       for ( int i = 0; i < pool_depth; ++i )
       {
-         if ( block_size / std::pow( 2, i ) == size )
+         if ( block_size / std::pow( 2, i ) >= size )
          {
             depth_index = i;
-            break;
          }
       }
 
