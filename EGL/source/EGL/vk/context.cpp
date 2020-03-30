@@ -72,32 +72,6 @@ namespace EGL
 
       return VK_FALSE;
    }
-   VkResult create_debug_utils_messenger( VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-      const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger )
-   {
-      auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-         vkGetInstanceProcAddr( instance, "vkCreateDebugUtilsMessengerEXT" ) );
-
-      if ( func != nullptr )
-      {
-         return func( instance, pCreateInfo, pAllocator, pDebugMessenger );
-      }
-      else
-      {
-         return VK_ERROR_EXTENSION_NOT_PRESENT;
-      }
-   }
-   void destroy_debug_utils_messenger(
-      VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator )
-   {
-      auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-         vkGetInstanceProcAddr( instance, "vkDestroyDebugUtilsMessengerEXT" ) );
-
-      if ( func != nullptr )
-      {
-         func( instance, debugMessenger, pAllocator );
-      }
-   }
 
    context::context( ESL::multipool_allocator* p_main_allocator ) : p_main_allocator( p_main_allocator )
    {
@@ -132,7 +106,7 @@ namespace EGL
       {
          if ( debug_messenger != VK_NULL_HANDLE )
          {
-            destroy_debug_utils_messenger( instance, debug_messenger, nullptr );
+            vkDestroyDebugUtilsMessengerEXT( instance, debug_messenger, nullptr );
          }
       }
 
@@ -146,6 +120,8 @@ namespace EGL
    {
       if ( this != &rhs )
       {
+         p_log = rhs.p_log;
+
          p_main_allocator = rhs.p_main_allocator;
          rhs.p_main_allocator = nullptr;
 
@@ -154,6 +130,9 @@ namespace EGL
 
          instance = rhs.instance;
          rhs.instance = VK_NULL_HANDLE;
+
+         debug_messenger = rhs.debug_messenger;
+         rhs.debug_messenger = VK_NULL_HANDLE;
       }
 
       return *this;
@@ -173,13 +152,16 @@ namespace EGL
       std::uint32_t glfw_ext_count = 0;
       char const** glfw_ext = glfwGetRequiredInstanceExtensions( &glfw_ext_count );
 
+      instance_extensions.assign( glfw_ext, glfw_ext + glfw_ext_count );
+      instance_extensions.emplace_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
+
       VkInstanceCreateInfo instance_create_info = { };
       instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
       instance_create_info.pNext = nullptr;
       instance_create_info.flags = { };
       instance_create_info.pApplicationInfo = &app_info;
-      instance_create_info.enabledExtensionCount = glfw_ext_count;
-      instance_create_info.ppEnabledExtensionNames = glfw_ext;
+      instance_create_info.enabledExtensionCount = instance_extensions.size( );
+      instance_create_info.ppEnabledExtensionNames = instance_extensions.data( );
 
       if ( check_validation_layer_support( ) )
       {
@@ -212,7 +194,7 @@ namespace EGL
          create_info.pfnUserCallback = debug_callback;
          create_info.pUserData = p_log;
 
-         if ( create_debug_utils_messenger( instance, &create_info, nullptr, &debug_messenger ) != VK_SUCCESS )
+         if ( vkCreateDebugUtilsMessengerEXT( instance, &create_info, nullptr, &debug_messenger ) != VK_SUCCESS )
          {
             LOG_ERROR( p_log, "Failed to create debug utils messenger. No validation layers support will be enabled." );
          }
