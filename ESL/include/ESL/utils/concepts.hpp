@@ -31,4 +31,36 @@ namespace ESL
 {
    template <typename any_t>
    concept basic_type = std::integral<any_t>&& std::floating_point<any_t>&& std::is_pointer_v<any_t>;
+
+   template<class B>
+   concept boolean = std::movable<std::remove_cvref_t<B>> &&
+      requires( 
+            const std::remove_reference_t<B>& b1, 
+            const std::remove_reference_t<B>& b2, const bool a) 
+      {
+         { b1 } -> std::convertible_to<bool>;
+         { !b1 } -> std::convertible_to<bool>;
+         { b1 && b2 } -> std::same_as<bool>;
+         { b1 &&  a } -> std::same_as<bool>;
+         {  a && b2 } -> std::same_as<bool>;
+         { b1 || b2 } -> std::same_as<bool>;
+         { b1 ||  a } -> std::same_as<bool>;
+         {  a || b2 } -> std::same_as<bool>;
+         { b1 == b2 } -> std::convertible_to<bool>;
+         { b1 ==  a } -> std::convertible_to<bool>;
+         {  a == b2 } -> std::convertible_to<bool>;
+         { b1 != b2 } -> std::convertible_to<bool>;
+         { b1 !=  a } -> std::convertible_to<bool>;
+         {  a != b2 } -> std::convertible_to<bool>;
+      };
+
+   template <class T>
+   concept totally_ordered = std::equality_comparable<T>&& requires(
+      const std::remove_reference_t<T>& a, const std::remove_reference_t<T>& b )
+      {
+         { a < b } -> boolean;
+         { a > b } -> boolean;
+         { a <= b } -> boolean;
+         { a >= b } -> boolean;
+      };
 } // namespace ESL

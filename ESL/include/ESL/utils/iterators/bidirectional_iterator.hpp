@@ -26,39 +26,37 @@
 
 #include <cstdint>
 #include <iterator>
-#include <compare>
 
 namespace ESL
 {
-   template <typename type_>
-   class random_access_iterator
+   template <class any_>
+   class bidirectional_iterator
    {
    public:
-      using iterator_category = std::random_access_iterator_tag;
-      using self_type = random_access_iterator;
-      using value_type = type_;
-      using reference = type_&;
-      using const_reference = type_ const&;
-      using pointer = type_*;
-      using const_pointer = type_ const*;
+      using iterator_category = std::bidirectional_iterator_tag;
+      using self_type = bidirectional_iterator;
+      using value_type = any_;
+      using reference = value_type&;
+      using const_reference = value_type const&;
+      using pointer = value_type*;
+      using const_pointer = value_type const*;
       using difference_type = std::ptrdiff_t;
 
    public:
-      constexpr random_access_iterator( ) noexcept = default;
-      constexpr explicit random_access_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
+      constexpr bidirectional_iterator( ) noexcept = default;
+      constexpr explicit bidirectional_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
 
-      constexpr bool operator==( self_type const& rhs ) const noexcept = default;
-      constexpr std::strong_ordering operator<=>( self_type const& rhs ) const noexcept = default;
+      constexpr bool operator==( self_type rhs ) const noexcept = default;
 
       constexpr reference operator*( ) noexcept
       {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+         assert( p_type != nullptr && "Cannot derefence a nullptr" );
 
          return *p_type;
       }
       constexpr const_reference operator*( ) const noexcept
       {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+         assert( p_type != nullptr && "Cannot derefence a nullptr" );
 
          return *p_type;
       }
@@ -70,7 +68,7 @@ namespace ESL
       }
       constexpr const_pointer operator->( ) const noexcept
       {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+         assert( p_type != nullptr && "Cannot derefence a nullptr" );
 
          return p_type;
       };
@@ -103,51 +101,7 @@ namespace ESL
          return it;
       }
 
-      constexpr self_type& operator+=( difference_type diff ) noexcept
-      {
-         this->p_type += diff;
-
-         return *this;
-      }
-      constexpr self_type& operator-=( difference_type diff ) noexcept
-      {
-         this->p_type -= diff;
-
-         return *this;
-      }
-
-      constexpr self_type operator+( difference_type rhs ) const noexcept
-      {
-         self_type it = *this;
-         it += rhs;
-
-         return it;
-      }
-      constexpr self_type operator-( difference_type rhs ) const noexcept
-      {
-         self_type it = *this;
-         it -= rhs;
-
-         return it;
-      }
-
-      constexpr difference_type operator+( self_type const& it ) const noexcept { return p_type + it.p_type; }
-      constexpr difference_type operator-( self_type const& it ) const noexcept { return p_type - it.p_type; }
-
-      constexpr reference operator[]( difference_type diff ) noexcept
-      {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
-
-         return *( *this + diff );
-      }
-      constexpr const_reference operator[]( difference_type diff ) const noexcept
-      {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
-
-         return *( *this + diff );
-      }
-
-      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.p_type ); }
+      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.get_ptr( ) ); }
 
    private:
       pointer p_type{ nullptr };
