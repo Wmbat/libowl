@@ -389,20 +389,21 @@ namespace ESL
       const_pointer data( ) const noexcept { return p_alloc; }
 
       // iterators
-      constexpr iterator begin( ) noexcept { return iterator{ p_alloc }; }
-      constexpr const_iterator cbegin( ) const noexcept { return const_iterator{ p_alloc }; }
+      iterator begin( ) noexcept { return iterator{ p_alloc }; }
+      const_iterator begin( ) const noexcept { return const_iterator{ p_alloc }; }
+      const_iterator cbegin( ) const noexcept { return const_iterator{ p_alloc }; }
 
-      constexpr iterator end( ) noexcept { return iterator{ p_alloc + current_size }; }
-      constexpr const_iterator cend( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
+      iterator end( ) noexcept { return iterator{ p_alloc + current_size }; }
+      const_iterator end( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
+      const_iterator cend( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
 
-      constexpr reverse_iterator rbegin( ) noexcept { return reverse_iterator{ p_alloc }; }
-      constexpr const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
+      reverse_iterator rbegin( ) noexcept { return reverse_iterator{ p_alloc }; }
+      const_reverse_iterator rbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
+      const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
 
-      constexpr reverse_iterator rend( ) noexcept { return reverse_iterator{ p_alloc + current_size }; }
-      constexpr const_reverse_iterator crend( ) const noexcept
-      {
-         return const_reverse_iterator{ p_alloc + current_size };
-      }
+      reverse_iterator rend( ) noexcept { return reverse_iterator{ p_alloc + current_size }; }
+      const_reverse_iterator rend( ) const noexcept { return reverse_iterator{ p_alloc + current_size }; }
+      const_reverse_iterator crend( ) const noexcept { return const_reverse_iterator{ p_alloc + current_size }; }
 
       // capacity
       constexpr bool empty( ) const noexcept { return current_size == 0; }

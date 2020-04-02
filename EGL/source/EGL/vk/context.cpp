@@ -212,13 +212,13 @@ namespace EGL
          auto* p_layers = reinterpret_cast<VkLayerProperties*>( alloca( sizeof( VkLayerProperties ) * layer_count ) );
          vkEnumerateInstanceLayerProperties( &layer_count, p_layers );
 
-         for ( std::size_t j = 0; j < validation_layer.size( ); ++j )
+         for ( auto const& layer : validation_layer )
          {
             for ( std::size_t i = 0; i < layer_count; ++i )
             {
-               if ( strcmp( validation_layer[j], p_layers[i].layerName ) == 0 )
+               if ( strcmp( layer, p_layers[i].layerName ) == 0 )
                {
-                  LOG_INFO_P( p_log, "Validation layer support: {1}", validation_layer[j] );
+                  LOG_INFO_P( p_log, "Validation layer support: {1}", layer );
 
                   return true;
                }
