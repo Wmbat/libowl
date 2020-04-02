@@ -30,7 +30,7 @@ set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" )
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror" )
+set( CLANG_DEBUG_FLAGS "-o0 -g -Weverything -Werror" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
 set( GNU_RELEASE_FLAGS "-o3" )

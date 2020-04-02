@@ -25,6 +25,8 @@
 #include <EGL/render_manager.hpp>
 #include <ESL/utils/logger.hpp>
 
+#include <map>
+
 int main( )
 {
    auto main_logger = ESL::logger( "main_logger" );

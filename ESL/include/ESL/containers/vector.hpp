@@ -25,6 +25,7 @@
 #pragma once
 
 #include <ESL/allocators/allocator_utils.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/utils/compare.hpp>
 #include <ESL/utils/concepts.hpp>
 #include <ESL/utils/iterators/random_access_iterator.hpp>
@@ -38,7 +39,7 @@
 
 namespace ESL
 {
-   template <class type_, allocator allocator_>
+   template <class type_, allocator allocator_ = ESL::multipool_allocator>
    class vector
    {
       using is_ptr = std::is_pointer<type_>;
