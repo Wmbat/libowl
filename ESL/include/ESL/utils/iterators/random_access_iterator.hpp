@@ -30,6 +30,15 @@
 
 namespace ESL
 {
+   /**
+    * @class random_access_iterator random_access_iterator.hpp <ESL/utils/iterators/random_access_iterator.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Tuesday, April 7th, 2020
+    * @brief An iterator used for random access in containers.
+    * @copyright MIT License
+    *
+    * @tparam  type_    The type of elements the iterator will operate over.
+    */
    template <typename type_>
    class random_access_iterator
    {

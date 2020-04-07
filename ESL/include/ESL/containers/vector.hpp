@@ -593,7 +593,7 @@ namespace ESL
       const_pointer data( ) const noexcept { return p_alloc; }
 
       /**
-       * @brief Return an iterator to the first element in the container.
+       * @brief Return an @ref random_access_iterator iterator to the first element in the container.
        *
        * @return The iterator to the first element in the container.
        */
