@@ -70,7 +70,7 @@ namespace ESL
 
    public:
       /**
-       * @brief Constructs an empty vector with a pointer to an allocator.
+       * @brief Constructs an empty vector with a pointer to an #allocator.
        *
        * @param[in]  p_allocator*   A pointer to the allocator that will hold the vector's memory.
        */
@@ -82,8 +82,8 @@ namespace ESL
        * @brief Constructs a vector with count copies of elements with value value and a pointer to
        * an allocator.
        *
-       * Constructs a vector of size count with value value of type value_type in a memory location provided
-       * by the allocator of type allocator_type. To use this constructor, the type #value_type must comply
+       * Constructs a vector of size count with value value of type #value_type in a memory location provided
+       * by the allocator of type #allocator_type. To use this constructor, the type #value_type must comply
        * with the <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> concept.
        *
        * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory. If the exception occurs, the
@@ -118,7 +118,7 @@ namespace ESL
        * allocator.
        *
        * Constructs a vector of size count with elements of type value_type in a memory location provided
-       * by the allocator of type allocator_type.
+       * by the allocator of type #allocator_type.
        * To use this constructor, the type value_type must comply
        * with the <a
        * href="https://en.cppreference.com/w/cpp/concepts/default_initializable">std::default_initializable</a> concept.
@@ -152,7 +152,7 @@ namespace ESL
        * @brief Constructs a vector from a range of input iterators [first, last) and a pointer to an allocator.
        *
        * Constructs a vector using a range designated by input iterators from first to last exclusive on a memory
-       * location provided by the allocator of type allocator_type. To use this constructor, the type #value_type
+       * location provided by the allocator of type #allocator_type. To use this constructor, the type #value_type
        * must comply with the <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
        * concept.
        *
