@@ -25,10 +25,10 @@
 
 namespace ESL
 {
-   logger::logger( ) : log( "Luciole" )
+   logger::logger( ) : log( "Default EGL Logger" )
    {
       auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
-      console_sink->set_level( spdlog::level::debug );
+      console_sink->set_level( spdlog::level::info );
       console_sink->set_pattern( "[%H:%M:%S.%f] [%n] [%l] %v" );
 
       auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( "logs.txt", true );

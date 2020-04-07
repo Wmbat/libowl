@@ -19,8 +19,11 @@
 [submodule "EGL/external/Vulkan-Headers"]
 	path = EGL/external/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
-[submodule "EWL/external/glfw"]
-	path = EWL/external/glfw
+[submodule "external/easy_profiler"]
+	path = external/easy_profiler
+	url = https://github.com/yse/easy_profiler
+[submodule "EGL/external/glfw"]
+	path = EGL/external/glfw
 	url = https://github.com/glfw/glfw
 [submodule "ESL/external/spdlog"]
 	path = ESL/external/spdlog

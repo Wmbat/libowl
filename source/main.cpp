@@ -1,50 +1,44 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2020 Wmbat
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include <ESL/allocators/allocator_utils.hpp>
-#include <ESL/allocators/pool_allocator.hpp>
-#include <ESL/containers/vector.hpp>
-
+#include <EGL/render_manager.hpp>
 #include <ESL/utils/logger.hpp>
 
-#include <vector>
-
-struct moveable
-{
-   moveable( ) = default;
-   explicit moveable( int i ) : i( i ) {}
-   moveable( moveable const& other ) = delete;
-   moveable( moveable&& other ) { i = std::move( other.i ); }
-
-   moveable& operator=( moveable const& other ) = delete;
-   moveable& operator=( moveable&& other )
-   {
-      i = std::move( other.i );
-      return *this;
-   }
-
-   int i = 0;
-};
-
-struct copyable
-{
-   int i = 0;
-};
-
-void test( ESL::complex_allocator<int> auto& t )
-{
-
-}
+#include <map>
 
 int main( )
 {
-   std::size_t size = 4096 * 4;
+   auto main_logger = ESL::logger( "main_logger" );
 
-   ESL::pool_allocator my_pool{ 1, size };
-   ESL::vector<copyable, ESL::pool_allocator> my_vec{ &my_pool };
+   auto render_manager = EGL::render_manager( &main_logger )
+      .set_app_name( "My App" )
+      .create_context( );
 
-   test( my_pool );
-
-   copyable a{ 20 };
-   auto it = my_vec.insert( my_vec.cbegin( ), 5, a );
+   while ( render_manager.is_running( ) )
+   {
+      render_manager.render( );
+   }
 
    return 0;
 }

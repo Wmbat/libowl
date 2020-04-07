@@ -42,7 +42,7 @@ else ( )
    message( STATUS "Build type: Debug" )
 endif ( )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
+set( CLANG_DEBUG_FLAGS "-o0 -g -Weverything -Werror -fno-omit-frame-pointer" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )

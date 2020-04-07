@@ -1,3 +1,7 @@
 /[Bb]uild
 /compile_commands.json
 .clangd
+tags
+
+html
+latex

@@ -68,7 +68,7 @@ namespace ESL
          return *this;
       }
 
-      constexpr self_type operator++( int ) noexcept
+      constexpr self_type operator++( int ) const noexcept
       {
          self_type it = *this;
          ++*this;
