@@ -35,10 +35,20 @@
 #include <compare>
 #include <type_traits>
 
-#define TO_TYPE_PTR( ptr ) reinterpret_cast<pointer>( ptr )
-
 namespace ESL
 {
+#define TO_TYPE_PTR( ptr ) reinterpret_cast<pointer>( ptr )
+
+   /**
+    * @class vector vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday 4th, 2020
+    * @brief A dynamically allocated resizable array.
+    * @copyright MIT License.
+    *
+    * @tparam  type_       The type of the vector's elements.
+    * @tparam  allocator_  The type of the allocator.
+    */
    template <class type_, allocator allocator_ = ESL::multipool_allocator>
    class vector
    {
@@ -51,22 +61,42 @@ namespace ESL
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-      using self_type = vector;
       using value_type = type_;
-      using reference = type_&;
-      using const_reference = type_ const&;
-      using pointer = type_*;
-      using const_pointer = type_ const*;
+      using allocator_type = allocator_;
+      using reference = value_type&;
+      using const_reference = value_type const&;
+      using pointer = value_type*;
+      using const_pointer = value_type const*;
       using size_type = std::size_t;
       using difference_type = std::ptrdiff_t;
 
    public:
+      /**
+       * @brief Constructs an empty vector with a pointer to an allocator.
+       *
+       * @param[in]  p_allocator*   A pointer to the allocator that will hold the vector's memory.
+       */
       explicit vector( allocator_* p_allocator ) noexcept : p_allocator( p_allocator )
       {
          assert( p_allocator != nullptr && "Cannot have a nullptr allocator" );
       }
+      /**
+       * @brief Constructs a vector with count copies of elements with value value and a pointer to
+       * an allocator.
+       *
+       * Constructs a vector of size count with value value of type #value_type in a memory location provided
+       * by the allocator of type #allocator_type. To use this constructor, the type #value_type must comply
+       * with the <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> concept.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory. If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  count          The number of elements to place in the vector.
+       * @param[in]  value          The value to assign the elements placed in the vector.
+       * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
+       */
       explicit vector(
-         size_type count, const_reference value, allocator_* p_allocator ) requires std::copyable<value_type> :
+         size_type count, const_reference value, allocator_type* p_allocator ) requires std::copyable<value_type> :
          p_allocator( p_allocator ),
          current_capacity( count ),
          current_size( count )
@@ -85,7 +115,23 @@ namespace ESL
             new ( TO_BYTE_PTR( p_alloc + i ) ) value_type( value );
          }
       }
-      explicit vector( size_type count, allocator_* p_allocator ) requires std::default_initializable<value_type> :
+      /**
+       * @brief Constructs a vector with count copies of elements with default value and a pointer to an
+       * allocator.
+       *
+       * Constructs a vector of size count with elements of type #value_type in a memory location provided
+       * by the allocator of type #allocator_type.
+       * To use this constructor, the type #value_type must comply
+       * with the <a
+       * href="https://en.cppreference.com/w/cpp/concepts/default_initializable">std::default_initializable</a> concept.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory. If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  count          The number of elements to place in the vector.
+       * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
+       */
+      explicit vector( size_type count, allocator_type* p_allocator ) requires std::default_initializable<value_type> :
          p_allocator( p_allocator ),
          current_capacity( count ),
          current_size( count )
@@ -104,8 +150,25 @@ namespace ESL
             new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
          }
       }
+      /**
+       * @brief Constructs a vector from a range of input iterators [first, last) and a pointer to an allocator.
+       *
+       * Constructs a vector using a range designated by input iterators from first to last exclusive on a memory
+       * location provided by the allocator of type #allocator_type. To use this constructor, the type #value_type
+       * must comply with the <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
+       * concept.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  first          The first element to start copying from. Must satisfy the std::input_iterator
+       * requirement.
+       * @param[in]  last           The last element to end copying from. Must satisfy the std::input_iterator
+       * requirement.
+       * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
+       */
       explicit vector( std::input_iterator auto first, std::input_iterator auto last,
-         allocator_* p_allocator ) requires std::copyable<value_type> :
+         allocator_type* p_allocator ) requires std::copyable<value_type> :
          p_allocator( p_allocator ),
          current_capacity( last - first ),
          current_size( current_capacity )
@@ -124,7 +187,24 @@ namespace ESL
             p_alloc[i] = *first;
          }
       }
-      vector( std::initializer_list<type_> init, allocator_* p_allocator ) requires std::copyable<value_type> :
+      /**
+       * @brief Constructs a vector from an <a
+       * href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a> and a pointer to an
+       * allocator.
+       *
+       * @details Constructs a vector from an
+       * <a href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a> and place all
+       * elements of the list into a memory location provided by the allocator. To use this constructor, the type
+       * #value_type must satisfy the
+       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  init           The list of elements to place into the vector.
+       * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
+       */
+      vector( std::initializer_list<type_> init, allocator_type* p_allocator ) requires std::copyable<value_type> :
          p_allocator( p_allocator )
       {
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
@@ -144,6 +224,18 @@ namespace ESL
             p_alloc[index++] = it;
          }
       }
+      /**
+       * @brief Construct a vector from another vector.
+       * 
+       * @details Construct a vector from another vector, copying it's data into a new memory allocation from the same #allocator.
+       * To use this constructor, the type #value_type must satisfy the
+       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  other    The vector to copy the data from.
+       */
       vector( vector const& other ) requires std::copyable<value_type>
       {
          p_allocator = other.p_allocator;
@@ -162,7 +254,20 @@ namespace ESL
             p_alloc[i] = other[i];
          }
       }
-      vector( vector const& other, allocator_* p_allocator ) requires std::copyable<value_type> :
+      /**
+       * @brief Construct a vector from another vector.
+       * 
+       * @details Construct a vector from another vector, copying it's data into a new memory allocation from another #allocator.
+       * To use this constructor, the type #value_type must satisfy the
+       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  other          The vector to copy the data from.
+       * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
+       */
+      vector( vector const& other, allocator_type* p_allocator ) requires std::copyable<value_type> :
          p_allocator( p_allocator )
       {
          if ( !p_allocator )
@@ -182,6 +287,11 @@ namespace ESL
 
          std::copy( other.cbegin( ), other.cend( ), p_alloc );
       }
+      /**
+       * @brief Move the data from another vector into this vector.
+       *
+       * @param[in]  other    The vector to move the data from.
+       */
       vector( vector&& other ) noexcept
       {
          p_allocator = other.p_allocator;
@@ -196,6 +306,9 @@ namespace ESL
          p_alloc = other.p_alloc;
          other.p_alloc = nullptr;
       }
+      /**
+       * @brief Destructor.
+       */
       ~vector( )
       {
          if ( p_allocator && p_alloc )
@@ -292,12 +405,28 @@ namespace ESL
          return *this;
       }
 
+      /**
+       * @brief Check if two vectors have the same elements.
+       *
+       * @tparam  other_   The allocator of the other vector.
+       * @param   rhs      The vector to compare against.
+       *
+       * @return True if the two vectors have the same data, otherwise false
+       */
       template <allocator other_ = allocator_>
       constexpr bool operator==( vector<type_, other_> const& rhs ) const requires std::equality_comparable<type_>
       {
          return std::equal( cbegin( ), cbegin( ), rhs.cbegin( ), rhs.cend( ) );
       }
 
+      /**
+       * @brief Perform a lexicographical compare on the elements of the two vectors.
+       *
+       * @tparam  other_   The allocator of the other vector.
+       * @param   rhs      The vector to compare against.
+       *
+       * @return An ordering defining the relationship between the two vectors.
+       */
       template <allocator other_ = allocator_>
       constexpr auto operator<=>( vector<type_, other_> const& rhs )
       {
@@ -305,6 +434,17 @@ namespace ESL
             cbegin( ), cend( ), rhs.cbegin( ), rhs.cend( ), synth_three_way );
       }
 
+      /**
+       * @brief Assign a value to a count of elements in the container.
+       *
+       * @details Assign a number count of elements with the value value in the container. if the container requires
+       * reallocation, all elements currently present in the container will be moved to the new allocation. This 
+       * function may only be called if the type #value_type satisfies the 
+       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @param[in]  count    The number of elements to assign a value.
+       * @param[in]  value    The value to assign to the elements.
+       */
       void assign( size_type count, value_type const& value ) requires std::copyable<value_type>
       {
          reallocate( count );
@@ -338,10 +478,26 @@ namespace ESL
          }
       }
 
-      allocator_* get_allocator( ) noexcept { return p_allocator; }
-      allocator_ const* get_allocator( ) const noexcept { return p_allocator; }
+      /**
+       * @brief Return a pointer to the container's allocator.
+       *
+       * @return The pointer to the container's allocator
+       */
+      allocator_type* get_allocator( ) noexcept { return p_allocator; }
+      /**
+       * @brief Return a pointer to the container's allocator.
+       *
+       * @return The pointer to the container's allocator
+       */
+      allocator_type const* get_allocator( ) const noexcept { return p_allocator; }
 
-      // element access
+      /** 
+       * @brief Return a #reference to the element at the index position in the container.
+       *
+       * @param[in]  index    The index position of the desired element.
+       *
+       * @return A #reference to the element at the index position in the container.
+       */
       reference at( size_type index )
       {
          if ( index < 0 && index >= current_size )
@@ -353,6 +509,13 @@ namespace ESL
             return p_alloc[index];
          }
       }
+      /** 
+       * @brief Return a #const_reference to the element at the index position in the container.
+       *
+       * @param[in]  index    The index position of the desired element.
+       *
+       * @return A #const_reference to the element at the index position in the container.
+       */
       const_reference at( size_type index ) const
       {
          if ( index < 0 && index >= current_size )
@@ -364,6 +527,13 @@ namespace ESL
             return p_alloc[index];
          }
       }
+      /**
+       * @brief Return a #reference to the element at the desired index position.
+       *
+       * @param[in]  index    The index position of the element to access.
+       *
+       * @return A #reference to the element at location index.
+       */
       reference operator[]( size_type index ) noexcept
       {
          assert( index >= 0 && "Index cannot be less than zero" );
@@ -371,6 +541,13 @@ namespace ESL
 
          return p_alloc[index];
       }
+      /**
+       * @brief Return a #const_reference to the element at the desired index position.
+       *
+       * @param[in]  index    The index position of the element to access.
+       *
+       * @return A #const_reference to the element at location index.
+       */
       const_reference operator[]( size_type index ) const noexcept
       {
          assert( index >= 0 && "Index cannot be less than zero" );
@@ -378,37 +555,151 @@ namespace ESL
 
          return p_alloc[index];
       }
+      /**
+       * @brief Return a #reference to the first element in the container.
+       *
+       * @return A #reference to the first element in the container.
+       */
       reference front( ) noexcept { return p_alloc[0]; }
+      /**
+       * @brief Return a #const_reference to the first element in the container.
+       *
+       * @return A #const_reference to the first element in the container.
+       */
       const_reference front( ) const noexcept { return p_alloc[0]; }
 
+      /**
+       * @brief Return a #reference to the last element in the container.
+       *
+       * @return A #reference to the last element in the container.
+       */
       reference back( ) noexcept { return p_alloc[current_size - 1]; }
+      /**
+       * @brief Return a #const_reference to the last element in the container.
+       *
+       * @return A #const_reference to the last element in the container.
+       */
       const_reference back( ) const noexcept { return p_alloc[current_size - 1]; }
 
-      // data access
+      /**
+       * @brief Return a #pointer to the memory allocation of the container's data.
+       *
+       * @return A #pointer to the memory allocation of the container's data.
+       */
       pointer data( ) noexcept { return p_alloc; }
+      /**
+       * @brief Return a #const_pointer to the memory allocation of the container's data.
+       *
+       * @return A #const_pointer to the memory allocation of the container's data.
+       */
       const_pointer data( ) const noexcept { return p_alloc; }
 
-      // iterators
+      /**
+       * @brief Return an #iterator to the first element in the container.
+       *
+       * @return The #iterator to the first element in the container.
+       */
       iterator begin( ) noexcept { return iterator{ p_alloc }; }
+      /**
+       * @brief Return a #const_iterator to the first element in the container.
+       *
+       * @return The #const_iterator to the first element in the container.
+       */
       const_iterator begin( ) const noexcept { return const_iterator{ p_alloc }; }
+      /**
+       * @brief Return a #const_iterator to the first element in the container.
+       *
+       * @return The #const_iterator to the first element in the container.
+       */
       const_iterator cbegin( ) const noexcept { return const_iterator{ p_alloc }; }
 
+      /**
+       * @brief Return a #iterator to one past the last element in the container.
+       *
+       * @return The #iterator to one past the last element in the container.
+       */
       iterator end( ) noexcept { return iterator{ p_alloc + current_size }; }
+      /**
+       * @brief Return a #const_iterator to one past the last element in the container.
+       *
+       * @return The #const_iterator to one past the last element in the container.
+       */
       const_iterator end( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
+      /**
+       * @brief Return a #const_iterator to one past the last element in the container.
+       *
+       * @return The #const_iterator to one past the last element in the container.
+       */
       const_iterator cend( ) const noexcept { return const_iterator{ p_alloc + current_size }; }
 
+      /**
+       * @brief Return a #reverse_iterator to the first element in the container.
+       *
+       * @return The #reverse_iterator to the first element in the container.
+       */
       reverse_iterator rbegin( ) noexcept { return reverse_iterator{ p_alloc }; }
+      /**
+       * @brief Return a #const_reverse_iterator to the first element in the container.
+       *
+       * @return The #const_reverse_iterator to the first element in the container.
+       */
       const_reverse_iterator rbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
+      /**
+       * @brief Return a #const_reverse_iterator to the first element in the container.
+       *
+       * @return The #const_reverse_iterator to the first element in the container.
+       */
       const_reverse_iterator crbegin( ) const noexcept { return const_reverse_iterator{ p_alloc }; }
 
+      /**
+       * @brief Return a #reverse_iterator to one past the last element in the container.
+       *
+       * @return The #reverse_iterator to one past the last element in the container.
+       */
       reverse_iterator rend( ) noexcept { return reverse_iterator{ p_alloc + current_size }; }
+      /**
+       * @brief Return a #const_reverse_iterator to one past the last element in the container.
+       *
+       * @return The #const_reverse_iterator to one past the last element in the container.
+       */
       const_reverse_iterator rend( ) const noexcept { return reverse_iterator{ p_alloc + current_size }; }
+      /**
+       * @brief Return a #const_reverse_iterator to one past the last element in the container.
+       *
+       * @return The #const_reverse_iterator to one past the last element in the container.
+       */
       const_reverse_iterator crend( ) const noexcept { return const_reverse_iterator{ p_alloc + current_size }; }
 
-      // capacity
+      /**
+       * @brief Check if the container has no element.
+       *
+       * @return True if the container is empty, otherwise false.
+       */
       constexpr bool empty( ) const noexcept { return current_size == 0; }
+      /**
+       * @brief Return the number of elements in the container.
+       *
+       * @return The size of the container.
+       */
       constexpr size_type size( ) const noexcept { return current_size; }
+      /**
+       * @brief Return the maximum size of the container.
+       *
+       * @return The maximum size of the container.
+       */
       constexpr size_type max_size( ) const noexcept { return std::numeric_limits<std::uintptr_t>::max( ); }
+      /**
+       * @brief Reserve a piece of memory of size new_capacity from the #allocator.
+       *
+       * Reserve a piece of memory of size new_capacity from the #allocator. If the container already has elements and
+       * the new capacity is greater than the old capacity, all elements will be moved over to the new memory
+       * allocation.
+       *
+       * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
+       * state of the vector instance will remain unchanged and valid.
+       *
+       * @param[in]  new_capacity   The new desired capacity for the container's memory allocation.
+       */
       void reserve( size_type new_capacity )
       {
          if ( new_capacity > max_size( ) )
@@ -433,9 +724,16 @@ namespace ESL
             current_capacity = new_capacity;
          }
       }
+      /**
+       * @brief Return the current capacity of the memory allocation.
+       *
+       * @return The current capacity of the memory allocation.
+       */
       constexpr size_type capacity( ) const noexcept { return current_capacity; };
 
-      // modifiers
+      /**
+       * @brief Remove all elements in the container.
+       */
       void clear( ) noexcept
       {
          if constexpr ( !basic_type<value_type> )
@@ -704,6 +1002,16 @@ namespace ESL
 
          p_alloc[current_size++] = value;
       }
+      /**
+       * @brief Move an rvalue reference at the end of the container.
+       *
+       * @details Move the #value_type value at the end of the container. The container may need to reallocate the
+       * memory and move all elements into the new memory allocation. This function may only be used if the type
+       * #value_type satisfies the <a href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a>
+       * requirement.
+       *
+       * @param[in]  value    The value to move at the end of the container.
+       */
       void push_back( value_type&& value ) requires std::movable<value_type>
       {
          assert( current_size + 1 < max_size( ) );
@@ -713,6 +1021,14 @@ namespace ESL
          p_alloc[current_size++] = std::move( value );
       }
 
+      /**
+       * @brief Construct an element at the end of the container.
+       *
+       * @tparam  args_    
+       * @param   args     The arguments needed to construct the new element.
+       *
+       * @return A #reference to the newly constructed element at the end of the container.
+       */
       template <class... args_>
       reference emplace_back( args_&&... args ) requires std::constructible_from<value_type, args_...>
       {
@@ -725,6 +1041,9 @@ namespace ESL
          return p_alloc[current_size++];
       }
 
+      /**
+       * @brief Remove the last element in the container.
+       */
       void pop_back( )
       {
          if constexpr ( !basic_type<value_type> )
@@ -850,12 +1169,13 @@ namespace ESL
       }
 
    private:
-      allocator_* p_allocator{ nullptr };
+      allocator_type* p_allocator{ nullptr };
 
       pointer p_alloc{ nullptr };
       size_type current_capacity{ 0 };
       size_type current_size{ 0 };
    }; // namespace ESL
-} // namespace ESL
 
 #undef TO_TYPE_PTR
+
+} // namespace ESL
