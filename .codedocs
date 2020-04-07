@@ -15,3 +15,5 @@
 # location of the DOXYFILE.
 
 DOXYFILE = docs/Doxyfile.in
+
+EXCLUDE = EGL/include/EGL/vk/vma/vk_mem_alloc.h
