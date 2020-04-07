@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+/**
+ * @mainpage Test main page
+ */
+
 #include <EGL/render_manager.hpp>
 #include <ESL/utils/logger.hpp>
 
