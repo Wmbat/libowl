@@ -57,10 +57,6 @@ target_compile_options( ESL_test
 target_sources( ESL_test
    PRIVATE
       "ESL/main.cpp"
-      "ESL/allocators/monotonic_allocator_test.cpp"
-      "ESL/allocators/multipool_allocator_test.cpp"
-      "ESL/allocators/pool_allocator_test.cpp"
-      "ESL/allocators/stack_allocator_test.cpp"
       "ESL/containers/vector_test.cpp"
 )
 

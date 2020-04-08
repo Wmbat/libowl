@@ -30,21 +30,21 @@
 
 namespace ESL
 {
-   pool_allocator::pool_allocator( size_type const block_count, size_type const block_size ) noexcept :
-      total_size( block_count * block_size ), used_memory( 0 ), num_allocations( 0 ), block_count( block_count ),
-      block_size( block_size ),
-      p_memory( std::make_unique<std::byte[]>( block_count * ( block_size + sizeof( block_header ) ) ) ),
+   pool_allocator::pool_allocator( create_info const& create_info ) noexcept :
+      total_size( create_info.pool_count * create_info.pool_size ), pool_count( create_info.pool_count ),
+      pool_size( create_info.pool_size ),
+      p_memory( std::make_unique<std::byte[]>( pool_count * ( pool_size + sizeof( block_header ) ) ) ),
       p_first_free( nullptr )
    {
-      assert( block_count != 0 && "Cannot have no blocks in memory pool" );
-      assert( block_size != 0 && "Cannot have a block size of zero" );
+      assert( pool_count != 0 && "Cannot have no blocks in memory pool" );
+      assert( pool_size != 0 && "Cannot have a block size of zero" );
 
       p_first_free = TO_BLOCK_HEAD_PTR( p_memory.get( ) );
       auto* p_base_cpy = p_first_free;
 
-      for ( int i = 1; i < block_count; ++i )
+      for ( int i = 1; i < pool_count; ++i )
       {
-         size_type offset = i * ( block_size + sizeof( block_header ) );
+         size_type offset = i * ( pool_size + sizeof( block_header ) );
 
          auto* p_new = TO_BLOCK_HEAD_PTR( p_memory.get( ) + offset );
          p_base_cpy->p_next = p_new;
@@ -64,7 +64,7 @@ namespace ESL
 
          p_first_free = p_first_free->p_next;
 
-         used_memory += block_size;
+         used_memory += pool_size;
          ++num_allocations;
 
          return TO_BYTE_PTR( p_chunk_header + sizeof( block_header ) );
@@ -75,31 +75,23 @@ namespace ESL
       }
    }
 
-   void pool_allocator::free( pointer p_location ) noexcept
+   auto pool_allocator::deallocate( pointer p_alloc ) noexcept -> void
    {
-      assert( p_location != nullptr && "cannot free a nullptr" );
+      assert( p_alloc != nullptr && "cannot free a nullptr" );
 
-      auto* p_header = TO_BLOCK_HEAD_PTR( p_location - sizeof( block_header ) );
+      auto* p_header = TO_BLOCK_HEAD_PTR( p_alloc - sizeof( block_header ) );
       p_header->p_next = p_first_free;
       p_first_free = p_header;
 
-      used_memory -= block_size;
+      used_memory -= pool_size;
       --num_allocations;
-   }
-
-   bool pool_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
-   {
-      assert( size != 0 && "Size cannot be zero" );
-      assert( alignment != 0 && "Alignment cannot be zero" );
-
-      return p_first_free != nullptr;
    }
 
    auto pool_allocator::allocation_capacity( pointer p_alloc ) const noexcept -> size_type
    {
       if ( p_alloc )
       {
-         return block_size;
+         return pool_size;
       }
       else
       {

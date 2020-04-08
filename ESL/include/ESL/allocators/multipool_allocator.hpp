@@ -31,16 +31,19 @@
 
 namespace ESL
 {
+   /**
+    * @class multipool_allocator multipool_allocator.hpp <ESL/allocators/multipool_allocator.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Tuesday April 7th, 2020
+    * @brief An pool allocator holding multiple layers of pools with varying sizes.
+    * @copyright MIT license
+    */
    class multipool_allocator final
    {
-   public:
-      using pointer = std::byte*;
-      using size_type = std::size_t;
-
       struct block_header
       {
          block_header* p_next = nullptr;
-         size_type depth_index = 0;
+         std::size_t depth_index = 0;
       };
 
       struct access_header
@@ -49,24 +52,90 @@ namespace ESL
       };
 
    public:
-      multipool_allocator( size_type block_count, size_type block_size, size_type pool_depth = 1 ) noexcept;
+      using pointer = std::byte*;
+      using size_type = std::size_t;
 
-      [[nodiscard( "Allocation will never be freed" )]] pointer allocate(
-         size_type size, size_type alignment ) noexcept;
-      void free( pointer p_alloc ) noexcept;
+      /**
+       * @brief The data used to create the #multipool_allocator.
+       */
+      struct create_info
+      {
+         size_type pool_count{ 1 };
+         size_type pool_size{ 1024 };
+         size_type depth{ 1 };
+      };
 
-      [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
+   public:
+      /**
+       * @brief Constructs an empty allocator with no memory.
+       */
+      multipool_allocator( ) = default;
+      /**
+       * @brief Constructs an allocator with the given parameters in the #create_info struct.
+       *
+       * @param[in]  create_info    The parameters used to construct the allocator and allocate the memory.
+       */
+      multipool_allocator( create_info const& create_info ) noexcept;
 
+      /**
+       * @brief Give out a pool of memory that best matchdes the size requirement.
+       *
+       * @param[in]  size        The desired size of the memory pool.
+       * @param[in]  alignment   The memory alignment of the pool.
+       *
+       * @return A pointer to the memory pool.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer allocate(
+         size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+      /**
+       * @brief Give the memory pool back to the allocator.
+       *
+       * @param[in]  p_alloc     The pointer to the previously given memory.
+       */
+      void deallocate( pointer p_alloc ) noexcept;
+
+      /**
+       * @brief Return the size of a pool.
+       *
+       * @param[in]  p_alloc     The allocation of memory associated with a pool.
+       *
+       * @return The size of a pool the memory lives in.
+       */
       size_type allocation_capacity( pointer alloc ) const noexcept;
 
-      void clear( ) noexcept;
+      /**
+       * @brief Reset the allocator's memory. All pointers received from the allocator become invalid.
+       */
+      void release( ) noexcept;
 
+      /**
+       * @brief Return the size of the allocator's memory.
+       *
+       * @return The size of the allocator's memory.
+       */
       size_type max_size( ) const noexcept;
+      /**
+       * @brief Return the amount of memory that has been given out.
+       */
       size_type memory_usage( ) const noexcept;
+      /**
+       * @brief Return the amount of times memory has been given out.
+       */
       size_type allocation_count( ) const noexcept;
 
+      /**
+       * @brief Constructs an instance of type type_ in a pool of memory.
+       *
+       * @tparam     type_       The type of the object ot construct in the pool.
+       * @tparam     args_       The parameters used to construct an instance of type type_.
+       *
+       * @param[in]  args        The parameters necessary for the construction of an object of type type_.
+       *
+       * @return A pointer to the newly constructed object in a memory pool.
+       */
       template <class type_, class... args_>
-      [[nodiscard]] type_* make_new( args_&&... args ) noexcept
+      [[nodiscard( "Memory will go to waste" )]] type_* construct( args_&&... args ) noexcept
+         requires std::constructible_from<type_, args_...>
       {
          if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
          {
@@ -78,28 +147,13 @@ namespace ESL
          }
       }
 
+      /**
+       * @brief Destroy an object previously allocated by the allocator and free it's memory pool.
+       *
+       * @param[in]  p_type   A pointer to the object's memory.
+       */
       template <class type_>
-      [[nodiscard]] type_* make_array( size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot allocate zero elements" );
-         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
-
-         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
-         if ( !p_alloc )
-         {
-            return nullptr;
-         }
-
-         for ( std::size_t i = 0; i < element_count; ++i )
-         {
-            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
-         }
-
-         return reinterpret_cast<type_*>( p_alloc );
-      }
-
-      template <class type_>
-      void make_delete( type_* p_type ) noexcept
+      void destroy( type_* p_type ) noexcept
       {
          if ( p_type )
          {
@@ -108,37 +162,36 @@ namespace ESL
          }
       }
 
-      template <class type_>
-      void make_delete( type_* p_type, size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot free zero elements" );
-
-         for ( size_type i = 0; i < element_count; ++i )
-         {
-            p_type[i].~type_( );
-         }
-
-         free( TO_BYTE_PTR( p_type ) );
-      }
-
+      /**
+       * @brief Create a unique handle to a object allocated in the allocator, it'll be automatically destroyed up
+       * reaching the end of the handle's scope.
+       *
+       * @tparam     type_       The type of the object ot construct in the pool.
+       * @tparam     args_       The parameters used to construct an instance of type type_.
+       *
+       * @param[in]  args        The parameters necessary for the construction of an object of type type_.
+       *
+       * @return A unique pointer to the newly constructed object in a memory pool.
+       */
       template <class type_, class... args_>
       [[nodiscard]] auto_ptr<type_> make_unique( args_&&... args ) noexcept
+         requires std::constructible_from<type_, args_...>
       {
-         return auto_ptr<type_>( make_new<type_>( args... ), [this]( type_* p_type ) {
-            this->make_delete( p_type );
+         return auto_ptr<type_>( construct<type_>( args... ), [this]( type_* p_type ) {
+            this->destroy( p_type );
          } );
       }
 
    private:
-      size_type block_count;
-      size_type block_size;
-      size_type pool_depth;
+      size_type pool_count{ 0 };
+      size_type pool_size{ 0 };
+      size_type depth{ 1 };
 
-      size_type total_size;
-      size_type used_memory;
-      size_type num_allocations;
+      size_type total_size{ 0 };
+      size_type used_memory{ 0 };
+      size_type num_allocations{ 0 };
 
-      std::unique_ptr<std::byte[]> p_memory;
-      access_header* p_access_headers;
+      std::unique_ptr<std::byte[]> p_memory{ nullptr };
+      access_header* p_access_headers{ nullptr };
    };
 } // namespace ESL
