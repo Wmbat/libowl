@@ -117,9 +117,9 @@ namespace ESL
        * @brief Constructs a vector with count copies of elements with default value and a pointer to an
        * allocator.
        *
-       * Constructs a vector of size count with elements of type #value_type in a memory location provided
+       * Constructs a vector of size count with elements of type value_type in a memory location provided
        * by the allocator of type #allocator_type.
-       * To use this constructor, the type #value_type must comply
+       * To use this constructor, the type value_type must comply
        * with the <a
        * href="https://en.cppreference.com/w/cpp/concepts/default_initializable">std::default_initializable</a> concept.
        *
@@ -193,7 +193,7 @@ namespace ESL
        * @details Constructs a vector from an
        * <a href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a> and place all
        * elements of the list into a memory location provided by the allocator. To use this constructor, the type
-       * #value_type must satisfy the
+       * value_type must satisfy the
        * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
        *
        * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
