@@ -4,7 +4,8 @@
 namespace EGL
 {
    render_manager::render_manager( ESL::logger* p_logger ) :
-      p_logger( p_logger ), main_allocator( 2, 5_KB, 5 ), context( &main_allocator )
+      p_logger( p_logger ), main_allocator( { .pool_count = 2, .pool_size = 5_KB, .depth = 5 } ),
+      context( &main_allocator )
    {
       if ( !IS_GRAPHIC_ENV_SETUP )
       {

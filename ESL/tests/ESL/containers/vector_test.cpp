@@ -31,10 +31,22 @@
 
 struct vector_test : public testing::Test
 {
-   vector_test( ) = default;
+   vector_test( )
+   {
+      {
+         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
 
-   ESL::pool_allocator main_pool_alloc{ 2, 2048 };
-   ESL::pool_allocator backup_pool_alloc{ 2, 2048 };
+         main_pool_alloc = ESL::pool_allocator{ create_info };
+      }
+      {
+         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
+
+         backup_pool_alloc = ESL::pool_allocator{ create_info };
+      }
+   }
+
+   ESL::pool_allocator main_pool_alloc;
+   ESL::pool_allocator backup_pool_alloc;
 };
 
 struct copyable
@@ -42,7 +54,7 @@ struct copyable
    copyable( ) = default;
    copyable( int i ) : i( i ) {}
 
-   bool operator==(copyable const& other) const = default;
+   bool operator==( copyable const& other ) const = default;
 
    int i = 0;
 };
@@ -297,7 +309,7 @@ TEST_F( vector_test, init_list_copy_assign )
 
 TEST_F( vector_test, assign_count_value )
 {
-   auto multipool = ESL::multipool_allocator{ 1, 2048, 2 };
+   auto multipool = ESL::multipool_allocator{ { .pool_count = 1, .pool_size = 2048, .depth = 2 } };
    ESL::vector<int, ESL::multipool_allocator> my_vec{ 2048 / sizeof( int ), 10, &multipool };
 
    EXPECT_EQ( my_vec.get_allocator( ), &multipool );
@@ -321,8 +333,6 @@ TEST_F( vector_test, assign_count_value )
    std::for_each( my_vec2.cbegin( ), my_vec2.cend( ), []( int i ) {
       EXPECT_EQ( i, 10 );
    } );
-
-   EXPECT_THROW( my_vec2.assign( 2048 * 2 / sizeof( int ), 20 ), std::bad_alloc );
 
    ESL::vector<copyable, ESL::pool_allocator> my_cpy_vec{ &main_pool_alloc };
 

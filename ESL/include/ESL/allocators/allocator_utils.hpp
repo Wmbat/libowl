@@ -75,7 +75,7 @@ namespace ESL
    concept basic_allocator = requires( allocator_ a, std::byte* ptr, std::size_t s )
    {
       { a.allocate( s, s ) } -> std::same_as<std::byte*>;
-      { a.free( ptr ) } -> std::same_as<void>;
+      { a.deallocate( ptr ) } -> std::same_as<void>;
       { a.max_size() } -> std::convertible_to<std::size_t>;
       { a.memory_usage( ) } -> std::convertible_to<std::size_t>;
       { a.allocation_count() } -> std::convertible_to<std::size_t>;
@@ -84,7 +84,6 @@ namespace ESL
    template<class allocator_>
    concept allocator = basic_allocator<allocator_>&& requires( allocator_ a, std::byte* ptr, std::size_t s )
    {
-      { a.can_allocate( s, s ) } -> std::same_as<bool>;
       { a.allocation_capacity( ptr ) } -> std::convertible_to<std::size_t>;
    };
 

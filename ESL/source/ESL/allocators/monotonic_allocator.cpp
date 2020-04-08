@@ -30,8 +30,8 @@
 
 namespace ESL
 {
-   monotonic_allocator::monotonic_allocator( std::size_t size ) noexcept :
-      total_size( size ), num_allocations( 0 ), used_memory( 0 ), p_memory( std::make_unique<std::byte[]>( size ) ),
+   monotonic_allocator::monotonic_allocator( size_type initial_size ) noexcept :
+      total_size( initial_size ), p_memory( std::make_unique<std::byte[]>( initial_size ) ),
       p_current_pos( p_memory.get( ) )
    {}
 
@@ -54,17 +54,12 @@ namespace ESL
 
       return aligned_address;
    }
-
-   bool monotonic_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   auto monotonic_allocator::deallocate( pointer* p_alloc ) noexcept -> void
    {
-      assert( size != 0 );
+      assert( false && "Deallocate does not apply to a monotonic allocator" );
+   };
 
-      auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
-
-      return ( padding + size + used_memory ) > total_size;
-   }
-
-   void monotonic_allocator::clear( ) noexcept
+   auto monotonic_allocator::release( ) noexcept -> void
    {
       p_current_pos = p_memory.get( );
       used_memory = 0;

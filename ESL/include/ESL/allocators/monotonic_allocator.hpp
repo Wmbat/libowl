@@ -26,11 +26,15 @@
 
 #include <ESL/allocators/allocator_utils.hpp>
 
-#include <cassert>
-#include <memory>
-
 namespace ESL
 {
+   /**
+    * @class monotonic_allocator monotonic_allocator.hpp <ESL/allocators/monotonic_allocator.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Tuesday April 7th, 2020
+    * @brief A simple allocator where memory is only released upon destruction of the allocator.
+    * @copyright MIT License
+    */
    class monotonic_allocator final
    {
    public:
@@ -38,79 +42,60 @@ namespace ESL
       using size_type = std::size_t;
 
    public:
-      monotonic_allocator( std::size_t size ) noexcept;
+      /**
+       * @brief Constructs a monotonic allocator where the buffer is set no null.
+       */
+      monotonic_allocator( ) = default;
+      /**
+       * @brief Constructs a monotonic_allocator with size initial_size.
+       *
+       * @param[in]  initial_size   The initial size of the memory allocation.
+       */
+      explicit monotonic_allocator( size_type initial_size ) noexcept;
 
-      [[nodiscard("Memory will go to waste")]] pointer allocate( size_type size, size_type alignment ) noexcept;
-      [[nodiscard]] bool can_allocate( size_type size, size_type alignment ) const noexcept;
+      /**
+       * @brief Give out a block of memory from the allocator
+       *
+       * @param[in]  size        The size in bytes of the memory block needed.
+       * @param[in]  alignment   The alignment of the memory block needed.
+       *
+       * @return A pointer to the memory block.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer allocate(
+         size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+      /**
+       * @brief Does nothing.
+       *
+       * @param[in]  p_alloc     Pointer to the memory block previously acquired.
+       */
+      void deallocate( pointer* p_alloc ) noexcept;
 
-      void clear( ) noexcept;
+      /**
+       * @brief Reset the allocator's memory. All pointers received from the allocator become invalid.
+       */
+      void release( ) noexcept;
 
+      /**
+       * @brief Return the size of the allocator's memory.
+       *
+       * @return The size of the allocator's memory.
+       */
       size_type max_size( ) const noexcept;
+      /**
+       * @brief Return the amount of memory that has been given out.
+       */
       size_type memory_usage( ) const noexcept;
+      /**
+       * @brief Return the amount of times memory has been given out.
+       */
       size_type allocation_count( ) const noexcept;
 
-      template <class type_, class... args_>
-      [[nodiscard]] type_* make_new( args_&&... args ) noexcept
-      {
-         if ( auto* p_alloc = allocate( sizeof( type_ ), alignof( type_ ) ) )
-         {
-            return new ( p_alloc ) type_( args... );
-         }
-         else
-         {
-            return nullptr;
-         }
-      }
-
-      template <class type_>
-      [[nodiscard]] type_* make_array( size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot allocate zero elements" );
-         static_assert( std::is_default_constructible_v<type_>, "type must be default constructible" );
-
-         auto* p_alloc = allocate( sizeof( type_ ) * element_count, alignof( type_ ) );
-         if ( !p_alloc )
-         {
-            return nullptr;
-         }
-
-         for ( std::size_t i = 0; i < element_count; ++i )
-         {
-            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
-         }
-
-         return reinterpret_cast<type_*>( p_alloc );
-      }
-
-      template <class type_>
-      void make_delete( type_* p_type ) noexcept
-      {
-         if ( p_type )
-         {
-            p_type->~type_( );
-            free( TO_BYTE_PTR( p_type ) );
-         }
-      }
-
-      template <class type_>
-      void make_delete( type_* p_type, size_type element_count ) noexcept
-      {
-         assert( element_count != 0 && "cannot free zero elements" );
-
-         for ( size_type i = 0; i < element_count; ++i )
-         {
-            p_type[i].~type_( );
-         }
-
-         free( TO_BYTE_PTR( p_type ) );
-      }
-
    private:
-      size_type total_size;
-      size_type used_memory;
-      size_type num_allocations;
+      size_type total_size{ 0 };
+      size_type used_memory{ 0 };
+      size_type num_allocations{ 0 };
 
-      std::unique_ptr<std::byte[]> p_memory;
-      pointer p_current_pos;
+      std::unique_ptr<std::byte[]> p_memory{ nullptr };
+      pointer p_current_pos{ nullptr };
    };
 } // namespace ESL

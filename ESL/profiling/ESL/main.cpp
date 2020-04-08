@@ -149,7 +149,13 @@ int main( )
    std_vector_reserve_test( );
    {
       std::cout << "esl_pool_vector_test\n";
-      ESL::pool_allocator pool_allocator{ 1, sizeof( int ) * std::numeric_limits<std::uint16_t>::max( ) };
+      ESL::pool_allocator::create_info const create_info
+      { 
+         .pool_count = 1,
+         .pool_size = sizeof( int ) * std::numeric_limits<std::uint16_t>::max( ) 
+      };
+
+      ESL::pool_allocator pool_allocator{ create_info };
 
       esl_pool_vector_test( &pool_allocator );
    }

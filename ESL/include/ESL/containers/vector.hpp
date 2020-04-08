@@ -224,10 +224,10 @@ namespace ESL
       }
       /**
        * @brief Construct a vector from another vector.
-       * 
-       * @details Construct a vector from another vector, copying it's data into a new memory allocation from the same allocator.
-       * To use this constructor, the type value_type must satisfy the
-       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @details Construct a vector from another vector, copying it's data into a new memory allocation from the same
+       * allocator. To use this constructor, the type #value_type must satisfy the <a
+       * href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
        *
        * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
        * state of the vector instance will remain unchanged and valid.
@@ -254,10 +254,10 @@ namespace ESL
       }
       /**
        * @brief Construct a vector from another vector.
-       * 
-       * @details Construct a vector from another vector, copying it's data into a new memory allocation from another allocator.
-       * To use this constructor, the type value_type must satisfy the
-       * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
+       *
+       * @details Construct a vector from another vector, copying it's data into a new memory allocation from another
+       * allocator. To use this constructor, the type #value_type must satisfy the <a
+       * href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
        *
        * @throw   std::bad_alloc    Thrown if the allocator fails to allocate memory, If the exception occurs, the
        * state of the vector instance will remain unchanged and valid.
@@ -319,7 +319,7 @@ namespace ESL
                }
             }
 
-            p_allocator->free( TO_BYTE_PTR( p_alloc ) );
+            p_allocator->deallocate( TO_BYTE_PTR( p_alloc ) );
             p_alloc = nullptr;
          }
 
@@ -370,26 +370,45 @@ namespace ESL
       }
       vector& operator=( std::initializer_list<value_type> init ) requires std::copyable<value_type>
       {
-         current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
-         if ( current_capacity < init.size( ) || !p_alloc )
+         if ( !p_alloc )
          {
-            if ( !p_allocator->can_allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) )
+            p_alloc =
+               TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) );
+            if ( !p_alloc )
             {
                throw std::bad_alloc{ };
             }
          }
-
-         if constexpr ( basic_type<value_type> )
+         else
          {
-            std::for_each( begin( ), end( ), []( value_type& type ) {
-               type.~value_type( );
-            } );
-         }
+            pointer p_temp{ nullptr };
+            if ( current_capacity < init.size( ) )
+            {
+               current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
 
-         if ( current_capacity < init.size( ) || !p_alloc )
-         {
-            p_alloc =
-               TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) );
+               if ( current_capacity < init.size( ) )
+               {
+                  p_temp =
+                     TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * init.size( ), alignof( value_type ) ) );
+                  if ( !p_temp )
+                  {
+                     throw std::bad_alloc{ };
+                  }
+               };
+            }
+
+            if constexpr ( basic_type<value_type> )
+            {
+               std::for_each( begin( ), end( ), []( value_type& type ) {
+                  type.~value_type( );
+               } );
+            }
+
+            if ( p_temp )
+            {
+               p_alloc = p_temp;
+               p_temp = nullptr;
+            }
          }
 
          current_size = init.size( );
@@ -436,8 +455,8 @@ namespace ESL
        * @brief Assign a value to a count of elements in the container.
        *
        * @details Assign a number count of elements with the value value in the container. if the container requires
-       * reallocation, all elements currently present in the container will be moved to the new allocation. This 
-       * function may only be called if the type value_type satisfies the 
+       * reallocation, all elements currently present in the container will be moved to the new allocation. This
+       * function may only be called if the type #value_type satisfies the
        * <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a> requirement.
        *
        * @param[in]  count    The number of elements to assign a value.
@@ -453,6 +472,9 @@ namespace ESL
             p_alloc[i] = value;
          }
       }
+      /**
+       *
+       */
       void assign( std::input_iterator auto first, std::input_iterator auto last ) requires std::copyable<value_type>
       {
          size_type const count = std::distance( first, last );
@@ -489,7 +511,7 @@ namespace ESL
        */
       allocator_type const* get_allocator( ) const noexcept { return p_allocator; }
 
-      /** 
+      /**
        * @brief Return a reference to the element at the index position in the container.
        *
        * @param[in]  index    The index position of the desired element.
@@ -507,7 +529,7 @@ namespace ESL
             return p_alloc[index];
          }
       }
-      /** 
+      /**
        * @brief Return a const_reference to the element at the index position in the container.
        *
        * @param[in]  index    The index position of the desired element.
@@ -718,7 +740,7 @@ namespace ESL
                p_temp[i] = std::move( p_alloc[i] );
             }
 
-            p_allocator->free( TO_BYTE_PTR( p_alloc ) );
+            p_allocator->deallocate( TO_BYTE_PTR( p_alloc ) );
             current_capacity = new_capacity;
          }
       }
@@ -1022,7 +1044,7 @@ namespace ESL
       /**
        * @brief Construct an element at the end of the container.
        *
-       * @tparam  args_    
+       * @tparam  args_
        * @param   args     The arguments needed to construct the new element.
        *
        * @return A reference to the newly constructed element at the end of the container.
@@ -1116,52 +1138,45 @@ namespace ESL
       {
          if ( !p_alloc )
          {
-            if ( !p_allocator->can_allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) )
+            p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
+            if ( !p_alloc )
             {
                throw std::bad_alloc{ };
             }
-            else
-            {
-               p_alloc = TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
-               current_capacity = new_size;
-            }
+
+            current_capacity = new_size;
          }
          else if ( new_size > current_capacity )
          {
             current_capacity = p_allocator->allocation_capacity( TO_BYTE_PTR( p_alloc ) ) / sizeof( value_type );
-
             if ( new_size > current_capacity )
             {
-
-               if ( !p_allocator->can_allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) )
+               pointer p_temp =
+                  TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
+               if ( !p_temp )
                {
                   throw std::bad_alloc{ };
                }
-               else
+
+               for ( size_type i = 0; i < current_size; ++i )
                {
-                  pointer p_temp =
-                     TO_TYPE_PTR( p_allocator->allocate( sizeof( value_type ) * new_size, alignof( value_type ) ) );
-
-                  for ( size_type i = 0; i < current_size; ++i )
+                  if constexpr ( std::movable<value_type> )
                   {
-                     if constexpr ( std::movable<value_type> )
-                     {
-                        p_temp[i] = std::move( p_alloc[i] );
-                     }
-                     else
-                     {
-                        p_temp[i] = p_alloc[i];
-                     }
-
-                     if constexpr ( basic_type<value_type> )
-                     {
-                        p_alloc[i].~value_type( );
-                     }
+                     p_temp[i] = std::move( p_alloc[i] );
+                  }
+                  else
+                  {
+                     p_temp[i] = p_alloc[i];
                   }
 
-                  p_alloc = p_temp;
-                  current_capacity = new_size;
+                  if constexpr ( basic_type<value_type> )
+                  {
+                     p_alloc[i].~value_type( );
+                  }
                }
+
+               p_alloc = p_temp;
+               current_capacity = new_size;
             }
          }
       }
