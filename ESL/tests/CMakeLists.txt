@@ -57,6 +57,7 @@ target_compile_options( ESL_test
 target_sources( ESL_test
    PRIVATE
       "ESL/main.cpp"
+      "ESL/containers/maps/avl_map_test.cpp"
       "ESL/containers/vector_test.cpp"
 )
 

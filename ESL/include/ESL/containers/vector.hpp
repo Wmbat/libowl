@@ -49,7 +49,7 @@ namespace ESL
     * @tparam  type_       The type of the vector's elements.
     * @tparam  allocator_  The type of the allocator.
     */
-   template <class type_, allocator allocator_ = ESL::multipool_allocator>
+   template <class type_, complex_allocator<type_> allocator_ = ESL::multipool_allocator>
    class vector
    {
       using is_ptr = std::is_pointer<type_>;
@@ -430,7 +430,7 @@ namespace ESL
        *
        * @return True if the two vectors have the same data, otherwise false
        */
-      template <allocator other_ = allocator_>
+      template <complex_allocator<type_> other_ = allocator_>
       constexpr bool operator==( vector<type_, other_> const& rhs ) const requires std::equality_comparable<type_>
       {
          return std::equal( cbegin( ), cbegin( ), rhs.cbegin( ), rhs.cend( ) );
@@ -444,7 +444,7 @@ namespace ESL
        *
        * @return An ordering defining the relationship between the two vectors.
        */
-      template <allocator other_ = allocator_>
+      template <complex_allocator<type_> other_ = allocator_>
       constexpr auto operator<=>( vector<type_, other_> const& rhs )
       {
          return std::lexicographical_compare_three_way(
@@ -1014,6 +1014,17 @@ namespace ESL
          return it;
       }
 
+      /**
+       * @brief Copy a value at the end of the container.
+       *
+       * @details Copy the #value_type value at the end of the container. The container may need to reallocate the
+       * memory and move all elements into the new memory allocation. In case of reallocation, all iterators to the
+       * container will be invalidated. This function may only be used if the type
+       * #value_type satisfies the <a href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
+       * requirement.
+       *
+       * @param[in]  value    The value to move at the end of the container.
+       */
       void push_back( const_reference value ) requires std::copyable<value_type>
       {
          assert( current_size + 1 < max_size( ) );
@@ -1025,9 +1036,10 @@ namespace ESL
       /**
        * @brief Move an rvalue reference at the end of the container.
        *
-       * @details Move the value_type value at the end of the container. The container may need to reallocate the
-       * memory and move all elements into the new memory allocation. This function may only be used if the type
-       * value_type satisfies the <a href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a>
+       * @details Move the #value_type value at the end of the container. The container may need to reallocate the
+       * memory and move all elements into the new memory allocation. In case of reallocation, all iterators to the
+       * container will be invalidated. This function may only be used if the type
+       * #value_type satisfies the <a href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a>
        * requirement.
        *
        * @param[in]  value    The value to move at the end of the container.
@@ -1044,7 +1056,7 @@ namespace ESL
       /**
        * @brief Construct an element at the end of the container.
        *
-       * @tparam  args_
+       * @tparam  args_    The type of the arguments needed to construct the new element.
        * @param   args     The arguments needed to construct the new element.
        *
        * @return A reference to the newly constructed element at the end of the container.

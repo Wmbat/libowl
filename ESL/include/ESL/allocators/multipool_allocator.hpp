@@ -35,7 +35,7 @@ namespace ESL
     * @class multipool_allocator multipool_allocator.hpp <ESL/allocators/multipool_allocator.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Tuesday April 7th, 2020
-    * @brief An pool allocator holding multiple layers of pools with varying sizes.
+    * @brief A pool allocator holding multiple layers of pools with varying sizes.
     * @copyright MIT license
     */
    class multipool_allocator final
@@ -160,6 +160,38 @@ namespace ESL
             p_type->~type_( );
             free( TO_BYTE_PTR( p_type ) );
          }
+      }
+
+      template <std::default_initializable type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      void destroy_array( type_* const p_data, size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            p_data[i].~type_( );
+         }
+
+         deallocate( TO_BYTE_PTR( p_data ) );
       }
 
       /**

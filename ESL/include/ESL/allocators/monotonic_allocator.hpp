@@ -43,7 +43,7 @@ namespace ESL
 
    public:
       /**
-       * @brief Constructs a monotonic allocator where the buffer is set no null.
+       * @brief Constructs a #monotonic_allocator where the buffer is set no null.
        */
       monotonic_allocator( ) = default;
       /**

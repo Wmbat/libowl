@@ -32,26 +32,26 @@
 #include <string>
 #include <string_view>
 
-namespace EGL
+namespace EGL::vk
 {
-   class context
+   class runtime
    {
    public:
-      context( ESL::multipool_allocator* p_main_allocator );
-      context( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log = nullptr );
-      context( context const& other ) = delete;
-      context( context&& other );
-      ~context( );
+      runtime( ESL::multipool_allocator* p_main_allocator );
+      runtime( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log = nullptr );
+      runtime( runtime const& other ) = delete;
+      runtime( runtime&& other );
+      ~runtime( );
 
-      context& operator=( context const& rhs ) = delete;
-      context& operator=( context&& rhs );
+      runtime& operator=( runtime const& rhs ) = delete;
+      runtime& operator=( runtime&& rhs );
 
-      context&& create_instance( );
+      runtime&& create_instance( );
 
    private:
       bool check_validation_layer_support( );
 
-      ESL::vector<char const*, ESL::multipool_allocator> get_instance_extensions( );
+      ESL::vector<char const*> get_instance_extensions( );
 
    private:
       ESL::logger* p_log{ nullptr };
@@ -63,8 +63,7 @@ namespace EGL
       VkInstance instance{ VK_NULL_HANDLE };
       VkDebugUtilsMessengerEXT debug_messenger{ VK_NULL_HANDLE };
 
-      ESL::vector<char const*, ESL::multipool_allocator> const validation_layer{
-         1, "VK_LAYER_KHRONOS_validation", p_main_allocator };
-      ESL::vector<char const*, ESL::multipool_allocator> instance_extensions{ p_main_allocator };
+      ESL::vector<char const*> const validation_layer{ 1, "VK_LAYER_KHRONOS_validation", p_main_allocator };
+      ESL::vector<char const*> instance_extensions{ p_main_allocator };
    };
-} // namespace EGL
+} // namespace EGL::vk

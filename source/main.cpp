@@ -27,17 +27,20 @@
  */
 
 #include <EGL/render_manager.hpp>
+#include <ESL/allocators/pool_allocator.hpp>
 #include <ESL/utils/logger.hpp>
 
 #include <map>
 
 int main( )
 {
+   auto pool = ESL::pool_allocator{ { .pool_count = 1, .pool_size = 1024 } };
+   auto* p_int = pool.construct<int>( 10 );
+   pool.destroy( p_int );
+
    auto main_logger = ESL::logger( "main_logger" );
 
-   auto render_manager = EGL::render_manager( &main_logger )
-      .set_app_name( "My App" )
-      .create_context( );
+   auto render_manager = EGL::render_manager( &main_logger ).set_app_name( "My App" ).create_context( );
 
    while ( render_manager.is_running( ) )
    {

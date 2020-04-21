@@ -34,7 +34,7 @@ namespace EGL
 
    render_manager&& render_manager::create_context( )
    {
-      context = EGL::context( app_name, &main_allocator, p_logger ).create_instance( );
+      context = EGL::vk::runtime( app_name, &main_allocator, p_logger ).create_instance( );
       main_window = EGL::window( app_name, 1080u, 720u );
 
       LOG_INFO( p_logger, "Basic graphical context setup" );

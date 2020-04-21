@@ -73,23 +73,23 @@ namespace ESL
 
    template<class allocator_>
    concept basic_allocator = requires( allocator_ a, std::byte* ptr, std::size_t s )
-   {
-      { a.allocate( s, s ) } -> std::same_as<std::byte*>;
-      { a.deallocate( ptr ) } -> std::same_as<void>;
-      { a.max_size() } -> std::convertible_to<std::size_t>;
-      { a.memory_usage( ) } -> std::convertible_to<std::size_t>;
-      { a.allocation_count() } -> std::convertible_to<std::size_t>;
-   };
-
-   template<class allocator_>
-   concept allocator = basic_allocator<allocator_>&& requires( allocator_ a, std::byte* ptr, std::size_t s )
-   {
-      { a.allocation_capacity( ptr ) } -> std::convertible_to<std::size_t>;
-   };
+      {
+         { a.allocate( s, s ) } -> std::same_as<std::byte*>;
+         { a.deallocate( ptr ) } -> std::same_as<void>;
+         { a.max_size() } -> std::convertible_to<std::size_t>;
+         { a.memory_usage( ) } -> std::convertible_to<std::size_t>;
+         { a.allocation_count() } -> std::convertible_to<std::size_t>;
+      };
 
    template<class allocator_, class any_, class... args_>
-   concept complex_allocator = allocator<allocator_> && requires( allocator_ a, args_&&... args )
-   {
-      { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
-   };
+   concept complex_allocator = basic_allocator<allocator_> && 
+      requires( allocator_ a, std::byte* ptr, any_* p_type, std::size_t s, args_&&... args )
+      {
+         { a.allocation_capacity( ptr ) } -> std::convertible_to<std::size_t>;
+         { a.template construct<any_>( args... ) } -> std::same_as<any_*>;
+         { a.template destroy<any_>( p_type ) } -> std::same_as<void>;
+         { a.template construct_array<any_>( s ) } -> std::same_as<any_*>;
+         { a.template destroy_array<any_>( p_type, s ) } -> std::same_as<void>;
+         { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
+      };
 } // namespace ESL
