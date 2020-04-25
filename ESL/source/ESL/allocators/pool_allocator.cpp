@@ -68,11 +68,26 @@ namespace ESL
          used_memory += pool_size;
          ++num_allocations;
 
-         return TO_BYTE_PTR( p_pool_header + sizeof( pool_header ) );
+         return static_cast<void*>( p_pool_header + sizeof( pool_header ) );
       }
       else
       {
          return nullptr;
+      }
+   }
+
+   auto pool_allocator::reallocate(pointer p_alloc, size_type new_size) noexcept -> pointer
+   {
+      assert( new_size != 0 );
+      assert( p_alloc != nullptr );
+
+      if ( new_size <= pool_size )
+      {
+         return p_alloc;
+      }
+      else 
+      {
+         return nullptr; 
       }
    }
 
@@ -81,7 +96,7 @@ namespace ESL
       assert( p_alloc != nullptr && "cannot free a nullptr" );
       assert( static_cast<std::int32_t>( num_allocations ) - 1 >= 0 );
 
-      auto* p_header = TO_POOL_HEADER_PTR( p_alloc - sizeof( pool_header ) );
+      auto* p_header = TO_POOL_HEADER_PTR( static_cast<std::byte*>( p_alloc ) - sizeof( pool_header ) );
       p_header->p_next = p_first_free;
       p_first_free = p_header;
 

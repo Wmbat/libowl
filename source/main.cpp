@@ -32,8 +32,13 @@
 
 #include <map>
 
+#include <ESL/containers/vector.hpp>
+
 int main( )
 {
+   ESL::hybrid_vector<int, 16> my_vec{ nullptr };
+   my_vec.rbegin();
+
    auto pool = ESL::pool_allocator{ { .pool_count = 1, .pool_size = 1024 } };
    auto* p_int = pool.construct<int>( 10 );
    pool.destroy( p_int );

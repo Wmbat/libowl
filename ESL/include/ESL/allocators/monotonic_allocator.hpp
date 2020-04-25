@@ -38,7 +38,7 @@ namespace ESL
    class monotonic_allocator final
    {
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
    public:
@@ -96,6 +96,6 @@ namespace ESL
       size_type num_allocations{ 0 };
 
       std::unique_ptr<std::byte[]> p_memory{ nullptr };
-      pointer p_current_pos{ nullptr };
+      std::byte* p_current_pos{ nullptr };
    };
 } // namespace ESL

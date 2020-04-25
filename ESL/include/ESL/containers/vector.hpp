@@ -1,25 +1,8 @@
 /**
- * MIT License
- *
- * Copyright (c) 2020 Wmbat
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * @file avl_map.hpp.
+ * @author wmbat wmbat@protonmail.com.
+ * @date Tuesday, April 23rd, 2020.
+ * @copyright MIT License.
  */
 
 #pragma once
@@ -33,16 +16,358 @@
 #include <algorithm>
 #include <cassert>
 #include <compare>
+#include <cstddef>
+#include <cstring>
 #include <type_traits>
 
 namespace ESL
 {
+   /**
+    * @class vector_base vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 22th, 2020
+    * @copyright MIT License.
+    * @brief A common base for all dynamic arrays using custom allocators.
+    *
+    * @tparam allocator_ The type of the allocator used by the container.
+    */
+   template <full_allocator allocator_>
+   class vector_base
+   {
+   public:
+      using size_type = std::size_t;
+      using difference_type = std::ptrdiff_t;
+      using allocator_type = allocator_;
+      using pointer = void*;
+
+   protected:
+      /**
+       * @brief deleted default constructor.
+       */
+      vector_base( ) = delete;
+      vector_base( pointer p_first_el, size_type capacity, allocator_type* p_alloc ) :
+         p_begin( p_first_el ), cap( capacity ), p_alloc( p_alloc )
+      {}
+
+      void grow_pod( void* p_first_element, size_type min_cap, size_type type_size, size_type type_align )
+      {
+         size_type const new_capacity =
+            std::clamp( 2 * capacity( ) + 1, min_cap, std::numeric_limits<size_type>::max( ) );
+
+         if ( p_begin == p_first_element )
+         {
+            void* p_new = p_alloc->allocate( new_capacity * type_size, type_align );
+            if ( !p_new )
+            {
+               throw std::bad_alloc{ };
+            }
+
+            memcpy( p_new, p_begin, size( ) * type_size );
+
+            p_begin = p_new;
+         }
+         else
+         {
+            void* p_new = p_alloc->reallocate( p_begin, new_capacity * type_size );
+            if ( !p_new )
+            {
+               throw std::bad_alloc{ };
+            }
+
+            p_begin = p_new;
+         }
+         cap = new_capacity;
+      }
+
+   public:
+      /**
+       * @brief Return a pointer to the container's allocator.
+       *
+       * @return The pointer to the container's allocator
+       */
+      allocator_type* get_allocator( ) noexcept { return p_alloc; }
+      /**
+       * @brief Return a pointer to the container's allocator.
+       *
+       * @return The pointer to the container's allocator
+       */
+      allocator_type const* get_allocator( ) const noexcept { return p_alloc; }
+
+      /**
+       * @brief Check if the container has no element.
+       *
+       * @return True if the container is empty, otherwise false.
+       */
+      [[nodiscard]] constexpr bool empty( ) const noexcept { return count == 0; }
+      /**
+       * @brief Return the number of elements in the container.
+       *
+       * @return The size of the container.
+       */
+      size_type size( ) const noexcept { return count; }
+      /**
+       * @brief Return the maximum size of the container.
+       *
+       * @return The maximum value held by the #difference_type.
+       */
+      size_type max_size( ) const noexcept { return std::numeric_limits<difference_type>::max( ); }
+      size_type capacity( ) const noexcept { return cap; }
+
+   protected:
+      void* p_begin{ nullptr };
+
+      size_type count{ 0 };
+      size_type cap{ 0 };
+
+      allocator_type* p_alloc{ nullptr };
+   };
+
+   template <class any_, complex_allocator<any_> allocator_>
+   struct hybrid_vector_align_and_size
+   {
+      std::aligned_storage_t<sizeof( vector_base<allocator_> ), alignof( vector_base<allocator_> )> base;
+      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
+   };
+
+   template <class any_, complex_allocator<any_> allocator_>
+   class hybrid_vector_impl : public vector_base<allocator_>
+   {
+      using super = vector_base<allocator_>;
+
+   public:
+      using value_type = any_;
+      using allocator_type = typename super::allocator_type;
+      using reference = value_type&;
+      using const_reference = value_type const&;
+      using pointer = value_type*;
+      using const_pointer = value_type const*;
+      using size_type = typename super::size_type;
+      using difference_type = typename super::difference_type;
+      using iterator = random_access_iterator<value_type>;
+      using const_iterator = random_access_iterator<value_type const>;
+      using reverse_iterator = std::reverse_iterator<iterator>;
+      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+   protected:
+      hybrid_vector_impl( ) = delete;
+      explicit hybrid_vector_impl( size_type size, allocator_type* p_alloc ) :
+         super( get_first_element( ), size, p_alloc )
+      {}
+
+      bool is_static( ) const noexcept { return super::p_begin == get_first_element( ); }
+
+   public:
+      virtual ~hybrid_vector_impl( )
+      {
+         if ( !is_static( ) )
+         {
+            clear( );
+
+            super::p_alloc->deallocate( super::p_begin );
+         }
+      }
+
+      /**
+       * @brief Return a reference to the element at the index position in the container.
+       *  
+       * @throw std::out_of_range
+       *
+       * @param[in]  index    The index position of the desired element.
+       *
+       * @return A #reference to the element at the index position in the container.
+       */
+      reference at( size_type index )
+      {
+         if ( index >= super::count )
+         {
+            throw std::out_of_range{ "Index: " + std::to_string( index ) + " is out of bounds" };
+         }
+         else
+         {
+            return super::p_alloc[index];
+         }
+      }
+      /**
+       * @brief Return a reference to the element at the index position in the container.
+       *
+       * @throw std::out_of_range
+       *
+       * @param[in]  index    The index position of the desired element.
+       *
+       * @return A #const_reference to the element at the index position in the container.
+       */
+      const_reference at( size_type index ) const
+      {
+         if ( index >= super::count )
+         {
+            throw std::out_of_range{ "Index: " + std::to_string( index ) + " is out of bounds" };
+         }
+         else
+         {
+            return super::p_alloc[index];
+         }
+      }
+
+      reference operator[]( size_type index ) noexcept
+      {
+         assert( index < super::count && "Index out of bounds." );
+         return *super::p_begin[index];
+      }
+      const_reference operator[]( size_type index ) const noexcept
+      {
+         assert( index < super::count && "Index out of bounds." );
+         return *super::p_begin[index];
+      }
+
+      reference front( ) noexcept
+      {
+         assert( !super::empty( ) && "No elements in the container" );
+         return *begin( );
+      }
+      const_reference front( ) const noexcept
+      {
+         assert( !super::empty( ) && "No elements in the container" );
+         return *cbegin( );
+      }
+
+      reference back( ) noexcept
+      {
+         assert( !super::empty( ) && "No elements in the container" );
+         return *( end( ) - 1 );
+      }
+      const_reference back( ) const noexcept
+      {
+         assert( !super::empty( ) && "No elements in the container" );
+         return *( cend( ) - 1 );
+      }
+
+      pointer data( ) noexcept { return pointer{ begin( ) }; }
+      const_pointer data( ) const noexcept { return const_pointer{ cbegin( ) }; }
+
+      iterator begin( ) noexcept { return iterator{ static_cast<pointer>( super::p_begin ) }; }
+      const_iterator begin( ) const noexcept { return const_iterator{ static_cast<pointer>( super::p_begin ) }; }
+      const_iterator cbegin( ) const noexcept { return const_iterator{ static_cast<pointer>( super::p_begin ) }; }
+
+      iterator end( ) noexcept { return iterator{ begin( ) + super::count }; }
+      const_iterator end( ) const noexcept { return const_iterator{ begin( ) + super::count }; }
+      const_iterator cend( ) const noexcept { return const_iterator{ cbegin( ) + super::count }; }
+
+      reverse_iterator rbegin( ) noexcept { return reverse_iterator{ end( ) }; }
+      const_reverse_iterator rbegin( ) const noexcept { return const_reverse_iterator{ cend( ) }; }
+      const_reverse_iterator rcbegin( ) const noexcept { return const_reverse_iterator{ cend( ) }; }
+
+      reverse_iterator rend( ) noexcept { return reverse_iterator{ begin( ) }; }
+      const_reverse_iterator rend( ) const noexcept { return const_reverse_iterator{ cbegin( ) }; }
+      const_reverse_iterator rcend( ) const noexcept { return const_reverse_iterator{ cbegin( ) }; }
+
+      void reserve( size_type new_cap )
+      {
+         if ( new_cap > super::capacity )
+         {
+            grow( new_cap );
+         }
+      }
+
+      void clear( ) noexcept
+      {
+         destroy_range( begin( ), end( ) );
+         super::count = 0;
+      }
+
+   private:
+      void* get_first_element( ) const noexcept
+      {
+         using layout = hybrid_vector_align_and_size<value_type, allocator_type>;
+
+         return const_cast<void*>(
+            static_cast<void const*>( reinterpret_cast<char const*>( this ) + offsetof( layout, first_element ) ) );
+      }
+
+      void grow( size_type min_size )
+      {
+         if ( min_size > std::numeric_limits<difference_type>::max( ) )
+         {
+         }
+
+         if constexpr ( pod_type<value_type> )
+         {
+            super::grow_pod( get_first_element( ), min_size, sizeof( value_type ) );
+         }
+         else
+         {
+            size_type new_size =
+               std::clamp( 2 * super::capacity( ) + 1, min_size, std::numeric_limits<size_type>::max( ) );
+
+            pointer p_new = super::p_alloc->template construct_array<value_type>( new_size );
+         }
+      }
+
+      void destroy_range( std::input_iterator auto first, std::input_iterator auto last )
+      {
+         if constexpr ( !pod_type<value_type> )
+         {
+            while ( first != last )
+            {
+               first->~value_type( );
+               ++first;
+            }
+         }
+      }
+   };
+
+   template <class any_, std::size_t buff_sz>
+   struct static_vector_storage
+   {
+      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> data[buff_sz];
+   };
+
+   template <class any_>
+   struct alignas( alignof( any_ ) ) static_vector_storage<any_, 0>
+   {
+   };
+
+   template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
+   class hybrid_vector : public hybrid_vector_impl<any_, allocator_>, static_vector_storage<any_, buff_sz>
+   {
+      using super_impl = hybrid_vector_impl<any_, allocator_>;
+      using super_storage = static_vector_storage<any_, buff_sz>;
+
+   public:
+      using value_type = typename super_impl::value_type;
+      using allocator_type = typename super_impl::allocator_type;
+      using reference = value_type&;
+      using const_reference = value_type const&;
+      using pointer = value_type*;
+      using const_pointer = value_type const*;
+      using size_type = std::size_t;
+      using difference_type = std::ptrdiff_t;
+      using iterator = random_access_iterator<value_type>;
+      using const_iterator = random_access_iterator<value_type const>;
+      using reverse_iterator = std::reverse_iterator<iterator>;
+      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+   public:
+      explicit hybrid_vector( allocator_type* p_alloc ) : super_impl( buff_sz, p_alloc ) {}
+      explicit hybrid_vector( size_type count, reference value, allocator_type* p_alloc ) {}
+      explicit hybrid_vector( size_type count, allocator_type* p_alloc ) requires std::default_initializable<value_type>
+      {}
+      hybrid_vector( std::input_iterator auto first, std::input_iterator auto last, allocator_type* p_alloc ) {}
+      hybrid_vector( std::initializer_list<any_> init, allocator_type* p_alloc ) {}
+      hybrid_vector( hybrid_vector const& other ) {}
+      hybrid_vector( hybrid_vector const& other, allocator_type* p_alloc ) {}
+      hybrid_vector( hybrid_vector&& other ) {}
+      hybrid_vector( hybrid_vector&& other, allocator_type* p_alloc ) {}
+   };
+
+   template <class any_, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
+   using tvector = hybrid_vector<any_, 0, allocator_>;
+
 #define TO_TYPE_PTR( ptr ) reinterpret_cast<pointer>( ptr )
 
    /**
     * @class vector vector.hpp <ESL/containers/vector.hpp>
     * @author wmbat wmbat@protonmail.com
-    * @date Monday 4th, 2020
+    * @date Monday, April 4th, 2020
     * @brief A dynamically allocated resizable array.
     * @copyright MIT License.
     *
@@ -101,18 +426,13 @@ namespace ESL
       {
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         p_alloc = p_allocator->template construct_array<value_type>( current_size, value );
          if ( !p_alloc )
          {
             throw std::bad_alloc( );
          }
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            new ( TO_BYTE_PTR( p_alloc + i ) ) value_type( value );
-         }
       }
+
       /**
        * @brief Constructs a vector with count copies of elements with default value and a pointer to an
        * allocator.
@@ -136,16 +456,10 @@ namespace ESL
       {
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         p_alloc = p_allocator->template construct_array<value_type>( current_size );
          if ( !p_alloc )
          {
             throw std::bad_alloc( );
-         }
-
-         for ( size_type i = 0; i < current_size; ++i )
-         {
-            new ( reinterpret_cast<std::byte*>( p_alloc + i ) ) value_type( );
          }
       }
       /**
@@ -203,15 +517,13 @@ namespace ESL
        * @param[in]  p_allocator    A pointer to the allocator that will hold the vector's memory.
        */
       vector( std::initializer_list<type_> init, allocator_type* p_allocator ) requires std::copyable<value_type> :
+         current_capacity( init.size( ) ),
+         current_size( init.size( ) ),
          p_allocator( p_allocator )
       {
          assert( p_allocator != nullptr && "allocator cannot be nullptr" );
 
-         current_capacity = init.size( );
-         current_size = init.size( );
-
-         auto const size_in_bytes = current_capacity * sizeof( value_type );
-         p_alloc = TO_TYPE_PTR( p_allocator->allocate( size_in_bytes, alignof( value_type ) ) );
+         p_alloc = p_allocator->template construct_array<type_>( current_size );
          if ( !p_alloc )
          {
             throw std::bad_alloc( );
@@ -311,7 +623,7 @@ namespace ESL
       {
          if ( p_allocator && p_alloc )
          {
-            if constexpr ( basic_type<value_type> )
+            if constexpr ( !pod_type<value_type> )
             {
                for ( size_type i = 0; i < current_size; ++i )
                {
@@ -397,7 +709,7 @@ namespace ESL
                };
             }
 
-            if constexpr ( basic_type<value_type> )
+            if constexpr ( pod_type<value_type> )
             {
                std::for_each( begin( ), end( ), []( value_type& type ) {
                   type.~value_type( );
@@ -756,7 +1068,7 @@ namespace ESL
        */
       void clear( ) noexcept
       {
-         if constexpr ( !basic_type<value_type> )
+         if constexpr ( !pod_type<value_type> )
          {
             for ( size_type i = 0; i < current_size; ++i )
             {
@@ -981,7 +1293,7 @@ namespace ESL
                std::iter_swap( curr, curr + 1 );
             }
 
-            if constexpr ( basic_type<value_type> )
+            if constexpr ( pod_type<value_type> )
             {
                ( end( ) - 1 )->~value_type( );
             }
@@ -1001,7 +1313,7 @@ namespace ESL
             std::iter_swap( curr, curr + count );
          }
 
-         if constexpr ( !basic_type<value_type> )
+         if constexpr ( !pod_type<value_type> )
          {
             for ( auto beg = end( ) - count; beg != end( ); ++beg )
             {
@@ -1078,7 +1390,7 @@ namespace ESL
        */
       void pop_back( )
       {
-         if constexpr ( !basic_type<value_type> )
+         if constexpr ( !pod_type<value_type> )
          {
             ( end( ) - 1 )->~value_type( );
          }
@@ -1093,7 +1405,7 @@ namespace ESL
 
          if ( count < current_size )
          {
-            if constexpr ( !basic_type<value_type> )
+            if constexpr ( !pod_type<value_type> )
             {
                for ( int i = count; i < current_size; ++i )
                {
@@ -1122,7 +1434,7 @@ namespace ESL
 
          if ( count < current_size )
          {
-            if constexpr ( !basic_type<value_type> )
+            if constexpr ( !pod_type<value_type> )
             {
                for ( int i = count; i < current_size; ++i )
                {
@@ -1181,7 +1493,7 @@ namespace ESL
                      p_temp[i] = p_alloc[i];
                   }
 
-                  if constexpr ( basic_type<value_type> )
+                  if constexpr ( pod_type<value_type> )
                   {
                      p_alloc[i].~value_type( );
                   }
@@ -1202,5 +1514,4 @@ namespace ESL
    }; // namespace ESL
 
 #undef TO_TYPE_PTR
-
 } // namespace ESL

@@ -27,29 +27,29 @@ set( CLANG_RELEASE_FLAGS "-o0" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o0" )
 
-add_executable( ESL_profiling )
+add_executable( ESL_benchmarks )
 
-target_link_libraries( ESL_profiling
+target_link_libraries( ESL_benchmarks
    PUBLIC
       ESL
-      easy_profiler
+      benchmark
 
    PRIVATE
       $<$<CXX_COMPILER_ID:GNU>:-lasan>
       $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
 
-set_target_properties( ESL_profiling
+set_target_properties( ESL_benchmarks
    PROPERTIES
       CXX_EXTENSIONS OFF
 )
 
-target_compile_features( ESL_profiling
+target_compile_features( ESL_benchmarks
    PRIVATE
       cxx_std_20
 )
 
-target_compile_options( ESL_profiling
+target_compile_options( ESL_benchmarks
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
@@ -58,7 +58,7 @@ target_compile_options( ESL_profiling
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
-target_sources( ESL_profiling
+target_sources( ESL_benchmarks
    PRIVATE
       "ESL/main.cpp"
 )

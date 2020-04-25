@@ -52,7 +52,7 @@ namespace ESL
       };
 
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
       /**
@@ -87,6 +87,15 @@ namespace ESL
        */
       [[nodiscard( "Memory will go to waste" )]] pointer allocate(
          size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+      /**
+       * @brief Doesn't really do much.
+       *
+       * @param[in]  p_alloc        The memory allocation to reallocate.
+       * @param[in]  size           The desired size of the pool to give out.
+       * @return Returns nullptr if the new_size is greater than the pool size, otherwise p_alloc.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer reallocate( pointer p_alloc, size_type new_size ) noexcept;
+
       /**
        * @brief Give the memory pool back to the allocator.
        *
@@ -176,6 +185,25 @@ namespace ESL
          for ( size_type i = 0; i < count; ++i )
          {
             new ( p_data + i ) type_( );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count, type_ const& value ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( value );
          }
 
          return p_data;

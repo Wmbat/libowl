@@ -936,7 +936,7 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       =    */test/* \
                             */tests/* \
                             */external/* \
-                            */profiling/* \
+                            */benchmarks/* \
                             */build/* \
                             */.clangd/* \
                             */.git/* \

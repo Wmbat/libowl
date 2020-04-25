@@ -43,7 +43,7 @@ namespace ESL
    class pool_allocator final
    {
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
       /**
@@ -73,10 +73,20 @@ namespace ESL
        * @param[in]  size           The desired size of the pool to give out.
        * @param[in]  alignment      The alignment in the pool to give out.
        *
-       * @return A pointer to the pool of memory.
+       * @return A valid pointer if the allocator has a pool to give, nullptr otherwise.
        */
       [[nodiscard( "Memory will go to waste" )]] pointer allocate(
          size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+
+      /**
+       * @brief Doesn't really do much.
+       *
+       * @param[in]  p_alloc        The memory allocation to reallocate.
+       * @param[in]  size           The desired size of the pool to give out.
+       * @return Returns nullptr if the new_size is greater than the pool size, otherwise p_alloc.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer reallocate( pointer p_alloc, size_type new_size ) noexcept;
+
       /**
        * @brief Release the memory of a pool that has been previously given out.
        *
@@ -143,7 +153,7 @@ namespace ESL
          if ( p_type )
          {
             p_type->~type_( );
-            free( TO_BYTE_PTR( p_type ) );
+            deallocate( TO_BYTE_PTR( p_type ) );
          }
       }
 
@@ -161,6 +171,25 @@ namespace ESL
          for ( size_type i = 0; i < count; ++i )
          {
             new ( p_data + i ) type_( );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count, type_ const& value ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( value );
          }
 
          return p_data;

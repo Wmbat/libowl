@@ -1,25 +1,11 @@
 /**
- * MIT License
+ * @file avl_map.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Tuesday, April 21st, 2020
+ * @brief Contains all data containers implemented using an <a href="https://en.wikipedia.org/wiki/AVL_tree">AVL
+ * tree</a>.
  *
- * Copyright (c) 2020 Wmbat
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * @copyright MIT License
  */
 
 #pragma once
@@ -38,14 +24,17 @@ namespace ESL
 {
    /**
     * @class avl_map avl_map.hpp <ESL/containers/maps/avl_map.hpp>
-    * @brief
     * @author wmbat wmbat@protonmail.com
     * @date
     *
-    * @tparam key_
-    * @tparam any_
-    * @tparam allocator_
-    * @tparam compare_
+    * @brief An ordered data structure implemented an <a href="https://en.wikipedia.org/wiki/AVL_tree">AVL tree</a>
+    * using nodes in a linked-list fashion.
+    *
+    * @tparam key_ The type of the key. Must satisfy the <a
+    * href="https://en.cppreference.com/w/cpp/concepts/equality_comparable">std::equality_comparable</a> requirement.
+    * @tparam any_ The type of the value to store along the key.
+    * @tparam allocator_ The type of the allocator. Must satisfy the ESL::basic_allocator requirement.
+    * @tparam compare_ The comparison functor to use when comparing keys.
     */
    template <std::equality_comparable key_, class any_, basic_allocator allocator_ = multipool_allocator,
       class compare_ = std::less<key_>>
@@ -236,6 +225,7 @@ namespace ESL
 
          return iterator{ p_node };
       }
+
       /**
        * @brief Return an #const_iterator to the left-most #value_type in the tree
        *
@@ -251,6 +241,7 @@ namespace ESL
 
          return const_iterator{ p_node };
       }
+
       /**
        * @brief Return an #const_iterator to the left-most #value_type in the tree
        *
@@ -267,8 +258,25 @@ namespace ESL
          return const_iterator{ p_node };
       }
 
+      /**
+       * @brief Return an #iterator to one past the last element in the container.
+       *
+       * @return The #iterator to one past the last element.
+       */
       iterator end( ) noexcept { return iterator{ p_root->p_parent }; }
+
+      /**
+       * @brief Return an #const_iterator to one past the last element in the container.
+       *
+       * @return The #const_iterator to one past the last element.
+       */
       const_iterator end( ) const noexcept { return const_iterator{ p_root->p_parent }; }
+
+      /**
+       * @brief Return an #const_iterator to one past the last element in the container.
+       *
+       * @return The #const_iterator to one past the last element.
+       */
       const_iterator cend( ) const noexcept { return const_iterator{ p_root->p_parent }; }
 
       /**
@@ -286,6 +294,7 @@ namespace ESL
 
          return { p_node };
       }
+
       /**
        * @brief Return a #const_reverse_iterator to the left-most #value_type in the container.
        *
@@ -301,6 +310,7 @@ namespace ESL
 
          return { p_node };
       }
+
       /**
        * @brief Return a #const_reverse_iterator to the left-most #value_type in the container.
        *
@@ -323,12 +333,14 @@ namespace ESL
        * @return True if the container is empty, otherwise false.
        */
       [[nodiscard]] bool empty( ) const noexcept { return count == 0; }
+
       /**
        * @brief Return the number of elements in the container;
        *
        * @return The number of elements in the container.
        */
       size_type size( ) const noexcept { return count; }
+
       /**
        * @brief Return the maximum number of elements the container can support.
        *
@@ -336,6 +348,9 @@ namespace ESL
        */
       size_type max_size( ) const noexcept { return std::numeric_limits<difference_type>::max( ); }
 
+      /**
+       * @brief Remove all elements from the container
+       */
       void clear( ) noexcept
       {
          if ( p_root )
@@ -369,11 +384,11 @@ namespace ESL
        */
       std::pair<iterator, bool> insert( const_reference value ) requires std::copyable<value_type>
       {
-         auto [p_node, took_place] = find_insert( value.first, p_root );
+         auto [p_node, p_new, took_place] = find_insert( value, p_root );
 
          p_root = p_node;
 
-         return { iterator{ find_util( value.first, p_root ) }, took_place };
+         return { iterator{ p_new }, took_place };
       }
 
       /**
@@ -395,12 +410,11 @@ namespace ESL
        */
       std::pair<iterator, bool> insert( value_type&& value ) requires std::movable<value_type>
       {
-         key_type key = value.first;
-         auto [p_node, took_place] = insert_util( std::move( value ), p_root );
+         auto [p_start, p_new, took_place] = insert_util( std::move( value ), p_root );
 
-         p_root = p_node;
+         p_root = p_start;
 
-         return { iterator{ find_util( key, p_root ) }, took_place };
+         return { iterator{ p_new }, took_place };
       }
 
       template <class value_>
@@ -408,6 +422,7 @@ namespace ESL
       {
          return emplace( std::forward<value_>( value ) );
       }
+
       /**
        * @brief Inserts elements from range [first, last).
        *
@@ -484,15 +499,15 @@ namespace ESL
       template <class... args_>
       std::pair<iterator, bool> emplace( args_&&... args ) requires std::constructible_from<value_type, args_...>
       {
-         auto new_pair = value_type( args... );
-         auto [p_node, took_place] = insert_util( new_pair, p_root );
+         auto [p_node, p_new, took_place] = insert_util( value_type( args... ), p_root );
 
          p_root = p_node;
 
-         return { iterator{ find_util( new_pair.first, p_root ) }, took_place };
+         return { iterator{ p_new }, took_place };
       }
 
-      iterator find( key_type const& key ) {}
+      iterator find( key_type const& key ) { return { find_util( key, p_root ) }; }
+      const_iterator find( key_type const& key ) const { return { find_util( key, p_root ) }; }
 
    private:
       void clear_util( node* p_node )
@@ -518,154 +533,153 @@ namespace ESL
          }
       }
 
-      std::pair<node*, bool> insert_util( const_reference value, node* p_node )
+      std::tuple<node*, node*, bool> insert_util( const_reference value, node* p_start )
       {
-         if ( !p_node )
+         if ( !p_start )
          {
-            std::byte* p_memory = p_allocator->allocate( sizeof( node ), alignof( node ) );
+            void* p_memory = p_allocator->allocate( sizeof( node ), alignof( node ) );
             if ( !p_memory )
             {
                throw std::bad_alloc{ };
             }
 
-            p_node = new ( p_memory ) node( { .data = value, .height = 0 } );
+            p_start = new ( p_memory ) node( { .data = value, .height = 0 } );
 
             ++count;
 
-            return { p_node, true };
+            return { p_start, p_start, true };
          }
 
-         if ( key_compare comp{ }; comp( value.first, p_node->data.first ) )
+         if ( key_compare comp{ }; comp( value.first, p_start->data.first ) )
          {
-            auto [p_new, took_place] = insert_util( std::move( value ), p_node->p_left );
+            auto [p_node, p_new, took_place] = insert_util( std::move( value ), p_start->p_left );
             if ( took_place )
             {
-               p_node->p_left = p_new;
-               p_new->p_parent = p_node;
+               p_start->p_left = p_node;
+               p_node->p_parent = p_start;
 
-               if ( height( p_node->p_left ) - height( p_node->p_right ) == 2 )
+               if ( height( p_start->p_left ) - height( p_start->p_right ) == 2 )
                {
-                  if ( comp( value.first, p_new->data.first ) )
+                  if ( comp( p_new->data.first, p_node->data.first ) )
                   {
-                     p_node = right_rotate( p_node );
+                     p_start = right_rotate( p_start );
                   }
                   else
                   {
-                     p_node->p_left = left_rotate( p_node->p_left );
-                     p_node = right_rotate( p_node );
+                     p_start->p_left = left_rotate( p_start->p_left );
+                     p_start = right_rotate( p_start );
                   }
                }
 
-               p_node->height = std::max( height( p_node->p_left ), height( p_node->p_right ) ) + 1;
+               p_start->height = std::max( height( p_start->p_left ), height( p_start->p_right ) ) + 1;
             }
 
-            return { p_node, took_place };
+            return { p_start, p_new, took_place };
          }
-         else if ( value.first == p_node->data.first )
+         else if ( value.first == p_start->data.first )
          {
-            return { p_node, false };
+            return { p_start, p_start, false };
          }
          else
          {
-            auto [p_new, took_place] = insert_util( std::move( value ), p_node->p_right );
+            auto [p_node, p_new, took_place] = insert_util( std::move( value ), p_start->p_right );
             if ( took_place )
             {
-               p_node->p_right = p_new;
-               p_new->p_parent = p_node;
+               p_start->p_right = p_node;
+               p_node->p_parent = p_start;
 
-               if ( height( p_node->p_right ) - height( p_node->p_left ) == 2 )
+               if ( height( p_start->p_right ) - height( p_start->p_left ) == 2 )
                {
-                  if ( !comp( value.first, p_new->data.first ) )
+                  if ( !comp( p_new->data.first, p_node->data.first ) )
                   {
-                     p_node = left_rotate( p_node );
+                     p_start = left_rotate( p_start );
                   }
                   else
                   {
-                     p_node->p_right = right_rotate( p_node->p_right );
-                     p_node = left_rotate( p_node );
+                     p_start->p_right = right_rotate( p_start->p_right );
+                     p_start = left_rotate( p_start );
                   }
                }
 
-               p_node->height = std::max( height( p_node->p_left ), height( p_node->p_right ) ) + 1;
+               p_start->height = std::max( height( p_start->p_left ), height( p_start->p_right ) ) + 1;
             }
 
-            return { p_node, took_place };
+            return { p_start, p_new, took_place };
          }
       }
 
-      std::pair<node*, bool> insert_util( value_type&& value, node* p_node )
+      std::tuple<node*, node*, bool> insert_util( value_type&& value, node* p_start )
       {
-         if ( !p_node )
+         if ( !p_start )
          {
-            std::byte* p_memory = p_allocator->allocate( sizeof( node ), alignof( node ) );
+            void* p_memory = p_allocator->allocate( sizeof( node ), alignof( node ) );
             if ( !p_memory )
             {
                throw std::bad_alloc{ };
             }
 
-            p_node = new ( p_memory ) node( { .data = std::move( value ), .height = 0 } );
+            p_start = new ( p_memory ) node( { .data = std::move( value ), .height = 0 } );
 
             ++count;
 
-            return { p_node, true };
+            return { p_start, p_start, true };
          }
 
-         key_type key = value.first;
-         if ( key_compare comp{ }; comp( key, p_node->data.first ) )
+         if ( key_compare comp{ }; comp( value.first, p_start->data.first ) )
          {
-            auto [p_new, took_place] = insert_util( std::move( value ), p_node->p_left );
+            auto [p_node, p_new, took_place] = insert_util( std::move( value ), p_start->p_left );
             if ( took_place )
             {
-               p_node->p_left = p_new;
-               p_new->p_parent = p_node;
+               p_start->p_left = p_node;
+               p_node->p_parent = p_start;
 
-               if ( height( p_node->p_left ) - height( p_node->p_right ) == 2 )
+               if ( height( p_start->p_left ) - height( p_start->p_right ) == 2 )
                {
-                  if ( comp( key, p_new->data.first ) )
+                  if ( comp( p_new->data.first, p_node->data.first ) )
                   {
-                     p_node = right_rotate( p_node );
+                     p_start = right_rotate( p_start );
                   }
                   else
                   {
-                     p_node->p_left = left_rotate( p_node->p_left );
-                     p_node = right_rotate( p_node );
+                     p_start->p_left = left_rotate( p_start->p_left );
+                     p_start = right_rotate( p_start );
                   }
                }
 
-               p_node->height = std::max( height( p_node->p_left ), height( p_node->p_right ) ) + 1;
+               p_start->height = std::max( height( p_start->p_left ), height( p_start->p_right ) ) + 1;
             }
 
-            return { p_node, took_place };
+            return { p_start, p_new, took_place };
          }
-         else if ( key == p_node->data.first )
+         else if ( value.first == p_start->data.first )
          {
-            return { p_node, false };
+            return { p_start, p_start, false };
          }
          else
          {
-            auto [p_new, took_place] = insert_util( std::move( value ), p_node->p_right );
+            auto [p_node, p_new, took_place] = insert_util( std::move( value ), p_start->p_right );
             if ( took_place )
             {
-               p_node->p_right = p_new;
-               p_new->p_parent = p_node;
+               p_start->p_right = p_node;
+               p_node->p_parent = p_start;
 
-               if ( height( p_node->p_right ) - height( p_node->p_left ) == 2 )
+               if ( height( p_start->p_right ) - height( p_start->p_left ) == 2 )
                {
-                  if ( !comp( key, p_new->data.first ) )
+                  if ( !comp( p_new->data.first, p_node->data.first ) )
                   {
-                     p_node = left_rotate( p_node );
+                     p_start = left_rotate( p_start );
                   }
                   else
                   {
-                     p_node->p_right = right_rotate( p_node->p_right );
-                     p_node = left_rotate( p_node );
+                     p_start->p_right = right_rotate( p_start->p_right );
+                     p_start = left_rotate( p_start );
                   }
                }
 
-               p_node->height = std::max( height( p_node->p_left ), height( p_node->p_right ) ) + 1;
+               p_start->height = std::max( height( p_start->p_left ), height( p_start->p_right ) ) + 1;
             }
 
-            return { p_node, took_place };
+            return { p_start, p_new, took_place };
          }
       }
 

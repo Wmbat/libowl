@@ -28,7 +28,7 @@ project( ESL
 )
 
 option( ESL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
-option( ESL_BUILD_PERF_TESTS "Build ${PROJECT_NAME}'s performance tests" OFF )
+option( ESL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
@@ -47,17 +47,20 @@ set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )
 
-if ( EML_BUILD_TESTS )
-   enable_testing( )
+message( STATUS "Build Tests: ${ESL_BUILD_TESTS}" )
+message( STATUS "Build Bench: ${ESL_BUILD_TESTS}" )
 
-   add_subdirectory( ../external/googletest ${CMAKE_BINARY_DIR}/googletest )
-   add_subdirectory( tests )
+if ( ESL_BUILD_TESTS ) 
+    enable_testing( )
+
+    add_subdirectory( ../external/googletest ${CMAKE_BINARY_DIR}/googletest )
+    add_subdirectory( tests )
 endif ( )
 
-if ( EML_BUILD_PERF_TESTS )
-   add_subdirectory( ../external/easy_profiler ${CMAKE_BINARY_DIR}/easy_profiler )
-   add_subdirectory( profiling )
-endif ( )
+if ( ESL_BUILD_BENCH )
+    add_subdirectory( external/benchmark )
+    add_subdirectory( bench )
+endif( )
 
 add_subdirectory( external/spdlog )
 

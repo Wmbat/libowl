@@ -102,7 +102,7 @@ namespace ESL
          used_memory += pool_size;
          ++num_allocations;
 
-         return TO_BYTE_PTR( ++p_block_header );
+         return static_cast<void*>( ++p_block_header );
       }
       else
       {
@@ -110,11 +110,17 @@ namespace ESL
       }
    }
 
-   void multipool_allocator::deallocate( pointer p_alloc ) noexcept
+   auto multipool_allocator::reallocate( pointer p_alloc, size_type new_size ) noexcept -> pointer
+   {
+
+   }
+
+
+   auto multipool_allocator::deallocate( pointer p_alloc ) noexcept -> void
    {
       assert( p_alloc != nullptr && "cannot free a nullptr" );
 
-      auto* p_header = reinterpret_cast<block_header*>( p_alloc - sizeof( block_header ) );
+      auto* p_header = reinterpret_cast<block_header*>( static_cast<std::byte*>( p_alloc ) - sizeof( block_header ) );
       p_header->p_next = p_access_headers[p_header->depth_index].p_first_free;
       p_access_headers[p_header->depth_index].p_first_free = p_header;
 
@@ -132,7 +138,7 @@ namespace ESL
       return pool_size / std::pow( 2, p_header->depth_index );
    }
 
-   void multipool_allocator::release( ) noexcept
+   auto multipool_allocator::release( ) noexcept -> void
    {
       p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
       for ( int i = 0; i < depth; ++i )
