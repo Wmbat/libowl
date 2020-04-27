@@ -43,7 +43,7 @@ namespace ESL
       p_first_free = TO_POOL_HEADER_PTR( p_memory.get( ) );
       auto* p_base_cpy = p_first_free;
 
-      for ( int i = 1; i < pool_count; ++i )
+      for ( size_type i = 1; i < pool_count; ++i )
       {
          size_type offset = i * ( pool_size + sizeof( pool_header ) );
 
@@ -76,7 +76,7 @@ namespace ESL
       }
    }
 
-   auto pool_allocator::reallocate(pointer p_alloc, size_type new_size) noexcept -> pointer
+   auto pool_allocator::reallocate( pointer p_alloc, size_type new_size ) noexcept -> pointer
    {
       assert( new_size != 0 );
       assert( p_alloc != nullptr );
@@ -85,9 +85,9 @@ namespace ESL
       {
          return p_alloc;
       }
-      else 
+      else
       {
-         return nullptr; 
+         return nullptr;
       }
    }
 

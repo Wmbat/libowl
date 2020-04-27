@@ -30,7 +30,7 @@
 namespace ESL
 {
    template <typename any_t>
-   concept pod_type = std::integral<any_t>&& std::floating_point<any_t>&& std::is_pointer_v<any_t>;
+   concept pod_type = std::integral<any_t> || std::floating_point<any_t> || std::is_pointer_v<any_t>;
 
    template<class B>
    concept boolean = std::movable<std::remove_cvref_t<B>> &&

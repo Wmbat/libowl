@@ -56,6 +56,8 @@ namespace ESL
    auto monotonic_allocator::deallocate( pointer* p_alloc ) noexcept -> void
    {
       assert( false && "Deallocate does not apply to a monotonic allocator" );
+
+      p_alloc = nullptr; // to remove unused error.
    };
 
    auto monotonic_allocator::release( ) noexcept -> void

@@ -36,12 +36,10 @@
 
 int main( )
 {
-   ESL::hybrid_vector<int, 16> my_vec{ nullptr };
-   my_vec.rbegin();
-
    auto pool = ESL::pool_allocator{ { .pool_count = 1, .pool_size = 1024 } };
-   auto* p_int = pool.construct<int>( 10 );
-   pool.destroy( p_int );
+
+   ESL::hybrid_vector<int, 4, decltype(pool)> my_vec{&pool};
+   my_vec.push_back( 10 );
 
    auto main_logger = ESL::logger( "main_logger" );
 

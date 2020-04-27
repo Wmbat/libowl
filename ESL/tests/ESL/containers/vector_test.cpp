@@ -29,26 +29,6 @@
 
 #include <gtest/gtest.h>
 
-struct vector_test : public testing::Test
-{
-   vector_test( )
-   {
-      {
-         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
-
-         main_pool_alloc = ESL::pool_allocator{ create_info };
-      }
-      {
-         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
-
-         backup_pool_alloc = ESL::pool_allocator{ create_info };
-      }
-   }
-
-   ESL::pool_allocator main_pool_alloc;
-   ESL::pool_allocator backup_pool_alloc;
-};
-
 struct copyable
 {
    copyable( ) = default;
@@ -74,6 +54,77 @@ struct moveable
    }
 
    int i = 0;
+};
+
+struct hybrid_vector_test : public testing::Test
+{
+   hybrid_vector_test( ) { pool_allocator = ESL::pool_allocator{ { .pool_count = 2, .pool_size = 2048 } }; }
+
+   ESL::pool_allocator pool_allocator;
+};
+
+TEST_F( hybrid_vector_test, default_ctor )
+{
+   {
+      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+
+      EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
+      EXPECT_EQ( vec.size( ), 0 );
+      EXPECT_EQ( vec.capacity( ), 0 );
+   }
+
+   {
+      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+
+      EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
+      EXPECT_EQ( vec.size( ), 0 );
+      EXPECT_EQ( vec.capacity( ), 0 );
+   }
+}
+
+TEST_F( hybrid_vector_test, push_back_const_ref )
+{
+   {
+      int one = 1;
+      int two = 2;
+      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+
+      EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
+      EXPECT_EQ( vec.size( ), 0 );
+      EXPECT_EQ( vec.capacity( ), 0 );
+
+      vec.push_back( one );
+
+      EXPECT_EQ( vec.size( ), 1 );
+      EXPECT_EQ( vec.capacity( ), 1 );
+      EXPECT_EQ( *vec.begin(), one );
+
+      vec.push_back( two );
+
+      EXPECT_EQ( vec.size( ), 2 );
+      EXPECT_EQ( vec.capacity( ), 2 );
+      EXPECT_EQ( *vec.begin(), two );
+   }
+}
+
+struct vector_test : public testing::Test
+{
+   vector_test( )
+   {
+      {
+         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
+
+         main_pool_alloc = ESL::pool_allocator{ create_info };
+      }
+      {
+         ESL::pool_allocator::create_info const create_info{ .pool_count = 2, .pool_size = 2048 };
+
+         backup_pool_alloc = ESL::pool_allocator{ create_info };
+      }
+   }
+
+   ESL::pool_allocator main_pool_alloc;
+   ESL::pool_allocator backup_pool_alloc;
 };
 
 TEST_F( vector_test, default_ctor )

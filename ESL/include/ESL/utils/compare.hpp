@@ -30,7 +30,7 @@
 namespace ESL
 {
    template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
-   auto synth_three_way( lhs_ const& lhs, rhs_ const& rhs )
+   constexpr auto synth_three_way( lhs_ const& lhs, rhs_ const& rhs )
    {
       if constexpr ( std::three_way_comparable_with<lhs_, rhs_> )
       {

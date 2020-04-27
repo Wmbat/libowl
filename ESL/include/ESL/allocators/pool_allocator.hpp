@@ -118,6 +118,22 @@ namespace ESL
        */
       size_type allocation_count( ) const noexcept;
 
+      template <class type_>
+      type_ reallocate( type_ p_alloc, size_type new_size ) noexcept
+      {
+         assert( new_size != 0 );
+         assert( p_alloc != nullptr );
+
+         if ( new_size <= pool_size )
+         {
+            return p_alloc;
+         }
+         else
+         {
+            return nullptr;
+         }
+      }
+
       /**
        * @brief Constructs an instance of type type_ in a pool of memory.
        *

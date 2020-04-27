@@ -18,6 +18,8 @@
 #include <compare>
 #include <cstddef>
 #include <cstring>
+#include <iterator>
+#include <memory>
 #include <type_traits>
 
 namespace ESL
@@ -129,6 +131,17 @@ namespace ESL
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
    };
 
+   template <class any_, std::size_t buff_sz>
+   struct static_vector_storage
+   {
+      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> data[buff_sz];
+   };
+
+   template <class any_>
+   struct alignas( alignof( any_ ) ) static_vector_storage<any_, 0>
+   {
+   };
+
    template <class any_, complex_allocator<any_> allocator_>
    class hybrid_vector_impl : public vector_base<allocator_>
    {
@@ -169,7 +182,7 @@ namespace ESL
 
       /**
        * @brief Return a reference to the element at the index position in the container.
-       *  
+       *
        * @throw std::out_of_range
        *
        * @param[in]  index    The index position of the desired element.
@@ -273,7 +286,77 @@ namespace ESL
          destroy_range( begin( ), end( ) );
          super::count = 0;
       }
+      iterator insert( const_iterator pos, const_reference value ) requires std::copyable<value_type>
+      {
+         if ( pos == cend( ) )
+         {
+            push_back( value );
 
+            return cend( ) - 1;
+         }
+
+         assert( pos >= cbegin( ) && "Insertion iterator is out of bounds" );
+         assert( pos <= cend( ) && "Insertion iterator is past the end" );
+
+         if ( super::size( ) >= super::capacity( ) )
+         {
+            grow( );
+         }
+      }
+      /*
+      iterator insert( const_iterator pos, value_type&& value ) requires std::movable<value_type> {}
+      iterator insert( const_iterator pos, size_type count, reference value ) requires std::copyable<value_type> {}
+      iterator insert( const_iterator pos, std::input_iterator auto first, std::input_iterator auto last ) {}
+      iterator insert( const_iterator pos, std::initializer_list<value_type> initializer_list ) {}
+
+      template <class... args_>
+      iterator emplace( const_iterator pos, args_&&... args ) requires std::constructible_from<value_type, args_...>
+      {}
+
+      iterator erase( const_iterator pos );
+      iterator erase( const_iterator first, const_iterator last );
+      */
+
+      void push_back( const_reference value ) requires std::copyable<value_type>
+      {
+         if ( super::size( ) >= super::capacity( ) )
+         {
+            grow( );
+         }
+
+         if constexpr ( pod_type<value_type> )
+         {
+            memcpy( static_cast<void*>( *end( ) ), &value, sizeof( value_type ) );
+         }
+         else
+         {
+            new ( static_cast<void*>( &( *end( ) ) ) ) value_type( value );
+         }
+
+         ++super::count;
+      };
+      void push_back( value_type&& value ) requires std::movable<value_type>
+      {
+         if ( super::size( ) >= super::capacity( ) )
+         {
+            grow( );
+         }
+
+         new ( static_cast<void*>( &( *end( ) ) ) ) value_type( std::move( value ) );
+
+         ++super::count;
+      };
+
+      /*
+      template <class... args_>
+      reference emplace_back( args_&&... args ) requires std::constructible_from<value_type, args_...>
+      {}
+
+      void pop_back( ){ };
+
+      void resize( size_type count ) requires std::default_initializable<value_type>;
+      void resize( size_type count, const_reference value ) requires std::copyable<value_type> {}
+*/
    private:
       void* get_first_element( ) const noexcept
       {
@@ -283,10 +366,11 @@ namespace ESL
             static_cast<void const*>( reinterpret_cast<char const*>( this ) + offsetof( layout, first_element ) ) );
       }
 
-      void grow( size_type min_size )
+      void grow( size_type min_size = 0 )
       {
          if ( min_size > std::numeric_limits<difference_type>::max( ) )
          {
+            // handle error
          }
 
          if constexpr ( pod_type<value_type> )
@@ -295,14 +379,44 @@ namespace ESL
          }
          else
          {
-            size_type new_size =
+            size_type new_cap =
                std::clamp( 2 * super::capacity( ) + 1, min_size, std::numeric_limits<size_type>::max( ) );
 
-            pointer p_new = super::p_alloc->template construct_array<value_type>( new_size );
+            if ( begin( ) == end( ) )
+            {
+               pointer p_new = static_cast<pointer>(
+                  super::p_alloc->allocate( new_cap * sizeof( value_type ), alignof( value_type ) ) );
+            }
+            else
+            {
+            }
+
+            /*
+            pointer p_new = static_cast<pointer>(
+               super::p_alloc->allocate( new_cap * sizeof( value_type ), alignof( value_type ) ) );
+
+            if constexpr ( std::movable<value_type> )
+            {
+               std::uninitialized_move( begin( ), end( ), iterator{ p_new } );
+            }
+            else
+            {
+               std::uninitialized_copy( begin( ), end( ), iterator{ p_new } );
+            }
+
+            destroy_range( begin( ), end( ) );
+
+            if ( !this->is_static( ) )
+            {
+               super::p_alloc->deallocate( static_cast<void*>( &( *begin( ) ) ) );
+            }
+            */
+
+            super::cap = new_cap;
          }
       }
 
-      void destroy_range( std::input_iterator auto first, std::input_iterator auto last )
+      static void destroy_range( iterator first, iterator last )
       {
          if constexpr ( !pod_type<value_type> )
          {
@@ -313,17 +427,6 @@ namespace ESL
             }
          }
       }
-   };
-
-   template <class any_, std::size_t buff_sz>
-   struct static_vector_storage
-   {
-      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> data[buff_sz];
-   };
-
-   template <class any_>
-   struct alignas( alignof( any_ ) ) static_vector_storage<any_, 0>
-   {
    };
 
    template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
@@ -348,6 +451,7 @@ namespace ESL
 
    public:
       explicit hybrid_vector( allocator_type* p_alloc ) : super_impl( buff_sz, p_alloc ) {}
+      /*
       explicit hybrid_vector( size_type count, reference value, allocator_type* p_alloc ) {}
       explicit hybrid_vector( size_type count, allocator_type* p_alloc ) requires std::default_initializable<value_type>
       {}
@@ -357,6 +461,7 @@ namespace ESL
       hybrid_vector( hybrid_vector const& other, allocator_type* p_alloc ) {}
       hybrid_vector( hybrid_vector&& other ) {}
       hybrid_vector( hybrid_vector&& other, allocator_type* p_alloc ) {}
+      */
    };
 
    template <class any_, complex_allocator<any_> allocator_ = ESL::multipool_allocator>

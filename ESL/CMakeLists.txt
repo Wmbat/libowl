@@ -29,6 +29,8 @@ project( ESL
 
 option( ESL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
 option( ESL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF )
+option( ESL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF )
+option( ESL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
@@ -42,10 +44,10 @@ else ( )
    message( STATUS "Build type: Debug" )
 endif ( )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Weverything -Werror -fno-omit-frame-pointer" )
-set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
-set( GNU_RELEASE_FLAGS "-o3" )
+set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer )
+set( CLANG_RELEASE_FLAGS -o3 )
+set( GNU_DEBUG_FLAGS -o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
+set( GNU_RELEASE_FLAGS -o3 )
 
 message( STATUS "Build Tests: ${ESL_BUILD_TESTS}" )
 message( STATUS "Build Bench: ${ESL_BUILD_TESTS}" )
@@ -62,27 +64,35 @@ if ( ESL_BUILD_BENCH )
     add_subdirectory( bench )
 endif( )
 
+if ( ESL_NO_EXCEPTIONS )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_EXCEPTIONS )
+endif( )
+
+if ( ESL_NO_LOGGING )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING )
+endif( )
+
 add_subdirectory( external/spdlog )
 
 add_library( ${PROJECT_NAME} STATIC )
 
 set_target_properties( ${PROJECT_NAME}
-   PROPERTIES
-      CXX_EXTENSIONS OFF
+    PROPERTIES
+        CXX_EXTENSIONS OFF
 )
 
 target_compile_features( ${PROJECT_NAME}
-   PRIVATE
-      cxx_std_20
+    PRIVATE
+        cxx_std_20
 )
 
 target_compile_options( ${PROJECT_NAME}
    PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:${CLANG_RELEASE_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
 
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
        
 target_include_directories( ${PROJECT_NAME}

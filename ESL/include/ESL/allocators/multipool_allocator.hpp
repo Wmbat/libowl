@@ -87,6 +87,7 @@ namespace ESL
        */
       [[nodiscard( "Memory will go to waste" )]] pointer allocate(
          size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+   
       /**
        * @brief Doesn't really do much.
        *
@@ -131,6 +132,8 @@ namespace ESL
        * @brief Return the amount of times memory has been given out.
        */
       size_type allocation_count( ) const noexcept;
+
+       
 
       /**
        * @brief Constructs an instance of type type_ in a pool of memory.
