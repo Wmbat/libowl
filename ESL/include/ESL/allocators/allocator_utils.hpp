@@ -94,10 +94,11 @@ namespace ESL
    concept complex_allocator = full_allocator<allocator_> && 
       requires( allocator_ a, any_* p_type, any_ const& val, std::size_t s, args_&&... args )
       {
-         { a.template construct<any_>( args... ) } -> std::same_as<any_*>;
+         { a.template reallocate<any_>( p_type, s ) } -> std::same_as<decltype( p_type )>;
+         { a.template construct<any_>( args... ) } -> std::same_as<decltype( p_type )>;
          { a.template destroy<any_>( p_type ) } -> std::same_as<void>;
-         { a.template construct_array<any_>( s ) } -> std::same_as<any_*>;
-         { a.template construct_array<any_>( s, val ) } -> std::same_as<any_*>;
+         { a.template construct_array<any_>( s ) } -> std::same_as<decltype( p_type )>;
+         { a.template construct_array<any_>( s, val ) } -> std::same_as<decltype( p_type )>;
          { a.template destroy_array<any_>( p_type, s ) } -> std::same_as<void>;
          { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
       };

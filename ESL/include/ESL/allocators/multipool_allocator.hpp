@@ -133,6 +133,12 @@ namespace ESL
        */
       size_type allocation_count( ) const noexcept;
 
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* reallocate( type_* p_alloc, size_type new_size ) noexcept
+      {
+         assert( new_size != 0 );
+         assert( p_alloc != nullptr );
+      }
        
 
       /**

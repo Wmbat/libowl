@@ -48,10 +48,10 @@ namespace ESL
        */
       vector_base( ) = delete;
       vector_base( pointer p_first_el, size_type capacity, allocator_type* p_alloc ) :
-         p_begin( p_first_el ), cap( capacity ), p_alloc( p_alloc )
+         p_begin( p_first_el ), p_alloc( p_alloc ), cap( capacity )
       {}
 
-      void grow_pod( void* p_first_element, size_type min_cap, size_type type_size, size_type type_align )
+      void grow_trivial( void* p_first_element, size_type min_cap, size_type type_size, size_type type_align )
       {
          size_type const new_capacity =
             std::clamp( 2 * capacity( ) + 1, min_cap, std::numeric_limits<size_type>::max( ) );
@@ -78,6 +78,7 @@ namespace ESL
 
             p_begin = p_new;
          }
+
          cap = new_capacity;
       }
 
@@ -117,17 +118,16 @@ namespace ESL
 
    protected:
       void* p_begin{ nullptr };
-
+      allocator_type* p_alloc{ nullptr };
       size_type count{ 0 };
       size_type cap{ 0 };
-
-      allocator_type* p_alloc{ nullptr };
    };
 
    template <class any_, complex_allocator<any_> allocator_>
    struct hybrid_vector_align_and_size
    {
       std::aligned_storage_t<sizeof( vector_base<allocator_> ), alignof( vector_base<allocator_> )> base;
+      std::aligned_storage_t<sizeof( std::size_t ), alignof( std::size_t )> padding;
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
    };
 
@@ -224,12 +224,14 @@ namespace ESL
       reference operator[]( size_type index ) noexcept
       {
          assert( index < super::count && "Index out of bounds." );
-         return *super::p_begin[index];
+
+         return static_cast<pointer>( super::p_begin )[index];
       }
       const_reference operator[]( size_type index ) const noexcept
       {
          assert( index < super::count && "Index out of bounds." );
-         return *super::p_begin[index];
+
+         return static_cast<pointer>( super::p_begin )[index];
       }
 
       reference front( ) noexcept
@@ -275,7 +277,7 @@ namespace ESL
 
       void reserve( size_type new_cap )
       {
-         if ( new_cap > super::capacity )
+         if ( new_cap > super::capacity( ) )
          {
             grow( new_cap );
          }
@@ -286,29 +288,199 @@ namespace ESL
          destroy_range( begin( ), end( ) );
          super::count = 0;
       }
+
       iterator insert( const_iterator pos, const_reference value ) requires std::copyable<value_type>
       {
          if ( pos == cend( ) )
          {
             push_back( value );
 
-            return cend( ) - 1;
+            return end( ) - 1;
          }
 
          assert( pos >= cbegin( ) && "Insertion iterator is out of bounds" );
          assert( pos <= cend( ) && "Insertion iterator is past the end" );
 
+         iterator new_pos;
          if ( super::size( ) >= super::capacity( ) )
          {
+            size_type offset = pos - cbegin( );
             grow( );
+            new_pos = begin( ) + offset;
          }
-      }
-      /*
-      iterator insert( const_iterator pos, value_type&& value ) requires std::movable<value_type> {}
-      iterator insert( const_iterator pos, size_type count, reference value ) requires std::copyable<value_type> {}
-      iterator insert( const_iterator pos, std::input_iterator auto first, std::input_iterator auto last ) {}
-      iterator insert( const_iterator pos, std::initializer_list<value_type> initializer_list ) {}
+         else
+         {
+            new_pos = begin( ) + ( pos - cbegin( ) );
+         }
 
+         new ( static_cast<void*>( &( *end( ) ) ) ) value_type( std::move( back( ) ) );
+
+         std::move_backward( new_pos, end( ) - 1, end( ) );
+
+         ++super::count;
+
+         const_pointer p_element = &value;
+         if ( pointer{ &( *new_pos ) } <= p_element && pointer{ &( *end( ) ) } > p_element )
+         {
+            ++p_element;
+         }
+
+         *new_pos = *p_element;
+
+         return new_pos;
+      }
+
+      iterator insert( const_iterator pos, value_type&& value ) requires std::movable<value_type>
+      {
+         if ( pos == cend( ) )
+         {
+            push_back( std::move( value ) );
+
+            return end( ) - 1;
+         }
+
+         assert( pos >= cbegin( ) && "Insertion iterator is out of bounds" );
+         assert( pos <= cend( ) && "Insertion iterator is past the end" );
+
+         iterator new_pos;
+         if ( super::size( ) >= super::capacity( ) )
+         {
+            size_type offset = pos - cbegin( );
+            grow( );
+            new_pos = begin( ) + offset;
+         }
+         else
+         {
+            new_pos = begin( ) + ( pos - cbegin( ) );
+         }
+
+         new ( static_cast<void*>( &( *end( ) ) ) ) value_type( std::move( back( ) ) );
+
+         std::move_backward( new_pos, end( ) - 1, end( ) );
+
+         ++super::count;
+
+         pointer p_element = &value;
+         if ( pointer{ &( *new_pos ) } <= p_element && pointer{ &( *end( ) ) } > p_element )
+         {
+            ++p_element;
+         }
+
+         *new_pos = std::move( *p_element );
+
+         return new_pos;
+      }
+
+      iterator insert( const_iterator pos, size_type count, const_reference value ) requires std::copyable<value_type>
+      {
+         size_type start_index = pos - cbegin( );
+
+         if ( pos == cend( ) )
+         {
+            if ( super::size( ) + count >= super::capacity( ) )
+            {
+               grow( super::size( ) + count );
+            }
+
+            std::uninitialized_fill_n( end( ), count, value );
+
+            super::count += count;
+
+            return begin( ) + start_index;
+         }
+
+         assert( pos >= cbegin( ) && "Insertion iterator is out of bounds" );
+         assert( pos <= cend( ) && "Insertion iterator is past the end" );
+
+         reserve( super::size( ) + count );
+
+         iterator updated_pos = begin( ) + start_index;
+
+         if ( iterator old_end = end( ); end( ) - updated_pos >= count )
+         {
+            std::uninitialized_move( end( ) - count, end( ), end( ) );
+
+            super::count += count;
+
+            std::move_backward( updated_pos, old_end - count, old_end );
+            std::fill_n( updated_pos, count, value );
+         }
+         else
+         {
+            size_type move_count = old_end - updated_pos;
+            super::count += count;
+
+            std::uninitialized_move( updated_pos, old_end, end( ) - move_count );
+            std::fill_n( updated_pos, move_count, value );
+            std::uninitialized_fill_n( old_end, count - move_count, value );
+         }
+
+         return updated_pos;
+      }
+
+      iterator insert( const_iterator pos, std::input_iterator auto first, std::input_iterator auto last ) requires std::copyable<value_type>
+      {
+         size_type start_index = pos - cbegin( );
+         size_type count = std::distance( first, last );
+
+         if ( pos == cend( ) )
+         {
+            if ( super::size( ) + count >= super::capacity( ) )
+            {
+               grow( super::size( ) + count );
+            }
+
+            std::uninitialized_copy( first, last, end( ) );
+
+            super::count += count;
+
+            return begin( ) + start_index;
+         }
+
+         assert( pos >= cbegin( ) && "Insertion iterator is out of bounds" );
+         assert( pos <= cend( ) && "Insertion iterator is past the end" );
+
+         reserve( super::size( ) + count );
+
+         iterator updated_pos = begin( ) + start_index;
+
+         if ( iterator old_end = end( ); end( ) - updated_pos >= count )
+         {
+            std::uninitialized_move( end( ) - count, end( ), end( ) );
+
+            super::count += count;
+
+            std::move_backward( updated_pos, old_end - count, old_end );
+            std::copy( first, last, updated_pos );
+         }
+         else
+         {
+            size_type move_count = old_end - updated_pos;
+            super::count += count;
+
+            std::uninitialized_move( updated_pos, old_end, end( ) - move_count );
+
+            for ( auto it = updated_pos; count > 0; --count )
+            {
+               *it = *first;
+
+               ++it;
+               ++first;
+            }
+
+            std::uninitialized_copy( first, last, old_end );
+         }
+
+         return updated_pos;
+      }
+
+      iterator insert(
+         const_iterator pos, std::initializer_list<value_type> initializer_list ) requires std::copyable<value_type>
+      {
+         return insert( pos, initializer_list.begin( ), initializer_list.end( ) );
+      }
+
+      /*
       template <class... args_>
       iterator emplace( const_iterator pos, args_&&... args ) requires std::constructible_from<value_type, args_...>
       {}
@@ -324,9 +496,9 @@ namespace ESL
             grow( );
          }
 
-         if constexpr ( pod_type<value_type> )
+         if constexpr ( trivial_type<value_type> )
          {
-            memcpy( static_cast<void*>( *end( ) ), &value, sizeof( value_type ) );
+            memcpy( static_cast<void*>( &( *end( ) ) ), &value, sizeof( value_type ) );
          }
          else
          {
@@ -347,11 +519,23 @@ namespace ESL
          ++super::count;
       };
 
-      /*
       template <class... args_>
       reference emplace_back( args_&&... args ) requires std::constructible_from<value_type, args_...>
-      {}
+      {
+         if ( super::size( ) >= super::capacity( ) )
+         {
+            grow( );
+         }
 
+         iterator last = end( );
+         new ( static_cast<void*>( &( *last ) ) ) value_type( std::forward<args_>( args )... );
+
+         ++super::count;
+
+         return *last;
+      }
+
+      /*
       void pop_back( ){ };
 
       void resize( size_type count ) requires std::default_initializable<value_type>;
@@ -362,8 +546,8 @@ namespace ESL
       {
          using layout = hybrid_vector_align_and_size<value_type, allocator_type>;
 
-         return const_cast<void*>(
-            static_cast<void const*>( reinterpret_cast<char const*>( this ) + offsetof( layout, first_element ) ) );
+         return const_cast<void*>( reinterpret_cast<void const*>(
+            reinterpret_cast<char const*>( this ) + offsetof( layout, first_element ) ) );
       }
 
       void grow( size_type min_size = 0 )
@@ -373,52 +557,56 @@ namespace ESL
             // handle error
          }
 
-         if constexpr ( pod_type<value_type> )
+         if constexpr ( trivial_type<value_type> )
          {
-            super::grow_pod( get_first_element( ), min_size, sizeof( value_type ) );
+            super::grow_trivial( get_first_element( ), min_size, sizeof( value_type ), alignof( value_type ) );
          }
          else
          {
             size_type new_cap =
                std::clamp( 2 * super::capacity( ) + 1, min_size, std::numeric_limits<size_type>::max( ) );
 
-            if ( begin( ) == end( ) )
+            pointer p_new{ nullptr };
+            if ( is_static( ) ) // memory is currently static
             {
-               pointer p_new = static_cast<pointer>(
+               p_new = static_cast<pointer>(
                   super::p_alloc->allocate( new_cap * sizeof( value_type ), alignof( value_type ) ) );
+
+               if ( !p_new )
+               {
+                  abort( );
+               }
+
+               if constexpr ( std::movable<value_type> )
+               {
+                  std::uninitialized_move( begin( ), end( ), iterator{ p_new } );
+               }
+               else
+               {
+                  std::uninitialized_copy( begin( ), end( ), iterator{ p_new } );
+               }
+
+               destroy_range( begin( ), end( ) );
             }
             else
             {
+               p_new =
+                  super::p_alloc->template reallocate<value_type>( static_cast<pointer>( super::p_begin ), new_cap );
+
+               if ( !p_new )
+               {
+                  abort( );
+               }
             }
 
-            /*
-            pointer p_new = static_cast<pointer>(
-               super::p_alloc->allocate( new_cap * sizeof( value_type ), alignof( value_type ) ) );
-
-            if constexpr ( std::movable<value_type> )
-            {
-               std::uninitialized_move( begin( ), end( ), iterator{ p_new } );
-            }
-            else
-            {
-               std::uninitialized_copy( begin( ), end( ), iterator{ p_new } );
-            }
-
-            destroy_range( begin( ), end( ) );
-
-            if ( !this->is_static( ) )
-            {
-               super::p_alloc->deallocate( static_cast<void*>( &( *begin( ) ) ) );
-            }
-            */
-
+            super::p_begin = static_cast<void*>( p_new );
             super::cap = new_cap;
          }
       }
 
       static void destroy_range( iterator first, iterator last )
       {
-         if constexpr ( !pod_type<value_type> )
+         if constexpr ( !trivial_type<value_type> )
          {
             while ( first != last )
             {
@@ -728,7 +916,7 @@ namespace ESL
       {
          if ( p_allocator && p_alloc )
          {
-            if constexpr ( !pod_type<value_type> )
+            if constexpr ( !trivial_type<value_type> )
             {
                for ( size_type i = 0; i < current_size; ++i )
                {
@@ -814,7 +1002,7 @@ namespace ESL
                };
             }
 
-            if constexpr ( pod_type<value_type> )
+            if constexpr ( trivial_type<value_type> )
             {
                std::for_each( begin( ), end( ), []( value_type& type ) {
                   type.~value_type( );
@@ -1173,7 +1361,7 @@ namespace ESL
        */
       void clear( ) noexcept
       {
-         if constexpr ( !pod_type<value_type> )
+         if constexpr ( !trivial_type<value_type> )
          {
             for ( size_type i = 0; i < current_size; ++i )
             {
@@ -1398,7 +1586,7 @@ namespace ESL
                std::iter_swap( curr, curr + 1 );
             }
 
-            if constexpr ( pod_type<value_type> )
+            if constexpr ( trivial_type<value_type> )
             {
                ( end( ) - 1 )->~value_type( );
             }
@@ -1418,7 +1606,7 @@ namespace ESL
             std::iter_swap( curr, curr + count );
          }
 
-         if constexpr ( !pod_type<value_type> )
+         if constexpr ( !trivial_type<value_type> )
          {
             for ( auto beg = end( ) - count; beg != end( ); ++beg )
             {
@@ -1495,7 +1683,7 @@ namespace ESL
        */
       void pop_back( )
       {
-         if constexpr ( !pod_type<value_type> )
+         if constexpr ( !trivial_type<value_type> )
          {
             ( end( ) - 1 )->~value_type( );
          }
@@ -1510,7 +1698,7 @@ namespace ESL
 
          if ( count < current_size )
          {
-            if constexpr ( !pod_type<value_type> )
+            if constexpr ( !trivial_type<value_type> )
             {
                for ( int i = count; i < current_size; ++i )
                {
@@ -1539,7 +1727,7 @@ namespace ESL
 
          if ( count < current_size )
          {
-            if constexpr ( !pod_type<value_type> )
+            if constexpr ( !trivial_type<value_type> )
             {
                for ( int i = count; i < current_size; ++i )
                {
@@ -1598,7 +1786,7 @@ namespace ESL
                      p_temp[i] = p_alloc[i];
                   }
 
-                  if constexpr ( pod_type<value_type> )
+                  if constexpr ( trivial_type<value_type> )
                   {
                      p_alloc[i].~value_type( );
                   }

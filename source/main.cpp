@@ -33,6 +33,7 @@
 #include <map>
 
 #include <ESL/containers/vector.hpp>
+#include <vector>
 
 int main( )
 {
