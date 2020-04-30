@@ -43,14 +43,26 @@ namespace ESL
       using pointer = void*;
 
    protected:
-      /**
-       * @brief deleted default constructor.
-       */
       vector_base( ) = delete;
-      vector_base( pointer p_first_el, size_type capacity, allocator_type* p_alloc ) :
-         p_begin( p_first_el ), p_alloc( p_alloc ), cap( capacity )
+      /**
+       * @brief Set the default data of the container.
+       *
+       * @param[in] p_first_element A pointer to the first element in the containen.
+       * @param[in] capacity The starting capacity of the container.
+       * @param[in] p_alloc A pointer to the allocator used by the container.
+       */
+      vector_base( pointer p_first_element, size_type capacity, allocator_type* p_alloc ) :
+         p_begin( p_first_element ), p_alloc( p_alloc ), cap( capacity )
       {}
 
+      /**
+       * @brief A special function to grow the container's memory with trivial types.
+       *
+       * @param[in] p_first_element A pointer to the first element in the container.
+       * @param[in] min_cap The maximum capacity to grow the container by.
+       * @param[in] type_size The size of the trivial type.
+       * @param[in] type_align The alignment of the trivial type.
+       */
       void grow_trivial( void* p_first_element, size_type min_cap, size_type type_size, size_type type_align )
       {
          size_type const new_capacity =
@@ -114,6 +126,11 @@ namespace ESL
        * @return The maximum value held by the #difference_type.
        */
       size_type max_size( ) const noexcept { return std::numeric_limits<difference_type>::max( ); }
+      /**
+       * @brief Return the container's capacity;
+       *
+       * @return The container's current memory capacity.
+       */
       size_type capacity( ) const noexcept { return cap; }
 
    protected:
@@ -123,6 +140,16 @@ namespace ESL
       size_type cap{ 0 };
    };
 
+   /**
+    * @struct hybrid_vector_align_and_size vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief The memory layout with padding of a hybrid_vector
+    *
+    * @tparam any_, The type of objects that can be contained in the container.
+    * @tparam allocator_ The type of the allocator used by the container.
+    */
    template <class any_, complex_allocator<any_> allocator_>
    struct hybrid_vector_align_and_size
    {
@@ -131,17 +158,46 @@ namespace ESL
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
    };
 
+   /**
+    * @struct static_vector_storage vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief The static storage of a hybrid vector.
+    *
+    * @tparam any_, The type of objects that can be contained in the static storage of the container.
+    * @tparam buff_sz, The size of the storage.
+    */
    template <class any_, std::size_t buff_sz>
    struct static_vector_storage
    {
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> data[buff_sz];
    };
 
+   /**
+    * @struct static_vector_storage vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief A specific overload of the #static_vector_storage class for a size of 0.
+    *
+    * @tparam any_, The type of objects that can be contained in the static storage of the container.
+    */
    template <class any_>
    struct alignas( alignof( any_ ) ) static_vector_storage<any_, 0>
    {
    };
 
+   /**
+    * @class hybrid_vector_impl vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief The implementation of the common functions that all vectors should use.
+    *
+    * @tparam any_, The type of objects that can be contained in the container.
+    * @tparam allocator_ The type of the allocator used by the container.
+    */
    template <class any_, complex_allocator<any_> allocator_>
    class hybrid_vector_impl : public vector_base<allocator_>
    {
@@ -163,13 +219,30 @@ namespace ESL
 
    protected:
       hybrid_vector_impl( ) = delete;
-      explicit hybrid_vector_impl( size_type size, allocator_type* p_alloc ) :
-         super( get_first_element( ), size, p_alloc )
+      /**
+       * @brief Sets the capacity and the allocator of the container.
+       *
+       * @param[in] capacity The default capacity of the container.
+       * @param[in] p_alloc The allocator from which memory will be fetched.
+       */
+      explicit hybrid_vector_impl( size_type capacity, allocator_type* p_alloc ) :
+         super( get_first_element( ), capacity, p_alloc )
       {}
 
+      /**
+       * @brief Check if the container is currently using the static memory buffer.
+       *
+       * @return True if the container is using the static memory buffer, otherwise false.
+       */
       bool is_static( ) const noexcept { return super::p_begin == get_first_element( ); }
 
    public:
+      /**
+       * @brief Clear the container's data and surrenders the memory allocation.
+       *
+       * @details Clear the container's data and surrenders the memory allocation only if the vector is not using the
+       * static memory storage.
+       */
       virtual ~hybrid_vector_impl( )
       {
          if ( !is_static( ) )
@@ -181,9 +254,9 @@ namespace ESL
       }
 
       /**
-       * @brief Return a reference to the element at the index position in the container.
+       * @brief Return a #reference to the element at the index position in the container.
        *
-       * @throw std::out_of_range
+       * @throw std::out_of_range Only if the flag ESL_NO_EXCEPTIONS is not defined.
        *
        * @param[in]  index    The index position of the desired element.
        *
@@ -201,9 +274,9 @@ namespace ESL
          }
       }
       /**
-       * @brief Return a reference to the element at the index position in the container.
+       * @brief Return a #const_reference to the element at the index position in the container.
        *
-       * @throw std::out_of_range
+       * @throw std::out_of_range Only if the flag ESL_NO_EXCEPTIONS is not defined.
        *
        * @param[in]  index    The index position of the desired element.
        *
@@ -221,12 +294,26 @@ namespace ESL
          }
       }
 
+      /**
+       * @brief Return a #reference to the element at the index position in the container.
+       *
+       * @param[in] index The index position of the desired element.
+       *
+       * @return A #reference to the element at the index position in the container.
+       */
       reference operator[]( size_type index ) noexcept
       {
          assert( index < super::count && "Index out of bounds." );
 
          return static_cast<pointer>( super::p_begin )[index];
       }
+      /**
+       * @brief Return a #const_reference to the element at the index position in the container.
+       *
+       * @param[in] index The index position of the desired element.
+       *
+       * @return A #const_reference to the element at the index position in the container.
+       */
       const_reference operator[]( size_type index ) const noexcept
       {
          assert( index < super::count && "Index out of bounds." );
@@ -234,37 +321,97 @@ namespace ESL
          return static_cast<pointer>( super::p_begin )[index];
       }
 
+      /**
+       * @brief Return a #reference to the first element in the container.
+       *
+       * @return A #reference to the first element in the container.
+       */
       reference front( ) noexcept
       {
          assert( !super::empty( ) && "No elements in the container" );
          return *begin( );
       }
+      /**
+       * @brief Return a #const_reference to the first element in the container.
+       *
+       * @return A #const_reference to the first element in the container.
+       */
       const_reference front( ) const noexcept
       {
          assert( !super::empty( ) && "No elements in the container" );
          return *cbegin( );
       }
 
+      /**
+       * @brief Return a #reference to the last element in the container.
+       *
+       * @return A #reference to the last element in the container.
+       */
       reference back( ) noexcept
       {
          assert( !super::empty( ) && "No elements in the container" );
          return *( end( ) - 1 );
       }
+      /**
+       * @brief Return a #const_reference to the last element in the container.
+       *
+       * @return A #const_reference to the last element in the container.
+       */
       const_reference back( ) const noexcept
       {
          assert( !super::empty( ) && "No elements in the container" );
          return *( cend( ) - 1 );
       }
 
-      pointer data( ) noexcept { return pointer{ begin( ) }; }
-      const_pointer data( ) const noexcept { return const_pointer{ cbegin( ) }; }
+      /**
+       * @brief Return a #pointer to the container's memory.
+       *
+       * @return A #pointer to the container's memory
+       */
+      pointer data( ) noexcept { return pointer{ *begin( ) }; }
+      /**
+       * @brief Return a #const_pointer to the container's memory.
+       *
+       * @return A #const_pointer to the container's memory
+       */
+      const_pointer data( ) const noexcept { return const_pointer{ *cbegin( ) }; }
 
+      /**
+       * @brief Return an #iterator to the beginning of the container.
+       *
+       * @return An #iterator to the first element.
+       */
       iterator begin( ) noexcept { return iterator{ static_cast<pointer>( super::p_begin ) }; }
+      /**
+       * @brief Return a #const_iterator to the beginning of the container.
+       *
+       * @return A #const_iterator to the first element.
+       */
       const_iterator begin( ) const noexcept { return const_iterator{ static_cast<pointer>( super::p_begin ) }; }
+      /**
+       * @brief Return a #const_iterator to the beginning of the container.
+       *
+       * @return A #const_iterator to the first element.
+       */
       const_iterator cbegin( ) const noexcept { return const_iterator{ static_cast<pointer>( super::p_begin ) }; }
 
+      /**
+       * @brief Return an #iterator to one past the last element in the container.
+       *
+       * @return An #iterator to one past the last element.
+       */
       iterator end( ) noexcept { return iterator{ begin( ) + super::count }; }
+      /**
+       * @brief Return a #const_iterator to one past the last element in the container.
+       *
+       * @return A #const_iterator to one past the last element.
+       */
       const_iterator end( ) const noexcept { return const_iterator{ begin( ) + super::count }; }
+      /**
+       * @brief Return a #const_iterator to one past the last element in the container.
+       *
+       * @return A #const_iterator to one past the last element.
+       */
       const_iterator cend( ) const noexcept { return const_iterator{ cbegin( ) + super::count }; }
 
       reverse_iterator rbegin( ) noexcept { return reverse_iterator{ end( ) }; }
@@ -275,6 +422,12 @@ namespace ESL
       const_reverse_iterator rend( ) const noexcept { return const_reverse_iterator{ cbegin( ) }; }
       const_reverse_iterator rcend( ) const noexcept { return const_reverse_iterator{ cbegin( ) }; }
 
+      /**
+       * @brief Resize the container to a new capacity.
+       *
+       * @details Resize the container to a new capacity. All iterators may be invalidated if the data has to be moved
+       * to a new memory allocation.
+       */
       void reserve( size_type new_cap )
       {
          if ( new_cap > super::capacity( ) )
@@ -283,6 +436,11 @@ namespace ESL
          }
       }
 
+      /**
+       * @brief Remove all elements in the container.
+       *
+       * @details Remove all elements in the container. All iterators will be invalidated.
+       */
       void clear( ) noexcept
       {
          destroy_range( begin( ), end( ) );
@@ -418,7 +576,8 @@ namespace ESL
          return updated_pos;
       }
 
-      iterator insert( const_iterator pos, std::input_iterator auto first, std::input_iterator auto last ) requires std::copyable<value_type>
+      iterator insert( const_iterator pos, std::input_iterator auto first,
+         std::input_iterator auto last ) requires std::copyable<value_type>
       {
          size_type start_index = pos - cbegin( );
          size_type count = std::distance( first, last );
@@ -519,6 +678,15 @@ namespace ESL
          ++super::count;
       };
 
+      /**
+       * @brief Constructs a #value_type object at the end of the container.
+       *
+       * @tparam args_ The types of the arguments to construct the #value_type from.
+       * 
+       * @param args The arguments to forward to the constructor of the #value_type.
+       *
+       * @return A #reference to the newly constructed element.
+       */
       template <class... args_>
       reference emplace_back( args_&&... args ) requires std::constructible_from<value_type, args_...>
       {
@@ -617,6 +785,17 @@ namespace ESL
       }
    };
 
+   /**
+    * @class hybrid_vector vector.hpp <ESL/containers/vector.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief A dynamic array data structure that allows for a small static memory storage.
+    *
+    * @tparam any_, The type of objects that can be contained in the container.
+    * @tparam buff_sz, The size of the static memory buffer in the container.
+    * @tparam allocator_ The type of the allocator used by the container.
+    */
    template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
    class hybrid_vector : public hybrid_vector_impl<any_, allocator_>, static_vector_storage<any_, buff_sz>
    {
