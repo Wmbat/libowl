@@ -1,12 +1,3 @@
-[submodule "external/nlohmann"]
-	path = external/nlohmann
-	url = https://github.com/nlohmann/json
-[submodule "external/glm"]
-	path = external/glm
-	url = https://github.com/g-truc/glm
-[submodule "external/googletest"]
-	path = external/googletest
-	url = https://github.com/google/googletest
 [submodule "EGL/external/volk"]
 	path = EGL/external/volk
 	url = https://github.com/zeux/volk
@@ -19,18 +10,6 @@
 [submodule "EGL/external/Vulkan-Headers"]
 	path = EGL/external/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
-[submodule "external/easy_profiler"]
-	path = external/easy_profiler
-	url = https://github.com/yse/easy_profiler
 [submodule "EGL/external/glfw"]
 	path = EGL/external/glfw
 	url = https://github.com/glfw/glfw
-[submodule "ESL/external/spdlog"]
-	path = ESL/external/spdlog
-	url = https://github.com/gabime/spdlog
-[submodule "external/easy_profiler"]
-	path = external/easy_profiler
-	url = https://github.com/yse/easy_profiler
-[submodule "ESL/external/benchmark"]
-	path = ESL/external/benchmark
-	url = https://github.com/google/benchmark

@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.16 )
+cmake_minimum_required( VERSION 3.12 )
 project( ESL
    VERSION 0.2.1
    DESCRIPTION "A standard library"
@@ -36,12 +36,12 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-message( STATUS "Build ${PROJECT_NAME}: ${PROJECT_VERSION}" )
+message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}" )
 
 if ( CMAKE_BUILD_TYPE MATCHES Release )
-   message( STATUS "Build type: Release" )
+   message( STATUS "[${PROJECT_NAME}] Build type: Release" )
 else ( )
-   message( STATUS "Build type: Debug" )
+   message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
 endif ( )
 
 set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer )
@@ -49,19 +49,24 @@ set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
 set( GNU_RELEASE_FLAGS -o3 )
 
-message( STATUS "Build Tests: ${ESL_BUILD_TESTS}" )
-message( STATUS "Build Bench: ${ESL_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Build Tests: ${ESL_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Build Bench: ${ESL_BUILD_TESTS}" )
+
+hunter_add_package( spdlog )
+
+find_package( spdlog CONFIG REQUIRED )
 
 if ( ESL_BUILD_TESTS ) 
     enable_testing( )
 
-    add_subdirectory( ../external/googletest ${CMAKE_BINARY_DIR}/googletest )
+    # add_subdirectory( ../external/googletest ${CMAKE_BINARY_DIR}/googletest )
     add_subdirectory( tests )
 endif ( )
 
 if ( ESL_BUILD_BENCH )
-    add_subdirectory( external/benchmark )
-    add_subdirectory( bench )
+   hunter_add_package( benchmark )
+
+   add_subdirectory( bench )
 endif( )
 
 if ( ESL_NO_EXCEPTIONS )
@@ -71,8 +76,6 @@ endif( )
 if ( ESL_NO_LOGGING )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING )
 endif( )
-
-add_subdirectory( external/spdlog )
 
 add_library( ${PROJECT_NAME} STATIC )
 
@@ -105,12 +108,14 @@ target_include_directories( ${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME}
    PUBLIC
-      spdlog_header_only
+      spdlog::spdlog
 
    PRIVATE
       $<$<CXX_COMPILER_ID:GNU>:-lasan>
       $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
+
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" ) 
 
 target_precompile_headers( ${PROJECT_NAME} 
    PRIVATE 
@@ -118,6 +123,8 @@ target_precompile_headers( ${PROJECT_NAME}
       <cassert> <compare> <cstdint> <cstddef>
       <memory> <spdlog/spdlog.h>
 )
+
+endif()
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
