@@ -1,5 +1,5 @@
 /**
- * @file avl_map.hpp.
+ * @file vector.hpp.
  * @author wmbat wmbat@protonmail.com.
  * @date Tuesday, April 23rd, 2020.
  * @copyright MIT License.
@@ -11,6 +11,7 @@
 #include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/utils/compare.hpp>
 #include <ESL/utils/concepts.hpp>
+#include <ESL/utils/error_handling.hpp>
 #include <ESL/utils/iterators/random_access_iterator.hpp>
 
 #include <algorithm>
@@ -1166,7 +1167,7 @@ namespace ESL
 
          if ( min_size > std::numeric_limits<difference_type>::max( ) )
          {
-            // handle error
+            handle_bad_alloc_error( "Hybrid vector capacity overflow during allocation." );
          }
 
          if constexpr ( trivial_type<value_type> )
@@ -1186,7 +1187,7 @@ namespace ESL
 
                if ( !p_new )
                {
-                  abort( );
+                  handle_bad_alloc_error( "hybrid vector allocation error" );
                }
 
                if constexpr ( std::movable<value_type> )
@@ -1208,7 +1209,7 @@ namespace ESL
 
                if ( !p_new )
                {
-                  abort( );
+                  handle_bad_alloc_error( "Hybrid vector allocation error" );
                }
             }
 

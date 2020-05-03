@@ -51,6 +51,8 @@ set( GNU_RELEASE_FLAGS -o3 )
 
 message( STATUS "[${PROJECT_NAME}] Build Tests: ${ESL_BUILD_TESTS}" )
 message( STATUS "[${PROJECT_NAME}] Build Bench: ${ESL_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building without exceptions: ${ESL_NO_EXCEPTIONS}" )
+message( STATUS "[${PROJECT_NAME}] Building without internal logging: ${ESL_NO_LOGGING}" )
 
 hunter_add_package( spdlog )
 
