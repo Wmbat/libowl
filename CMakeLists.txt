@@ -1,4 +1,12 @@
 cmake_minimum_required( VERSION 3.12 )
+
+include( "cmake/HunterGate.cmake" )
+
+HunterGate(
+    URL "https://github.com/cpp-pm/hunter/archive/v0.23.253.tar.gz"
+    SHA1 "88ea6d37c897a81a080eb9ae0f69d7807bbb3c73"
+)
+
 project( Epona
    VERSION 0.0.2
    DESCRIPTION "A Vulkan based rendering engine"
@@ -6,19 +14,19 @@ project( Epona
 )
 
 option( BUILD_TESTS "Build unit tests" OFF )
-option( BUILD_PERF_TESTS "Build performance tests" OFF )
+option( BUILD_BENCH "Build benchmarks" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
 endif( )
 
-message( STATUS "Compiling Epona with ${CMAKE_CXX_COMPILER_ID}" )
+message( STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}" )
 
 if ( BUILD_TESTS )
     set( ESL_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
 
-if ( BUILD_PERF_TESTS )
+if ( BUILD_BENCH )
     set( ESL_BUILD_BENCH ON CACHE BOOL "" FORCE )
 endif( )
 
@@ -35,8 +43,13 @@ set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0, -g -Wall -Wextra -Werror )
 set( GNU_RELEASE_FLAGS -o3 )
 
-add_subdirectory( external/nlohmann )
-add_subdirectory( external/glm )
+hunter_add_package( glm )
+hunter_add_package( GTest )
+hunter_add_package( nlohmann_json )
+
+find_package( glm REQUIRED )
+find_package( GTest CONFIG REQUIRED )
+find_package( nlohmann_json CONFIG REQUIRED )
 
 add_subdirectory( ESL )
 add_subdirectory( EGL )
@@ -73,5 +86,5 @@ target_link_libraries( ${PROJECT_NAME}
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
-      "source/main.cpp"
+      source/main.cpp
 )

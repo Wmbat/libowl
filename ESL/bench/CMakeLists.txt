@@ -27,12 +27,14 @@ set( CLANG_RELEASE_FLAGS "-o0" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o0" )
 
+find_package( benchmark CONFIG REQUIRED )
+
 add_executable( ESL_benchmarks )
 
 target_link_libraries( ESL_benchmarks
    PUBLIC
       ESL
-      benchmark
+      benchmark::benchmark
 
    PRIVATE
       $<$<CXX_COMPILER_ID:GNU>:-lasan>

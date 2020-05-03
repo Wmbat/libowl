@@ -27,12 +27,14 @@ set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0, -g )
 set( GNU_RELEASE_FLAGS -o3 )
 
+find_package( GTest CONFIG REQUIRED )
+
 add_executable( ESL_test )
 
 target_link_libraries( ESL_test
    PUBLIC
       ESL
-      gtest
+      GTest::gtest
 )
 
 set_target_properties( ESL_test

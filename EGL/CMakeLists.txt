@@ -9,12 +9,12 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-message( STATUS "Build ${PROJECT_NAME}: ${PROJECT_VERSION}" )
+message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}" )
 
 if ( CMAKE_BUILD_TYPE MATCHES Release )
-   message( STATUS "Build type: Release" )
+   message( STATUS "[${PROJECT_NAME}] Build type: Release" )
 else( )
-   message( STATUS "Build type: Debug" )
+   message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
 endif( )
 
 # compilation settings
