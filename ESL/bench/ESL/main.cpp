@@ -42,19 +42,6 @@ static void std_vector_int( benchmark::State& state )
    }
 }
 
-static void std_vector_int_2( benchmark::State& state )
-{
-   for ( auto _ : state )
-   {
-      std::vector<int> v1( state.range( 0 ), state.range( 0 ) );
-      std::vector<int> v2( state.range( 0 ), state.range( 0 ) );
-
-      benchmark::DoNotOptimize( v1.data( ) );
-      benchmark::DoNotOptimize( v2.data( ) );
-      benchmark::ClobberMemory( );
-   }
-}
-
 static void esl_vector_int( benchmark::State& state )
 {
    ESL::pool_allocator allocator(
@@ -62,32 +49,14 @@ static void esl_vector_int( benchmark::State& state )
 
    for ( auto _ : state )
    {
-      ESL::vector<int, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
+      ESL::hybrid_vector<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
 
       benchmark::DoNotOptimize( v1.data( ) );
-      benchmark::ClobberMemory( );
-   }
-}
-
-static void esl_vector_int_2( benchmark::State& state )
-{
-   ESL::pool_allocator allocator(
-      { .pool_count = 2, .pool_size = static_cast<size_t>( state.range( 0 ) * sizeof( int ) ) } );
-
-   for ( auto _ : state )
-   {
-      ESL::vector<int, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
-      ESL::vector<int, ESL::pool_allocator> v2( state.range( 0 ), state.range( 0 ), &allocator );
-
-      benchmark::DoNotOptimize( v1.data( ) );
-      benchmark::DoNotOptimize( v2.data( ) );
       benchmark::ClobberMemory( );
    }
 }
 
 BENCHMARK( std_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
 BENCHMARK( esl_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
-BENCHMARK( std_vector_int_2 )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
-BENCHMARK( esl_vector_int_2 )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
 
 BENCHMARK_MAIN( );

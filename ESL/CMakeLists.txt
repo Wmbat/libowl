@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.12 )
+cmake_minimum_required( VERSION 3.16 )
 project( ESL
    VERSION 0.2.1
    DESCRIPTION "A standard library"
@@ -112,11 +112,18 @@ target_link_libraries( ${PROJECT_NAME}
       $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
 
+target_precompile_headers( ${PROJECT_NAME} 
+   PRIVATE 
+      <algorithm> <concepts> <type_traits>
+      <cassert> <compare> <cstdint> <cstddef>
+      <memory> <spdlog/spdlog.h>
+)
+
 target_sources( ${PROJECT_NAME}
    PRIVATE
-      "source/ESL/allocators/monotonic_allocator.cpp"   
-      "source/ESL/allocators/multipool_allocator.cpp"
-      "source/ESL/allocators/pool_allocator.cpp"
-      "source/ESL/allocators/stack_allocator.cpp"
-      "source/ESL/utils/logger.cpp"
+      source/ESL/allocators/monotonic_allocator.cpp   
+      source/ESL/allocators/multipool_allocator.cpp
+      source/ESL/allocators/pool_allocator.cpp
+      source/ESL/allocators/stack_allocator.cpp
+      source/ESL/utils/logger.cpp
 )
