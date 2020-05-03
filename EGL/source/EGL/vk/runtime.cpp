@@ -23,11 +23,11 @@
  */
 
 #include "ESL/utils/logger.hpp"
-#include <EGL/vk/context.hpp>
+#include <EGL/vk/runtime.hpp>
 
 #include <alloca.h>
 
-namespace EGL
+namespace EGL::vk
 {
    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback( VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
@@ -73,11 +73,11 @@ namespace EGL
       return VK_FALSE;
    }
 
-   context::context( ESL::multipool_allocator* p_main_allocator ) : p_main_allocator( p_main_allocator )
+   runtime::runtime( ESL::multipool_allocator* p_main_allocator ) : p_main_allocator( p_main_allocator )
    {
       api_version = volkGetInstanceVersion( );
    }
-   context::context( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log ) :
+   runtime::runtime( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log ) :
       p_log( p_log ), app_name( app_name_in ), p_main_allocator( p_main_allocator )
    {
       api_version = volkGetInstanceVersion( );
@@ -85,7 +85,7 @@ namespace EGL
       LOG_INFO_P( p_log, "Vulkan API version: {1}.{2}.{3}", VK_VERSION_MAJOR( api_version ),
          VK_VERSION_MINOR( api_version ), VK_VERSION_PATCH( api_version ) );
    }
-   context::context( context&& other ) : p_main_allocator( other.p_main_allocator )
+   runtime::runtime( runtime&& other ) : p_main_allocator( other.p_main_allocator )
    {
       p_log = other.p_log;
 
@@ -100,7 +100,7 @@ namespace EGL
       debug_messenger = other.debug_messenger;
       other.debug_messenger = VK_NULL_HANDLE;
    }
-   context::~context( )
+   runtime::~runtime( )
    {
       if constexpr ( ENABLE_VALIDATION_LAYERS )
       {
@@ -116,7 +116,7 @@ namespace EGL
       }
    }
 
-   context& context::operator=( context&& rhs )
+   runtime& runtime::operator=( runtime&& rhs )
    {
       if ( this != &rhs )
       {
@@ -138,7 +138,7 @@ namespace EGL
       return *this;
    }
 
-   context&& context::create_instance( )
+   runtime&& runtime::create_instance( )
    {
       VkApplicationInfo app_info = { };
       app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -203,7 +203,7 @@ namespace EGL
       return std::move( *this );
    }
 
-   bool context::check_validation_layer_support( )
+   bool runtime::check_validation_layer_support( )
    {
       if constexpr ( ENABLE_VALIDATION_LAYERS )
       {
@@ -233,7 +233,7 @@ namespace EGL
       }
    }
 
-   ESL::vector<char const*, ESL::multipool_allocator> context::get_instance_extensions( )
+   ESL::vector<char const*, ESL::multipool_allocator> runtime::get_instance_extensions( )
    {
       ESL::vector<char const*, ESL::multipool_allocator> ext( p_main_allocator );
 
@@ -253,4 +253,4 @@ namespace EGL
       return ext;
    }
 
-} // namespace EGL
+} // namespace EGL::vk

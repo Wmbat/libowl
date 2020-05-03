@@ -15,11 +15,11 @@ endif( )
 message( STATUS "Compiling Epona with ${CMAKE_CXX_COMPILER_ID}" )
 
 if ( BUILD_TESTS )
-   set( EML_BUILD_TESTS ON CACHE BOOL "" FORCE )
+    set( ESL_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
 
 if ( BUILD_PERF_TESTS )
-   set( EML_BUILD_PERF_TESTS ON CACHE BOOL "" FORCE )
+    set( ESL_BUILD_BENCH ON CACHE BOOL "" FORCE )
 endif( )
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
@@ -30,10 +30,10 @@ set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" )
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g -Weverything -Werror" )
-set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g -Wall -Wextra -Werror" )
-set( GNU_RELEASE_FLAGS "-o3" )
+set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror )
+set( CLANG_RELEASE_FLAGS -o3 )
+set( GNU_DEBUG_FLAGS -o0, -g -Wall -Wextra -Werror )
+set( GNU_RELEASE_FLAGS -o3 )
 
 add_subdirectory( external/nlohmann )
 add_subdirectory( external/glm )

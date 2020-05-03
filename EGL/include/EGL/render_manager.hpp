@@ -1,7 +1,7 @@
 #pragma once
 
 #include <EGL/gui/window.hpp>
-#include <EGL/vk/context.hpp>
+#include <EGL/vk/runtime.hpp>
 #include <ESL/utils/logger.hpp>
 
 namespace EGL
@@ -25,7 +25,7 @@ namespace EGL
 
       std::string app_name{ "EGL default app" };
 
-      context context;
+      vk::runtime context;
       window main_window;
 
       inline static bool IS_GRAPHIC_ENV_SETUP = false;

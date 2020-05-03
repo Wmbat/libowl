@@ -35,7 +35,7 @@ namespace ESL
    class stack_allocator final
    {
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
    public:
@@ -79,7 +79,7 @@ namespace ESL
 
          for ( std::size_t i = 0; i < element_count; ++i )
          {
-            new ( p_alloc + ( sizeof( type_ ) * i ) ) type_( );
+            new ( static_cast<std::byte*>( p_alloc ) + ( sizeof( type_ ) * i ) ) type_( );
          }
 
          return reinterpret_cast<type_*>( p_alloc );
@@ -114,7 +114,7 @@ namespace ESL
       size_type num_allocations;
 
       std::unique_ptr<std::byte[]> p_memory;
-      pointer p_top;
+      std::byte* p_top;
 
    private:
       struct header

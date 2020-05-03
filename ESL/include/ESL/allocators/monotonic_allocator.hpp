@@ -38,12 +38,12 @@ namespace ESL
    class monotonic_allocator final
    {
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
    public:
       /**
-       * @brief Constructs a monotonic allocator where the buffer is set no null.
+       * @brief Constructs a #monotonic_allocator where the buffer is set no null.
        */
       monotonic_allocator( ) = default;
       /**
@@ -96,6 +96,6 @@ namespace ESL
       size_type num_allocations{ 0 };
 
       std::unique_ptr<std::byte[]> p_memory{ nullptr };
-      pointer p_current_pos{ nullptr };
+      std::byte* p_current_pos{ nullptr };
    };
 } // namespace ESL

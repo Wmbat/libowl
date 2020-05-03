@@ -35,7 +35,7 @@ namespace ESL
     * @class multipool_allocator multipool_allocator.hpp <ESL/allocators/multipool_allocator.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Tuesday April 7th, 2020
-    * @brief An pool allocator holding multiple layers of pools with varying sizes.
+    * @brief A pool allocator holding multiple layers of pools with varying sizes.
     * @copyright MIT license
     */
    class multipool_allocator final
@@ -52,7 +52,7 @@ namespace ESL
       };
 
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
       /**
@@ -87,6 +87,16 @@ namespace ESL
        */
       [[nodiscard( "Memory will go to waste" )]] pointer allocate(
          size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+   
+      /**
+       * @brief Doesn't really do much.
+       *
+       * @param[in]  p_alloc        The memory allocation to reallocate.
+       * @param[in]  size           The desired size of the pool to give out.
+       * @return Returns nullptr if the new_size is greater than the pool size, otherwise p_alloc.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer reallocate( pointer p_alloc, size_type new_size ) noexcept;
+
       /**
        * @brief Give the memory pool back to the allocator.
        *
@@ -122,6 +132,14 @@ namespace ESL
        * @brief Return the amount of times memory has been given out.
        */
       size_type allocation_count( ) const noexcept;
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* reallocate( type_* p_alloc, size_type new_size ) noexcept
+      {
+         assert( new_size != 0 );
+         assert( p_alloc != nullptr );
+      }
+       
 
       /**
        * @brief Constructs an instance of type type_ in a pool of memory.
@@ -160,6 +178,57 @@ namespace ESL
             p_type->~type_( );
             free( TO_BYTE_PTR( p_type ) );
          }
+      }
+
+      template <std::default_initializable type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count, type_ const& value ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( value );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      void destroy_array( type_* const p_data, size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            p_data[i].~type_( );
+         }
+
+         deallocate( TO_BYTE_PTR( p_data ) );
       }
 
       /**

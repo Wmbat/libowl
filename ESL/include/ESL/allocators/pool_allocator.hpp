@@ -42,17 +42,12 @@ namespace ESL
     */
    class pool_allocator final
    {
-      struct block_header
-      {
-         block_header* p_next;
-      };
-
    public:
-      using pointer = std::byte*;
+      using pointer = void*;
       using size_type = std::size_t;
 
       /**
-       * @brief The data used to create the pool allocator.
+       * @brief The data used to create the #pool_allocator.
        */
       struct create_info
       {
@@ -78,12 +73,22 @@ namespace ESL
        * @param[in]  size           The desired size of the pool to give out.
        * @param[in]  alignment      The alignment in the pool to give out.
        *
-       * @return A pointer to the pool of memory.
+       * @return A valid pointer if the allocator has a pool to give, nullptr otherwise.
        */
       [[nodiscard( "Memory will go to waste" )]] pointer allocate(
          size_type size, size_type alignment = alignof( std::max_align_t ) ) noexcept;
+
       /**
-       * @brief Release the memory of a pool thas has been previously given out.
+       * @brief Doesn't really do much.
+       *
+       * @param[in]  p_alloc        The memory allocation to reallocate.
+       * @param[in]  size           The desired size of the pool to give out.
+       * @return Returns nullptr if the new_size is greater than the pool size, otherwise p_alloc.
+       */
+      [[nodiscard( "Memory will go to waste" )]] pointer reallocate( pointer p_alloc, size_type new_size ) noexcept;
+
+      /**
+       * @brief Release the memory of a pool that has been previously given out.
        *
        * @param[in]  p_alloc        A pointer to the pool to return to the allocator.
        */
@@ -112,6 +117,22 @@ namespace ESL
        * @brief Return the amount of times memory has been given out.
        */
       size_type allocation_count( ) const noexcept;
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* reallocate( type_* p_alloc, size_type new_size ) noexcept
+      {
+         assert( new_size != 0 );
+         assert( p_alloc != nullptr );
+
+         if ( new_size <= pool_size )
+         {
+            return p_alloc;
+         }
+         else
+         {
+            return nullptr;
+         }
+      }
 
       /**
        * @brief Constructs an instance of type type_ in a pool of memory.
@@ -148,8 +169,59 @@ namespace ESL
          if ( p_type )
          {
             p_type->~type_( );
-            free( TO_BYTE_PTR( p_type ) );
+            deallocate( TO_BYTE_PTR( p_type ) );
          }
+      }
+
+      template <std::default_initializable type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      [[nodiscard( "Memory will go to waste" )]] type_* construct_array( size_type count, type_ const& value ) noexcept
+      {
+         assert( count != 0 );
+
+         auto* p_data = reinterpret_cast<type_*>( allocate( sizeof( type_ ) * count, alignof( type_ ) ) );
+         if ( !p_data )
+         {
+            return nullptr;
+         }
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            new ( p_data + i ) type_( value );
+         }
+
+         return p_data;
+      }
+
+      template <class type_>
+      void destroy_array( type_* const p_data, size_type count ) noexcept
+      {
+         assert( count != 0 );
+
+         for ( size_type i = 0; i < count; ++i )
+         {
+            p_data[i].~type_( );
+         }
+
+         deallocate( TO_BYTE_PTR( p_data ) );
       }
 
       /**
@@ -172,6 +244,12 @@ namespace ESL
       }
 
    private:
+      struct pool_header
+      {
+         pool_header* p_next;
+      };
+
+   private:
       size_type total_size{ 0 };
       size_type used_memory{ 0 };
       size_type num_allocations{ 0 };
@@ -180,6 +258,6 @@ namespace ESL
       size_type pool_size{ 0 };
 
       std::unique_ptr<std::byte[]> p_memory{ nullptr };
-      block_header* p_first_free{ nullptr };
+      pool_header* p_first_free{ nullptr };
    };
 } // namespace ESL

@@ -22,29 +22,41 @@
  * SOFTWARE.
  */
 
-/**
- * @mainpage Test main page
- */
-
-#include <EGL/render_manager.hpp>
+#include <ESL/allocators/multipool_allocator.hpp>
 #include <ESL/allocators/pool_allocator.hpp>
-#include <ESL/utils/logger.hpp>
-
-#include <map>
-
 #include <ESL/containers/vector.hpp>
-#include <vector>
 
-int main( )
+#include <benchmark/benchmark.h>
+
+#include <iostream>
+#include <string>
+
+static void std_vector_int( benchmark::State& state )
 {
-   auto main_logger = ESL::logger( "main_logger" );
-
-   auto render_manager = EGL::render_manager( &main_logger ).set_app_name( "My App" ).create_context( );
-
-   while ( render_manager.is_running( ) )
+   for ( auto _ : state )
    {
-      render_manager.render( );
-   }
+      std::vector<int> v1( state.range( 0 ), state.range( 0 ) );
 
-   return 0;
+      benchmark::DoNotOptimize( v1.data( ) );
+      benchmark::ClobberMemory( );
+   }
 }
+
+static void esl_vector_int( benchmark::State& state )
+{
+   ESL::pool_allocator allocator(
+      { .pool_count = 1, .pool_size = static_cast<size_t>( state.range( 0 ) * sizeof( int ) ) } );
+
+   for ( auto _ : state )
+   {
+      ESL::hybrid_vector<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
+
+      benchmark::DoNotOptimize( v1.data( ) );
+      benchmark::ClobberMemory( );
+   }
+}
+
+BENCHMARK( std_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+BENCHMARK( esl_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+
+BENCHMARK_MAIN( );

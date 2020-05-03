@@ -36,7 +36,7 @@ namespace ESL
       p_top( p_memory.get( ) )
    {}
 
-   std::byte* stack_allocator::allocate( size_type size, size_type alignment ) noexcept
+   auto stack_allocator::allocate( size_type size, size_type alignment ) noexcept -> pointer
    {
       assert( size != 0 );
 
@@ -60,19 +60,19 @@ namespace ESL
       return aligned_address;
    }
 
-   void stack_allocator::free( std::byte* p_address ) noexcept
+   auto stack_allocator::free( pointer p_address ) noexcept -> void
    {
       assert( p_address != nullptr );
 
-      auto* header_address = reinterpret_cast<header*>( p_address - sizeof( header ) );
-      used_memory -= p_top - p_address + header_address->adjustment;
+      auto* header_address = reinterpret_cast<header*>( static_cast<std::byte*>( p_address ) - sizeof( header ) );
+      used_memory -= p_top - static_cast<std::byte*>( p_address ) + header_address->adjustment;
 
-      p_top = p_address - header_address->adjustment;
+      p_top = static_cast<std::byte*>( p_address ) - header_address->adjustment;
 
       --num_allocations;
    }
 
-   bool stack_allocator::can_allocate( size_type size, size_type alignment ) const noexcept
+   auto stack_allocator::can_allocate( size_type size, size_type alignment ) const noexcept -> bool
    {
       assert( size != 0 && "Size cannot be zero" );
       assert( alignment != 0 && "Alignment cannot be zero" );
@@ -81,16 +81,16 @@ namespace ESL
       return ( padding + size + used_memory ) > total_size;
    }
 
-   void stack_allocator::clear( ) noexcept
+   auto stack_allocator::clear( ) noexcept -> void
    {
       p_top = p_memory.get( );
       used_memory = 0;
       num_allocations = 0;
    }
 
-   stack_allocator::size_type stack_allocator::max_size( ) const noexcept { return total_size; }
-   stack_allocator::size_type stack_allocator::memory_usage( ) const noexcept { return used_memory; }
-   stack_allocator::size_type stack_allocator::allocation_count( ) const noexcept { return num_allocations; }
+   auto stack_allocator::max_size( ) const noexcept -> size_type { return total_size; }
+   auto stack_allocator::memory_usage( ) const noexcept -> size_type { return used_memory; }
+   auto stack_allocator::allocation_count( ) const noexcept -> size_type { return num_allocations; }
 } // namespace ESL
 
 #undef TO_UINT_PTR

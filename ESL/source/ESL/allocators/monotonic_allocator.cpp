@@ -40,7 +40,6 @@ namespace ESL
       assert( size != 0 );
 
       auto const padding = get_forward_padding( TO_UINT_PTR( p_current_pos ), alignment );
-
       if ( padding + size + used_memory > total_size )
       {
          return nullptr;
@@ -52,11 +51,13 @@ namespace ESL
       used_memory += size + padding;
       ++num_allocations;
 
-      return aligned_address;
+      return static_cast<void*>( aligned_address );
    }
    auto monotonic_allocator::deallocate( pointer* p_alloc ) noexcept -> void
    {
       assert( false && "Deallocate does not apply to a monotonic allocator" );
+
+      p_alloc = nullptr; // to remove unused error.
    };
 
    auto monotonic_allocator::release( ) noexcept -> void

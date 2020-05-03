@@ -89,7 +89,7 @@ target_sources( ${PROJECT_NAME}
    PRIVATE
       "source/EGL/gui/widget.cpp"
       "source/EGL/gui/window.cpp"
-      "source/EGL/vk/context.cpp"
+      "source/EGL/vk/runtime.cpp"
       "source/EGL/vk/defines.cpp"
       "source/EGL/render_manager.cpp"
 )

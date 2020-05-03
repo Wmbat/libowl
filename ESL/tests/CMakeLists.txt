@@ -22,10 +22,10 @@
 
 cmake_minimum_required( VERSION 3.12 )
 
-set( CLANG_DEBUG_FLAGS "-o0 -g" )
-set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0, -g" )
-set( GNU_RELEASE_FLAGS "-o3" )
+set( CLANG_DEBUG_FLAGS -o0 -g )
+set( CLANG_RELEASE_FLAGS -o3 )
+set( GNU_DEBUG_FLAGS -o0, -g )
+set( GNU_RELEASE_FLAGS -o3 )
 
 add_executable( ESL_test )
 
@@ -54,10 +54,16 @@ target_compile_options( ESL_test
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
 )
 
+target_precompile_headers( ESL_test
+   PRIVATE
+      <gtest/gtest.h>
+)
+
 target_sources( ESL_test
    PRIVATE
-      "ESL/main.cpp"
-      "ESL/containers/vector_test.cpp"
+      ESL/main.cpp
+      ESL/containers/maps/avl_map_test.cpp
+      ESL/containers/vector_test.cpp
 )
 
 add_test( NAME ESL_test COMMAND ESL_test )

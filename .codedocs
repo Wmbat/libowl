@@ -14,6 +14,6 @@
 # paths will be considered relative to the root of the repository, not the
 # location of the DOXYFILE.
 
-DOXYFILE = docs/Doxyfile.in
+DOXYFILE = Doxyfile.in
 
 EXCLUDE = EGL/include/EGL/vk/vma/vk_mem_alloc.h

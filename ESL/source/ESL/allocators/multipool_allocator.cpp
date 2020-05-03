@@ -42,7 +42,7 @@ namespace ESL
       assert( depth != 0 && "Cannot have a pool depth of zero" );
 
       size_type true_alloc_size = 0;
-      for ( int i = 0; i < depth; ++i )
+      for ( size_type i = 0; i < depth; ++i )
       {
          size_type const depth_pow = std::pow( 2, i );
          size_type const depth_pool_count = pool_count * depth_pow;
@@ -54,7 +54,7 @@ namespace ESL
       p_memory = std::make_unique<std::byte[]>( true_alloc_size + ( ( depth + 1 ) * sizeof( access_header ) ) );
 
       p_access_headers = TO_ACCESS_HEADER_PTR( p_memory.get( ) );
-      for ( int i = 0; i < depth; ++i )
+      for ( size_type i = 0; i < depth; ++i )
       {
          size_type const depth_pow = std::pow( 2, i );
          size_type const depth_offset = ( depth + 1 ) * sizeof( block_header );
@@ -65,7 +65,7 @@ namespace ESL
          block_header* p_first_free = p_access_headers[i].p_first_free;
          p_first_free->depth_index = i;
 
-         for ( int j = 1; j < pool_count * depth_pow; ++j )
+         for ( size_type j = 1; j < pool_count * depth_pow; ++j )
          {
             size_type const offset = j * ( pool_size / depth_pow + sizeof( block_header ) );
 
@@ -85,7 +85,7 @@ namespace ESL
       assert( alignment != 0 && "Allocation alignment cannot be zero" );
 
       size_type depth_index = 0;
-      for ( int i = 0; i < depth; ++i )
+      for ( size_type i = 0; i < depth; ++i )
       {
          if ( pool_size / std::pow( 2, i ) >= size )
          {
@@ -102,7 +102,7 @@ namespace ESL
          used_memory += pool_size;
          ++num_allocations;
 
-         return TO_BYTE_PTR( ++p_block_header );
+         return static_cast<void*>( ++p_block_header );
       }
       else
       {
@@ -110,11 +110,18 @@ namespace ESL
       }
    }
 
-   void multipool_allocator::deallocate( pointer p_alloc ) noexcept
+   auto multipool_allocator::reallocate( pointer p_alloc, size_type new_size ) noexcept -> pointer
+   {
+      new_size = 0;
+
+      return p_alloc;
+   }
+
+   auto multipool_allocator::deallocate( pointer p_alloc ) noexcept -> void
    {
       assert( p_alloc != nullptr && "cannot free a nullptr" );
 
-      auto* p_header = reinterpret_cast<block_header*>( p_alloc - sizeof( block_header ) );
+      auto* p_header = reinterpret_cast<block_header*>( static_cast<std::byte*>( p_alloc ) - sizeof( block_header ) );
       p_header->p_next = p_access_headers[p_header->depth_index].p_first_free;
       p_access_headers[p_header->depth_index].p_first_free = p_header;
 
@@ -132,10 +139,10 @@ namespace ESL
       return pool_size / std::pow( 2, p_header->depth_index );
    }
 
-   void multipool_allocator::release( ) noexcept
+   auto multipool_allocator::release( ) noexcept -> void
    {
       p_access_headers = reinterpret_cast<access_header*>( p_memory.get( ) );
-      for ( int i = 0; i < depth; ++i )
+      for ( size_type i = 0; i < depth; ++i )
       {
          size_type const depth_pow = std::pow( 2, i );
          size_type const depth_offset = ( depth + 1 ) * sizeof( block_header );
@@ -144,7 +151,7 @@ namespace ESL
          p_access_headers[i].p_first_free = TO_BLOCK_HEADER_PTR( p_memory.get( ) + depth_offset + pool_offset );
 
          auto* p_base_cpy = p_access_headers[i].p_first_free;
-         for ( int j = 1; j < pool_count * depth_pow; ++j )
+         for ( size_type j = 1; j < pool_count * depth_pow; ++j )
          {
             size_type const offset = j * ( pool_size / depth_pow + sizeof( block_header ) );
 

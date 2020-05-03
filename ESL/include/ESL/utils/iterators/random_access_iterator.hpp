@@ -47,9 +47,7 @@ namespace ESL
       using self_type = random_access_iterator;
       using value_type = type_;
       using reference = type_&;
-      using const_reference = type_ const&;
       using pointer = type_*;
-      using const_pointer = type_ const*;
       using difference_type = std::ptrdiff_t;
 
    public:
@@ -59,30 +57,18 @@ namespace ESL
       constexpr bool operator==( self_type const& rhs ) const noexcept = default;
       constexpr std::strong_ordering operator<=>( self_type const& rhs ) const noexcept = default;
 
-      constexpr reference operator*( ) noexcept
+      constexpr reference operator*( ) const noexcept
       {
          assert( p_type != nullptr && "Cannot use derefence a nullptr" );
 
          return *p_type;
       }
-      constexpr const_reference operator*( ) const noexcept
-      {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
-
-         return *p_type;
-      }
-      constexpr pointer operator->( ) noexcept
+      constexpr pointer operator->( ) const noexcept
       {
          assert( p_type != nullptr && "Cannot use derefence a nullptr" );
 
          return p_type;
       }
-      constexpr const_pointer operator->( ) const noexcept
-      {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
-
-         return p_type;
-      };
 
       constexpr self_type& operator++( ) noexcept
       {
@@ -143,13 +129,7 @@ namespace ESL
       constexpr difference_type operator+( self_type const& it ) const noexcept { return p_type + it.p_type; }
       constexpr difference_type operator-( self_type const& it ) const noexcept { return p_type - it.p_type; }
 
-      constexpr reference operator[]( difference_type diff ) noexcept
-      {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
-
-         return *( *this + diff );
-      }
-      constexpr const_reference operator[]( difference_type diff ) const noexcept
+      constexpr reference operator[]( difference_type diff ) const noexcept
       {
          assert( p_type != nullptr && "Cannot use derefence a nullptr" );
 
