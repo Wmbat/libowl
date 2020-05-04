@@ -9,19 +9,13 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}" )
-
-if ( CMAKE_BUILD_TYPE MATCHES Release )
-   message( STATUS "[${PROJECT_NAME}] Build type: Release" )
-else( )
-   message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
-endif( )
-
 # compilation settings
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )
+
+message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION} - ${CMAKE_BUILD_TYPE}" )
 
 # spirv_cross settings
 set( SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE )
@@ -87,9 +81,9 @@ target_link_libraries( ${PROJECT_NAME}
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
-      "source/EGL/gui/widget.cpp"
-      "source/EGL/gui/window.cpp"
-      "source/EGL/vk/runtime.cpp"
-      "source/EGL/vk/defines.cpp"
-      "source/EGL/render_manager.cpp"
+      source/EGL/gui/widget.cpp
+      source/EGL/gui/window.cpp
+      source/EGL/vk/runtime.cpp
+      source/EGL/vk/defines.cpp
+      source/EGL/render_manager.cpp
 )
