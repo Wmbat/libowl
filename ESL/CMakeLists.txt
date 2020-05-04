@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.12 )
+cmake_minimum_required( VERSION 3.12...3.17 FATAL_ERROR )
 project( ESL
    VERSION 0.2.1
    DESCRIPTION "A standard library"
