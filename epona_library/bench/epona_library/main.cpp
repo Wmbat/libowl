@@ -22,48 +22,41 @@
  * SOFTWARE.
  */
 
-#pragma once
-
-#include <EGL/vk/core.hpp>
 #include <epona_library/allocators/multipool_allocator.hpp>
+#include <epona_library/allocators/pool_allocator.hpp>
 #include <epona_library/containers/vector.hpp>
-#include <epona_library/utils/logger.hpp>
 
+#include <benchmark/benchmark.h>
+
+#include <iostream>
 #include <string>
-#include <string_view>
 
-namespace EGL::vk
+static void std_vector_int( benchmark::State& state )
 {
-   class runtime
+   for ( auto _ : state )
    {
-   public:
-      runtime( ESL::multipool_allocator* p_main_allocator );
-      runtime( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log = nullptr );
-      runtime( runtime const& other ) = delete;
-      runtime( runtime&& other );
-      ~runtime( );
+      std::vector<int> v1( state.range( 0 ), state.range( 0 ) );
 
-      runtime& operator=( runtime const& rhs ) = delete;
-      runtime& operator=( runtime&& rhs );
+      benchmark::DoNotOptimize( v1.data( ) );
+      benchmark::ClobberMemory( );
+   }
+}
 
-      runtime&& create_instance( );
+static void esl_vector_int( benchmark::State& state )
+{
+   ESL::pool_allocator allocator(
+      { .pool_count = 1, .pool_size = static_cast<size_t>( state.range( 0 ) * sizeof( int ) ) } );
 
-   private:
-      bool check_validation_layer_support( );
+   for ( auto _ : state )
+   {
+      ESL::hybrid_vector<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
 
-      ESL::vector<char const*> get_instance_extensions( );
+      benchmark::DoNotOptimize( v1.data( ) );
+      benchmark::ClobberMemory( );
+   }
+}
 
-   private:
-      ESL::logger* p_log{ nullptr };
-      ESL::multipool_allocator* p_main_allocator;
+BENCHMARK( std_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+BENCHMARK( esl_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
 
-      std::uint32_t api_version{ 0 };
-      std::string app_name{ };
-
-      VkInstance instance{ VK_NULL_HANDLE };
-      VkDebugUtilsMessengerEXT debug_messenger{ VK_NULL_HANDLE };
-
-      ESL::vector<char const*> const validation_layer{ 1, "VK_LAYER_KHRONOS_validation", p_main_allocator };
-      ESL::vector<char const*> instance_extensions{ p_main_allocator };
-   };
-} // namespace EGL::vk
+BENCHMARK_MAIN( );
