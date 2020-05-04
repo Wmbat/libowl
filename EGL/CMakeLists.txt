@@ -27,14 +27,7 @@ set( SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON CACHE BOOL "" FORCE )
 
-include(CMakeLists.txt.in)
-
-# external dependencies
-# add_subdirectory( external/Vulkan-Headers )
-# add_subdirectory( external/volk )
-# add_subdirectory( external/glslang )
-# add_subdirectory( external/SPIRV-Cross )
-# add_subdirectory( external/glfw )
+include( CMakeLists.txt.in )
 
 add_library( ${PROJECT_NAME} STATIC )
 
@@ -79,7 +72,7 @@ target_link_libraries( ${PROJECT_NAME}
       glslang
       SPIRV
       glfw
-      ESL
+      epona_library
 )
 
 target_sources( ${PROJECT_NAME}

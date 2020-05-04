@@ -1,14 +1,5 @@
-cmake_minimum_required( VERSION 3.12 )
-
+cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
 include( FetchContent )
-include(ExternalProject)
-include( "cmake/HunterGate.cmake" )
-
-HunterGate(
-    URL "https://github.com/cpp-pm/hunter/archive/v0.23.253.tar.gz"
-    SHA1 "88ea6d37c897a81a080eb9ae0f69d7807bbb3c73"
-)
-
 project( Epona
    VERSION 0.0.2
    DESCRIPTION "A Vulkan based rendering engine"
@@ -34,9 +25,6 @@ endif( )
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
 
-# nlohmann settings
-set( JSON_BuildTests OFF CACHE BOOL "" FORCE )
-
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" )
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
@@ -45,15 +33,9 @@ set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0, -g -Wall -Wextra -Werror )
 set( GNU_RELEASE_FLAGS -o3 )
 
-hunter_add_package( glm )
-hunter_add_package( GTest )
-hunter_add_package( nlohmann_json )
+include( CMakeLists.txt.in )
 
-find_package( glm REQUIRED )
-find_package( GTest CONFIG REQUIRED )
-find_package( nlohmann_json CONFIG REQUIRED )
-
-add_subdirectory( ESL )
+add_subdirectory( epona_library )
 add_subdirectory( EGL )
 
 add_executable( ${PROJECT_NAME} )
@@ -81,7 +63,6 @@ target_compile_options( ${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME}
    PUBLIC
-      nlohmann_json
       glm
       EGL
 )

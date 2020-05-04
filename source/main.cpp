@@ -27,12 +27,12 @@
  */
 
 #include <EGL/render_manager.hpp>
-#include <ESL/allocators/pool_allocator.hpp>
-#include <ESL/utils/logger.hpp>
+#include <epona_library/allocators/pool_allocator.hpp>
+#include <epona_library/utils/logger.hpp>
 
 #include <map>
 
-#include <ESL/containers/vector.hpp>
+#include <epona_library/containers/vector.hpp>
 #include <vector>
 
 int main( )
