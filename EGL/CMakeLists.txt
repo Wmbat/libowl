@@ -1,4 +1,5 @@
-cmake_minimum_required( VERSION 3.12 )
+cmake_minimum_required( VERSION 3.14...3.17 FATAL_ERROR )
+
 project( EGL
    VERSION 0.0.1
    DESCRIPTION "A Vulkan graphics library"
@@ -9,19 +10,13 @@ if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}" )
-
-if ( CMAKE_BUILD_TYPE MATCHES Release )
-   message( STATUS "[${PROJECT_NAME}] Build type: Release" )
-else( )
-   message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
-endif( )
-
 # compilation settings
 set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
 set( CLANG_RELEASE_FLAGS "-o3" )
 set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
 set( GNU_RELEASE_FLAGS "-o3" )
+
+message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION} - ${CMAKE_BUILD_TYPE}" )
 
 # spirv_cross settings
 set( SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE )
@@ -32,12 +27,7 @@ set( SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE )
 set( SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON CACHE BOOL "" FORCE )
 
-# external dependencies
-add_subdirectory( external/Vulkan-Headers )
-add_subdirectory( external/volk )
-add_subdirectory( external/glslang )
-add_subdirectory( external/SPIRV-Cross )
-add_subdirectory( external/glfw )
+include( CMakeLists.txt.in )
 
 add_library( ${PROJECT_NAME} STATIC )
 
@@ -82,14 +72,14 @@ target_link_libraries( ${PROJECT_NAME}
       glslang
       SPIRV
       glfw
-      ESL
+      epona_library
 )
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
-      "source/EGL/gui/widget.cpp"
-      "source/EGL/gui/window.cpp"
-      "source/EGL/vk/runtime.cpp"
-      "source/EGL/vk/defines.cpp"
-      "source/EGL/render_manager.cpp"
+      source/EGL/gui/widget.cpp
+      source/EGL/gui/window.cpp
+      source/EGL/vk/runtime.cpp
+      source/EGL/vk/defines.cpp
+      source/EGL/render_manager.cpp
 )
