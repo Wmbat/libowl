@@ -1,7 +1,7 @@
 #pragma once
 
-#include <EGL/gui/window.hpp>
-#include <EGL/vk/runtime.hpp>
+#include <epona_core/gui/window.hpp>
+#include <epona_core/vk/runtime.hpp>
 #include <epona_library/utils/logger.hpp>
 
 namespace EGL

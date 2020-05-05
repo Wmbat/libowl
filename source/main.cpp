@@ -26,7 +26,7 @@
  * @mainpage Test main page
  */
 
-#include <EGL/render_manager.hpp>
+#include <epona_core/render_manager.hpp>
 #include <epona_library/allocators/pool_allocator.hpp>
 #include <epona_library/utils/logger.hpp>
 

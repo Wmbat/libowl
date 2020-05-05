@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <EGL/vk/core.hpp>
+#include <epona_core/vk/core.hpp>
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/containers/vector.hpp>
 #include <epona_library/utils/logger.hpp>

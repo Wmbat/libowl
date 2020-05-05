@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- *
+
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,26 +24,32 @@
 
 #pragma once
 
-#include <EGL/vk/core.hpp>
+#include <epona_core/gui/widget.hpp>
 
-namespace ESL
-{
-   class multipool_allocator;
-   class logger;
-} // namespace ESL
+#include <epona_core/vk/core.hpp>
+
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
 
 namespace EGL
 {
-   struct physical_device
+   class window : public widget
    {
-      std::string name;
-      VkPhysicalDevice handle;
-   };
+      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void( GLFWwindow* )>>;
 
-   class physical_device_manager
-   {
    public:
-      ESL::logger* p_logger;
-      ESL::multipool_allocator* p_main_allocator;
+      window( );
+      window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in );
+
+      bool is_open( );
+
+   private:
+      std::string title{ "EGL standard window" };
+      std::uint32_t width{ 1080u };
+      std::uint32_t height{ 720u };
+
+      wnd_ptr p_wnd;
    };
 } // namespace EGL

@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,25 +22,16 @@
  * SOFTWARE.
  */
 
-#include <EGL/gui/window.hpp>
-#include <memory>
+#include <epona_core/gui/widget.hpp>
 
 namespace EGL
 {
-   window::window( )
+   widget& widget::setParent( widget* p_parent_in )
    {
-      glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
-      glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
-      p_wnd = wnd_ptr( glfwCreateWindow( width, height, title.c_str( ), nullptr, nullptr ), glfwDestroyWindow );
+      p_parent = p_parent_in;
+
+      return *this;
    }
 
-   window::window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in ) :
-      title( title_in ), width( width_in ), height( height_in )
-   {
-      glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
-      glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
-      p_wnd = wnd_ptr( glfwCreateWindow( width, height, title.c_str( ), nullptr, nullptr ), glfwDestroyWindow );
-   }
-
-   bool window::is_open( ) { return !glfwWindowShouldClose( p_wnd.get( ) ); }
+   widget* widget::getParent( ) { return p_parent; }
 } // namespace EGL

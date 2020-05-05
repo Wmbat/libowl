@@ -27,10 +27,11 @@ project( epona_library
    LANGUAGES CXX
 )
 
-option( ESL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
-option( ESL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF )
-option( ESL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF )
-option( ESL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF )
+option( EPONA_LIBRARY_STATIC "Build ${PROJECT_NAME} as a static library" ON )
+option( EPONA_LIBRARY_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
+option( EPONA_LIBRARY_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF )
+option( EPONA_LIBRARY_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF )
+option( EPONA_LIBRARY_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
@@ -44,13 +45,14 @@ else ( )
    message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
 endif ( )
 
-set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer )
+set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
 set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
 set( GNU_RELEASE_FLAGS -o3 )
 
-message( STATUS "[${PROJECT_NAME}] Build Tests: ${ESL_BUILD_TESTS}" )
-message( STATUS "[${PROJECT_NAME}] Build Bench: ${ESL_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_LIBRARY_STATIC}" )
+message( STATUS "[${PROJECT_NAME}] Building unit tests: ${ESL_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${ESL_BUILD_BENCH}" )
 message( STATUS "[${PROJECT_NAME}] Building without exceptions: ${ESL_NO_EXCEPTIONS}" )
 message( STATUS "[${PROJECT_NAME}] Building without internal logging: ${ESL_NO_LOGGING}" )
 
@@ -76,15 +78,9 @@ endif( )
 
 add_library( ${PROJECT_NAME} STATIC )
 
-set_target_properties( ${PROJECT_NAME}
-    PROPERTIES
-        CXX_EXTENSIONS OFF
-)
+set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF )
 
-target_compile_features( ${PROJECT_NAME}
-    PRIVATE
-        cxx_std_20
-)
+target_compile_features( ${PROJECT_NAME} PRIVATE cxx_std_20 )
 
 target_compile_options( ${PROJECT_NAME}
    PRIVATE
@@ -104,23 +100,23 @@ target_include_directories( ${PROJECT_NAME}
 )
 
 target_link_libraries( ${PROJECT_NAME}
-   PUBLIC
-      spdlog::spdlog
+    PUBLIC
+        spdlog::spdlog
 
-   PRIVATE
-      $<$<CXX_COMPILER_ID:GNU>:-lasan>
-      $<$<CXX_COMPILER_ID:GNU>:-lubsan>
+    PRIVATE
+        $<$<CXX_COMPILER_ID:Clang>:-lasan>
+        $<$<CXX_COMPILER_ID:Clang>:-lubsan>
+        $<$<CXX_COMPILER_ID:GNU>:-lasan>
+        $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" ) 
-
-target_precompile_headers( ${PROJECT_NAME} 
-   PRIVATE 
-      <algorithm> <concepts> <type_traits>
-      <cassert> <compare> <cstdint> <cstddef>
-      <memory> <spdlog/spdlog.h>
-)
-
+if ( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" ) 
+    target_precompile_headers( ${PROJECT_NAME} 
+        PRIVATE 
+            <algorithm> <concepts> <type_traits>
+            <cassert> <compare> <cstdint> <cstddef>
+            <memory> <spdlog/spdlog.h>
+    )
 endif()
 
 target_sources( ${PROJECT_NAME}

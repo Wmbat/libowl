@@ -3,4 +3,6 @@ FetchContent_Declare( spdlog
     GIT_TAG v1.5.0
 )
 
+message( STATUS "[${PROJECT_NAME}] Fetching spdlog 1.5.0" )
+
 FetchContent_MakeAvailable( spdlog )

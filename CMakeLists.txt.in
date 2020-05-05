@@ -3,4 +3,6 @@ FetchContent_Declare( glm
     GIT_TAG 0.9.9.8
 )
 
+message( STATUS "[${PROJECT_NAME}] Fetching glm 0.9.9.8" )
+
 FetchContent_MakeAvailable( glm )

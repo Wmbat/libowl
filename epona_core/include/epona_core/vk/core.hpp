@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <EGL/vk/vma/vk_mem_alloc.h>
+#include <epona_core/vk/vma/vk_mem_alloc.h>
 
 #include <volk.h>
 

@@ -1,8 +1,8 @@
 cmake_minimum_required( VERSION 3.14...3.17 FATAL_ERROR )
 
-project( EGL
+project( epona_core
    VERSION 0.0.1
-   DESCRIPTION "A Vulkan graphics library"
+   DESCRIPTION "Main components of the epona renderer"
    LANGUAGES CXX
 )
 
@@ -38,9 +38,9 @@ set_target_properties( ${PROJECT_NAME}
 
 target_compile_definitions( ${PROJECT_NAME}
    PRIVATE
-      ${PROJECT_NAME}_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-      ${PROJECT_NAME}_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-      ${PROJECT_NAME}_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+      CORE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+      CORE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+      CORE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 target_compile_features( ${PROJECT_NAME}
@@ -77,9 +77,9 @@ target_link_libraries( ${PROJECT_NAME}
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
-      source/EGL/gui/widget.cpp
-      source/EGL/gui/window.cpp
-      source/EGL/vk/runtime.cpp
-      source/EGL/vk/defines.cpp
-      source/EGL/render_manager.cpp
+      source/epona_core/gui/widget.cpp
+      source/epona_core/gui/window.cpp
+      source/epona_core/vk/runtime.cpp
+      source/epona_core/vk/defines.cpp
+      source/epona_core/render_manager.cpp
 )

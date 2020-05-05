@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
 include( FetchContent )
-project( Epona
+project( epona
    VERSION 0.0.2
    DESCRIPTION "A Vulkan based rendering engine"
    LANGUAGES CXX 
@@ -15,12 +15,14 @@ endif( )
 
 message( STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}" )
 
+set( EPONA_LIBRARY_STATIC ON CACHE BOOL "" FORCE )
+
 if ( BUILD_TESTS )
-    set( ESL_BUILD_TESTS ON CACHE BOOL "" FORCE )
+    set( EPONA_LIBRARY_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
 
 if ( BUILD_BENCH )
-    set( ESL_BUILD_BENCH ON CACHE BOOL "" FORCE )
+    set( EPONA_LIBRARY_BUILD_BENCH ON CACHE BOOL "" FORCE )
 endif( )
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
@@ -33,22 +35,19 @@ set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0, -g -Wall -Wextra -Werror )
 set( GNU_RELEASE_FLAGS -o3 )
 
+message( STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}" )
+
 include( CMakeLists.txt.in )
 
 add_subdirectory( epona_library )
-add_subdirectory( EGL )
+add_subdirectory( epona_core )
 
 add_executable( ${PROJECT_NAME} )
 
-set_target_properties( ${PROJECT_NAME}
-   PROPERTIES
-      CXX_EXTENSIONS OFF
-)
+set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF )
 
-target_compile_features( ${PROJECT_NAME}
-   PRIVATE
-      cxx_std_20
-)
+target_compile_features( ${PROJECT_NAME} PRIVATE cxx_std_20 )
 
 target_compile_options( ${PROJECT_NAME}
    PRIVATE
@@ -64,7 +63,7 @@ target_compile_options( ${PROJECT_NAME}
 target_link_libraries( ${PROJECT_NAME}
    PUBLIC
       glm
-      EGL
+      epona_core
 )
 
 target_sources( ${PROJECT_NAME}

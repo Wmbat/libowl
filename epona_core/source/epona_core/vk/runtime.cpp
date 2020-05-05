@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <EGL/vk/runtime.hpp>
+#include <epona_core/vk/runtime.hpp>
 #include <epona_library/utils/logger.hpp>
 
 #include <alloca.h>
@@ -146,7 +146,7 @@ namespace EGL::vk
       app_info.pApplicationName = app_name.c_str( );
       app_info.applicationVersion = VK_MAKE_VERSION( 0, 0, 0 );
       app_info.pEngineName = "EGL";
-      app_info.engineVersion = VK_MAKE_VERSION( EGL_VERSION_MAJOR, EGL_VERSION_MINOR, EGL_VERSION_PATCH );
+      app_info.engineVersion = VK_MAKE_VERSION( CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH );
       app_info.apiVersion = api_version;
 
       std::uint32_t glfw_ext_count = 0;
