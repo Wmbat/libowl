@@ -18,7 +18,7 @@ namespace ESL
    inline static logger ESL_error_logger{ "ESL error logger" };
 #endif
 
-   static void handle_bad_alloc_error( [[maybe_unused]] std::string_view error_msg )
+   static inline void handle_bad_alloc_error( [[maybe_unused]] std::string_view error_msg )
    {
 #ifndef ESL_NO_EXCEPTIONS
       throw std::bad_alloc{ };

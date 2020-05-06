@@ -45,7 +45,7 @@ else ( )
    message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
 endif ( )
 
-set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
+set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror -fno-omit-frame-pointer )
 set( CLANG_RELEASE_FLAGS -o3 )
 set( GNU_DEBUG_FLAGS -o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined )
 set( GNU_RELEASE_FLAGS -o3 )
@@ -104,8 +104,6 @@ target_link_libraries( ${PROJECT_NAME}
         spdlog::spdlog
 
     PRIVATE
-        $<$<CXX_COMPILER_ID:Clang>:-lasan>
-        $<$<CXX_COMPILER_ID:Clang>:-lubsan>
         $<$<CXX_COMPILER_ID:GNU>:-lasan>
         $<$<CXX_COMPILER_ID:GNU>:-lubsan>
 )

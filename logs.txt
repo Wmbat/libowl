@@ -1,0 +1,10 @@
+[21:06:04.663005] [main_logger] [info] [runtime] Volk Initialized
+[21:06:04.851988] [main_logger] [info] [runtime] VK_KHR_device_group_creation
+[21:06:09.195945] [main_logger] [info] [runtime] VK_KHR_display
+[21:06:09.663983] [main_logger] [info] [runtime] VK_KHR_external_fence_capabilities
+[21:06:19.719884] [main_logger] [info] [runtime] VK_KHR_external_memory_capabilities
+[21:06:21.535823] [main_logger] [info] [runtime] VK_KHR_external_semaphore_capabilities
+[21:06:27.482939] [main_logger] [info] [runtime] VK_KHR_get_display_properties2
+[21:06:28.261577] [main_logger] [info] [runtime] VK_KHR_get_physical_device_properties2
+[21:06:29.541809] [main_logger] [info] [runtime] VK_KHR_get_surface_capabilities2
+[21:06:29.999842] [main_logger] [info] [runtime] VK_KHR_surface

@@ -1,48 +1,33 @@
+/**
+ * @file render_manager.hpp
+ * @author wmbat wmbat@protonmail.com.
+ * @date Tuesday, May 5th, 2020.
+ * @copyright MIT License.
+ */
+
+#include "GLFW/glfw3.h"
 #include <epona_core/render_manager.hpp>
+
 #include <epona_library/utils/logger.hpp>
 
-namespace EGL
+namespace core
 {
-   render_manager::render_manager( ESL::logger* p_logger ) :
-      p_logger( p_logger ), main_allocator( { .pool_count = 2, .pool_size = 5_KB, .depth = 5 } ),
-      context( &main_allocator )
+   render_manager::render_manager( ESL::logger* p_logger ) : p_logger( p_logger ), vk_runtime( p_logger )
    {
-      if ( !IS_GRAPHIC_ENV_SETUP )
+      if ( !IS_GLFW_INIT )
       {
-         if ( volkInitialize( ) != VK_SUCCESS )
+         if ( auto res = glfwInit( ); res != GLFW_TRUE )
          {
-            throw;
-         }
-         else if ( !glfwInit( ) )
-         {
-            throw;
-         }
+            LOG_ERROR( p_logger, "Failed to initialize GLFW" );
+        }
          else
          {
-            LOG_INFO( p_logger, "Graphical environment setup" )
+            LOG_INFO( p_logger, "GLFW initialized" );
 
-            IS_GRAPHIC_ENV_SETUP = true;
+            IS_GLFW_INIT = true;
          }
       }
    }
 
-   render_manager&& render_manager::set_app_name( std::string_view app_name )
-   {
-      this->app_name = app_name;
-      return std::move( *this );
-   }
-
-   render_manager&& render_manager::create_context( )
-   {
-      context = EGL::vk::runtime( app_name, &main_allocator, p_logger ).create_instance( );
-      main_window = EGL::window( app_name, 1080u, 720u );
-
-      LOG_INFO( p_logger, "Basic graphical context setup" );
-
-      return std::move( *this );
-   }
-
-   bool render_manager::is_running( ) { return main_window.is_open( ); }
-
-   void render_manager::render( ) { glfwPollEvents( ); }
-} // namespace EGL
+   auto render_manager::setup_runtime( ) -> void { vk_runtime.create_instance( "" ); }
+} // namespace core

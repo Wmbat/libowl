@@ -3,24 +3,34 @@ FetchContent_Declare( glfw
     GIT_TAG 3.3.2
 )
 
+message( STATUS "[${PROJECT_NAME}] Fetching glfw 3.3.2" )
+
 FetchContent_Declare( glslang
     GIT_REPOSITORY https://github.com/KhronosGroup/glslang
     GIT_TAG 8.13.3743
 )
+
+message( STATUS "[${PROJECT_NAME}] Fetching glslang 9.13.3742" )
 
 FetchContent_Declare( SPIRV-cross
     GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross
     GIT_TAG 2020-04-03
 )
 
+message( STATUS "[${PROJECT_NAME}] Fetching SPIRV-cross 2020-04-03" )
+
 FetchContent_Declare( Vulkan-Headers
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers
     GIT_TAG v1.2.135
 )
 
+message( STATUS "[${PROJECT_NAME}] Fetching Vulkan-Headers 1.2.135" )
+
 FetchContent_Declare( volk
     GIT_REPOSITORY https://github.com/zeux/volk
     GIT_TAG master
 )
+
+message( STATUS "[${PROJECT_NAME}] Fetching volk master" )
 
 FetchContent_MakeAvailable( glfw glslang SPIRV-cross Vulkan-Headers volk )

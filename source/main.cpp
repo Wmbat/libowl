@@ -39,12 +39,8 @@ int main( )
 {
    auto main_logger = ESL::logger( "main_logger" );
 
-   auto render_manager = EGL::render_manager( &main_logger ).set_app_name( "My App" ).create_context( );
-
-   while ( render_manager.is_running( ) )
-   {
-      render_manager.render( );
-   }
+   auto render_manager = core::render_manager( &main_logger );
+   render_manager.setup_runtime( );
 
    return 0;
 }

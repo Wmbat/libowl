@@ -24,7 +24,10 @@
 
 #pragma once
 
+#include <array>
 #include <epona_core/vk/core.hpp>
+#include <epona_core/vk/extension.hpp>
+
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/containers/vector.hpp>
 #include <epona_library/utils/logger.hpp>
@@ -32,38 +35,37 @@
 #include <string>
 #include <string_view>
 
-namespace EGL::vk
+namespace core::vk
 {
    class runtime
    {
    public:
-      runtime( ESL::multipool_allocator* p_main_allocator );
-      runtime( std::string_view app_name_in, ESL::multipool_allocator* p_main_allocator, ESL::logger* p_log = nullptr );
-      runtime( runtime const& other ) = delete;
-      runtime( runtime&& other );
-      ~runtime( );
+      runtime( ESL::logger* p_logger );
 
-      runtime& operator=( runtime const& rhs ) = delete;
-      runtime& operator=( runtime&& rhs );
+      void create_instance( std::string_view app_name );
 
-      runtime&& create_instance( );
+   public:
+      ESL::logger* p_logger;
 
-   private:
-      bool check_validation_layer_support( );
+      std::uint32_t version;
 
-      ESL::vector<char const*> get_instance_extensions( );
+      VkInstance instance;
 
-   private:
-      ESL::logger* p_log{ nullptr };
-      ESL::multipool_allocator* p_main_allocator;
+      static constexpr std::array<char const[VK_MAX_EXTENSION_NAME_SIZE], 8> supported_instance_exts
+      {
+         "VK_KHR_surface",
+         "VK_KHR_get_surface_capabilities2",
+         "VK_KHR_wayland_surface",
+         "VK_KHR_win32_surface",
+         "VK_KHR_xcb_surface",
+         "VK_KHR_xlib_surface",
+         "VK_EXT_debug_utils",
+         "VK_KHR_get_physical_device_properties2"
+      };
 
-      std::uint32_t api_version{ 0 };
-      std::string app_name{ };
+      std::vector<std::string_view> available_instance_exts;
+      std::vector<std::string_view> enabled_instance_exts;
 
-      VkInstance instance{ VK_NULL_HANDLE };
-      VkDebugUtilsMessengerEXT debug_messenger{ VK_NULL_HANDLE };
-
-      ESL::vector<char const*> const validation_layer{ 1, "VK_LAYER_KHRONOS_validation", p_main_allocator };
-      ESL::vector<char const*> instance_extensions{ p_main_allocator };
+      inline static bool IS_VOLK_INIT = false;
    };
-} // namespace EGL::vk
+} // namespace core::vk

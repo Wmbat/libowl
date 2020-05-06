@@ -68,7 +68,7 @@ target_include_directories( ${PROJECT_NAME}
 target_link_libraries( ${PROJECT_NAME}
    PUBLIC
       Vulkan-Headers
-      volk_headers
+      volk
       glslang
       SPIRV
       glfw

@@ -1,33 +1,30 @@
+/**
+ * @file render_manager.hpp
+ * @author wmbat wmbat@protonmail.com.
+ * @date Tuesday, May 5th, 2020.
+ * @copyright MIT License.
+ */
+
 #pragma once
 
 #include <epona_core/gui/window.hpp>
 #include <epona_core/vk/runtime.hpp>
 #include <epona_library/utils/logger.hpp>
 
-namespace EGL
+namespace core
 {
    class render_manager
    {
    public:
       render_manager( ESL::logger* p_logger );
 
-      render_manager&& set_app_name( std::string_view app_name );
-      render_manager&& create_context( );
-
-      bool is_running( );
-
-      void render( );
+      void setup_runtime( );
 
    private:
-      ESL::logger* p_logger{ nullptr };
+      ESL::logger* p_logger;
 
-      ESL::multipool_allocator main_allocator;
+      vk::runtime vk_runtime;
 
-      std::string app_name{ "EGL default app" };
-
-      vk::runtime context;
-      window main_window;
-
-      inline static bool IS_GRAPHIC_ENV_SETUP = false;
+      inline static bool IS_GLFW_INIT = false;
    };
-} // namespace EGL
+} // namespace core
