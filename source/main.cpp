@@ -32,9 +32,6 @@
 
 #include <map>
 
-#include <epona_library/containers/vector.hpp>
-#include <vector>
-
 int main( )
 {
    auto main_logger = ESL::logger( "main_logger" );

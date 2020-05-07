@@ -1,5 +1,5 @@
 /**
- * @file vector.hpp.
+ * @file dynamic_array.hpp.
  * @author wmbat wmbat@protonmail.com.
  * @date Tuesday, April 23rd, 2020.
  * @copyright MIT License.
@@ -26,7 +26,7 @@
 namespace ESL
 {
    /**
-    * @class vector_base vector.hpp <ESL/containers/vector.hpp>
+    * @class dynamic_array_base dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 22th, 2020
     * @copyright MIT License.
@@ -35,7 +35,7 @@ namespace ESL
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <full_allocator allocator_>
-   class vector_base
+   class dynamic_array_base
    {
    public:
       using size_type = std::size_t;
@@ -44,7 +44,7 @@ namespace ESL
       using pointer = void*;
 
    protected:
-      vector_base( ) = delete;
+      dynamic_array_base( ) = delete;
       /**
        * @brief Set the default data of the container.
        *
@@ -52,7 +52,7 @@ namespace ESL
        * @param[in] capacity The starting capacity of the container.
        * @param[in] p_alloc A pointer to the allocator used by the container.
        */
-      vector_base( pointer p_first_element, size_type capacity, allocator_type* p_alloc ) :
+      dynamic_array_base( pointer p_first_element, size_type capacity, allocator_type* p_alloc ) :
          p_begin( p_first_element ), p_alloc( p_alloc ), cap( capacity )
       {}
 
@@ -142,67 +142,67 @@ namespace ESL
    };
 
    /**
-    * @struct hybrid_vector_align_and_size vector.hpp <ESL/containers/vector.hpp>
+    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
-    * @brief The memory layout with padding of a hybrid_vector
+    * @brief The memory layout with padding of a tiny_dynamic_array
     *
     * @tparam any_, The type of objects that can be contained in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <class any_, complex_allocator<any_> allocator_>
-   struct hybrid_vector_align_and_size
+   struct tiny_dynamic_array_align_and_size
    {
-      std::aligned_storage_t<sizeof( vector_base<allocator_> ), alignof( vector_base<allocator_> )> base;
+      std::aligned_storage_t<sizeof( dynamic_array_base<allocator_> ), alignof( dynamic_array_base<allocator_> )> base;
       std::aligned_storage_t<sizeof( std::size_t ), alignof( std::size_t )> padding;
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
    };
 
    /**
-    * @struct static_vector_storage vector.hpp <ESL/containers/vector.hpp>
+    * @struct static_dynamic_array_storage dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
-    * @brief The static storage of a hybrid vector.
+    * @brief The static storage of a hybrid dynamic_array.
     *
     * @tparam any_, The type of objects that can be contained in the static storage of the container.
     * @tparam buff_sz, The size of the storage.
     */
    template <class any_, std::size_t buff_sz>
-   struct static_vector_storage
+   struct static_array_storage
    {
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> buffer[buff_sz];
    };
 
    /**
-    * @struct static_vector_storage vector.hpp <ESL/containers/vector.hpp>
+    * @struct static_dynamic_array_storage dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
-    * @brief A specific overload of the #static_vector_storage class for a size of 0.
+    * @brief A specific overload of the #static_dynamic_array_storage class for a size of 0.
     *
     * @tparam any_, The type of objects that can be contained in the static storage of the container.
     */
    template <class any_>
-   struct alignas( alignof( any_ ) ) static_vector_storage<any_, 0>
+   struct alignas( alignof( any_ ) ) static_array_storage<any_, 0>
    {
    };
 
    /**
-    * @class hybrid_vector_impl vector.hpp <ESL/containers/vector.hpp>
+    * @class tiny_dynamic_array_impl dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
-    * @brief The implementation of the common functions that all vectors should use.
+    * @brief The implementation of the common functions that all dynamic_arrays should use.
     *
     * @tparam any_, The type of objects that can be contained in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <class any_, complex_allocator<any_> allocator_>
-   class hybrid_vector_impl : public vector_base<allocator_>
+   class tiny_dynamic_array_impl : public dynamic_array_base<allocator_>
    {
-      using super = vector_base<allocator_>;
+      using super = dynamic_array_base<allocator_>;
 
    public:
       using value_type = any_;
@@ -219,14 +219,14 @@ namespace ESL
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    protected:
-      hybrid_vector_impl( ) = delete;
+      tiny_dynamic_array_impl( ) = delete;
       /**
        * @brief Sets the capacity and the allocator of the container.
        *
        * @param[in] capacity The default capacity of the container.
        * @param[in] p_alloc The allocator from which memory will be fetched.
        */
-      explicit hybrid_vector_impl( size_type capacity, allocator_type* p_alloc ) :
+      explicit tiny_dynamic_array_impl( size_type capacity, allocator_type* p_alloc ) :
          super( get_first_element( ), capacity, p_alloc )
       {}
 
@@ -241,10 +241,10 @@ namespace ESL
       /**
        * @brief Clear the container's data and surrenders the memory allocation.
        *
-       * @details Clear the container's data and surrenders the memory allocation only if the vector is not using the
+       * @details Clear the container's data and surrenders the memory allocation only if the dynamic_array is not using the
        * static memory storage.
        */
-      virtual ~hybrid_vector_impl( )
+      virtual ~tiny_dynamic_array_impl( )
       {
          if ( !is_static( ) )
          {
@@ -264,7 +264,7 @@ namespace ESL
        *
        * @return A reference to the current container.
        */
-      hybrid_vector_impl& operator=( hybrid_vector_impl const& rhs )
+      tiny_dynamic_array_impl& operator=( tiny_dynamic_array_impl const& rhs )
       {
          if ( this == &rhs )
          {
@@ -322,7 +322,7 @@ namespace ESL
        *
        * @return A reference to the current container.
        */
-      hybrid_vector_impl& operator=( hybrid_vector_impl&& rhs )
+      tiny_dynamic_array_impl& operator=( tiny_dynamic_array_impl&& rhs )
       {
          if ( this == &rhs )
          {
@@ -414,28 +414,28 @@ namespace ESL
        * href="https://en.cppreference.com/w/cpp/concepts/equality_comparable">std::equality_comparable</a> to use this
        * function.
        *
-       * @tparam  other_   The allocator of the other vector.
-       * @param   rhs      The vector to compare against.
+       * @tparam  other_   The allocator of the other dynamic_array.
+       * @param   rhs      The dynamic_array to compare against.
        *
-       * @return True if the two vectors have the same data, otherwise false
+       * @return True if the two dynamic_arrays have the same data, otherwise false
        */
       template <complex_allocator<value_type> other_ = allocator_>
-      constexpr bool operator==( hybrid_vector_impl<value_type, other_> const& rhs ) const
+      constexpr bool operator==( tiny_dynamic_array_impl<value_type, other_> const& rhs ) const
          requires std::equality_comparable<value_type>
       {
          return std::equal( cbegin( ), cend( ), rhs.cbegin( ), rhs.cend( ) );
       }
 
       /**
-       * @brief Perform a lexicographical compare on the elements of the two vectors.
+       * @brief Perform a lexicographical compare on the elements of the two dynamic_arrays.
        *
-       * @tparam  other_   The allocator of the other vector.
-       * @param   rhs      The vector to compare against.
+       * @tparam  other_   The allocator of the other dynamic_array.
+       * @param   rhs      The dynamic_array to compare against.
        *
-       * @return An ordering defining the relationship between the two vectors.
+       * @return An ordering defining the relationship between the two dynamic_arrays.
        */
       template <complex_allocator<value_type> other_ = allocator_>
-      constexpr auto operator<=>( hybrid_vector_impl<value_type, other_> const& rhs )
+      constexpr auto operator<=>( tiny_dynamic_array_impl<value_type, other_> const& rhs )
       {
          return std::lexicographical_compare_three_way(
             cbegin( ), cend( ), rhs.cbegin( ), rhs.cend( ), synth_three_way );
@@ -666,13 +666,13 @@ namespace ESL
       /**
        * @brief Increase the capacity of the container to a value greater than or equal to new_cap.
        *
-       * @details Increase the capacity of the vector to a value that's greater or equal to new_cap. If new_cap is
+       * @details Increase the capacity of the dynamic_array to a value that's greater or equal to new_cap. If new_cap is
        * greater than the current capacity(), new storage is allocated, otherwise the method does nothing. reserve()
-       * does not change the size of the vector. If new_cap is greater than capacity(), all iterators, including the
+       * does not change the size of the dynamic_array. If new_cap is greater than capacity(), all iterators, including the
        * past-the-end iterator, and all references to the elements are invalidated. Otherwise, no iterators or
        * references are invalidated.
        *
-       * @param[in] new_cap The new capacity of the vector.
+       * @param[in] new_cap The new capacity of the dynamic_array.
        */
       void reserve( size_type new_cap )
       {
@@ -687,7 +687,7 @@ namespace ESL
        *
        * @details Erases all elements from the container. After this call, size() return zero. Invalidates any
        * references, pointers, or iterators referring to contained elements. Any past-the-end iterators are also
-       * invalidated. Leaves the capacity() of the vector unchanged
+       * invalidated. Leaves the capacity() of the dynamic_array unchanged
        */
       void clear( ) noexcept
       {
@@ -1155,7 +1155,7 @@ namespace ESL
    private:
       void* get_first_element( ) const noexcept
       {
-         using layout = hybrid_vector_align_and_size<value_type, allocator_type>;
+         using layout = tiny_dynamic_array_align_and_size<value_type, allocator_type>;
 
          return const_cast<void*>( reinterpret_cast<void const*>(
             reinterpret_cast<char const*>( this ) + offsetof( layout, first_element ) ) );
@@ -1167,7 +1167,7 @@ namespace ESL
 
          if ( min_size > std::numeric_limits<difference_type>::max( ) )
          {
-            handle_bad_alloc_error( "Hybrid vector capacity overflow during allocation." );
+            handle_bad_alloc_error( "Hybrid dynamic_array capacity overflow during allocation." );
          }
 
          if constexpr ( trivial_type<value_type> )
@@ -1187,7 +1187,7 @@ namespace ESL
 
                if ( !p_new )
                {
-                  handle_bad_alloc_error( "hybrid vector allocation error" );
+                  handle_bad_alloc_error( "hybrid dynamic_array allocation error" );
                }
 
                if constexpr ( std::movable<value_type> )
@@ -1209,7 +1209,7 @@ namespace ESL
 
                if ( !p_new )
                {
-                  handle_bad_alloc_error( "Hybrid vector allocation error" );
+                  handle_bad_alloc_error( "Hybrid dynamic_array allocation error" );
                }
             }
 
@@ -1232,7 +1232,7 @@ namespace ESL
    };
 
    /**
-    * @class hybrid_vector vector.hpp <ESL/containers/vector.hpp>
+    * @class tiny_dynamic_array dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
@@ -1243,10 +1243,10 @@ namespace ESL
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
-   class hybrid_vector : public hybrid_vector_impl<any_, allocator_>, static_vector_storage<any_, buff_sz>
+   class tiny_dynamic_array : public tiny_dynamic_array_impl<any_, allocator_>, static_array_storage<any_, buff_sz>
    {
-      using super = hybrid_vector_impl<any_, allocator_>;
-      using storage = static_vector_storage<any_, buff_sz>;
+      using super = tiny_dynamic_array_impl<any_, allocator_>;
+      using storage = static_array_storage<any_, buff_sz>;
 
    public:
       using value_type = typename super::value_type;
@@ -1263,43 +1263,43 @@ namespace ESL
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit hybrid_vector( allocator_type* p_alloc ) : super( buff_sz, p_alloc ) {}
-      explicit hybrid_vector( size_type count,
-         allocator_type* p_alloc ) requires std::default_initializable<value_type> : super( buff_sz, p_alloc )
+      explicit tiny_dynamic_array( allocator_type* p_alloc ) : super( buff_sz, p_alloc ) {}
+      explicit tiny_dynamic_array( size_type count, allocator_type* p_alloc ) requires std::default_initializable<value_type> :
+         super( buff_sz, p_alloc )
       {
          super::assign( count, value_type( ) );
       }
-      hybrid_vector( size_type count, const_reference value,
+      tiny_dynamic_array( size_type count, const_reference value,
          allocator_type* p_alloc ) requires std::copyable<value_type> : super( buff_sz, p_alloc )
       {
          super::assign( count, value );
       }
       template <std::input_iterator it_>
-      hybrid_vector( it_ first, it_ last, allocator_type* p_alloc ) requires std::copyable<value_type> :
+      tiny_dynamic_array( it_ first, it_ last, allocator_type* p_alloc ) requires std::copyable<value_type> :
          super( buff_sz, p_alloc )
       {
          super::assign( first, last );
       }
-      hybrid_vector( std::initializer_list<any_> init, allocator_type* p_alloc ) requires std::copyable<value_type> :
+      tiny_dynamic_array( std::initializer_list<any_> init, allocator_type* p_alloc ) requires std::copyable<value_type> :
          super( buff_sz, p_alloc )
       {
          super::assign( init );
       }
-      hybrid_vector( hybrid_vector const& other ) : super( buff_sz, other.p_alloc )
+      tiny_dynamic_array( tiny_dynamic_array const& other ) : super( buff_sz, other.p_alloc )
       {
          if ( !other.empty( ) )
          {
             super::operator=( other );
          }
       }
-      hybrid_vector( hybrid_vector const& other, allocator_type* p_alloc ) : super( buff_sz, p_alloc )
+      tiny_dynamic_array( tiny_dynamic_array const& other, allocator_type* p_alloc ) : super( buff_sz, p_alloc )
       {
          if ( !other.empty( ) )
          {
             super::operator=( other );
          }
       }
-      hybrid_vector( hybrid_vector&& other ) : super( buff_sz, other.p_alloc )
+      tiny_dynamic_array( tiny_dynamic_array&& other ) : super( buff_sz, other.p_alloc )
       {
          if ( !other.empty( ) )
          {
@@ -1307,25 +1307,25 @@ namespace ESL
          }
       }
 
-      hybrid_vector& operator=( hybrid_vector const& other )
+      tiny_dynamic_array& operator=( tiny_dynamic_array const& other )
       {
          super::operator=( other );
          return *this;
       }
 
-      hybrid_vector& operator=( super const& other )
+      tiny_dynamic_array& operator=( super const& other )
       {
          super::operator=( other );
          return *this;
       }
 
-      hybrid_vector& operator=( hybrid_vector&& other )
+      tiny_dynamic_array& operator=( tiny_dynamic_array&& other )
       {
          super::operator=( std::move( other ) );
          return *this;
       }
 
-      hybrid_vector& operator=( super&& other )
+      tiny_dynamic_array& operator=( super&& other )
       {
          super::operator=( std::move( other ) );
          return *this;
@@ -1333,5 +1333,5 @@ namespace ESL
    };
 
    template <class any_, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
-   using vector = hybrid_vector<any_, 0, allocator_>;
+   using dynamic_array = tiny_dynamic_array<any_, 0, allocator_>;
 } // namespace ESL

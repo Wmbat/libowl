@@ -24,14 +24,14 @@
 
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/allocators/pool_allocator.hpp>
-#include <epona_library/containers/vector.hpp>
+#include <epona_library/containers/dynamic_array.hpp>
 
 #include <benchmark/benchmark.h>
 
 #include <iostream>
 #include <string>
 
-static void std_vector_int( benchmark::State& state )
+static void std_dynamic_array_int( benchmark::State& state )
 {
    for ( auto _ : state )
    {
@@ -42,21 +42,21 @@ static void std_vector_int( benchmark::State& state )
    }
 }
 
-static void esl_vector_int( benchmark::State& state )
+static void esl_dynamic_array_int( benchmark::State& state )
 {
    ESL::pool_allocator allocator(
       { .pool_count = 1, .pool_size = static_cast<size_t>( state.range( 0 ) * sizeof( int ) ) } );
 
    for ( auto _ : state )
    {
-      ESL::hybrid_vector<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
+      ESL::tiny_dynamic_array<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
 
       benchmark::DoNotOptimize( v1.data( ) );
       benchmark::ClobberMemory( );
    }
 }
 
-BENCHMARK( std_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
-BENCHMARK( esl_vector_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+BENCHMARK( std_dynamic_array_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+BENCHMARK( esl_dynamic_array_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
 
 BENCHMARK_MAIN( );

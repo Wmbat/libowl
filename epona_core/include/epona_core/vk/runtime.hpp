@@ -29,7 +29,7 @@
 #include <epona_core/vk/extension.hpp>
 
 #include <epona_library/allocators/multipool_allocator.hpp>
-#include <epona_library/containers/vector.hpp>
+#include <epona_library/containers/dynamic_array.hpp>
 #include <epona_library/utils/logger.hpp>
 
 #include <string>

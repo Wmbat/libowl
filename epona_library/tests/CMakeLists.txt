@@ -70,7 +70,7 @@ target_sources( epona_library_test
    PRIVATE
       epona_library/main.cpp
       epona_library/containers/maps/avl_map_test.cpp
-      epona_library/containers/vector_test.cpp
+      epona_library/containers/dynamic_array_test.cpp
 )
 
 add_test( NAME epona_library_test COMMAND epona_library_test )

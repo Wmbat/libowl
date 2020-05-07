@@ -24,7 +24,7 @@
 
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/allocators/pool_allocator.hpp>
-#include <epona_library/containers/vector.hpp>
+#include <epona_library/containers/dynamic_array.hpp>
 #include <epona_library/utils/iterators/random_access_iterator.hpp>
 
 #include <gtest/gtest.h>
@@ -56,9 +56,9 @@ struct moveable
    int i = 0;
 };
 
-struct hybrid_vector_test : public testing::Test
+struct tiny_dynamic_array_test : public testing::Test
 {
-   hybrid_vector_test( ) :
+   tiny_dynamic_array_test( ) :
       pool_allocator( { .pool_count = 2, .pool_size = 2048 } ),
       secondary_allocator( { .pool_count = 2, .pool_size = 2048 } )
    {}
@@ -67,10 +67,10 @@ struct hybrid_vector_test : public testing::Test
    ESL::pool_allocator secondary_allocator;
 };
 
-TEST_F( hybrid_vector_test, default_ctor )
+TEST_F( tiny_dynamic_array_test, default_ctor )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -78,7 +78,7 @@ TEST_F( hybrid_vector_test, default_ctor )
    }
 
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -86,10 +86,10 @@ TEST_F( hybrid_vector_test, default_ctor )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_count )
+TEST_F( tiny_dynamic_array_test, ctor_count )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 10 );
@@ -101,7 +101,7 @@ TEST_F( hybrid_vector_test, ctor_count )
       }
    }
    {
-      ESL::hybrid_vector<copyable, 5, ESL::pool_allocator> vec{ 5, &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 5, ESL::pool_allocator> vec{ 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -115,10 +115,10 @@ TEST_F( hybrid_vector_test, ctor_count )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_count_values )
+TEST_F( tiny_dynamic_array_test, ctor_count_values )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 10 );
@@ -130,7 +130,7 @@ TEST_F( hybrid_vector_test, ctor_count_values )
       }
    }
    {
-      ESL::hybrid_vector<copyable, 5, ESL::pool_allocator> vec{ 5, copyable{ 20 }, &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 5, ESL::pool_allocator> vec{ 5, copyable{ 20 }, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -144,10 +144,10 @@ TEST_F( hybrid_vector_test, ctor_count_values )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_range )
+TEST_F( tiny_dynamic_array_test, ctor_range )
 {
    {
-      ESL::hybrid_vector<copyable, 0, ESL::pool_allocator> vec{ 10, copyable{ 5 }, &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 0, ESL::pool_allocator> vec{ 10, copyable{ 5 }, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -159,7 +159,7 @@ TEST_F( hybrid_vector_test, ctor_range )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<copyable, 5, ESL::pool_allocator> vec2{ vec.begin( ), vec.end( ), &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 5, ESL::pool_allocator> vec2{ vec.begin( ), vec.end( ), &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 2 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -173,10 +173,10 @@ TEST_F( hybrid_vector_test, ctor_range )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_initializer_list )
+TEST_F( tiny_dynamic_array_test, ctor_initializer_list )
 {
    {
-      ESL::hybrid_vector<copyable, 10, ESL::pool_allocator> vec{
+      ESL::tiny_dynamic_array<copyable, 10, ESL::pool_allocator> vec{
          { copyable{ 1 }, copyable{ 1 }, copyable{ 1 } }, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
@@ -186,10 +186,10 @@ TEST_F( hybrid_vector_test, ctor_initializer_list )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_copy )
+TEST_F( tiny_dynamic_array_test, ctor_copy )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -201,7 +201,7 @@ TEST_F( hybrid_vector_test, ctor_copy )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec2{ vec };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec2{ vec };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 2 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -215,10 +215,10 @@ TEST_F( hybrid_vector_test, ctor_copy )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_copy_w_allocator )
+TEST_F( tiny_dynamic_array_test, ctor_copy_w_allocator )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( secondary_allocator.allocation_count( ), 0 );
@@ -231,7 +231,7 @@ TEST_F( hybrid_vector_test, ctor_copy_w_allocator )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec2{ vec, &secondary_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec2{ vec, &secondary_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( secondary_allocator.allocation_count( ), 1 );
@@ -247,10 +247,10 @@ TEST_F( hybrid_vector_test, ctor_copy_w_allocator )
    }
 }
 
-TEST_F( hybrid_vector_test, ctor_move )
+TEST_F( tiny_dynamic_array_test, ctor_move )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -262,7 +262,7 @@ TEST_F( hybrid_vector_test, ctor_move )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec2{ std::move( vec ) };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec2{ std::move( vec ) };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -279,7 +279,7 @@ TEST_F( hybrid_vector_test, ctor_move )
       EXPECT_EQ( vec.capacity( ), 0 );
    }
    {
-      ESL::hybrid_vector<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -291,7 +291,7 @@ TEST_F( hybrid_vector_test, ctor_move )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 10, ESL::pool_allocator> vec2{ std::move( vec ) };
+      ESL::tiny_dynamic_array<int, 10, ESL::pool_allocator> vec2{ std::move( vec ) };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -309,10 +309,10 @@ TEST_F( hybrid_vector_test, ctor_move )
    }
 }
 
-TEST_F( hybrid_vector_test, copy_assignment_operator )
+TEST_F( tiny_dynamic_array_test, copy_assignment_operator )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -324,7 +324,7 @@ TEST_F( hybrid_vector_test, copy_assignment_operator )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec2 = vec;
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec2 = vec;
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 2 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -338,10 +338,10 @@ TEST_F( hybrid_vector_test, copy_assignment_operator )
    }
 }
 
-TEST_F( hybrid_vector_test, move_assignment_operator )
+TEST_F( tiny_dynamic_array_test, move_assignment_operator )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -370,7 +370,7 @@ TEST_F( hybrid_vector_test, move_assignment_operator )
       EXPECT_EQ( vec.capacity( ), 0 );
    }
    {
-      ESL::hybrid_vector<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -400,10 +400,10 @@ TEST_F( hybrid_vector_test, move_assignment_operator )
    }
 }
 
-TEST_F( hybrid_vector_test, equality_operator )
+TEST_F( tiny_dynamic_array_test, equality_operator )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -415,7 +415,7 @@ TEST_F( hybrid_vector_test, equality_operator )
          EXPECT_EQ( val, 5 );
       }
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec2 = vec;
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec2 = vec;
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 2 );
       EXPECT_EQ( vec2.get_allocator( ), &pool_allocator );
@@ -433,7 +433,7 @@ TEST_F( hybrid_vector_test, equality_operator )
       }
    }
    {
-      ESL::hybrid_vector<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
+      ESL::tiny_dynamic_array<int, 10, ESL::pool_allocator> vec{ 10, 5, &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -468,10 +468,10 @@ TEST_F( hybrid_vector_test, equality_operator )
    }
 }
 
-TEST_F( hybrid_vector_test, assign_n_values )
+TEST_F( tiny_dynamic_array_test, assign_n_values )
 {
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -506,7 +506,7 @@ TEST_F( hybrid_vector_test, assign_n_values )
       }
    }
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -526,10 +526,10 @@ TEST_F( hybrid_vector_test, assign_n_values )
    }
 }
 
-TEST_F( hybrid_vector_test, assign_range )
+TEST_F( tiny_dynamic_array_test, assign_range )
 {
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -563,7 +563,7 @@ TEST_F( hybrid_vector_test, assign_range )
          EXPECT_EQ( val.i, 0 );
       }
 
-      ESL::hybrid_vector<copyable, 10, ESL::pool_allocator> vec2{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 10, ESL::pool_allocator> vec2{ &pool_allocator };
 
       vec2.assign( vec.begin( ), vec.end( ) );
 
@@ -578,10 +578,10 @@ TEST_F( hybrid_vector_test, assign_range )
    }
 }
 
-TEST_F( hybrid_vector_test, assign_initializer_list )
+TEST_F( tiny_dynamic_array_test, assign_initializer_list )
 {
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -609,10 +609,10 @@ TEST_F( hybrid_vector_test, assign_initializer_list )
    }
 }
 
-TEST_F( hybrid_vector_test, clear )
+TEST_F( tiny_dynamic_array_test, clear )
 {
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -663,12 +663,12 @@ TEST_F( hybrid_vector_test, clear )
    }
 }
 
-TEST_F( hybrid_vector_test, insert_lvalue_ref )
+TEST_F( tiny_dynamic_array_test, insert_lvalue_ref )
 {
    {
       int one = 1;
       int two = 2;
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -717,7 +717,7 @@ TEST_F( hybrid_vector_test, insert_lvalue_ref )
       copyable three{ 3 };
       copyable four{ 4 };
 
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -765,10 +765,10 @@ TEST_F( hybrid_vector_test, insert_lvalue_ref )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 }
 
-TEST_F( hybrid_vector_test, insert_rvalue_ref )
+TEST_F( tiny_dynamic_array_test, insert_rvalue_ref )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -812,7 +812,7 @@ TEST_F( hybrid_vector_test, insert_rvalue_ref )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -860,7 +860,7 @@ TEST_F( hybrid_vector_test, insert_rvalue_ref )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 
    {
-      ESL::hybrid_vector<moveable, 4, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<moveable, 4, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -908,10 +908,10 @@ TEST_F( hybrid_vector_test, insert_rvalue_ref )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 }
 
-TEST_F( hybrid_vector_test, insert_n_values )
+TEST_F( tiny_dynamic_array_test, insert_n_values )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -951,9 +951,9 @@ TEST_F( hybrid_vector_test, insert_n_values )
    }
 }
 
-TEST_F( hybrid_vector_test, insert_range )
+TEST_F( tiny_dynamic_array_test, insert_range )
 {
-   ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+   ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
    EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -992,7 +992,7 @@ TEST_F( hybrid_vector_test, insert_range )
    }
 
    {
-      ESL::hybrid_vector<int, 2, ESL::pool_allocator> vec_range{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 2, ESL::pool_allocator> vec_range{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -1011,7 +1011,7 @@ TEST_F( hybrid_vector_test, insert_range )
       }
    }
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec_range{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec_range{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 1 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -1031,10 +1031,10 @@ TEST_F( hybrid_vector_test, insert_range )
    }
 }
 
-TEST_F( hybrid_vector_test, insert_initializer_list )
+TEST_F( tiny_dynamic_array_test, insert_initializer_list )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -1073,7 +1073,7 @@ TEST_F( hybrid_vector_test, insert_initializer_list )
    }
 
    {
-      ESL::hybrid_vector<copyable, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -1093,10 +1093,10 @@ TEST_F( hybrid_vector_test, insert_initializer_list )
    }
 }
 
-TEST_F( hybrid_vector_test, emplace )
+TEST_F( tiny_dynamic_array_test, emplace )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1140,7 +1140,7 @@ TEST_F( hybrid_vector_test, emplace )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1183,10 +1183,10 @@ TEST_F( hybrid_vector_test, emplace )
    EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
 }
 
-TEST_F( hybrid_vector_test, erase )
+TEST_F( tiny_dynamic_array_test, erase )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1253,7 +1253,7 @@ TEST_F( hybrid_vector_test, erase )
       }
    }
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1300,10 +1300,10 @@ TEST_F( hybrid_vector_test, erase )
    }
 }
 
-TEST_F( hybrid_vector_test, erase_range )
+TEST_F( tiny_dynamic_array_test, erase_range )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1350,7 +1350,7 @@ TEST_F( hybrid_vector_test, erase_range )
       }
    }
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1392,7 +1392,7 @@ TEST_F( hybrid_vector_test, erase_range )
    }
 }
 
-TEST_F( hybrid_vector_test, push_back_lvalue_ref )
+TEST_F( tiny_dynamic_array_test, push_back_lvalue_ref )
 {
    {
       int one = 1;
@@ -1400,7 +1400,7 @@ TEST_F( hybrid_vector_test, push_back_lvalue_ref )
       int three = 3;
       int four = 4;
 
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1441,7 +1441,7 @@ TEST_F( hybrid_vector_test, push_back_lvalue_ref )
       copyable three{ 3 };
       copyable four{ 4 };
 
-      ESL::hybrid_vector<copyable, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1482,7 +1482,7 @@ TEST_F( hybrid_vector_test, push_back_lvalue_ref )
       copyable three{ 3 };
       copyable four{ 4 };
 
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1519,10 +1519,10 @@ TEST_F( hybrid_vector_test, push_back_lvalue_ref )
    }
 }
 
-TEST_F( hybrid_vector_test, push_back_rvalue_ref )
+TEST_F( tiny_dynamic_array_test, push_back_rvalue_ref )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1558,7 +1558,7 @@ TEST_F( hybrid_vector_test, push_back_rvalue_ref )
       }
    }
    {
-      ESL::hybrid_vector<moveable, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<moveable, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1594,7 +1594,7 @@ TEST_F( hybrid_vector_test, push_back_rvalue_ref )
       }
    }
    {
-      ESL::hybrid_vector<moveable, 4, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<moveable, 4, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1630,7 +1630,7 @@ TEST_F( hybrid_vector_test, push_back_rvalue_ref )
       }
    }
    {
-      ESL::hybrid_vector<moveable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<moveable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1667,10 +1667,10 @@ TEST_F( hybrid_vector_test, push_back_rvalue_ref )
    }
 }
 
-TEST_F( hybrid_vector_test, emplace_back )
+TEST_F( tiny_dynamic_array_test, emplace_back )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1706,7 +1706,7 @@ TEST_F( hybrid_vector_test, emplace_back )
       }
    }
    {
-      ESL::hybrid_vector<int*, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int*, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1742,7 +1742,7 @@ TEST_F( hybrid_vector_test, emplace_back )
       }
    }
    {
-      ESL::hybrid_vector<copyable, 3, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 3, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1778,7 +1778,7 @@ TEST_F( hybrid_vector_test, emplace_back )
       }
    }
    {
-      ESL::hybrid_vector<moveable, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<moveable, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1815,10 +1815,10 @@ TEST_F( hybrid_vector_test, emplace_back )
    }
 }
 
-TEST_F( hybrid_vector_test, pop_back )
+TEST_F( tiny_dynamic_array_test, pop_back )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1874,7 +1874,7 @@ TEST_F( hybrid_vector_test, pop_back )
       }
    }
    {
-      ESL::hybrid_vector<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<copyable, 2, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( pool_allocator.allocation_count( ), 0 );
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
@@ -1912,10 +1912,10 @@ TEST_F( hybrid_vector_test, pop_back )
    }
 }
 
-TEST_F( hybrid_vector_test, resize )
+TEST_F( tiny_dynamic_array_test, resize )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -1963,7 +1963,7 @@ TEST_F( hybrid_vector_test, resize )
       EXPECT_EQ( vec[1], 1 );
    }
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -2017,10 +2017,10 @@ TEST_F( hybrid_vector_test, resize )
    }
 }
 
-TEST_F( hybrid_vector_test, resize_value )
+TEST_F( tiny_dynamic_array_test, resize_value )
 {
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
@@ -2068,7 +2068,7 @@ TEST_F( hybrid_vector_test, resize_value )
       EXPECT_EQ( vec[1], 1 );
    }
    {
-      ESL::hybrid_vector<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
+      ESL::tiny_dynamic_array<int, 0, ESL::pool_allocator> vec{ &pool_allocator };
 
       EXPECT_EQ( vec.get_allocator( ), &pool_allocator );
       EXPECT_EQ( vec.size( ), 0 );
