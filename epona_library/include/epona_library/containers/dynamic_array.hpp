@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <epona_library/containers/details.hpp>
 #include <epona_library/allocators/allocator_utils.hpp>
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/utils/compare.hpp>
@@ -157,36 +158,6 @@ namespace ESL
       std::aligned_storage_t<sizeof( dynamic_array_base<allocator_> ), alignof( dynamic_array_base<allocator_> )> base;
       std::aligned_storage_t<sizeof( std::size_t ), alignof( std::size_t )> padding;
       std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
-   };
-
-   /**
-    * @struct static_dynamic_array_storage dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 29th, 2020
-    * @copyright MIT License.
-    * @brief The static storage of a hybrid dynamic_array.
-    *
-    * @tparam any_, The type of objects that can be contained in the static storage of the container.
-    * @tparam buff_sz, The size of the storage.
-    */
-   template <class any_, std::size_t buff_sz>
-   struct static_array_storage
-   {
-      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> buffer[buff_sz];
-   };
-
-   /**
-    * @struct static_dynamic_array_storage dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 29th, 2020
-    * @copyright MIT License.
-    * @brief A specific overload of the #static_dynamic_array_storage class for a size of 0.
-    *
-    * @tparam any_, The type of objects that can be contained in the static storage of the container.
-    */
-   template <class any_>
-   struct alignas( alignof( any_ ) ) static_array_storage<any_, 0>
-   {
    };
 
    /**
@@ -1243,10 +1214,10 @@ namespace ESL
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
-   class tiny_dynamic_array : public tiny_dynamic_array_impl<any_, allocator_>, static_array_storage<any_, buff_sz>
+   class tiny_dynamic_array : public tiny_dynamic_array_impl<any_, allocator_>, details::static_array_storage<any_, buff_sz>
    {
       using super = tiny_dynamic_array_impl<any_, allocator_>;
-      using storage = static_array_storage<any_, buff_sz>;
+      using storage = details::static_array_storage<any_, buff_sz>;
 
    public:
       using value_type = typename super::value_type;

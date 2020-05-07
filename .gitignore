@@ -1,4 +1,6 @@
 /[Bb]uild
+/build_debug
+/build_release
 /compile_commands.json
 .clangd
 tags

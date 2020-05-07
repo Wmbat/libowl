@@ -7,10 +7,12 @@
 
 #pragma once
 
+#include <epona_library/containers/details.hpp>
+
 namespace ESL
 {
    template <full_allocator allocator_>
-   class hybrid_flat_map_base
+   class flat_map_base
    {
    public:
       using size_type = std::size_t;
@@ -19,8 +21,8 @@ namespace ESL
       using pointer = void*;
 
    protected:
-      hybrid_flat_map_base( ) = delete;
-      hybrid_flat_map_base( pointer p_first_element, size_type capacity, allocator_type* p_alloc ) :
+      flat_map_base( ) = delete;
+      flat_map_base( pointer p_first_element, size_type capacity, allocator_type* p_alloc ) :
          p_begin( p_first_element ), p_alloc( p_alloc ), cap( capacity )
       {}
 
@@ -69,4 +71,34 @@ namespace ESL
       size_type count{ 0 };
       size_type cap{ 0 };
    }
+
+   /**
+    * @struct tiny_flat_map_align_and_size flat_map.hpp <ESL/containers/flat_map.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Monday, April 29th, 2020
+    * @copyright MIT License.
+    * @brief The memory layout with padding of a tiny_flat_map
+    *
+    * @tparam any_ The type of objects that can be contained in the container.
+    * @tparam allocator_ The type of the allocator used by the container.
+    */
+   template <class any_, complex_allocator<any_> allocator_>
+   struct tiny_dynamic_array_align_and_size
+   {
+      std::aligned_storage_t<sizeof( flat_map_base<allocator_> ), alignof( flat_map_base<allocator_> )> base;
+      std::aligned_storage_t<sizeof( std::size_t ), alignof( std::size_t )> padding;
+      std::aligned_storage_t<sizeof( any_ ), alignof( any_ )> first_element;
+   };
+
+   template <class key_, class val_, complex_allocator<std::pair<key_, val_>> allocator_>
+   class flat_avl_map_impl : public flat_map_base<allocator_>
+   {
+   };
+
+   template <class key_, class val_, std::size_t buff_sz, complex_allocator<std::pair<key_, val_>> allocator_>
+   class flat_avl_map :
+      public flat_avl_map_impl<key_, val, allocator_>,
+      details::static_array_storage<std::pair<key_, val_>, buff_sz>
+   {
+   };
 } // namespace ESL
