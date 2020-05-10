@@ -6,8 +6,8 @@ project( epona
    LANGUAGES CXX 
 )
 
-option( BUILD_TESTS "Build unit tests" OFF )
-option( BUILD_BENCH "Build benchmarks" OFF )
+option( BUILD_TESTS "Build unit tests" ON )
+option( BUILD_BENCH "Build benchmarks" ON )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )

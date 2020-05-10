@@ -34,6 +34,8 @@ FetchContent_Declare( gtest
 
 FetchContent_MakeAvailable( gtest )
 
+message( STATUS "[${PROJECT_NAME}] Fetching gtest 1.10.0" )
+
 add_executable( epona_library_test )
 
 target_link_libraries( epona_library_test
@@ -70,6 +72,7 @@ target_sources( epona_library_test
    PRIVATE
       epona_library/main.cpp
       epona_library/containers/maps/avl_map_test.cpp
+      epona_library/containers/flat_map_test.cpp
       epona_library/containers/dynamic_array_test.cpp
 )
 

@@ -5,7 +5,6 @@
  * @copyright MIT License.
  */
 
-#include "GLFW/glfw3.h"
 #include <epona_core/render_manager.hpp>
 
 #include <epona_library/utils/logger.hpp>

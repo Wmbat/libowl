@@ -30,37 +30,83 @@
 namespace ESL
 {
    template <typename any_>
-   concept trivial_type = std::is_trivial_v<any_>;
+   concept trivially_copyable = std::is_trivially_copyable_v<any_>;
 
-   template<class B>
-   concept boolean = std::movable<std::remove_cvref_t<B>> &&
-      requires( 
-            const std::remove_reference_t<B>& b1, 
-            const std::remove_reference_t<B>& b2, const bool a) 
+   template <typename any_>
+   concept trivially_default_constructible = std::is_trivially_default_constructible_v<any_>;
+
+   template <typename any_>
+   concept trivial = trivially_copyable<any_> && trivially_default_constructible<any_>;
+
+   template <class B>
+   concept boolean = std::movable<std::remove_cvref_t<B>>&& requires(
+      const std::remove_reference_t<B>& b1, const std::remove_reference_t<B>& b2, const bool a )
+   {
       {
-         { b1 } -> std::convertible_to<bool>;
-         { !b1 } -> std::convertible_to<bool>;
-         { b1 && b2 } -> std::same_as<bool>;
-         { b1 &&  a } -> std::same_as<bool>;
-         {  a && b2 } -> std::same_as<bool>;
-         { b1 || b2 } -> std::same_as<bool>;
-         { b1 ||  a } -> std::same_as<bool>;
-         {  a || b2 } -> std::same_as<bool>;
-         { b1 == b2 } -> std::convertible_to<bool>;
-         { b1 ==  a } -> std::convertible_to<bool>;
-         {  a == b2 } -> std::convertible_to<bool>;
-         { b1 != b2 } -> std::convertible_to<bool>;
-         { b1 !=  a } -> std::convertible_to<bool>;
-         {  a != b2 } -> std::convertible_to<bool>;
-      };
+         b1
+      }
+      ->std::convertible_to<bool>;
+      {
+         !b1
+      }
+      ->std::convertible_to<bool>;
+      {
+         b1&& b2
+      }
+      ->std::same_as<bool>;
+      {
+         b1&& a
+      }
+      ->std::same_as<bool>;
+      {
+         a&& b2
+      }
+      ->std::same_as<bool>;
+      {
+         b1 || b2
+      }
+      ->std::same_as<bool>;
+      {
+         b1 || a
+      }
+      ->std::same_as<bool>;
+      {
+         a || b2
+      }
+      ->std::same_as<bool>;
+      {
+         b1 == b2
+      }
+      ->std::convertible_to<bool>;
+      {
+         b1 == a
+      }
+      ->std::convertible_to<bool>;
+      {
+         a == b2
+      }
+      ->std::convertible_to<bool>;
+      {
+         b1 != b2
+      }
+      ->std::convertible_to<bool>;
+      {
+         b1 != a
+      }
+      ->std::convertible_to<bool>;
+      {
+         a != b2
+      }
+      ->std::convertible_to<bool>;
+   };
 
    template <class T>
-   concept totally_ordered = std::equality_comparable<T>&& requires(
-      const std::remove_reference_t<T>& a, const std::remove_reference_t<T>& b )
-      {
-         { a < b } -> boolean;
-         { a > b } -> boolean;
-         { a <= b } -> boolean;
-         { a >= b } -> boolean;
-      };
+   concept totally_ordered = std::equality_comparable<T> && 
+   requires( const std::remove_reference_t<T>& a, const std::remove_reference_t<T>& b )
+   {
+      { a < b } -> boolean;
+      { a > b } -> boolean;
+      { a <= b } -> boolean;
+      { a >= b } -> boolean;
+   };
 } // namespace ESL

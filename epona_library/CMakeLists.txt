@@ -51,28 +51,28 @@ set( GNU_DEBUG_FLAGS -o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsani
 set( GNU_RELEASE_FLAGS -o3 )
 
 message( STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_LIBRARY_STATIC}" )
-message( STATUS "[${PROJECT_NAME}] Building unit tests: ${ESL_BUILD_TESTS}" )
-message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${ESL_BUILD_BENCH}" )
-message( STATUS "[${PROJECT_NAME}] Building without exceptions: ${ESL_NO_EXCEPTIONS}" )
-message( STATUS "[${PROJECT_NAME}] Building without internal logging: ${ESL_NO_LOGGING}" )
+message( STATUS "[${PROJECT_NAME}] Building unit tests: ${EPONA_LIBRARY_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${EPONA_LIBRARY_BUILD_BENCH}" )
+message( STATUS "[${PROJECT_NAME}] Building without exceptions: ${EPONA_LIBRARY_NO_EXCEPTIONS}" )
+message( STATUS "[${PROJECT_NAME}] Building without internal logging: ${EPONA_LIBRARY_NO_LOGGING}" )
 
 include( CMakeLists.txt.in )
 
-if ( ESL_BUILD_TESTS ) 
+if ( EPONA_LIBRARY_BUILD_TESTS ) 
     enable_testing( )
 
     add_subdirectory( tests )
 endif ( )
 
-if ( ESL_BUILD_BENCH )
+if ( EPONA_LIBRARY_BUILD_BENCH )
    add_subdirectory( bench )
 endif( )
 
-if ( ESL_NO_EXCEPTIONS )
+if ( EPONA_LIBRARY_NO_EXCEPTIONS )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_EXCEPTIONS )
 endif( )
 
-if ( ESL_NO_LOGGING )
+if ( EPONA_LIBRARY_NO_LOGGING )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING )
 endif( )
 
