@@ -107,7 +107,7 @@ namespace ESL
        *
        * @return The pointer to the container's allocator
        */
-      allocator_type const* get_allocator() const noexcept { return p_alloc; }
+      allocator_type* get_allocator() const noexcept { return p_alloc; }
 
       /**
        * @brief Check if the container has no element.
@@ -188,8 +188,6 @@ namespace ESL
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-   protected:
-      tiny_dynamic_array_impl() = delete;
       /**
        * @brief Sets the capacity and the allocator of the container.
        *
@@ -199,6 +197,9 @@ namespace ESL
       explicit tiny_dynamic_array_impl(size_type capacity, allocator_type* p_alloc) :
          super(get_first_element(), capacity, p_alloc)
       {}
+
+   protected:
+      tiny_dynamic_array_impl() = delete;
 
       /**
        * @brief Check if the container is currently using the static memory buffer.
@@ -1210,12 +1211,9 @@ namespace ESL
     * @tparam allocator_ The type of the allocator used by the container.
     */
    template <class any_, std::size_t buff_sz, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
-   class tiny_dynamic_array :
-      public tiny_dynamic_array_impl<any_, allocator_>,
-      details::static_array_storage<any_, buff_sz>
+   class tiny_dynamic_array
    {
       using super = tiny_dynamic_array_impl<any_, allocator_>;
-      using storage = details::static_array_storage<any_, buff_sz>;
 
    public:
       using value_type = typename super::value_type;
@@ -1232,73 +1230,163 @@ namespace ESL
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit tiny_dynamic_array(allocator_type* p_alloc) : super(buff_sz, p_alloc) {}
+      explicit tiny_dynamic_array(allocator_type* p_alloc) : impl(buff_sz, p_alloc) {}
       explicit tiny_dynamic_array(size_type count,
-         allocator_type* p_alloc) requires std::default_initializable<value_type> : super(buff_sz, p_alloc)
+         allocator_type* p_alloc) requires std::default_initializable<value_type> : impl(buff_sz, p_alloc)
       {
-         super::assign(count, value_type());
+         assign(count, value_type());
       }
       tiny_dynamic_array(size_type count, const_reference value,
-         allocator_type* p_alloc) requires std::copyable<value_type> : super(buff_sz, p_alloc)
+         allocator_type* p_alloc) requires std::copyable<value_type> : impl(buff_sz, p_alloc)
       {
-         super::assign(count, value);
+         assign(count, value);
       }
       template <std::input_iterator it_>
       tiny_dynamic_array(it_ first, it_ last, allocator_type* p_alloc) requires std::copyable<value_type> :
-         super(buff_sz, p_alloc)
+         impl(buff_sz, p_alloc)
       {
-         super::assign(first, last);
+         assign(first, last);
       }
       tiny_dynamic_array(std::initializer_list<any_> init, allocator_type* p_alloc) requires std::copyable<value_type> :
-         super(buff_sz, p_alloc)
+         impl(buff_sz, p_alloc)
       {
-         super::assign(init);
+         assign(init);
       }
-      tiny_dynamic_array(tiny_dynamic_array const& other) : super(buff_sz, other.p_alloc)
+      tiny_dynamic_array(tiny_dynamic_array const& other) : impl(buff_sz, other.get_allocator())
       {
          if (!other.empty())
          {
-            super::operator=(other);
+            *this = other;
          }
       }
-      tiny_dynamic_array(tiny_dynamic_array const& other, allocator_type* p_alloc) : super(buff_sz, p_alloc)
+      tiny_dynamic_array(tiny_dynamic_array const& other, allocator_type* p_alloc) : impl(buff_sz, p_alloc)
       {
          if (!other.empty())
          {
-            super::operator=(other);
+            *this = other;
          }
       }
-      tiny_dynamic_array(tiny_dynamic_array&& other) : super(buff_sz, other.p_alloc)
+      tiny_dynamic_array(tiny_dynamic_array&& other) : impl(buff_sz, other.get_allocator())
       {
          if (!other.empty())
          {
-            super::operator=(std::move(other));
+            *this = std::move(other);
          }
       }
 
       tiny_dynamic_array& operator=(tiny_dynamic_array const& other)
       {
-         super::operator=(other);
-         return *this;
-      }
-
-      tiny_dynamic_array& operator=(super const& other)
-      {
-         super::operator=(other);
+         impl = other.impl;
          return *this;
       }
 
       tiny_dynamic_array& operator=(tiny_dynamic_array&& other)
       {
-         super::operator=(std::move(other));
+         impl = std::move(other.impl);
          return *this;
       }
 
-      tiny_dynamic_array& operator=(super&& other)
+      template <complex_allocator<value_type> other_ = allocator_type>
+      constexpr bool operator==(tiny_dynamic_array<value_type, buff_sz, other_> const& rhs) const
+         requires std::equality_comparable<value_type>
       {
-         super::operator=(std::move(other));
-         return *this;
+         return impl == rhs.impl;
       }
+
+      template <complex_allocator<value_type> other_ = allocator_>
+      constexpr auto operator<=>(tiny_dynamic_array<value_type, buff_sz, other_> const& rhs)
+      {
+         return std::lexicographical_compare_three_way(cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
+      }
+
+      void assign(size_type count, const_reference value) { impl.assign(count, value); }
+      void assign(std::initializer_list<value_type> init) { impl.assign(init); }
+      template <std::input_iterator it_>
+      void assign(it_ first, it_ last)
+      {
+         impl.assign(first, last);
+      }
+
+      allocator_type* get_allocator() noexcept { return impl.get_allocator(); }
+      allocator_type* get_allocator() const noexcept { return impl.get_allocator(); }
+
+      reference at(size_type pos) { return impl.at(pos); }
+      const_reference at(size_type pos) const { return impl.at(pos); }
+
+      reference operator[](size_type pos) noexcept { return impl[pos]; }
+      const_reference operator[](size_type pos) const noexcept { return impl[pos]; }
+
+      reference front() { return impl.front(); }
+      const_reference front() const { return impl.front(); }
+
+      reference back() { return impl.back(); }
+      const_reference back() const { return impl.back(); }
+
+      constexpr pointer data() noexcept { return impl.data(); }
+      constexpr const_pointer data() const noexcept { return impl.data(); }
+
+      iterator begin() noexcept { return impl.begin(); }
+      const_iterator begin() const noexcept { return impl.begin(); }
+      const_iterator cbegin() const noexcept { return impl.cbegin(); }
+
+      iterator end() noexcept { return impl.end(); }
+      const_iterator end() const noexcept { return impl.end(); }
+      const_iterator cend() const noexcept { return impl.cend(); }
+
+      reverse_iterator rbegin() noexcept { return impl.rbegin(); }
+      const_reverse_iterator rbegin() const noexcept { return impl.rbegin(); }
+      const_reverse_iterator rcbegin() const noexcept { return impl.rcbegin(); }
+
+      reverse_iterator rend() noexcept { return impl.rend(); }
+      const_reverse_iterator rend() const noexcept { return impl.rend(); }
+      const_reverse_iterator rcend() const noexcept { return impl.rcend(); }
+
+      [[nodiscard]] constexpr bool empty() const noexcept { return impl.empty(); }
+      size_type size() const noexcept { return impl.size(); }
+      size_type max_size() const noexcept { return impl.max_size(); }
+      size_type capacity() const noexcept { return impl.capacity(); }
+      void reserve(size_type new_cap) { impl.reserve(new_cap); }
+
+      void clear() noexcept { impl.clear(); }
+      iterator insert(const_iterator pos, const_reference value) { return impl.insert(pos, value); }
+      iterator insert(const_iterator pos, value_type&& value) { return impl.insert(pos, std::move(value)); }
+      iterator insert(const_iterator pos, size_type count, const_reference value)
+      {
+         return impl.insert(pos, count, value);
+      }
+      template <std::input_iterator it_>
+      iterator insert(const_iterator pos, it_ first, it_ last)
+      {
+         return impl.insert(pos, first, last);
+      }
+      iterator insert(const_iterator pos, std::initializer_list<value_type> init) { return impl.insert(pos, init); }
+
+      template <class... args_>
+      iterator emplace(const_iterator pos, args_&&... args)
+      {
+         return impl.emplace(pos, std::forward<args_>(args)...);
+      }
+
+      iterator erase(const_iterator pos) { return impl.erase(pos); }
+      iterator erase(const_iterator first, const_iterator last) { return impl.erase(first, last); }
+
+      void push_back(const_reference value) { impl.push_back(value); }
+      void push_back(value_type&& value) { impl.push_back(std::move(value)); }
+
+      template <class... args_>
+      reference emplace_back(args_&&... args)
+      {
+         return impl.emplace_back(std::forward<args_>(args)...);
+      }
+
+      void pop_back() { impl.pop_back(); }
+
+      void resize(size_type count) { impl.resize(count); }
+      void resize(size_type count, const_reference value) { impl.resize(count, value); }
+
+   private:
+      tiny_dynamic_array_impl<any_, allocator_> impl;
+      details::static_array_storage<any_, buff_sz> storage;
    };
 
    template <class any_, complex_allocator<any_> allocator_ = ESL::multipool_allocator>
