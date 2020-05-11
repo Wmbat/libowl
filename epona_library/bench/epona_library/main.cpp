@@ -31,32 +31,42 @@
 #include <iostream>
 #include <string>
 
-static void std_dynamic_array_int( benchmark::State& state )
+static void std_dynamic_array_int(benchmark::State& state)
 {
-   for ( auto _ : state )
+   for (auto _ : state)
    {
-      std::vector<int> v1( state.range( 0 ), state.range( 0 ) );
+      std::vector<int> v1(state.range(0), state.range(0));
 
-      benchmark::DoNotOptimize( v1.data( ) );
-      benchmark::ClobberMemory( );
+      benchmark::DoNotOptimize(v1.data());
+      benchmark::ClobberMemory();
    }
 }
 
-static void esl_dynamic_array_int( benchmark::State& state )
+static void esl_dynamic_array_int(benchmark::State& state)
 {
-   ESL::pool_allocator allocator(
-      { .pool_count = 1, .pool_size = static_cast<size_t>( state.range( 0 ) * sizeof( int ) ) } );
+   ESL::pool_allocator allocator({.pool_count = 1, .pool_size = static_cast<size_t>(state.range(0) * sizeof(int))});
 
-   for ( auto _ : state )
+   for (auto _ : state)
    {
-      ESL::tiny_dynamic_array<int, 1000, ESL::pool_allocator> v1( state.range( 0 ), state.range( 0 ), &allocator );
+      ESL::tiny_dynamic_array<int, 1000, ESL::pool_allocator> v1(state.range(0), state.range(0), &allocator);
 
-      benchmark::DoNotOptimize( v1.data( ) );
-      benchmark::ClobberMemory( );
+      benchmark::DoNotOptimize(v1.data());
+      benchmark::ClobberMemory();
    }
 }
 
-BENCHMARK( std_dynamic_array_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
-BENCHMARK( esl_dynamic_array_int )->RangeMultiplier( 2 )->Range( 8, 8 << 15 );
+static void esl_tiny_flat_map_int(benchmark::State& state)
+{
+   ESL::pool_allocator allocator({.pool_count = 1, .pool_size = static_cast<size_t>(state.range(0) * sizeof(int))});
 
-BENCHMARK_MAIN( );
+   for (auto _ : state)
+   {
+      benchmark::DoNotOptimize(v1.data());
+      benchmark::ClobberMemory();
+   }
+}
+
+BENCHMARK(std_dynamic_array_int)->RangeMultiplier(2)->Range(8, 8 << 15);
+BENCHMARK(esl_dynamic_array_int)->RangeMultiplier(2)->Range(8, 8 << 15);
+
+BENCHMARK_MAIN();

@@ -29,6 +29,7 @@
 
 namespace ESL
 {
+   // clang-format off
    template <typename any_>
    concept trivially_copyable = std::is_trivially_copyable_v<any_>;
 
@@ -39,66 +40,27 @@ namespace ESL
    concept trivial = trivially_copyable<any_> && trivially_default_constructible<any_>;
 
    template <class B>
-   concept boolean = std::movable<std::remove_cvref_t<B>>&& requires(
-      const std::remove_reference_t<B>& b1, const std::remove_reference_t<B>& b2, const bool a )
-   {
+   concept boolean = std::movable<std::remove_cvref_t<B>> && 
+      requires( 
+         const std::remove_reference_t<B>& b1, 
+         const std::remove_reference_t<B>& b2, 
+         const bool a )
       {
-         b1
-      }
-      ->std::convertible_to<bool>;
-      {
-         !b1
-      }
-      ->std::convertible_to<bool>;
-      {
-         b1&& b2
-      }
-      ->std::same_as<bool>;
-      {
-         b1&& a
-      }
-      ->std::same_as<bool>;
-      {
-         a&& b2
-      }
-      ->std::same_as<bool>;
-      {
-         b1 || b2
-      }
-      ->std::same_as<bool>;
-      {
-         b1 || a
-      }
-      ->std::same_as<bool>;
-      {
-         a || b2
-      }
-      ->std::same_as<bool>;
-      {
-         b1 == b2
-      }
-      ->std::convertible_to<bool>;
-      {
-         b1 == a
-      }
-      ->std::convertible_to<bool>;
-      {
-         a == b2
-      }
-      ->std::convertible_to<bool>;
-      {
-         b1 != b2
-      }
-      ->std::convertible_to<bool>;
-      {
-         b1 != a
-      }
-      ->std::convertible_to<bool>;
-      {
-         a != b2
-      }
-      ->std::convertible_to<bool>;
-   };
+         { b1 } -> std::convertible_to<bool>;
+         { !b1 } -> std::convertible_to<bool>;
+         { b1 && b2 } -> std::same_as<bool>;
+         { b1&& a } -> std::same_as<bool>;
+         { a&& b2 } -> std::same_as<bool>;
+         { b1 || b2 } -> std::same_as<bool>;
+         { b1 || a } -> std::same_as<bool>;
+         { a || b2 } -> std::same_as<bool>;
+         { b1 == b2 } -> std::convertible_to<bool>;
+         { b1 == a } -> std::convertible_to<bool>;
+         { a == b2 } -> std::convertible_to<bool>;
+         { b1 != b2 } -> std::convertible_to<bool>;
+         { b1 != a } -> std::convertible_to<bool>;
+         { a != b2 } -> std::convertible_to<bool>;
+      };
 
    template <class T>
    concept totally_ordered = std::equality_comparable<T> && 
@@ -109,4 +71,5 @@ namespace ESL
       { a <= b } -> boolean;
       { a >= b } -> boolean;
    };
+   // clang-format on
 } // namespace ESL

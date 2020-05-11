@@ -71,7 +71,6 @@ target_precompile_headers( epona_library_test
 target_sources( epona_library_test
    PRIVATE
       epona_library/main.cpp
-      epona_library/containers/maps/avl_map_test.cpp
       epona_library/containers/flat_map_test.cpp
       epona_library/containers/dynamic_array_test.cpp
 )

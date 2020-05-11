@@ -10,428 +10,264 @@
 #include <epona_library/allocators/allocator_utils.hpp>
 #include <epona_library/allocators/multipool_allocator.hpp>
 #include <epona_library/containers/details.hpp>
+#include <epona_library/containers/dynamic_array.hpp>
 #include <epona_library/utils/concepts.hpp>
 #include <epona_library/utils/error_handling.hpp>
 
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <span>
+#include <utility>
 
 namespace ESL
 {
-   template <full_allocator allocator_>
-   class tiny_flat_map_base
+   template <std::equality_comparable key_, class val_, std::size_t buff_sz,
+      complex_allocator<std::pair<key_, val_>> allocator_, class compare_ = std::less<key_>>
+   class tiny_flat_map
    {
-   public:
-      using size_type = std::size_t;
-      using difference_type = std::ptrdiff_t;
-      using allocator_type = allocator_;
-      using pointer = void*;
-
-   protected:
-      tiny_flat_map_base() = delete;
-      tiny_flat_map_base(pointer p_first_element, size_type capacity, allocator_type* p_alloc) :
-         p_begin(p_first_element), p_alloc(p_alloc), cap(capacity)
-      {}
-
-      /**
-       * @brief Return the container's capacity;
-       *
-       * @return The container's current memory capacity.
-       */
-      size_type capacity() const noexcept { return cap; }
-
-      /**
-       * @brief A special function to grow the container's memory with trivial types.
-       *
-       * @param[in] p_first_element A pointer to the first element in the container.
-       * @param[in] min_cap The maximum capacity to grow the container by.
-       * @param[in] type_size The size of the trivial type.
-       * @param[in] type_align The alignment of the trivial type.
-       */
-      void grow_trivial(void* p_first_element, size_type min_cap, size_type type_size, size_type type_align)
-      {
-         size_type const new_capacity = std::clamp(2 * capacity() + 1, min_cap, std::numeric_limits<size_type>::max());
-
-         if (p_begin == p_first_element)
-         {
-            void* p_new = p_alloc->allocate(new_capacity * type_size, type_align);
-            if (!p_new)
-            {
-               handle_bad_alloc_error("tiny flat map capacity overflow during reallocation.");
-            }
-
-            memcpy(p_new, p_begin, size() * type_size);
-
-            p_begin = p_new;
-         }
-         else
-         {
-            void* p_new = p_alloc->reallocate(p_begin, new_capacity * type_size);
-            if (!p_new)
-            {
-               handle_bad_alloc_error("tiny flat map capacity overflow during reallocation.");
-            }
-
-            p_begin = p_new;
-         }
-
-         cap = new_capacity;
-      }
-
-   public:
-      /**
-       * @brief Return a pointer to the container's allocator.
-       *
-       * @return The pointer to the container's allocator
-       */
-      allocator_type* get_allocator() noexcept { return p_alloc; }
-      /**
-       * @brief Return a pointer to the container's allocator.
-       *
-       * @return The pointer to the container's allocator
-       */
-      allocator_type const* get_allocator() const noexcept { return p_alloc; }
-
-      /**
-       * @brief Check if the container has no element.
-       *
-       * @return True if the container is empty, otherwise false.
-       */
-      [[nodiscard]] constexpr bool empty() const noexcept { return count == 0; }
-      /**
-       * @brief Return the number of elements in the container.
-       *
-       * @return The size of the container.
-       */
-      size_type size() const noexcept { return count; }
-      /**
-       * @brief Return the maximum size of the container.
-       *
-       * @return The maximum value held by the #difference_type.
-       */
-      size_type max_size() const noexcept { return std::numeric_limits<difference_type>::max(); }
-
-   protected:
-      pointer p_begin{nullptr};
-      allocator_type* p_alloc{nullptr};
-      size_type count{0};
-      size_type cap{0};
-   };
-
-   /**
-    * @struct tiny_flat_map_align_and_size flat_map.hpp <ESL/containers/flat_map.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 29th, 2020
-    * @copyright MIT License.
-    * @brief The memory layout with padding of a tiny_flat_map
-    *
-    * @tparam any_ The type of objects that can be contained in the container.
-    * @tparam allocator_ The type of the allocator used by the container.
-    */
-   template <class pair_, complex_allocator<std::optional<pair_>> allocator_>
-   struct tiny_flat_map_align_and_size
-   {
-      std::aligned_storage_t<sizeof(tiny_flat_map_base<allocator_>), alignof(tiny_flat_map_base<allocator_>)> base;
-      std::aligned_storage_t<sizeof(std::size_t), alignof(std::size_t)> padding;
-      std::aligned_storage_t<sizeof(std::optional<pair_>), alignof(std::optional<pair_>)> first_element;
-   };
-
-   namespace details
-   {
-      template <class key_, class val_>
-      using opt_pair = std::optional<std::pair<key_, val_>>;
-   }
-
-   template <std::equality_comparable key_, class val_, complex_allocator<details::opt_pair<key_, val_>> allocator_,
-      class compare_ = std::less<key_>>
-   class tiny_flat_avl_map_impl : public tiny_flat_map_base<allocator_>
-   {
-      using super = tiny_flat_map_base<allocator_>;
-
-      template <class value_>
-      class inorder_iterator
-      {
-         using outer = tiny_flat_avl_map_impl;
-
-      public:
-         using iterator_category = std::bidirectional_iterator_tag;
-         using self_type = inorder_iterator;
-         using value_type = value_;
-         using reference = value_type&;
-         using const_reference = value_type const&;
-         using pointer = value_type*;
-         using const_pointer = value_type const*;
-         using difference_type = std::ptrdiff_t;
-
-         constexpr inorder_iterator() noexcept = default;
-         constexpr explicit inorder_iterator(std::size_t index) noexcept : index(index) {}
-
-         constexpr bool operator==(self_type const& rhs) const noexcept = default;
-
-         constexpr reference operator*() noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            return p_data[index].value;
-         }
-         constexpr const_reference operator*() const noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            return p_data[index].value;
-         }
-         constexpr pointer operator->() noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            return &p_data[index].value;
-         }
-         constexpr const_pointer operator->() const noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            return &p_data[index].value;
-         }
-
-         constexpr self_type& operator++() noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            std::size_t const right = outer::find_right(index);
-            if (right < outer::capacity() && p_data[right].has_value())
-            {
-               index = right;
-
-               std::size_t const left = outer::find_left(index);
-               while (left < outer::capacity() && p_data[left].has_value())
-               {
-                  index = left;
-               }
-            }
-            else
-            {
-               std::size_t temp = 0;
-               do
-               {
-                  temp = index;
-                  index = outer::find_parent(index);
-               } while ((index < outer::capacity() && p_data[index]) && temp == outer::find_right(index));
-            }
-         }
-         constexpr self_type& operator--() noexcept
-         {
-            auto* p_data = static_cast<std::optional<value_type>*>(outer::p_begin);
-
-            std::size_t const left = outer::find_left(index);
-            if (left < outer::capacity() && p_data[left].has_value())
-            {
-               index = left;
-
-               std::size_t const right = outer::find_right(index);
-               while (right < outer::capacity() && p_data[right].has_value())
-               {
-                  index = right;
-               }
-            }
-            else
-            {
-               std::size_t temp = 0;
-               do
-               {
-                  temp = index;
-                  index = outer::find_parent(index);
-               } while ((index < outer::capacity() && p_data[index]) && temp == outer::find_left(index));
-            }
-         }
-
-         constexpr self_type operator++(int) const noexcept
-         {
-            self_type it = *this;
-            ++(*this);
-
-            return it;
-         }
-         constexpr self_type operator--(int) const noexcept
-         {
-            self_type it = *this;
-            --(*this);
-
-            return it;
-         }
-
-         constexpr void swap(self_type& rhs) noexcept { std::swap(index, rhs.index); }
-
-      private:
-         std::size_t index{std::numeric_limits<std::size_t>::max()};
-      };
+      using container_type = tiny_dynamic_array<std::pair<key_, val_>, buff_sz, allocator_>;
 
    public:
       using key_type = key_;
       using mapped_type = val_;
-      using value_type = std::pair<key_type, mapped_type>;
-      using size_type = typename super::size_type;
-      using difference_type = typename super::difference_type;
+      using value_type = std::pair<key_, val_>;
+      using size_type = typename container_type::size_type;
+      using difference_type = typename container_type::difference_type;
       using key_compare = compare_;
-      using allocator_type = typename super::allocator_type;
-      using reference = value_type&;
-      using const_reference = value_type const&;
-      using pointer = value_type*;
-      using const_pointer = value_type const*;
-      using iterator = inorder_iterator<value_type>;
-      using const_iterator = inorder_iterator<value_type const>;
-      using reverse_iterator = std::reverse_iterator<iterator>;
-      using const_reverse_iterator = std::reverse_iterator<iterator const>;
-
-   private:
-      using opt_type = std::optional<value_type>;
-
-   protected:
-      tiny_flat_avl_map_impl() = delete;
-      tiny_flat_avl_map_impl(size_type capacity, allocator_type* p_allocator) :
-         super(get_first_element(), capacity, p_allocator)
-      {}
-
-      /**
-       * @brief Check if the container is currently using the static memory buffer.
-       *
-       * @return True if the container is using the static memory buffer, otherwise false.
-       */
-      bool is_static() const noexcept { return super::p_begin == get_first_element(); }
+      using allocator_type = allocator_;
+      using reference = typename container_type::reference;
+      using const_reference = typename container_type::const_reference;
+      using pointer = typename container_type::pointer;
+      using const_pointer = typename container_type::const_pointer;
+      using iterator = typename container_type::iterator;
+      using const_iterator = typename container_type::const_iterator;
+      using reverse_iterator = typename container_type::reverse_iterator;
+      using const_reverse_iterator = typename container_type::const_reverse_iterator;
 
    public:
-      iterator begin() noexcept
-      {
-         auto const* const p_data = static_cast<opt_type*>(super::p_begin);
-         std::size_t left = find_left(0);
+      tiny_flat_map(allocator_type* p_allocator) : data(p_allocator) {}
 
-         while (left < super::capacity(), p_data[left].has_value())
+      mapped_type& at(key_type const& key)
+      {
+         auto it = find(key);
+         if (it == end())
          {
-            left = find_left(left);
+            handle_out_of_range_error("key is not present in container");
          }
 
-         return iterator{left};
+         return it->second;
       }
-      const_iterator begin() const noexcept
+      mapped_type const& at(key_type const& key) const
       {
-         auto const* const p_data = static_cast<opt_type*>(super::p_begin);
-         std::size_t left = find_left(0);
-
-         while (left < super::capacity(), p_data[left].has_value())
+         auto it = find(key);
+         if (it == cend())
          {
-            left = find_left(left);
+            handle_out_of_range_error("key is not present in container");
          }
 
-         return iterator{left};
-      }
-      const_iterator cbegin() const noexcept
-      {
-         auto const* const p_data = static_cast<opt_type*>(super::p_begin);
-         std::size_t left = find_left(0);
-
-         while (left < super::capacity(), p_data[left].has_value())
-         {
-            left = find_left(left);
-         }
-
-         return iterator{left};
+         return it->second;
       }
 
-      iterator end() noexcept { return iterator{std::numeric_limits<size_type>::max()}; }
-      const_iterator end() const noexcept { return iterator{std::numeric_limits<size_type>::max()}; }
-      const_iterator cend() const noexcept { return iterator{std::numeric_limits<size_type>::max()}; }
+      iterator begin() noexcept { return data.begin(); }
+      const_iterator begin() const noexcept { return data.begin(); }
+      const_iterator cbegin() const noexcept { return data.cbegin(); }
+
+      iterator end() noexcept { return data.end(); }
+      const_iterator end() const noexcept { return data.end(); }
+      const_iterator cend() const noexcept { return data.cend(); }
+
+      reverse_iterator rbegin() noexcept { return data.rbegin(); }
+      const_reverse_iterator rbegin() const noexcept { return data.rbegin(); }
+      const_reverse_iterator rcbegin() const noexcept { return data.rcbegin(); }
+
+      reverse_iterator rend() noexcept { return data.rend(); }
+      const_reverse_iterator rend() const noexcept { return data.rend(); }
+      const_reverse_iterator rcend() const noexcept { return data.rcend(); }
+
+      [[nodiscard]] bool empty() const noexcept { return data.empty(); }
+      size_type size() const noexcept { return data.size(); }
+      size_type max_size() const noexcept { return data.max_size(); }
+      size_type capacity() const noexcept { return data.capacity(); }
+
+      void clear() noexcept { data.clear(); }
 
       std::pair<iterator, bool> insert(const_reference value) requires std::copyable<value_type>
       {
-         auto* p_data = static_cast<opt_type*>(super::p_begin);
-
-         if (p_data[0].has_value())
+         if (empty())
          {
-         }
-      }
+            data.push_back(value);
 
-   private:
-      void* get_first_element() const noexcept
-      {
-         using layout = tiny_flat_map_align_and_size<value_type, allocator_type>;
-
-         return const_cast<void*>(
-            reinterpret_cast<void const*>(reinterpret_cast<char const*>(this) + offsetof(layout, first_element)));
-      }
-
-      void grow(size_type min_size = 0)
-      {
-         assert(super::p_alloc != nullptr);
-
-         if (min_size > super::max_size())
-         {
-            handle_bad_alloc_error("tiny flat map capacity overflow during allocation.");
+            return std::make_pair(begin(), true);
          }
 
-         if constexpr (trivially_copyable<value_type>)
+         int32_t left = 0;
+         int32_t right = size() - 1;
+         while (left <= right)
          {
-            super::grow_trivial(get_first_element(), min_size, sizeof(opt_type), alignof(opt_type));
-         }
-         else
-         {
-            size_type new_cap = std::clamp(2 * super::capacity() + 1, min_size, std::numeric_limits<size_type>::max());
-
-            if (opt_type* p_new = nullptr; is_static())
+            int32_t midpoint = left + (right - left) / 2;
+            if (key_compare comp{}; comp(data[midpoint].first, value.first))
             {
-               p_new = static_cast<opt_type*>(super::p_alloc->allocate(new_cap * sizeof(opt_type), alignof(opt_type)));
-               if (!p_new)
-               {
-                  handle_bad_alloc_error("tiny flat map capacity overflow during allocation.");
-               }
+               left = midpoint + 1;
+            }
+            else if (data[midpoint].first == value.first)
+            {
+               return std::make_pair(iterator{begin() + midpoint}, false);
             }
             else
             {
-               p_new = super::p_alloc->template reallocate<opt_type>(static_cast<opt_type*>(super::p_begin), new_cap);
-               if (!p_new)
-               {
-                  handle_bad_alloc_error("tiny flat map capacity overflow during allocation.");
-               }
+               right = midpoint - 1;
             }
          }
+
+         return std::make_pair(data.insert(cbegin() + left, value), true);
       }
 
-      static void destroy_range(iterator first, iterator last)
+      std::pair<iterator, bool> insert(value_type&& value) requires std::movable<value_type>
       {
-         if constexpr (!trivial<value_type>)
+         if (empty())
          {
-            while (first != last)
+            data.push_back(std::move(value));
+
+            return std::make_pair(begin(), true);
+         }
+
+         int32_t left = 0;
+         int32_t right = size() - 1;
+         while (left <= right)
+         {
+            int32_t midpoint = left + (right - left) / 2;
+            if (key_compare comp{}; comp(data[midpoint].first, value.first))
             {
-               first->~value_type();
-               ++first;
+               left = midpoint + 1;
             }
+            else if (data[midpoint].first == value.first)
+            {
+               return std::make_pair(iterator{begin() + midpoint}, false);
+            }
+            else
+            {
+               right = midpoint - 1;
+            }
+         }
+
+         return std::make_pair(data.insert(cbegin() + left, std::move(value)), true);
+      }
+
+      template <class value_>
+      std::pair<iterator, bool> insert(value_&& value) requires std::constructible_from<value_type, value_&&>
+      {
+         return emplace(std::forward<value_>(value));
+      }
+
+      template <std::input_iterator it_>
+      void insert(it_ first, it_ last)
+      {
+         for (auto const& val : std::span(first, last))
+         {
+            insert(val);
          }
       }
 
-      static constexpr size_type find_left(size_type index) noexcept { return 2 * index + 1; }
-      static constexpr size_type find_right(size_type index) noexcept { return 2 * index + 2; }
-      static constexpr size_type find_parent(size_type index) noexcept { return (index - 1) / 2; }
-   };
+      void insert(std::initializer_list<value_type> init) { insert(init.begin(), init.end()); }
 
-   template <std::equality_comparable key_, class val_, std::size_t buff_sz,
-      complex_allocator<details::opt_pair<key_, val_>> allocator_ = ESL::multipool_allocator,
-      class compare_ = std::less<key_>>
-   class tiny_flat_avl_map :
-      public tiny_flat_avl_map_impl<key_, val_, allocator_, compare_>,
-      details::static_array_storage<details::opt_pair<key_, val_>, buff_sz>
-   {
-      using super = tiny_flat_avl_map_impl<key_, val_, allocator_, compare_>;
-      using storage = details::static_array_storage<details::opt_pair<key_, val_>, buff_sz>;
+      template <class... args_>
+      std::pair<iterator, bool> emplace(args_&&... args) requires std::constructible_from<value_type, args_...>
+      {
+         if (empty())
+         {
+            data.emplace_back(std::forward<args_>(args)...);
 
-   public:
-      using key_type = typename super::key_type;
-      using mapped_type = typename super::mapped_type;
-      using value_type = typename super::value_type;
-      using size_type = typename super::size_type;
-      using difference_type = typename super::difference_type;
-      using key_compare = typename super::key_compare;
-      using allocator_type = typename super::allocator_type;
+            return std::make_pair(begin(), true);
+         }
 
-   public:
-      tiny_flat_avl_map(allocator_type* p_allocator) : super(buff_sz, p_allocator) {}
+         value_type const value(std::forward<args_>(args)...);
+
+         int32_t left = 0;
+         int32_t right = size() - 1;
+         while (left <= right)
+         {
+            int32_t midpoint = left + (right - left) / 2;
+            if (key_compare comp{}; comp(data[midpoint].first, value.first))
+            {
+               left = midpoint + 1;
+            }
+            else if (data[midpoint].first == value.first)
+            {
+               return std::make_pair(iterator{begin() + midpoint}, false);
+            }
+            else
+            {
+               right = midpoint - 1;
+            }
+         }
+
+         return std::make_pair(data.insert(cbegin() + left, std::move(value)), true);
+      }
+
+      size_type count(key_type const& key) const
+      {
+         if (find(key) != cend())
+         {
+            return 1;
+         }
+         else
+         {
+            return 0;
+         }
+      }
+
+      iterator find(key_type const& key)
+      {
+         int32_t left = 0;
+         int32_t right = size() - 1;
+         while (left <= right)
+         {
+            int32_t midpoint = left + (right - left) / 2;
+            if (key_compare comp{}; comp(data[midpoint].first, key))
+            {
+               left = midpoint + 1;
+            }
+            else if (data[midpoint].first == key)
+            {
+               return begin() + midpoint;
+            }
+            else
+            {
+               right = midpoint - 1;
+            }
+         }
+
+         return end();
+      }
+
+      const_iterator find(key_type const& key) const
+      {
+         int32_t left = 0;
+         int32_t right = size() - 1;
+         while (left <= right)
+         {
+            int32_t midpoint = left + (right - left) / 2;
+            if (key_compare comp{}; comp(data[midpoint].first, key))
+            {
+               left = midpoint + 1;
+            }
+            else if (data[midpoint].first == key)
+            {
+               return cbegin() + midpoint;
+            }
+            else
+            {
+               right = midpoint - 1;
+            }
+         }
+
+         return cend();
+      }
+
+      bool contains(key_type const& key) const { return find(key) != cend(); }
+
+   private:
+      container_type data;
    };
 } // namespace ESL

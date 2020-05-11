@@ -498,7 +498,7 @@ namespace ESL
       {
          if (index >= super::count)
          {
-            throw std::out_of_range{"Index: " + std::to_string(index) + " is out of bounds"};
+            handle_out_of_range_error("Index: " + std::to_string(index) + " is out of bounds");
          }
          else
          {
@@ -521,7 +521,7 @@ namespace ESL
       {
          if (index >= super::count)
          {
-            throw std::out_of_range{"Index: " + std::to_string(index) + " is out of bounds"};
+            handle_out_of_range_error("Index: " + std::to_string(index) + " is out of bounds");
          }
          else
          {
