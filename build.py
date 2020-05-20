@@ -3,7 +3,7 @@ import argparse
 
 def build(args):
     root_dir = os.getcwd()
-    build_dir = root_dir + "/build_" + args.build_type
+    build_dir = root_dir + "/build_" + args.build_type + "_" + args.compiler
 
     if os.path.isdir(build_dir) is not True:
         os.mkdir(build_dir)
@@ -43,7 +43,7 @@ def build(args):
     if args.generator == 'ninja':
         os.system('ninja')
     else:
-        os.system('cmake')
+        os.system('make -j13')
 
     os.system("mv compile_commands.json ../")
 

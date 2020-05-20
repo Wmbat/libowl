@@ -22,16 +22,16 @@
  * SOFTWARE.
  */
 
-#include <epona_core/gui/widget.hpp>
+#include "epona_core/gui/widget.hpp"
 
 namespace EGL
 {
-   widget& widget::setParent( widget* p_parent_in )
+   widget& widget::setParent(widget* p_parent_in)
    {
       p_parent = p_parent_in;
 
       return *this;
    }
 
-   widget* widget::getParent( ) { return p_parent; }
+   widget* widget::getParent() { return p_parent; }
 } // namespace EGL

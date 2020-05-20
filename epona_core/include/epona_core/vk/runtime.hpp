@@ -28,9 +28,9 @@
 #include <epona_core/vk/core.hpp>
 #include <epona_core/vk/extension.hpp>
 
-#include <epona_library/allocators/multipool_allocator.hpp>
-#include <epona_library/containers/dynamic_array.hpp>
-#include <epona_library/utils/logger.hpp>
+#include "epona_core/containers/dynamic_array.hpp"
+#include "epona_core/details/logger.hpp"
+#include "epona_core/memory/multipool_allocator.hpp"
 
 #include <string>
 #include <string_view>
@@ -40,28 +40,21 @@ namespace core::vk
    class runtime
    {
    public:
-      runtime( ESL::logger* p_logger );
+      runtime(logger* p_logger);
 
-      void create_instance( std::string_view app_name );
+      void create_instance(std::string_view app_name);
 
    public:
-      ESL::logger* p_logger;
+      logger* p_logger;
 
       std::uint32_t version;
 
       VkInstance instance;
 
-      static constexpr std::array<char const[VK_MAX_EXTENSION_NAME_SIZE], 8> supported_instance_exts
-      {
-         "VK_KHR_surface",
-         "VK_KHR_get_surface_capabilities2",
-         "VK_KHR_wayland_surface",
-         "VK_KHR_win32_surface",
-         "VK_KHR_xcb_surface",
-         "VK_KHR_xlib_surface",
-         "VK_EXT_debug_utils",
-         "VK_KHR_get_physical_device_properties2"
-      };
+      static constexpr std::array<const char[VK_MAX_EXTENSION_NAME_SIZE], 8>
+         supported_instance_exts{"VK_KHR_surface", "VK_KHR_get_surface_capabilities2",
+            "VK_KHR_wayland_surface", "VK_KHR_win32_surface", "VK_KHR_xcb_surface",
+            "VK_KHR_xlib_surface", "VK_EXT_debug_utils", "VK_KHR_get_physical_device_properties2"};
 
       std::vector<std::string_view> available_instance_exts;
       std::vector<std::string_view> enabled_instance_exts;

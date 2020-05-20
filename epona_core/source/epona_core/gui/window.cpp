@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <epona_core/gui/window.hpp>
+#include "epona_core/gui/window.hpp"
 
 #include <memory>
 

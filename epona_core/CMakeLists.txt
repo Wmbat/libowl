@@ -6,17 +6,30 @@ project( epona_core
    LANGUAGES CXX
 )
 
+option( EPONA_CORE_STATIC "Build ${PROJECT_NAME} as a static library" ON )
+option( EPONA_CORE_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF )
+option( EPONA_CORE_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF )
+option( EPONA_CORE_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF )
+option( EPONA_CORE_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF )
+
+
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release CACHE FORCE )
 endif( )
 
-# compilation settings
-set( CLANG_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer" )
-set( CLANG_RELEASE_FLAGS "-o3" )
-set( GNU_DEBUG_FLAGS "-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined" )
-set( GNU_RELEASE_FLAGS "-o3" )
+message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}" )
 
-message( STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION} - ${CMAKE_BUILD_TYPE}" )
+if ( CMAKE_BUILD_TYPE MATCHES Release )
+   message( STATUS "[${PROJECT_NAME}] Build type: Release" )
+else ( )
+   message( STATUS "[${PROJECT_NAME}] Build type: Debug" )
+endif ( )
+
+message( STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_CORE_STATIC}" )
+message( STATUS "[${PROJECT_NAME}] Building unit tests: ${EPONA_CORE_BUILD_TESTS}" )
+message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${EPONA_CORE_BUILD_BENCH}" )
+message( STATUS "[${PROJECT_NAME}] Building without exceptions: ${EPONA_CORE_NO_EXCEPTIONS}" )
+message( STATUS "[${PROJECT_NAME}] Building without internal logging: ${EPONA_CORE_NO_LOGGING}" )
 
 # spirv_cross settings
 set( SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE )
@@ -32,6 +45,20 @@ set( GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE )
 set( GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE )
 
 include( CMakeLists.txt.in )
+
+if ( EPONA_CORE_BUILD_TESTS ) 
+    enable_testing( )
+
+    add_subdirectory( tests )
+endif ( )
+
+if ( EPONA_CORE_NO_EXCEPTIONS )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_EXCEPTIONS )
+endif( )
+
+if ( EPONA_CORE_NO_LOGGING )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING )
+endif( )
 
 add_library( ${PROJECT_NAME} STATIC )
 
@@ -54,11 +81,11 @@ target_compile_features( ${PROJECT_NAME}
 
 target_compile_options( ${PROJECT_NAME}
    PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer >
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
 target_include_directories( ${PROJECT_NAME}
@@ -76,14 +103,32 @@ target_link_libraries( ${PROJECT_NAME}
       glslang
       SPIRV
       glfw
-      epona_library
+      spdlog::spdlog
 )
+
+if ( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" ) 
+    target_precompile_headers( ${PROJECT_NAME} 
+        PRIVATE 
+            <algorithm> <concepts> <type_traits>
+            <cassert> <compare> <cstdint> <cstddef>
+            <memory> <spdlog/spdlog.h>
+    )
+endif()
 
 target_sources( ${PROJECT_NAME}
    PRIVATE
       source/epona_core/gui/widget.cpp
       source/epona_core/gui/window.cpp
+
+      source/epona_core/memory/monotonic_allocator.cpp
+      source/epona_core/memory/multipool_allocator.cpp
+      source/epona_core/memory/pool_allocator.cpp
+      source/epona_core/memory/stack_allocator.cpp
+
+      source/epona_core/details/logger.cpp
+
       source/epona_core/vk/runtime.cpp
       source/epona_core/vk/defines.cpp
+
       source/epona_core/render_manager.cpp
 )
