@@ -25,10 +25,10 @@
 namespace core
 {
    template <std::equality_comparable key_, class val_, std::size_t buff_sz,
-      complex_allocator<std::pair<key_, val_>> allocator_, class compare_ = std::less<key_>>
+      class compare_ = std::less<key_>>
    class tiny_flat_map
    {
-      using container_type = tiny_dynamic_array<std::pair<key_, val_>, buff_sz, allocator_>;
+      using container_type = tiny_dynamic_array<std::pair<key_, val_>, buff_sz>;
 
    public:
       using key_type = key_;
@@ -37,7 +37,6 @@ namespace core
       using size_type = typename container_type::size_type;
       using difference_type = typename container_type::difference_type;
       using key_compare = compare_;
-      using allocator_type = allocator_;
       using reference = typename container_type::reference;
       using const_reference = typename container_type::const_reference;
       using pointer = typename container_type::pointer;
@@ -48,7 +47,7 @@ namespace core
       using const_reverse_iterator = typename container_type::const_reverse_iterator;
 
    public:
-      tiny_flat_map(allocator_type* p_allocator) : data(p_allocator) {}
+      tiny_flat_map() = default;
 
       mapped_type& at(const key_type& key)
       {

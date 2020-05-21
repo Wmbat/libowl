@@ -7,18 +7,19 @@
 
 #pragma once
 
-#include "epona_core/memory/details.hpp"
-#include "epona_core/memory/multipool_allocator.hpp"
 #include "epona_core/containers/details.hpp"
 #include "epona_core/details/compare.hpp"
 #include "epona_core/details/concepts.hpp"
 #include "epona_core/details/error_handling.hpp"
 #include "epona_core/details/iterators/random_access_iterator.hpp"
+#include "epona_core/memory/details.hpp"
+#include "epona_core/memory/multipool_allocator.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <compare>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <memory>
@@ -35,13 +36,11 @@ namespace core
     *
     * @tparam allocator_ The type of the allocator used by the container.
     */
-   template <full_allocator allocator_>
    class dynamic_array_base
    {
    public:
       using size_type = std::size_t;
       using difference_type = std::ptrdiff_t;
-      using allocator_type = allocator_;
       using pointer = void*;
 
    protected:
@@ -53,8 +52,8 @@ namespace core
        * @param[in] capacity The starting capacity of the container.
        * @param[in] p_alloc A pointer to the allocator used by the container.
        */
-      dynamic_array_base(pointer p_first_element, size_type capacity, allocator_type* p_alloc) :
-         p_begin(p_first_element), p_alloc(p_alloc), cap(capacity)
+      dynamic_array_base(pointer p_first_element, size_type capacity) :
+         p_begin(p_first_element), cap(capacity)
       {}
 
       /**
@@ -65,15 +64,14 @@ namespace core
        * @param[in] type_size The size of the trivial type.
        * @param[in] type_align The alignment of the trivial type.
        */
-      void grow_trivial(
-         void* p_first_element, size_type min_cap, size_type type_size, size_type type_align)
+      void grow_trivial(void* p_first_element, size_type min_cap, size_type type_size)
       {
          size_type const new_capacity =
             std::clamp(2 * capacity() + 1, min_cap, std::numeric_limits<size_type>::max());
 
          if (p_begin == p_first_element)
          {
-            void* p_new = p_alloc->allocate(new_capacity * type_size, type_align);
+            void* p_new = std::malloc(new_capacity * type_size);
             if (!p_new)
             {
                handle_bad_alloc_error(
@@ -86,7 +84,7 @@ namespace core
          }
          else
          {
-            void* p_new = p_alloc->reallocate(p_begin, new_capacity * type_size);
+            void* p_new = std::realloc(p_begin, new_capacity * type_size);
             if (!p_new)
             {
                handle_bad_alloc_error(
@@ -100,19 +98,6 @@ namespace core
       }
 
    public:
-      /**
-       * @brief Return a pointer to the container's allocator.
-       *
-       * @return The pointer to the container's allocator
-       */
-      allocator_type* get_allocator() noexcept { return p_alloc; }
-      /**
-       * @brief Return a pointer to the container's allocator.
-       *
-       * @return The pointer to the container's allocator
-       */
-      allocator_type* get_allocator() const noexcept { return p_alloc; }
-
       /**
        * @brief Check if the container has no element.
        *
@@ -140,7 +125,6 @@ namespace core
 
    protected:
       void* p_begin{nullptr};
-      allocator_type* p_alloc{nullptr};
       size_type count{0};
       size_type cap{0};
    };
@@ -155,12 +139,10 @@ namespace core
     * @tparam any_, The type of objects that can be contained in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
-   template <class any_, complex_allocator<any_> allocator_>
+   template <class any_>
    struct tiny_dynamic_array_align_and_size
    {
-      std::aligned_storage_t<sizeof(dynamic_array_base<allocator_>),
-         alignof(dynamic_array_base<allocator_>)>
-         base;
+      std::aligned_storage_t<sizeof(dynamic_array_base), alignof(dynamic_array_base)> base;
       std::aligned_storage_t<sizeof(std::size_t), alignof(std::size_t)> padding;
       std::aligned_storage_t<sizeof(any_), alignof(any_)> first_element;
    };
@@ -175,14 +157,13 @@ namespace core
     * @tparam any_, The type of objects that can be contained in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
-   template <class any_, complex_allocator<any_> allocator_>
-   class tiny_dynamic_array_impl : public dynamic_array_base<allocator_>
+   template <class any_>
+   class tiny_dynamic_array_impl : public dynamic_array_base
    {
-      using super = dynamic_array_base<allocator_>;
+      using super = dynamic_array_base;
 
    public:
       using value_type = any_;
-      using allocator_type = typename super::allocator_type;
       using reference = value_type&;
       using const_reference = const value_type&;
       using pointer = value_type*;
@@ -200,9 +181,7 @@ namespace core
        * @param[in] capacity The default capacity of the container.
        * @param[in] p_alloc The allocator from which memory will be fetched.
        */
-      explicit tiny_dynamic_array_impl(size_type capacity, allocator_type* p_alloc) :
-         super(get_first_element(), capacity, p_alloc)
-      {}
+      explicit tiny_dynamic_array_impl(size_type capacity) : super(get_first_element(), capacity) {}
 
    protected:
       tiny_dynamic_array_impl() = delete;
@@ -227,9 +206,9 @@ namespace core
          {
             clear();
 
-            if (super::p_alloc && super::p_begin)
+            if (super::p_begin)
             {
-               super::p_alloc->deallocate(super::p_begin);
+               free(super::p_begin);
             }
          }
       }
@@ -246,11 +225,6 @@ namespace core
          if (this == &rhs)
          {
             return *this;
-         }
-
-         if (!super::p_alloc)
-         {
-            super::p_alloc = rhs.p_alloc;
          }
 
          size_type const other_sz = rhs.size();
@@ -306,19 +280,13 @@ namespace core
             return *this;
          }
 
-         if (!super::p_alloc)
-         {
-            super::p_alloc = rhs.p_alloc;
-            rhs.p_alloc = nullptr;
-         }
-
          // If not static, steal buffer.
          if (!rhs.is_static())
          {
             destroy_range(begin(), end());
             if (!is_static() && super::p_begin)
             {
-               super::p_alloc->deallocate(super::p_begin);
+               free(super::p_begin);
             }
 
             super::count = rhs.count;
@@ -329,8 +297,6 @@ namespace core
 
             super::p_begin = rhs.p_begin;
             rhs.p_begin = nullptr;
-
-            rhs.p_alloc = nullptr;
 
             return *this;
          }
@@ -353,7 +319,6 @@ namespace core
             super::count = other_sz;
 
             rhs.clear();
-            rhs.p_alloc = nullptr;
 
             return *this;
          }
@@ -376,7 +341,6 @@ namespace core
             super::count = other_sz;
 
             rhs.clear();
-            rhs.p_alloc = nullptr;
 
             return *this;
          }
@@ -396,8 +360,7 @@ namespace core
        *
        * @return True if the two dynamic_arrays have the same data, otherwise false
        */
-      template <complex_allocator<value_type> other_ = allocator_>
-      constexpr bool operator==(const tiny_dynamic_array_impl<value_type, other_>& rhs) const
+      constexpr bool operator==(const tiny_dynamic_array_impl<value_type>& rhs) const
          requires std::equality_comparable<value_type>
       {
          return std::equal(cbegin(), cend(), rhs.cbegin(), rhs.cend());
@@ -411,8 +374,7 @@ namespace core
        *
        * @return An ordering defining the relationship between the two dynamic_arrays.
        */
-      template <complex_allocator<value_type> other_ = allocator_>
-      constexpr auto operator<=>(const tiny_dynamic_array_impl<value_type, other_>& rhs)
+      constexpr auto operator<=>(const tiny_dynamic_array_impl<value_type>& rhs)
       {
          return std::lexicographical_compare_three_way(
             cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
@@ -517,7 +479,7 @@ namespace core
          }
          else
          {
-            return super::p_alloc[index];
+            return static_cast<value_type*>(super::p_begin)[index];
          }
       }
       /**
@@ -540,7 +502,7 @@ namespace core
          }
          else
          {
-            return super::p_alloc[index];
+            return static_cast<value_type*>(super::p_begin)[index];
          }
       }
 
@@ -1158,7 +1120,7 @@ namespace core
    private:
       void* get_first_element() const noexcept
       {
-         using layout = tiny_dynamic_array_align_and_size<value_type, allocator_type>;
+         using layout = tiny_dynamic_array_align_and_size<value_type>;
 
          return const_cast<void*>(reinterpret_cast<void const*>(
             reinterpret_cast<char const*>(this) + offsetof(layout, first_element)));
@@ -1166,8 +1128,6 @@ namespace core
 
       void grow(size_type min_size = 0)
       {
-         assert(super::p_alloc != nullptr);
-
          if (min_size > std::numeric_limits<difference_type>::max())
          {
             handle_bad_alloc_error("Hybrid dynamic_array capacity overflow during allocation.");
@@ -1175,8 +1135,7 @@ namespace core
 
          if constexpr (trivial<value_type>)
          {
-            super::grow_trivial(
-               get_first_element(), min_size, sizeof(value_type), alignof(value_type));
+            super::grow_trivial(get_first_element(), min_size, sizeof(value_type));
          }
          else
          {
@@ -1186,9 +1145,7 @@ namespace core
             pointer p_new{nullptr};
             if (is_static()) // memory is currently static
             {
-               p_new = static_cast<pointer>(
-                  super::p_alloc->allocate(new_cap * sizeof(value_type), alignof(value_type)));
-
+               p_new = static_cast<value_type*>(std::malloc(new_cap * sizeof(value_type)));
                if (!p_new)
                {
                   handle_bad_alloc_error("hybrid dynamic_array allocation error");
@@ -1207,10 +1164,8 @@ namespace core
             }
             else
             {
-               // The templated reallocate move the data if needed, so no need to move here.
-               p_new = super::p_alloc->template reallocate<value_type>(
-                  static_cast<pointer>(super::p_begin), new_cap);
-
+               p_new = static_cast<value_type*>(
+                  std::realloc(super::p_begin, new_cap * sizeof(value_type)));
                if (!p_new)
                {
                   handle_bad_alloc_error("Hybrid dynamic_array allocation error");
@@ -1246,15 +1201,13 @@ namespace core
     * @tparam buff_sz, The size of the static memory buffer in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
-   template <class any_, std::size_t buff_sz,
-      complex_allocator<any_> allocator_ = multipool_allocator>
+   template <class any_, std::size_t buff_sz>
    class tiny_dynamic_array
    {
-      using super = tiny_dynamic_array_impl<any_, allocator_>;
+      using super = tiny_dynamic_array_impl<any_>;
 
    public:
       using value_type = typename super::value_type;
-      using allocator_type = typename super::allocator_type;
       using reference = value_type&;
       using const_reference = const value_type&;
       using pointer = value_type*;
@@ -1267,45 +1220,35 @@ namespace core
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit tiny_dynamic_array(allocator_type* p_alloc) : impl(buff_sz, p_alloc) {}
-      explicit tiny_dynamic_array(
-         size_type count, allocator_type* p_alloc) requires std::default_initializable<value_type> :
-         impl(buff_sz, p_alloc)
+      explicit tiny_dynamic_array() : impl(buff_sz) {}
+      explicit tiny_dynamic_array(size_type count) requires std::default_initializable<value_type> :
+         impl(buff_sz)
       {
          assign(count, value_type());
       }
-      tiny_dynamic_array(size_type count, const_reference value,
-         allocator_type* p_alloc) requires std::copyable<value_type> : impl(buff_sz, p_alloc)
+      explicit tiny_dynamic_array(
+         size_type count, const_reference value) requires std::copyable<value_type> : impl(buff_sz)
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      tiny_dynamic_array(it_ first, it_ last,
-         allocator_type* p_alloc) requires std::copyable<value_type> : impl(buff_sz, p_alloc)
+      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type> : impl(buff_sz)
       {
          assign(first, last);
       }
-      tiny_dynamic_array(std::initializer_list<any_> init,
-         allocator_type* p_alloc) requires std::copyable<value_type> : impl(buff_sz, p_alloc)
+      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type> :
+         impl(buff_sz)
       {
          assign(init);
       }
-      tiny_dynamic_array(const tiny_dynamic_array& other) : impl(buff_sz, other.get_allocator())
+      tiny_dynamic_array(const tiny_dynamic_array& other) : impl(buff_sz)
       {
          if (!other.empty())
          {
             *this = other;
          }
       }
-      tiny_dynamic_array(const tiny_dynamic_array& other, allocator_type* p_alloc) :
-         impl(buff_sz, p_alloc)
-      {
-         if (!other.empty())
-         {
-            *this = other;
-         }
-      }
-      tiny_dynamic_array(tiny_dynamic_array&& other) : impl(buff_sz, other.get_allocator())
+      tiny_dynamic_array(tiny_dynamic_array&& other) : impl(buff_sz)
       {
          if (!other.empty())
          {
@@ -1325,15 +1268,13 @@ namespace core
          return *this;
       }
 
-      template <complex_allocator<value_type> other_ = allocator_type>
-      constexpr bool operator==(const tiny_dynamic_array<value_type, buff_sz, other_>& rhs) const
+      constexpr bool operator==(const tiny_dynamic_array<value_type, buff_sz>& rhs) const
          requires std::equality_comparable<value_type>
       {
          return impl == rhs.impl;
       }
 
-      template <complex_allocator<value_type> other_ = allocator_>
-      constexpr auto operator<=>(const tiny_dynamic_array<value_type, buff_sz, other_>& rhs)
+      constexpr auto operator<=>(const tiny_dynamic_array<value_type, buff_sz>& rhs)
       {
          return std::lexicographical_compare_three_way(
             cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
@@ -1346,9 +1287,6 @@ namespace core
       {
          impl.assign(first, last);
       }
-
-      allocator_type* get_allocator() noexcept { return impl.get_allocator(); }
-      allocator_type* get_allocator() const noexcept { return impl.get_allocator(); }
 
       reference at(size_type pos) { return impl.at(pos); }
       const_reference at(size_type pos) const { return impl.at(pos); }
@@ -1431,10 +1369,10 @@ namespace core
       void resize(size_type count, const_reference value) { impl.resize(count, value); }
 
    private:
-      tiny_dynamic_array_impl<any_, allocator_> impl;
+      tiny_dynamic_array_impl<any_> impl;
       details::static_array_storage<any_, buff_sz> storage;
    };
 
-   template <class any_, complex_allocator<any_> allocator_ = multipool_allocator>
-   using dynamic_array = tiny_dynamic_array<any_, 0, allocator_>;
-} // namespace ESL
+   template <class any_>
+   using dynamic_array = tiny_dynamic_array<any_, 0>;
+} // namespace core

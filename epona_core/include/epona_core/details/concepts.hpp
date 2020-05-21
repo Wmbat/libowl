@@ -72,4 +72,4 @@ namespace core
       { a >= b } -> boolean;
    };
    // clang-format on
-} // namespace ESL
+} // namespace core

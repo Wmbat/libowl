@@ -24,15 +24,13 @@
 
 #include <epona_core/containers/dynamic_array.hpp>
 #include <epona_core/details/iterators/random_access_iterator.hpp>
-#include <epona_core/memory/multipool_allocator.hpp>
-#include <epona_core/memory/pool_allocator.hpp>
 
 #include <gtest/gtest.h>
 
 struct copyable
 {
    copyable() = default;
-   copyable(int i) : i(i) {}
+   explicit copyable(int i) : i(i) {}
 
    bool operator==(copyable const& other) const = default;
 
@@ -58,29 +56,21 @@ struct moveable
 
 struct tiny_dynamic_array_test : public testing::Test
 {
-   tiny_dynamic_array_test() :
-      pool_allocator({.pool_count = 2, .pool_size = 2048}),
-      secondary_allocator({.pool_count = 2, .pool_size = 2048})
-   {}
-
-   core::pool_allocator pool_allocator;
-   core::pool_allocator secondary_allocator;
+   tiny_dynamic_array_test() = default;
 };
 
 TEST_F(tiny_dynamic_array_test, default_ctor)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
    }
 
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
    }
@@ -89,22 +79,19 @@ TEST_F(tiny_dynamic_array_test, default_ctor)
 TEST_F(tiny_dynamic_array_test, ctor_count)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 0);
+         EXPECT_EQ(val.i, 0);
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 5, core::pool_allocator> vec{5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 5> vec{5};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 5);
       EXPECT_EQ(vec.capacity(), 5);
 
@@ -118,23 +105,19 @@ TEST_F(tiny_dynamic_array_test, ctor_count)
 TEST_F(tiny_dynamic_array_test, ctor_count_values)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 5, core::pool_allocator> vec{
-         5, copyable{20}, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 5> vec{5, copyable{20}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 5);
       EXPECT_EQ(vec.capacity(), 5);
 
@@ -148,24 +131,18 @@ TEST_F(tiny_dynamic_array_test, ctor_count_values)
 TEST_F(tiny_dynamic_array_test, ctor_range)
 {
    {
-      core::tiny_dynamic_array<copyable, 0, core::pool_allocator> vec{
-         10, copyable{5}, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 5, core::pool_allocator> vec2{
-         vec.begin(), vec.end(), &pool_allocator};
+      core::tiny_dynamic_array<copyable, 5> vec2{vec.begin(), vec.end()};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 2);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 11);
 
@@ -179,73 +156,39 @@ TEST_F(tiny_dynamic_array_test, ctor_range)
 TEST_F(tiny_dynamic_array_test, ctor_initializer_list)
 {
    {
-      core::tiny_dynamic_array<copyable, 10, core::pool_allocator> vec{
-         {copyable{1}, copyable{1}, copyable{1}}, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 10> vec{{copyable{1}, copyable{1}, copyable{1}}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 10);
+
+      for (const auto& c : vec)
+      {
+         EXPECT_EQ(c.i, 1);
+      }
    }
 }
 
 TEST_F(tiny_dynamic_array_test, ctor_copy)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec2{vec};
+      core::tiny_dynamic_array<copyable, 0> vec2{vec};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 2);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
-      }
-   }
-}
-
-TEST_F(tiny_dynamic_array_test, ctor_copy_w_allocator)
-{
-   {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(secondary_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
-      EXPECT_EQ(vec.size(), 10);
-      EXPECT_EQ(vec.capacity(), 10);
-
-      for (auto& val : vec)
-      {
-         EXPECT_EQ(val, 5);
-      }
-
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec2{vec, &secondary_allocator};
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(secondary_allocator.allocation_count(), 1);
-      EXPECT_NE(vec2.get_allocator(), &pool_allocator);
-      EXPECT_EQ(vec2.get_allocator(), &secondary_allocator);
-      EXPECT_EQ(vec2.size(), 10);
-      EXPECT_EQ(vec2.capacity(), 10);
-
-      for (auto& val : vec2)
-      {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
    }
 }
@@ -253,60 +196,50 @@ TEST_F(tiny_dynamic_array_test, ctor_copy_w_allocator)
 TEST_F(tiny_dynamic_array_test, ctor_move)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec2{std::move(vec)};
+      core::tiny_dynamic_array<copyable, 0> vec2{std::move(vec)};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      EXPECT_EQ(vec.get_allocator(), nullptr);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
    }
    {
-      core::tiny_dynamic_array<int, 10, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<int, 10, core::pool_allocator> vec2{std::move(vec)};
+      core::tiny_dynamic_array<copyable, 10> vec2{std::move(vec)};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      EXPECT_EQ(vec.get_allocator(), nullptr);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 10);
    }
@@ -315,28 +248,24 @@ TEST_F(tiny_dynamic_array_test, ctor_move)
 TEST_F(tiny_dynamic_array_test, copy_assignment_operator)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec2 = vec;
+      core::tiny_dynamic_array<copyable, 0> vec2 = vec;
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 2);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
    }
 }
@@ -344,90 +273,52 @@ TEST_F(tiny_dynamic_array_test, copy_assignment_operator)
 TEST_F(tiny_dynamic_array_test, move_assignment_operator)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
       decltype(vec) vec2 = std::move(vec);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      EXPECT_EQ(vec.get_allocator(), nullptr);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
-   }
-   {
-      core::tiny_dynamic_array<int, 10, core::pool_allocator> vec{10, 5, &pool_allocator};
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
-      EXPECT_EQ(vec.size(), 10);
-      EXPECT_EQ(vec.capacity(), 10);
-
-      for (auto& val : vec)
-      {
-         EXPECT_EQ(val, 5);
-      }
-
-      decltype(vec) vec2 = std::move(vec);
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
-      EXPECT_EQ(vec2.size(), 10);
-      EXPECT_EQ(vec2.capacity(), 10);
-
-      for (auto& val : vec2)
-      {
-         EXPECT_EQ(val, 5);
-      }
-
-      EXPECT_EQ(vec.get_allocator(), nullptr);
-      EXPECT_EQ(vec.size(), 0);
-      EXPECT_EQ(vec.capacity(), 10);
    }
 }
 
 TEST_F(tiny_dynamic_array_test, equality_operator)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec2 = vec;
+      core::tiny_dynamic_array<copyable, 0> vec2 = vec;
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 2);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
       if (vec != vec2)
@@ -436,31 +327,26 @@ TEST_F(tiny_dynamic_array_test, equality_operator)
       }
    }
    {
-      core::tiny_dynamic_array<int, 10, core::pool_allocator> vec{10, 5, &pool_allocator};
+      core::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
 
       for (auto& val : vec)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
       decltype(vec) vec2 = std::move(vec);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec2.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
 
       for (auto& val : vec2)
       {
-         EXPECT_EQ(val, 5);
+         EXPECT_EQ(val.i, 5);
       }
 
-      EXPECT_EQ(vec.get_allocator(), nullptr);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 10);
 
@@ -474,16 +360,13 @@ TEST_F(tiny_dynamic_array_test, equality_operator)
 TEST_F(tiny_dynamic_array_test, assign_n_values)
 {
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), copyable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, 1);
@@ -491,7 +374,6 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
 
       auto it_two = vec.insert(vec.cend(), copyable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, 2);
@@ -499,7 +381,6 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
 
       vec.assign(4, copyable{0});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 5);
 
@@ -509,16 +390,13 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       vec.assign(2, copyable{0});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
 
@@ -532,16 +410,13 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
 TEST_F(tiny_dynamic_array_test, assign_range)
 {
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), copyable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, 1);
@@ -549,7 +424,6 @@ TEST_F(tiny_dynamic_array_test, assign_range)
 
       auto it_two = vec.insert(vec.cend(), copyable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, 2);
@@ -557,7 +431,6 @@ TEST_F(tiny_dynamic_array_test, assign_range)
 
       vec.assign(4, copyable{0});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 5);
 
@@ -566,11 +439,10 @@ TEST_F(tiny_dynamic_array_test, assign_range)
          EXPECT_EQ(val.i, 0);
       }
 
-      core::tiny_dynamic_array<copyable, 10, core::pool_allocator> vec2{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 10> vec2{};
 
       vec2.assign(vec.begin(), vec.end());
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec2.size(), 4);
       EXPECT_EQ(vec2.capacity(), 10);
 
@@ -584,16 +456,13 @@ TEST_F(tiny_dynamic_array_test, assign_range)
 TEST_F(tiny_dynamic_array_test, assign_initializer_list)
 {
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       vec.assign({copyable{0}, copyable{1}});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
 
@@ -602,7 +471,6 @@ TEST_F(tiny_dynamic_array_test, assign_initializer_list)
 
       vec.assign({copyable{3}, copyable{2}, copyable{1}});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 5);
 
@@ -615,16 +483,13 @@ TEST_F(tiny_dynamic_array_test, assign_initializer_list)
 TEST_F(tiny_dynamic_array_test, clear)
 {
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), copyable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, 1);
@@ -632,7 +497,6 @@ TEST_F(tiny_dynamic_array_test, clear)
 
       auto it_two = vec.insert(vec.cend(), copyable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, 2);
@@ -640,7 +504,6 @@ TEST_F(tiny_dynamic_array_test, clear)
 
       auto it_three = vec.insert(vec.cend() - 1, copyable{3});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_three->i, 3);
@@ -648,7 +511,6 @@ TEST_F(tiny_dynamic_array_test, clear)
 
       auto it_four = vec.insert(vec.cbegin(), copyable{4});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_four->i, 4);
@@ -671,9 +533,8 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
    {
       int one = 1;
       int two = 2;
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -708,11 +569,7 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
    }
-
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
 
    {
       copyable one{1};
@@ -720,16 +577,13 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), one);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, one.i);
@@ -737,7 +591,6 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
 
       auto it_two = vec.insert(vec.cend(), two);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, two.i);
@@ -745,7 +598,6 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
 
       auto it_three = vec.insert(vec.cend() - 1, three);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_three->i, three.i);
@@ -753,7 +605,6 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
 
       auto it_four = vec.insert(vec.cbegin(), four);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_four->i, four.i);
@@ -764,16 +615,13 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
       EXPECT_EQ(vec[2].i, three.i);
       EXPECT_EQ(vec[3].i, two.i);
    }
-
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
 }
 
 TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -808,23 +656,16 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
    }
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
-
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), copyable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, 1);
@@ -832,7 +673,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_two = vec.insert(vec.cend(), copyable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, 2);
@@ -840,7 +680,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_three = vec.insert(vec.cend() - 1, copyable{3});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_three->i, 3);
@@ -848,7 +687,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_four = vec.insert(vec.cbegin(), copyable{4});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 5);
       EXPECT_EQ(it_four->i, 4);
@@ -860,19 +698,14 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
       EXPECT_EQ(vec[3].i, 2);
    }
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
-
    {
-      core::tiny_dynamic_array<moveable, 4, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<moveable, 4> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 4);
 
       auto it_one = vec.insert(vec.cbegin(), moveable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 4);
       EXPECT_EQ(it_one->i, 1);
@@ -880,7 +713,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_two = vec.insert(vec.cend(), moveable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 4);
       EXPECT_EQ(it_two->i, 2);
@@ -888,7 +720,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_three = vec.insert(vec.cend() - 1, moveable{3});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 4);
       EXPECT_EQ(it_three->i, 3);
@@ -896,7 +727,6 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 
       auto it_four = vec.insert(vec.cbegin(), moveable{4});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 4);
       EXPECT_EQ(vec.capacity(), 4);
       EXPECT_EQ(it_four->i, 4);
@@ -907,23 +737,18 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
       EXPECT_EQ(vec[2].i, 3);
       EXPECT_EQ(vec[3].i, 2);
    }
-
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
 }
 
 TEST_F(tiny_dynamic_array_test, insert_n_values)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
       auto it_one = vec.insert(vec.cbegin(), 1);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 1);
       EXPECT_EQ(*it_one, 1);
@@ -931,7 +756,6 @@ TEST_F(tiny_dynamic_array_test, insert_n_values)
 
       auto it_two = vec.insert(vec.cend(), 2, 2);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 3);
       EXPECT_EQ(*it_two, 2);
@@ -942,7 +766,6 @@ TEST_F(tiny_dynamic_array_test, insert_n_values)
 
       auto it_three = vec.insert(vec.cbegin(), 4, 3);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 7);
       EXPECT_EQ(vec.capacity(), 7);
       EXPECT_EQ(*it_three, 3);
@@ -956,16 +779,13 @@ TEST_F(tiny_dynamic_array_test, insert_n_values)
 
 TEST_F(tiny_dynamic_array_test, insert_range)
 {
-   core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+   core::tiny_dynamic_array<int, 0> vec{};
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
-   EXPECT_EQ(vec.get_allocator(), &pool_allocator);
    EXPECT_EQ(vec.size(), 0);
    EXPECT_EQ(vec.capacity(), 0);
 
    auto it_one = vec.insert(vec.cbegin(), 1);
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 1);
    EXPECT_EQ(vec.size(), 1);
    EXPECT_EQ(vec.capacity(), 1);
    EXPECT_EQ(*it_one, 1);
@@ -973,7 +793,6 @@ TEST_F(tiny_dynamic_array_test, insert_range)
 
    auto it_two = vec.insert(vec.cend(), 2, 2);
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 1);
    EXPECT_EQ(vec.size(), 3);
    EXPECT_EQ(vec.capacity(), 3);
    EXPECT_EQ(*it_two, 2);
@@ -984,7 +803,6 @@ TEST_F(tiny_dynamic_array_test, insert_range)
 
    auto it_three = vec.insert(vec.cbegin(), 4, 3);
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 1);
    EXPECT_EQ(vec.size(), 7);
    EXPECT_EQ(vec.capacity(), 7);
    EXPECT_EQ(*it_three, 3);
@@ -995,16 +813,13 @@ TEST_F(tiny_dynamic_array_test, insert_range)
    }
 
    {
-      core::tiny_dynamic_array<int, 2, core::pool_allocator> vec_range{&pool_allocator};
+      core::tiny_dynamic_array<int, 2> vec_range{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec_range.size(), 0);
       EXPECT_EQ(vec_range.capacity(), 2);
 
       vec_range.insert(vec_range.cbegin(), vec.begin(), vec.begin() + 1);
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec_range.size(), 1);
       EXPECT_EQ(vec_range.capacity(), 2);
 
@@ -1014,16 +829,13 @@ TEST_F(tiny_dynamic_array_test, insert_range)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec_range{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec_range{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec_range.size(), 0);
       EXPECT_EQ(vec_range.capacity(), 0);
 
       vec_range.insert(vec_range.cbegin(), vec.begin(), vec.end());
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 2);
       EXPECT_EQ(vec_range.size(), 7);
       EXPECT_EQ(vec_range.capacity(), 7);
 
@@ -1037,16 +849,13 @@ TEST_F(tiny_dynamic_array_test, insert_range)
 TEST_F(tiny_dynamic_array_test, insert_initializer_list)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
       vec.insert(vec.cbegin(), {1, 2, 3});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 3);
 
@@ -1076,16 +885,13 @@ TEST_F(tiny_dynamic_array_test, insert_initializer_list)
    }
 
    {
-      core::tiny_dynamic_array<copyable, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
       vec.insert(vec.cbegin(), {copyable{1}, copyable{2}, copyable{3}});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 3);
 
@@ -1099,9 +905,8 @@ TEST_F(tiny_dynamic_array_test, insert_initializer_list)
 TEST_F(tiny_dynamic_array_test, emplace)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1136,16 +941,11 @@ TEST_F(tiny_dynamic_array_test, emplace)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
    }
 
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
-
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
@@ -1172,26 +972,21 @@ TEST_F(tiny_dynamic_array_test, emplace)
 
       for (int i = 2; auto& val : vec)
       {
-         EXPECT_EQ(val, i);
+         EXPECT_EQ(val.i, i);
 
          if (i != 1)
          {
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
    }
-
-   EXPECT_EQ(pool_allocator.allocation_count(), 0);
 }
 
 TEST_F(tiny_dynamic_array_test, erase)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1256,9 +1051,8 @@ TEST_F(tiny_dynamic_array_test, erase)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1306,9 +1100,8 @@ TEST_F(tiny_dynamic_array_test, erase)
 TEST_F(tiny_dynamic_array_test, erase_range)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1353,9 +1146,8 @@ TEST_F(tiny_dynamic_array_test, erase_range)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1403,9 +1195,8 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       int three = 3;
       int four = 4;
 
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1444,9 +1235,8 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1485,9 +1275,8 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
@@ -1525,9 +1314,8 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
 TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1561,9 +1349,8 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<moveable, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1597,9 +1384,8 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 4, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<moveable, 4> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 4);
 
@@ -1633,9 +1419,8 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<moveable, 2> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
@@ -1673,9 +1458,8 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
 TEST_F(tiny_dynamic_array_test, emplace_back)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1709,9 +1493,8 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<int*, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int*, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1745,9 +1528,8 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 3, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 3> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 3);
 
@@ -1781,9 +1563,8 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<moveable, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1821,9 +1602,8 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
 TEST_F(tiny_dynamic_array_test, pop_back)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1877,16 +1657,13 @@ TEST_F(tiny_dynamic_array_test, pop_back)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 2, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<copyable, 2> vec{};
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
 
       auto it_one = vec.insert(vec.cbegin(), copyable{1});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_one->i, 1);
@@ -1894,7 +1671,6 @@ TEST_F(tiny_dynamic_array_test, pop_back)
 
       auto it_two = vec.insert(vec.cend(), copyable{2});
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 2);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(it_two->i, 2);
@@ -1902,14 +1678,12 @@ TEST_F(tiny_dynamic_array_test, pop_back)
 
       vec.pop_back();
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 1);
       EXPECT_EQ(vec.capacity(), 2);
       EXPECT_EQ(vec.begin()->i, 1);
 
       vec.pop_back();
 
-      EXPECT_EQ(pool_allocator.allocation_count(), 0);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
    }
@@ -1918,9 +1692,8 @@ TEST_F(tiny_dynamic_array_test, pop_back)
 TEST_F(tiny_dynamic_array_test, resize)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -1955,8 +1728,6 @@ TEST_F(tiny_dynamic_array_test, resize)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
 
       vec.resize(2);
 
@@ -1966,9 +1737,8 @@ TEST_F(tiny_dynamic_array_test, resize)
       EXPECT_EQ(vec[1], 1);
    }
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -2003,8 +1773,6 @@ TEST_F(tiny_dynamic_array_test, resize)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
 
       vec.resize(6);
 
@@ -2023,9 +1791,8 @@ TEST_F(tiny_dynamic_array_test, resize)
 TEST_F(tiny_dynamic_array_test, resize_value)
 {
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -2060,8 +1827,6 @@ TEST_F(tiny_dynamic_array_test, resize_value)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
 
       vec.resize(2, 0);
 
@@ -2071,9 +1836,8 @@ TEST_F(tiny_dynamic_array_test, resize_value)
       EXPECT_EQ(vec[1], 1);
    }
    {
-      core::tiny_dynamic_array<int, 0, core::pool_allocator> vec{&pool_allocator};
+      core::tiny_dynamic_array<int, 0> vec{};
 
-      EXPECT_EQ(vec.get_allocator(), &pool_allocator);
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
 
@@ -2108,8 +1872,6 @@ TEST_F(tiny_dynamic_array_test, resize_value)
             --i;
          }
       }
-
-      EXPECT_EQ(pool_allocator.allocation_count(), 1);
 
       vec.resize(6, 10);
 

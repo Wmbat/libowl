@@ -1,28 +1,48 @@
 #include <epona_core/containers/flat_map.hpp>
-#include <epona_core/memory/pool_allocator.hpp>
 
 #include <gtest/gtest.h>
 #include <string>
 
+struct copyable
+{
+   copyable() = default;
+   explicit copyable(int i) : i(i) {}
+
+   bool operator==(copyable const& other) const = default;
+
+   int i = 0;
+};
+
+struct moveable
+{
+   moveable() = default;
+   explicit moveable(int i) : i(i) {}
+   moveable(moveable const& other) = delete;
+   moveable(moveable&& other) { i = std::move(other.i); }
+
+   moveable& operator=(moveable const& other) = delete;
+   moveable& operator=(moveable&& other)
+   {
+      i = std::move(other.i);
+      return *this;
+   }
+
+   int i = 0;
+};
+
 struct tiny_flat_avl_map_test : public testing::Test
 {
-   tiny_flat_avl_map_test() :
-      pool_allocator({.pool_count = 2, .pool_size = 2048}),
-      secondary_allocator({.pool_count = 2, .pool_size = 2048})
-   {}
-
-   core::pool_allocator pool_allocator;
-   core::pool_allocator secondary_allocator;
+   tiny_flat_avl_map_test() = default;
 };
 
 TEST_F(tiny_flat_avl_map_test, default_ctor)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 }
 
 TEST_F(tiny_flat_avl_map_test, clear)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -60,7 +80,7 @@ TEST_F(tiny_flat_avl_map_test, clear)
 
 TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -94,7 +114,7 @@ TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
 
 TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -128,7 +148,7 @@ TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
 
 TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    {
       EXPECT_EQ(map.size(), 0);
@@ -161,24 +181,73 @@ TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
       EXPECT_EQ(map.size(), 2);
    }
 
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map_2(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map_2{};
 
    map_2.insert(map.cbegin(), map.cend());
 }
 
 TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
 {
-   FAIL();
+   core::tiny_flat_map<int, copyable, 2> map{};
+
+   EXPECT_EQ(map.size(), 0);
+   EXPECT_EQ(map.capacity(), 2);
+
+   map.insert({
+      std::make_pair(3, copyable(3)),
+      std::make_pair(1, copyable(1)),
+      std::make_pair(2, copyable(2)),
+   });
+
+   EXPECT_EQ(map.size(), 3);
+   EXPECT_EQ(map.capacity(), 5);
+
+   for (int i = 0; const auto& [key, val] : map)
+   {
+      EXPECT_EQ(key, ++i);
+      EXPECT_EQ(val.i, i);
+   }
 }
 
 TEST_F(tiny_flat_avl_map_test, emplace)
 {
-   FAIL();
+   core::tiny_flat_map<int, std::string, 8> map{};
+
+   EXPECT_EQ(map.size(), 0);
+   EXPECT_EQ(map.capacity(), 8);
+
+   map.insert({
+      std::make_pair(4, "fourth"),
+      std::make_pair(1, "first"),
+      std::make_pair(2, "second"),
+   });
+
+   EXPECT_EQ(map.size(), 3);
+   EXPECT_EQ(map.capacity(), 8);
+
+   {
+      auto [it, res] = map.emplace(3, "third");
+
+      EXPECT_EQ(it->first, 3);
+      EXPECT_EQ(it->second, "third");
+      EXPECT_EQ(res, true);
+   }
+
+   {
+      auto [it, res] = map.emplace(3, "fourth");
+
+      EXPECT_EQ(it->first, 3);
+      EXPECT_EQ(it->second, "third");
+      EXPECT_EQ(res, false);
+   }
+
+   EXPECT_EQ(map.size(), 4);
+   EXPECT_EQ(map.capacity(), 8);
 }
 
 TEST_F(tiny_flat_avl_map_test, try_emplace)
 {
-   core::tiny_flat_map<int, std::string, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, std::string, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -213,17 +282,69 @@ TEST_F(tiny_flat_avl_map_test, try_emplace)
 
 TEST_F(tiny_flat_avl_map_test, erase)
 {
-   FAIL();
+   core::tiny_flat_map<int, copyable, 2> map{};
+
+   EXPECT_EQ(map.size(), 0);
+   EXPECT_EQ(map.capacity(), 2);
+
+   map.insert({
+      std::make_pair(3, copyable(3)),
+      std::make_pair(1, copyable(1)),
+      std::make_pair(2, copyable(2)),
+   });
+
+   EXPECT_EQ(map.size(), 3);
+   EXPECT_EQ(map.capacity(), 5);
+
+   for (int i = 0; const auto& [key, val] : map)
+   {
+      EXPECT_EQ(key, ++i);
+      EXPECT_EQ(val.i, i);
+   }
+
+   {
+      auto it = map.erase(map.cbegin());
+
+      EXPECT_EQ(map.size(), 2);
+      EXPECT_EQ(it->first, 2);
+      EXPECT_EQ(it->second.i, 2);
+   }
+   {
+      auto it = map.erase(map.cend() - 1);
+
+      EXPECT_EQ(map.size(), 1);
+      EXPECT_EQ(map.end(), it);
+   }
 }
 
 TEST_F(tiny_flat_avl_map_test, erase_iterator_range)
 {
-   FAIL();
+   core::tiny_flat_map<int, copyable, 2> map{};
+
+   EXPECT_EQ(map.size(), 0);
+   EXPECT_EQ(map.capacity(), 2);
+
+   map.insert({std::make_pair(3, copyable(3)), std::make_pair(1, copyable(1)),
+      std::make_pair(2, copyable(2)), std::make_pair(7, copyable(7)),
+      std::make_pair(5, copyable(5))});
+
+   EXPECT_EQ(map.size(), 5);
+   EXPECT_EQ(map.capacity(), 5);
+
+   map.erase(map.cbegin(), map.cbegin() + 2);
+
+   EXPECT_EQ(map.size(), 3);
+   EXPECT_EQ(map.capacity(), 5);
+
+   map.erase(map.cbegin(), map.cend());
+
+   EXPECT_EQ(map.size(), 0);
+   EXPECT_EQ(map.capacity(), 5);
 }
 
 TEST_F(tiny_flat_avl_map_test, count)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -260,7 +381,7 @@ TEST_F(tiny_flat_avl_map_test, count)
 
 TEST_F(tiny_flat_avl_map_test, find)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -307,7 +428,7 @@ TEST_F(tiny_flat_avl_map_test, find)
 
 TEST_F(tiny_flat_avl_map_test, find_const)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -350,7 +471,7 @@ TEST_F(tiny_flat_avl_map_test, find_const)
 
 TEST_F(tiny_flat_avl_map_test, contains)
 {
-   core::tiny_flat_map<int, int, 16, core::pool_allocator> map(&pool_allocator);
+   core::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
