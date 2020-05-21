@@ -22,22 +22,34 @@
  * SOFTWARE.
  */
 
-/**
- * @mainpage Test main page
- */
+#pragma once
 
-#include <epona_core/details/logger.hpp>
-#include <epona_core/memory/pool_allocator.hpp>
-#include <epona_core/render_manager.hpp>
+#include <compare>
+#include <concepts>
 
-#include <map>
-
-int main()
+namespace core
 {
-   auto main_logger = core::logger("main_logger");
-
-   auto render_manager = core::render_manager(&main_logger);
-   render_manager.setup_runtime();
-
-   return 0;
-}
+   template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
+   constexpr auto synth_three_way( lhs_ const& lhs, rhs_ const& rhs )
+   {
+      if constexpr ( std::three_way_comparable_with<lhs_, rhs_> )
+      {
+         return lhs <=> rhs;
+      }
+      else
+      {
+         if ( lhs == rhs )
+         {
+            return std::strong_ordering::equal;
+         }
+         else if ( lhs < rhs )
+         {
+            return std::strong_ordering::less;
+         }
+         else
+         {
+            return std::strong_ordering::greater;
+         }
+      }
+   }
+} // namespace ESL

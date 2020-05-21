@@ -24,9 +24,8 @@
 
 #pragma once
 
-#include <epona_core/gui/widget.hpp>
-
-#include <epona_core/vk/core.hpp>
+#include "epona_core/gui/widget.hpp"
+#include "epona_core/vk/core.hpp"
 
 #include <functional>
 #include <memory>

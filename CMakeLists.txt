@@ -6,8 +6,8 @@ project( epona
    LANGUAGES CXX 
 )
 
-option( BUILD_TESTS "Build unit tests" OFF )
-option( BUILD_BENCH "Build benchmarks" OFF )
+option( BUILD_TESTS "Build unit tests" ON )
+option( BUILD_BENCH "Build benchmarks" ON )
 
 if ( NOT CMAKE_BUILD_TYPE )
    set( CMAKE_BUILD_TYPE Release )
@@ -15,15 +15,11 @@ endif( )
 
 message( STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}" )
 
-set( EPONA_LIBRARY_STATIC ON CACHE BOOL "" FORCE )
+set( EPONA_CORE_STATIC ON CACHE BOOL "" FORCE )
 
 if ( BUILD_TESTS )
-    set( EPONA_LIBRARY_BUILD_TESTS ON CACHE BOOL "" FORCE )
+   set( EPONA_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE )
 endif ( )
-
-if ( BUILD_BENCH )
-    set( EPONA_LIBRARY_BUILD_BENCH ON CACHE BOOL "" FORCE )
-endif( )
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
 
@@ -40,7 +36,6 @@ message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}" )
 
 include( CMakeLists.txt.in )
 
-add_subdirectory( epona_library )
 add_subdirectory( epona_core )
 
 add_executable( ${PROJECT_NAME} )

@@ -28,9 +28,16 @@ message( STATUS "[${PROJECT_NAME}] Fetching Vulkan-Headers 1.2.135" )
 
 FetchContent_Declare( volk
     GIT_REPOSITORY https://github.com/zeux/volk
-    GIT_TAG master
+    GIT_TAG 486f7a86ffdf4444f36aeb53afc50d6b68a5c5a0
 )
 
-message( STATUS "[${PROJECT_NAME}] Fetching volk master" )
+message( STATUS "[${PROJECT_NAME}] Fetching volk 1.1.135" )
 
-FetchContent_MakeAvailable( glfw glslang SPIRV-cross Vulkan-Headers volk )
+FetchContent_Declare( spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog
+    GIT_TAG v1.5.0
+)
+
+message( STATUS "[${PROJECT_NAME}] Fetching spdlog 1.5.0" )
+
+FetchContent_MakeAvailable( glfw glslang SPIRV-cross Vulkan-Headers volk spdlog )

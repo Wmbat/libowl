@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include <epona_core/vk/vma/vk_mem_alloc.h>
-
 #include <volk.h>
 
 #include <GLFW/glfw3.h>

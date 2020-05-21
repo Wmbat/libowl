@@ -7,21 +7,21 @@
 
 #pragma once
 
-#include <epona_core/gui/window.hpp>
-#include <epona_core/vk/runtime.hpp>
-#include <epona_library/utils/logger.hpp>
+#include "epona_core/details/logger.hpp"
+#include "epona_core/gui/window.hpp"
+#include "epona_core/vk/runtime.hpp"
 
 namespace core
 {
    class render_manager
    {
    public:
-      render_manager( ESL::logger* p_logger );
+      render_manager(logger* p_logger);
 
-      void setup_runtime( );
+      void setup_runtime();
 
    private:
-      ESL::logger* p_logger;
+      logger* p_logger;
 
       vk::runtime vk_runtime;
 
