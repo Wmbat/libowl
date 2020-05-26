@@ -9,6 +9,9 @@
 
 #include "epona_core/details/logger.hpp"
 #include "epona_core/gui/window.hpp"
+#include "epona_core/vk/core.hpp"
+#include "epona_core/vk/instance.hpp"
+#include "epona_core/vk/result.hpp"
 #include "epona_core/vk/runtime.hpp"
 
 namespace core
@@ -18,13 +21,12 @@ namespace core
    public:
       render_manager(logger* p_logger);
 
-      void setup_runtime();
-
    private:
       logger* p_logger;
 
       vk::runtime vk_runtime;
+      vk::instance vk_instance;
 
-      inline static bool IS_GLFW_INIT = false;
+      std::string engine_name = "Epona";
    };
 } // namespace core

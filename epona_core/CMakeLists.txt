@@ -128,6 +128,7 @@ target_sources( ${PROJECT_NAME}
       source/epona_core/details/logger.cpp
 
       source/epona_core/vk/runtime.cpp
+      source/epona_core/vk/instance.cpp
       source/epona_core/vk/defines.cpp
 
       source/epona_core/render_manager.cpp

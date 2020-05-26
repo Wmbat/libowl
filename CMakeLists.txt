@@ -34,8 +34,6 @@ set( GNU_RELEASE_FLAGS -o3 )
 message( STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}" )
 message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}" )
 
-include( CMakeLists.txt.in )
-
 add_subdirectory( epona_core )
 
 add_executable( ${PROJECT_NAME} )
@@ -57,7 +55,6 @@ target_compile_options( ${PROJECT_NAME}
 
 target_link_libraries( ${PROJECT_NAME}
    PUBLIC
-      glm
       epona_core
 )
 

@@ -35,9 +35,7 @@
 int main()
 {
    auto main_logger = core::logger("main_logger");
-
    auto render_manager = core::render_manager(&main_logger);
-   render_manager.setup_runtime();
 
    return 0;
 }

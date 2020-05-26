@@ -1076,7 +1076,7 @@ namespace core
                grow(count);
             }
 
-            for (int i = super::size(); i < count; ++i)
+            for (size_type i = super::size(); i < count; ++i)
             {
                new (static_cast<void*>(static_cast<pointer>(super::p_begin) + i)) value_type();
             }
