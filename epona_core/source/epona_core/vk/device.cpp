@@ -1,4 +1,8 @@
 #include "epona_core/vk/device.hpp"
+#include "epona_core/containers/dynamic_array.hpp"
+#include "epona_core/details/logger.hpp"
+
+#include <ranges>
 
 namespace core::vk
 {
@@ -27,7 +31,7 @@ namespace core::vk
 
       struct queue_error_category : std::error_category
       {
-         const char* name() const noexcept override { return "vk_physical_device"; }
+         const char* name() const noexcept override { return "vk_device"; }
          std::string message(int err) const override
          {
             return to_string(static_cast<queue::error>(err));
@@ -40,9 +44,21 @@ namespace core::vk
       {
          return {static_cast<int>(err), queue_err_cat};
       }
+
+      struct device_error_category : std::error_category
+      {
+         const char* name() const noexcept override { return "vk_device"; }
+         std::string message(int err) const override
+         {
+            return device::to_string(static_cast<device::error>(err));
+         }
+      };
+
+      const device_error_category device_err_cat;
    } // namespace details
 
    device::device(device&& other) noexcept { *this = std::move(other); }
+
    device::~device()
    {
       if (vk_device != VK_NULL_HANDLE)
@@ -194,14 +210,133 @@ namespace core::vk
       return out_queue;
    }
 
-   device_builder::device_builder(physical_device&& phys_device)
+   std::string device::to_string(error err)
+   {
+      switch (err)
+      {
+         case error::failed_create_device:
+            return "failed_create_device";
+         default:
+            return "UNKNOWN";
+      }
+   }
+
+   std::error_code device::make_error_code(error err)
+   {
+      return {static_cast<int>(err), details::device_err_cat};
+   }
+
+   device_builder::device_builder(physical_device&& phys_device, logger* p_logger) :
+      p_logger{p_logger}
    {
       info.phys_device = std::move(phys_device);
    }
 
-   /*
-   details::result<device> device_builder::build() {}
-   */
+   details::result<device> device_builder::build()
+   {
+      dynamic_array<queue::description> descriptions;
+      descriptions.insert(descriptions.cend(), info.queue_descriptions);
+
+      if (descriptions.empty())
+      {
+         for (uint32_t i = 0; i < info.phys_device.queue_families.size(); ++i)
+         {
+            // clang-format off
+            descriptions.push_back(
+               {
+                  .index = i, 
+                  .count = 1, 
+                  .priorities = dynamic_array<float>{1.0f}
+               }
+            );
+            // clang-format on
+         }
+      }
+
+      dynamic_array<VkDeviceQueueCreateInfo> queue_create_infos;
+      queue_create_infos.reserve(descriptions.size());
+      for (const auto& desc : descriptions)
+      {
+         // clang-format off
+         queue_create_infos.push_back(
+            {
+               .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+               .pNext = nullptr,
+               .flags = {},
+               .queueFamilyIndex = desc.index,
+               .queueCount = desc.count,
+               .pQueuePriorities = desc.priorities.data()
+            }
+         );
+         // clang-format on   
+      }
+
+      tiny_dynamic_array<const char*, 4> extensions{info.desired_extensions};
+      if(info.phys_device.vk_surface != VK_NULL_HANDLE)
+      {
+         extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+      } 
+
+      VkPhysicalDevice vk_gpu = info.phys_device.vk_physical_device;
+
+      uint32_t device_ext_count =0;
+      vkEnumerateDeviceExtensionProperties(vk_gpu, nullptr, &device_ext_count, nullptr);
+      dynamic_array<VkExtensionProperties> ext_properties(device_ext_count);
+      vkEnumerateDeviceExtensionProperties(vk_gpu, nullptr, &device_ext_count, ext_properties.data());
+
+      for (const auto& desired : extensions)
+      {
+         bool is_present = false;
+         for (const auto& available : ext_properties)
+         {
+            if (strcmp(desired, available.extensionName) == 0)
+            {
+               is_present = true;
+            }
+         }
+
+         if (!is_present)
+         {
+            return device::make_error_code(device::error::device_extension_not_supported);
+         }
+      }
+
+      // clang-format off
+      std::ranges::for_each(extensions, [&](const char* ext_name){
+         LOG_INFO_P(p_logger, "Device extension: {1} - ENABLED", ext_name);
+      });
+
+      const VkDeviceCreateInfo device_create_info
+      {
+         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+         .pNext = nullptr,
+         .flags = {},
+         .queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
+         .pQueueCreateInfos = queue_create_infos.data(),
+         .enabledLayerCount = 0,
+         .ppEnabledLayerNames = nullptr,
+         .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+         .ppEnabledExtensionNames = extensions.data(),
+         .pEnabledFeatures = &info.phys_device.features
+      };
+      // clang-format on
+
+      VkDevice vk_device = VK_NULL_HANDLE;
+      const VkResult res = vkCreateDevice(vk_gpu, &device_create_info, nullptr, &vk_device);
+      if (res != VK_SUCCESS)
+      {
+         return {device::make_error_code(device::error::failed_create_device), res};
+      }
+
+      volkLoadDevice(vk_device);
+
+      vk::device device = {};
+      device.vk_device = vk_device;
+      device.phys_device = std::move(info.phys_device);
+      device.extensions = extensions;
+
+      return details::result(std::move(device));
+   }
 
    device_builder& device_builder::set_queue_setup(
       const dynamic_array<queue::description>& descriptions)

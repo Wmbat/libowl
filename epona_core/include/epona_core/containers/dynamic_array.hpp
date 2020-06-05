@@ -438,6 +438,8 @@ namespace core
          std::uninitialized_copy(first, last, begin());
       }
 
+      void assign(const std::ranges::range auto& r) { assign(r.begin(), r.end()); }
+
       /**
        * @brief Replaces the contents of the container with the elements from the <a
        * href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a>
@@ -784,7 +786,7 @@ namespace core
       iterator insert(const_iterator pos, it_ first, it_ last) requires std::copyable<value_type>
       {
          size_type start_index = pos - cbegin();
-         size_type count = std::distance(first, last);
+         difference_type count = std::distance(first, last);
 
          if (pos == cend())
          {
@@ -806,7 +808,6 @@ namespace core
          reserve(super::size() + count);
 
          iterator updated_pos = begin() + start_index;
-
          if (iterator old_end = end(); end() - updated_pos >= count)
          {
             std::uninitialized_move(end() - count, end(), end());
@@ -835,6 +836,11 @@ namespace core
          }
 
          return updated_pos;
+      }
+
+      iterator insert(const_iterator pos, const std::ranges::range auto& r)
+      {
+         return insert(pos, r.begin(), r.end());
       }
 
       iterator insert(const_iterator pos,
@@ -1236,6 +1242,7 @@ namespace core
       {
          assign(first, last);
       }
+      tiny_dynamic_array(const std::ranges::range auto& r) : impl(buff_sz) { assign(r); }
       tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type> :
          impl(buff_sz)
       {
@@ -1287,6 +1294,7 @@ namespace core
       {
          impl.assign(first, last);
       }
+      void assign(const std::ranges::range auto& r) { impl.assign(r); }
 
       reference at(size_type pos) { return impl.at(pos); }
       const_reference at(size_type pos) const { return impl.at(pos); }
@@ -1340,6 +1348,11 @@ namespace core
       {
          return impl.insert(pos, first, last);
       }
+      iterator insert(const_iterator pos, const std::ranges::range auto& r)
+      {
+         return impl.insert(pos, r);
+      }
+
       iterator insert(const_iterator pos, std::initializer_list<value_type> init)
       {
          return impl.insert(pos, init);

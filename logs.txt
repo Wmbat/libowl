@@ -1,6 +1,0 @@
-[23:06:01.171671] [main_logger] [info] [initialize] Volk initialized
-[23:06:01.180363] [main_logger] [info] [initialize] glfw initialized
-[23:06:01.359877] [main_logger] [info] [operator()] Instance extension: VK_EXT_debug_utils - ENABLED
-[23:06:01.359909] [main_logger] [info] [operator()] Instance extension: VK_KHR_surface - ENABLED
-[23:06:01.359916] [main_logger] [info] [operator()] Instance extension: VK_KHR_xcb_surface - ENABLED
-[23:06:01.359924] [main_logger] [info] [operator()] Instance layers: VK_LAYER_KHRONOS_validation - ENABLED

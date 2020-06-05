@@ -38,6 +38,13 @@ namespace core::vk
    struct device
    {
    public:
+      enum class error
+      {
+         device_extension_not_supported,
+         failed_create_device
+      };
+
+   public:
       device() = default;
       device(const device& other) = delete;
       device(device&& other) noexcept;
@@ -52,29 +59,39 @@ namespace core::vk
       details::result<VkQueue> get_queue(queue::type type) const;
       details::result<VkQueue> get_dedicated_queue(queue::type type) const;
 
+      static std::string to_string(error err);
+      static std::error_code make_error_code(error err);
+
    private:
       VkQueue get_queue(uint32_t family) const noexcept;
 
    public:
       VkDevice vk_device{VK_NULL_HANDLE};
       physical_device phys_device;
+
+      dynamic_array<const char*> extensions;
    };
 
    class device_builder
    {
    public:
-      device_builder(physical_device&& phys_device);
+      device_builder(physical_device&& phys_device, logger* p_logger = nullptr);
 
       details::result<device> build();
 
       device_builder& set_queue_setup(const dynamic_array<queue::description>& descriptions);
+      device_builder& add_desired_extension(const std::string& extension_name);
 
    private:
+      logger* p_logger;
+
       struct info
       {
          physical_device phys_device;
 
          dynamic_array<queue::description> queue_descriptions;
+
+         dynamic_array<const char*> desired_extensions;
       } info;
    };
 } // namespace core::vk

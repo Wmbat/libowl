@@ -7,6 +7,7 @@
 
 #include "epona_core/render_manager.hpp"
 #include "epona_core/details/logger.hpp"
+#include "epona_core/vk/device.hpp"
 #include "epona_core/vk/instance.hpp"
 #include "epona_core/vk/physical_device.hpp"
 
@@ -51,5 +52,17 @@ namespace core
       {
          LOG_ERROR_P(p_logger, "Failed to create instance: {1}", gpu_res.error_type().message());
       }
+
+      // clang-format off
+      auto device_res = vk::device_builder{std::move(gpu_res.value()), p_logger}
+         .build();
+      // clang-format on
+
+      if (!device_res)
+      {
+         LOG_ERROR_P(p_logger, "Failed to create device: {1}", gpu_res.error_type().message());
+      }
+
+      device = std::move(device_res.value());
    }
 } // namespace core

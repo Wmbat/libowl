@@ -11,6 +11,7 @@
 #include "epona_core/gui/window.hpp"
 #include "epona_core/vk/details/includes.hpp"
 #include "epona_core/vk/details/result.hpp"
+#include "epona_core/vk/device.hpp"
 #include "epona_core/vk/instance.hpp"
 #include "epona_core/vk/runtime.hpp"
 
@@ -29,5 +30,6 @@ namespace core
 
       vk::runtime runtime;
       vk::instance instance;
+      vk::device device;
    };
 } // namespace core

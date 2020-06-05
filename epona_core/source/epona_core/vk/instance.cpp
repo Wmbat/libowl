@@ -289,28 +289,32 @@ namespace core::vk
 
       volkLoadInstance(inst.vk_instance);
 
-      // clang-format off
-      const VkDebugUtilsMessengerCreateInfoEXT debug_create_info
+      if constexpr (details::ENABLE_VALIDATION_LAYERS)
       {
-         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-         .pNext = nullptr,
-         .flags = {},
-         .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | 
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-         .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-         .pfnUserCallback = debug_callback,
-         .pUserData = static_cast<void*>(p_logger)
-      };
-      // clang-format on
-      const VkResult debug_res = vkCreateDebugUtilsMessengerEXT(
-         inst.vk_instance, &debug_create_info, nullptr, &inst.vk_debug_messenger);
-      if (debug_res != VK_SUCCESS)
-      {
-         return details::result<instance>{
-            instance::make_error_code(instance::error::failed_create_debug_utils), debug_res};
+         // clang-format off
+         const VkDebugUtilsMessengerCreateInfoEXT debug_create_info
+         {
+            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .pNext = nullptr,
+            .flags = {},
+            .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | 
+               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+            .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+            .pfnUserCallback = debug_callback,
+            .pUserData = static_cast<void*>(p_logger)
+         };
+         // clang-format on
+
+         const VkResult debug_res = vkCreateDebugUtilsMessengerEXT(
+            inst.vk_instance, &debug_create_info, nullptr, &inst.vk_debug_messenger);
+         if (debug_res != VK_SUCCESS)
+         {
+            return details::result<instance>{
+               instance::make_error_code(instance::error::failed_create_debug_utils), debug_res};
+         }
       }
 
       return details::result{std::move(inst)};

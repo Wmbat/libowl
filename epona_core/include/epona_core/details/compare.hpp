@@ -30,19 +30,19 @@
 namespace core
 {
    template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
-   constexpr auto synth_three_way( lhs_ const& lhs, rhs_ const& rhs )
+   constexpr auto synth_three_way(lhs_ const& lhs, rhs_ const& rhs)
    {
-      if constexpr ( std::three_way_comparable_with<lhs_, rhs_> )
+      if constexpr (std::three_way_comparable_with<lhs_, rhs_>)
       {
          return lhs <=> rhs;
       }
       else
       {
-         if ( lhs == rhs )
+         if (lhs == rhs)
          {
             return std::strong_ordering::equal;
          }
-         else if ( lhs < rhs )
+         else if (lhs < rhs)
          {
             return std::strong_ordering::less;
          }
@@ -52,4 +52,4 @@ namespace core
          }
       }
    }
-} // namespace ESL
+} // namespace core

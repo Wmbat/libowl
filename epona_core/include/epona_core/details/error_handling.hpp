@@ -43,4 +43,4 @@ namespace core
       abort();
 #endif
    }
-} // namespace ESL
+} // namespace core
