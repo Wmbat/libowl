@@ -25,30 +25,33 @@
 #pragma once
 
 #include "epona_core/gui/widget.hpp"
-#include "epona_core/vk/core.hpp"
+#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/vk/details/result.hpp"
 
 #include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
 
-namespace EGL
+namespace core
 {
    class window : public widget
    {
-      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void( GLFWwindow* )>>;
+      using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 
    public:
-      window( );
-      window( std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in );
+      window();
+      window(std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in);
 
-      bool is_open( );
+      bool is_open();
+
+      vk::details::result<VkSurfaceKHR> get_surface(VkInstance inst) const noexcept;
 
    private:
-      std::string title{ "EGL standard window" };
-      std::uint32_t width{ 1080u };
-      std::uint32_t height{ 720u };
+      std::string title{"EGL standard window"};
+      std::uint32_t width{1080u};
+      std::uint32_t height{720u};
 
       wnd_ptr p_wnd;
    };
-} // namespace EGL
+} // namespace core

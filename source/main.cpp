@@ -26,6 +26,7 @@
  * @mainpage Test main page
  */
 
+#include <epona_core/core.hpp>
 #include <epona_core/details/logger.hpp>
 #include <epona_core/memory/pool_allocator.hpp>
 #include <epona_core/render_manager.hpp>
@@ -34,8 +35,16 @@
 
 int main()
 {
-   auto main_logger = core::logger("main_logger");
-   auto render_manager = core::render_manager(&main_logger);
+   auto main_logger = core::logger{"main_logger"};
+
+   core::initialize(&main_logger);
+
+   auto main_window = core::window{"Engine", 1080, 720};
+   auto render_manager = core::render_manager{&main_window, &main_logger};
+
+   while (main_window.is_open())
+   {
+   }
 
    return 0;
 }

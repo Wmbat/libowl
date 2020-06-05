@@ -44,7 +44,7 @@ namespace core
       size_type true_alloc_size = 0;
       for (size_type i = 0; i < depth; ++i)
       {
-         size_type const depth_pow = std::pow(2, i);
+         size_type const depth_pow = static_cast<size_type>(std::pow(2, i));
          size_type const depth_pool_count = pool_count * depth_pow;
          size_type const depth_pool_size = pool_size / depth_pow;
 
@@ -57,7 +57,7 @@ namespace core
       p_access_headers = TO_ACCESS_HEADER_PTR(p_memory.get());
       for (size_type i = 0; i < depth; ++i)
       {
-         size_type const depth_pow = std::pow(2, i);
+         size_type const depth_pow = static_cast<size_type>(std::pow(2, i));
          size_type const depth_offset = (depth + 1) * sizeof(block_header);
          size_type const pool_offset = pool_count * pool_size * i;
 
@@ -89,7 +89,7 @@ namespace core
       size_type depth_index = 0;
       for (size_type i = 0; i < depth; ++i)
       {
-         if (pool_size / std::pow(2, i) >= size)
+         if (pool_size / static_cast<size_type>(std::pow(2, i)) >= size)
          {
             depth_index = i;
          }
@@ -141,7 +141,7 @@ namespace core
       auto* p_header = TO_BLOCK_HEADER_PTR(p_alloc);
       --p_header;
 
-      return pool_size / std::pow(2, p_header->depth_index);
+      return pool_size / static_cast<size_type>(std::pow(2, p_header->depth_index));
    }
 
    auto multipool_allocator::release() noexcept -> void
@@ -149,7 +149,7 @@ namespace core
       p_access_headers = reinterpret_cast<access_header*>(p_memory.get());
       for (size_type i = 0; i < depth; ++i)
       {
-         size_type const depth_pow = std::pow(2, i);
+         size_type const depth_pow = static_cast<size_type>(std::pow(2, i));
          size_type const depth_offset = (depth + 1) * sizeof(block_header);
          size_type const pool_offset = pool_count * pool_size * i;
 

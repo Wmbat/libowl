@@ -119,6 +119,14 @@ namespace core::vk
             return "vulkan_version_1_2_unavailable";
          case error::window_extensions_not_present:
             return "window_extensions_not_present";
+         case error::instance_extension_not_supported:
+            return "instance_extension_not_supported";
+         case error::instance_layer_not_supported:
+            return "instance_layer_not_supported";
+         case error::failed_create_instance:
+            return "failed_create_instance";
+         case error::failed_create_debug_utils:
+            return "failed_create_debug_utils";
          default:
             return "UNKNOWN";
       }
@@ -268,6 +276,9 @@ namespace core::vk
 
       instance inst{};
       inst.version = rt.api_version;
+      inst.extensions.reserve(extensions.size());
+
+      std::copy(extensions.begin(), extensions.end(), inst.extensions.begin());
 
       const VkResult inst_res = vkCreateInstance(&instance_create_info, nullptr, &inst.vk_instance);
       if (inst_res != VK_SUCCESS)

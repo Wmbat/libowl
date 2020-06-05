@@ -7,26 +7,6 @@ namespace core::vk
 {
    runtime::runtime(logger* p_logger) : p_logger(p_logger)
    {
-      if (auto result = volkInitialize(); result != VK_SUCCESS)
-      {
-         LOG_ERROR(p_logger, "Failed to initialize volk");
-
-         abort();
-         // error
-      }
-
-      LOG_INFO(p_logger, "Volk initialized");
-
-      if (auto result = glfwInit(); result != GLFW_TRUE)
-      {
-         LOG_ERROR(p_logger, "Failed to initialize glfw");
-
-         abort();
-         // error
-      }
-
-      LOG_INFO(p_logger, "glfw initialized");
-
       api_version = volkGetInstanceVersion();
 
       uint32_t layer_count = 0;

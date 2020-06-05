@@ -1,6 +1,6 @@
 #pragma once
 
-#include "epona_core/vk/core.hpp"
+#include "epona_core/vk/details/includes.hpp"
 
 #include <cassert>
 #include <system_error>

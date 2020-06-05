@@ -1,7 +1,6 @@
-[19:44:05.310334] [main_logger] [info] [runtime] Volk initialized
-[19:44:05.329073] [main_logger] [info] [runtime] glfw initialized
-[19:44:05.516050] [main_logger] [info] [operator()] Instance extension: VK_KHR_get_physical_device_properties2 - ENABLED
-[19:44:05.516085] [main_logger] [info] [operator()] Instance extension: VK_EXT_debug_utils - ENABLED
-[19:44:05.516093] [main_logger] [info] [operator()] Instance extension: VK_KHR_surface - ENABLED
-[19:44:05.516101] [main_logger] [info] [operator()] Instance extension: VK_KHR_xcb_surface - ENABLED
-[19:44:05.516109] [main_logger] [info] [operator()] Instance layers: VK_LAYER_KHRONOS_validation - ENABLED
+[23:06:01.171671] [main_logger] [info] [initialize] Volk initialized
+[23:06:01.180363] [main_logger] [info] [initialize] glfw initialized
+[23:06:01.359877] [main_logger] [info] [operator()] Instance extension: VK_EXT_debug_utils - ENABLED
+[23:06:01.359909] [main_logger] [info] [operator()] Instance extension: VK_KHR_surface - ENABLED
+[23:06:01.359916] [main_logger] [info] [operator()] Instance extension: VK_KHR_xcb_surface - ENABLED
+[23:06:01.359924] [main_logger] [info] [operator()] Instance layers: VK_LAYER_KHRONOS_validation - ENABLED

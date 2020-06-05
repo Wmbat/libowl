@@ -49,8 +49,8 @@ namespace core
          { b1 } -> std::convertible_to<bool>;
          { !b1 } -> std::convertible_to<bool>;
          { b1 && b2 } -> std::same_as<bool>;
-         { b1&& a } -> std::same_as<bool>;
-         { a&& b2 } -> std::same_as<bool>;
+         { b1 && a } -> std::same_as<bool>;
+         { a && b2 } -> std::same_as<bool>;
          { b1 || b2 } -> std::same_as<bool>;
          { b1 || a } -> std::same_as<bool>;
          { a || b2 } -> std::same_as<bool>;

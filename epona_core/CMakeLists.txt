@@ -52,6 +52,12 @@ if ( EPONA_CORE_BUILD_TESTS )
     add_subdirectory( tests )
 endif ( )
 
+add_library( ${PROJECT_NAME} STATIC )
+
+if (EPONA_CORE_STATIC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DEPONA_STATIC) 
+endif()
+
 if ( EPONA_CORE_NO_EXCEPTIONS )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_EXCEPTIONS )
 endif( )
@@ -59,8 +65,6 @@ endif( )
 if ( EPONA_CORE_NO_LOGGING )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING )
 endif( )
-
-add_library( ${PROJECT_NAME} STATIC )
 
 set_target_properties( ${PROJECT_NAME}
    PROPERTIES
@@ -84,7 +88,7 @@ target_compile_options( ${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer >
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
@@ -112,6 +116,7 @@ if ( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" )
             <algorithm> <concepts> <type_traits>
             <cassert> <compare> <cstdint> <cstddef>
             <memory> <spdlog/spdlog.h>
+
     )
 endif()
 
@@ -128,7 +133,9 @@ target_sources( ${PROJECT_NAME}
       source/epona_core/details/logger.cpp
 
       source/epona_core/vk/runtime.cpp
+      source/epona_core/vk/device.cpp
       source/epona_core/vk/instance.cpp
+      source/epona_core/vk/physical_device.cpp
       source/epona_core/vk/defines.cpp
 
       source/epona_core/render_manager.cpp

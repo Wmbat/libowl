@@ -24,7 +24,7 @@
 
 #include "epona_core/gui/widget.hpp"
 
-namespace EGL
+namespace core
 {
    widget& widget::setParent(widget* p_parent_in)
    {
@@ -34,4 +34,4 @@ namespace EGL
    }
 
    widget* widget::getParent() { return p_parent; }
-} // namespace EGL
+} // namespace core

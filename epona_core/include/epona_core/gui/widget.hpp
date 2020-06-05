@@ -26,17 +26,17 @@
 
 #include <concepts>
 
-namespace EGL
+namespace core
 {
    class widget
    {
    public:
-      widget( ) = default;
+      widget() = default;
 
-      widget& setParent( widget* p_parent_in );
-      widget* getParent( );
+      widget& setParent(widget* p_parent_in);
+      widget* getParent();
 
    private:
-      widget* p_parent{ nullptr };
+      widget* p_parent{nullptr};
    };
-} // namespace EGL
+} // namespace core

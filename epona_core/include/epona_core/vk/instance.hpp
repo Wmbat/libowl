@@ -1,8 +1,9 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/vk/core.hpp"
-#include "epona_core/vk/result.hpp"
+#include "epona_core/defines.hpp"
+#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/vk/details/result.hpp"
 #include "epona_core/vk/runtime.hpp"
 
 #include <system_error>
@@ -23,19 +24,15 @@ namespace core::vk
       };
 
    public:
-      instance() noexcept = default;
-      instance(const instance& other) noexcept = delete;
-      instance(instance&& other) noexcept;
-      ~instance();
-
-      instance& operator=(const instance& rhs) noexcept = delete;
-      instance& operator=(instance&& rhs) noexcept;
+      CORE_MOVE_ONLY(instance);
 
    public:
       VkInstance vk_instance{VK_NULL_HANDLE};
       VkDebugUtilsMessengerEXT vk_debug_messenger{VK_NULL_HANDLE};
 
       uint32_t version = 0;
+
+      dynamic_array<const char*> extensions;
 
    public:
       static std::string to_string(error err);
