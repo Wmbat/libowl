@@ -1,7 +1,7 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/defines.hpp"
+#include "epona_core/details/monads/option.hpp"
 #include "epona_core/vk/details/includes.hpp"
 #include "epona_core/vk/instance.hpp"
 
@@ -9,23 +9,23 @@ namespace core::vk
 {
    namespace details
    {
-      std::optional<uint32_t> get_graphics_queue_index(
+      option<uint32_t> get_graphics_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
 
-      std::optional<uint32_t> get_present_queue_index(VkPhysicalDevice physical_device,
+      option<uint32_t> get_present_queue_index(VkPhysicalDevice physical_device,
          VkSurfaceKHR surface,
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
 
-      std::optional<uint32_t> get_dedicated_compute_queue_index(
+      option<uint32_t> get_dedicated_compute_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
 
-      std::optional<uint32_t> get_dedicated_transfer_queue_index(
+      option<uint32_t> get_dedicated_transfer_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
 
-      std::optional<uint32_t> get_separated_compute_queue_index(
+      option<uint32_t> get_separated_compute_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
 
-      std::optional<uint32_t> get_separated_transfer_queue_index(
+      option<uint32_t> get_separated_transfer_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
    } // namespace details
 
@@ -50,7 +50,13 @@ namespace core::vk
       };
 
    public:
-      CORE_MOVE_ONLY(physical_device);
+      physical_device() = default;
+      physical_device(const physical_device& other) = delete;
+      physical_device(physical_device&& other) noexcept;
+      ~physical_device();
+
+      physical_device& operator=(const physical_device& rhs) = delete;
+      physical_device& operator=(physical_device&& rhs) noexcept;
 
       bool has_dedicated_compute_queue() const;
       bool has_dedicated_transfer_queue() const;

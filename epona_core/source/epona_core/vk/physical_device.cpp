@@ -7,7 +7,7 @@ namespace core::vk
 {
    namespace details
    {
-      std::optional<uint32_t> get_graphics_queue_index(
+      option<uint32_t> get_graphics_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
          for (uint32_t i = 0; i < families.size(); ++i)
@@ -18,10 +18,10 @@ namespace core::vk
             }
          }
 
-         return std::nullopt;
+         return {};
       }
 
-      std::optional<uint32_t> get_present_queue_index(VkPhysicalDevice physical_device,
+      option<uint32_t> get_present_queue_index(VkPhysicalDevice physical_device,
          VkSurfaceKHR surface,
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
@@ -33,7 +33,7 @@ namespace core::vk
                if (vkGetPhysicalDeviceSurfaceSupportKHR(
                       physical_device, i, surface, &present_support) != VK_SUCCESS)
                {
-                  return std::nullopt;
+                  return {};
                }
             }
 
@@ -43,10 +43,10 @@ namespace core::vk
             }
          }
 
-         return std::nullopt;
+         return {};
       }
 
-      std::optional<uint32_t> get_dedicated_compute_queue_index(
+      option<uint32_t> get_dedicated_compute_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
          for (uint32_t i = 0; i < families.size(); ++i)
@@ -59,10 +59,10 @@ namespace core::vk
             }
          }
 
-         return std::nullopt;
+         return {};
       }
 
-      std::optional<uint32_t> get_dedicated_transfer_queue_index(
+      option<uint32_t> get_dedicated_transfer_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
          for (uint32_t i = 0; i < families.size(); ++i)
@@ -75,13 +75,13 @@ namespace core::vk
             }
          }
 
-         return std::nullopt;
+         return {};
       }
 
-      std::optional<uint32_t> get_separated_compute_queue_index(
+      option<uint32_t> get_separated_compute_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
-         std::optional<uint32_t> compute = std::nullopt;
+         option<uint32_t> compute{};
 
          for (uint32_t i = 0; i < families.size(); ++i)
          {
@@ -102,10 +102,10 @@ namespace core::vk
          return compute;
       }
 
-      std::optional<uint32_t> get_separated_transfer_queue_index(
+      option<uint32_t> get_separated_transfer_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
       {
-         std::optional<uint32_t> transfer = std::nullopt;
+         option<uint32_t> transfer = {};
          for (uint32_t i = 0; i < families.size(); ++i)
          {
             if ((families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
@@ -227,16 +227,19 @@ namespace core::vk
    {
       tiny_dynamic_array<VkPhysicalDevice, 4> physical_devices;
 
+      using error = physical_device::error;
+
       uint32_t device_count = 0;
       if (vkEnumeratePhysicalDevices(sys_info.instance, &device_count, nullptr) != VK_SUCCESS)
       {
-         return physical_device::make_error_code(
-            physical_device::error::failed_retrieve_physical_device_count);
+         return monads::right_t<details::error>{
+            physical_device::make_error_code(error::failed_retrieve_physical_device_count)};
       }
 
       if (device_count == 0)
       {
-         return physical_device::make_error_code(physical_device::error::no_physical_device_found);
+         return monads::right_t<details::error>{
+            physical_device::make_error_code(error::no_physical_device_found)};
       }
 
       physical_devices.resize(device_count);
@@ -244,8 +247,8 @@ namespace core::vk
       if (vkEnumeratePhysicalDevices(sys_info.instance, &device_count, physical_devices.data()) !=
          VK_SUCCESS)
       {
-         return physical_device::make_error_code(
-            physical_device::error::failed_enumerate_physical_devices);
+         return monads::right_t<details::error>{physical_device::make_error_code(
+            physical_device::error::failed_enumerate_physical_devices)};
       }
 
       tiny_dynamic_array<physical_device_description, 4> physical_device_descriptions;
@@ -279,7 +282,8 @@ namespace core::vk
 
       if (selected.phys_device == VK_NULL_HANDLE)
       {
-         return physical_device::make_error_code(physical_device::error::no_suitable_device);
+         return monads::right_t<details::error>{
+            physical_device::make_error_code(error::no_suitable_device)};
       }
 
       LOG_INFO_P(p_logger, "Selected physical device: {1}", selected.properties.deviceName);
@@ -294,7 +298,7 @@ namespace core::vk
       device.queue_families = selected.queue_families;
       device.name = device.properties.deviceName;
 
-      return device;
+      return monads::left_t<physical_device>{std::move(device)};
    }
 
    physical_device_selector& physical_device_selector::set_prefered_gpu_type(

@@ -60,9 +60,9 @@ namespace core
          vk::details::error err{};
          err.result = res;
 
-         return err;
+         return monads::right_t<vk::details::error>{err};
       }
 
-      return surface;
+      return monads::left_t<VkSurfaceKHR>{surface};
    }
 } // namespace core

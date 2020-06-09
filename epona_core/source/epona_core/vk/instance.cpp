@@ -141,12 +141,14 @@ namespace core::vk
    {
       if (rt.api_version == 0)
       {
-         return instance::make_error_code(instance::error::vulkan_version_unavailable);
+         return monads::right_t<details::error>{
+            instance::make_error_code(instance::error::vulkan_version_unavailable)};
       }
 
       if (VK_VERSION_MINOR(rt.api_version) < 2)
       {
-         return instance::make_error_code(instance::error::vulkan_version_1_2_unavailable);
+         return monads::right_t<details::error>{
+            instance::make_error_code(instance::error::vulkan_version_1_2_unavailable)};
       }
 
       VkApplicationInfo app_info = {};
@@ -203,7 +205,8 @@ namespace core::vk
 
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
-         return instance::make_error_code(instance::error::window_extensions_not_present);
+         return monads::right_t<details::error>{
+            instance::make_error_code(instance::error::window_extensions_not_present)};
       }
 
       for (const auto& desired : extensions)
@@ -219,7 +222,8 @@ namespace core::vk
 
          if (!is_present)
          {
-            return instance::make_error_code(instance::error::instance_extension_not_supported);
+            return monads::right_t<details::error>{
+               instance::make_error_code(instance::error::instance_extension_not_supported)};
          }
       }
 
@@ -261,7 +265,8 @@ namespace core::vk
 
                if (!is_present)
                {
-                  return instance::make_error_code(instance::error::instance_layer_not_supported);
+                  return monads::right_t<details::error>{
+                     instance::make_error_code(instance::error::instance_layer_not_supported)};
                }
             }
 
@@ -283,7 +288,7 @@ namespace core::vk
       const VkResult inst_res = vkCreateInstance(&instance_create_info, nullptr, &inst.vk_instance);
       if (inst_res != VK_SUCCESS)
       {
-         return details::result<instance>{
+         return monads::right_t<details::error>{
             instance::make_error_code(instance::error::failed_create_instance), inst_res};
       }
 
@@ -312,12 +317,12 @@ namespace core::vk
             inst.vk_instance, &debug_create_info, nullptr, &inst.vk_debug_messenger);
          if (debug_res != VK_SUCCESS)
          {
-            return details::result<instance>{
+            return monads::right_t<details::error>{
                instance::make_error_code(instance::error::failed_create_debug_utils), debug_res};
          }
       }
 
-      return details::result{std::move(inst)};
+      return monads::left_t<instance>{std::move(inst)};
    }
 
    instance_builder& instance_builder::set_application_name(std::string_view app_name)

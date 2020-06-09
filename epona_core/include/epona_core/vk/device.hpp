@@ -1,7 +1,6 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/defines.hpp"
 #include "epona_core/vk/details/includes.hpp"
 #include "epona_core/vk/physical_device.hpp"
 

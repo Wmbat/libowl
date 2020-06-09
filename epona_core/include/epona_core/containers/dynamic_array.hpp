@@ -28,7 +28,7 @@
 namespace core
 {
    /**
-    * @class dynamic_array_base dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
+    * @class dynamic_array_base dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 22th, 2020
     * @copyright MIT License.
@@ -130,7 +130,7 @@ namespace core
    };
 
    /**
-    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
+    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
@@ -148,7 +148,7 @@ namespace core
    };
 
    /**
-    * @class tiny_dynamic_array_impl dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
+    * @class tiny_dynamic_array_impl dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
@@ -1197,7 +1197,7 @@ namespace core
    };
 
    /**
-    * @class tiny_dynamic_array dynamic_array.hpp <ESL/containers/dynamic_array.hpp>
+    * @class tiny_dynamic_array dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.

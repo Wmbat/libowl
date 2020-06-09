@@ -42,9 +42,11 @@ int main()
    auto main_window = core::window{"Engine", 1080, 720};
    auto render_manager = core::render_manager{&main_window, &main_logger};
 
+   /*
    while (main_window.is_open())
    {
    }
+   */
 
    return 0;
 }
