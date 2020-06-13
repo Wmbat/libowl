@@ -24,7 +24,7 @@ jobs:
     - name: Download Packages
       run: | 
         sudo apt-get install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev gcc-10
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10.1 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10.1
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
     - name: Download Ninja and CMake
       id: cmake_and_ninja
       shell: cmake -P {0}
