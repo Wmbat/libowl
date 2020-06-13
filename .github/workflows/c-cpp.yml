@@ -15,6 +15,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Download libxrandr
       run: sudo apt-get install libxrandr-dev
+    - name: Download gcc-10
+      run: sudo apt-get install gcc-10
     - name: Download Ninja and CMake
       id: cmake_and_ninja
       shell: cmake -P {0}
@@ -56,35 +58,5 @@ jobs:
             COMMAND chmod +x ${cmake_dir}/cmake
           )
         endif() 
-    - name: Cache GCC-10
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-gcc-10
-      with:
-        path: ~/build
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-
-    - name: Download GCC-10
-      run: |
-        cd ~/
-        wget https://ftpmirror.gnu.org/gcc/gcc-10.1.0/gcc-10.1.0.tar.xz
-        tar xf gcc-10.1.0.tar.xz
-        cd gcc-10.1.0
-        contrib/download_prerequisites
-    - name: Configure and Build GCC
-      run: |
-        cd ~/
-        mkdir build && cd build
-        ../gcc-10.1.0/configure -v --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu --prefix=/usr/local/gcc-10.1.0 --enable-checking=release --enable-languages=c,c++,fortran --disable-multilib --program-suffix=-10.1
-        make -j 8
-        sudo make install-strip
     - name: Build and Compile Project
-      run: |
-        execute_process(
-          COMMAND python build.py -G make -C gcc -B release --build-test 
-          RESULT_VARIABLE result
-        )
-
-        if (NOT result EQUAL 0)
-          message(FATAL_ERROR "Bad exit status")
-        endif() 
+      run: python build.py -G make -C gcc -B release --build-test 
