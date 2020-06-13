@@ -81,9 +81,10 @@ jobs:
     - name: Build and Compile Project
       run: |
         execute_process(
-          COMMAND python build.py -G make -C gcc -B release --build-test
+          COMMAND python build.py -G make -C gcc -B release --build-test 
           RESULT_VARIABLE result
         )
+
         if (NOT result EQUAL 0)
           message(FATAL_ERROR "Bad exit status")
         endif() 
