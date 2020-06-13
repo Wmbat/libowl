@@ -66,5 +66,7 @@ jobs:
             COMMAND chmod +x ${cmake_dir}/cmake
           )
         endif() 
+    - name: Configure
+      run: ./cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
     - name: Build
-      run: python build.py -G make -C gcc -B debug --build_test
+      run: ./make
