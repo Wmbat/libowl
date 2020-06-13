@@ -67,6 +67,6 @@ jobs:
           )
         endif() 
     - name: Configure
-      run: ./cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
     - name: Build
-      run: ./make
+      run: make
