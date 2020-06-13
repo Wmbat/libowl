@@ -24,8 +24,7 @@ jobs:
     - name: Download Packages
       run: | 
         sudo apt-get install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev gcc-10
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60 --slave /usr/bin/g++ g++ /usr/bin/g++-10
-        sudo update-alternatives --config gcc
+        g++ -v
     - name: Download Ninja and CMake
       id: cmake_and_ninja
       shell: cmake -P {0}
@@ -68,6 +67,6 @@ jobs:
           )
         endif() 
     - name: Configure
-      run: cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ./
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ./
     - name: Build
       run: make
