@@ -22,15 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Download Packages
-      run: |
-        if ("${{runner.os}}" STREQUAL "Linux")
-          sudo apt-get install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
-        endif()
-    - name: Download gcc-10
-      run: |
-        if ("${{runner.os}}" STREQUAL "Linux")
-          sudo apt-get install gcc-10
-        endif()
+      run: sudo apt-get install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev gcc-10
     - name: Download Ninja and CMake
       id: cmake_and_ninja
       shell: cmake -P {0}
