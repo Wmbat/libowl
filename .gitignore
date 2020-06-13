@@ -4,6 +4,7 @@
 /build_debug_clang
 /build_release_clang
 /compile_commands.json
+/out
 .gdb_history
 .clangd
 tags

@@ -3,7 +3,13 @@ import argparse
 
 def build(args):
     root_dir = os.getcwd()
-    build_dir = root_dir + "/build_" + args.build_type + "_" + args.compiler
+    build_dir = root_dir + "/out/" + args.compiler + "/" + args.build_type
+
+    if os.path.isdir(root_dir + "/out/") is not True:
+        os.mkdir(root_dir + "/out/")
+
+    if os.path.isdir(root_dir + "/out/" + args.compiler + "/") is not True:
+        os.mkdir(root_dir + "/out/" + args.compiler + "/")
 
     if os.path.isdir(build_dir) is not True:
         os.mkdir(build_dir)
@@ -38,14 +44,14 @@ def build(args):
     else:
         cmake += 'OFF '
 
-    os.system(cmake + '../')
+    os.system(cmake + root_dir)
 
     if args.generator == 'ninja':
         os.system('ninja')
     else:
         os.system('make -j13')
 
-    os.system("mv compile_commands.json ../")
+    os.system("mv compile_commands.json " + root_dir)
 
 def main():
     parser = argparse.ArgumentParser(description='Build epona in debug mode')
