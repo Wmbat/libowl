@@ -12,8 +12,6 @@
 #include "epona_core/details/concepts.hpp"
 #include "epona_core/details/error_handling.hpp"
 #include "epona_core/details/iterators/random_access_iterator.hpp"
-#include "epona_core/memory/details.hpp"
-#include "epona_core/memory/multipool_allocator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,206 +20,99 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
-#include <memory>
 #include <type_traits>
 
 namespace core
 {
    /**
-    * @class dynamic_array_base dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 22th, 2020
-    * @copyright MIT License.
-    * @brief A common base for all dynamic arrays using custom allocators.
-    *
-    * @tparam allocator_ The type of the allocator used by the container.
-    */
-   class dynamic_array_base
-   {
-   public:
-      using size_type = std::size_t;
-      using difference_type = std::ptrdiff_t;
-      using pointer = void*;
-
-   protected:
-      dynamic_array_base() = delete;
-      /**
-       * @brief Set the default data of the container.
-       *
-       * @param[in] p_first_element A pointer to the first element in the containen.
-       * @param[in] capacity The starting capacity of the container.
-       * @param[in] p_alloc A pointer to the allocator used by the container.
-       */
-      dynamic_array_base(pointer p_first_element, size_type capacity) :
-         p_begin(p_first_element), cap(capacity)
-      {}
-
-      /**
-       * @brief A special function to grow the container's memory with trivial types.
-       *
-       * @param[in] p_first_element A pointer to the first element in the container.
-       * @param[in] min_cap The maximum capacity to grow the container by.
-       * @param[in] type_size The size of the trivial type.
-       * @param[in] type_align The alignment of the trivial type.
-       */
-      void grow_trivial(void* p_first_element, size_type min_cap, size_type type_size)
-      {
-         size_type const new_capacity =
-            std::clamp(2 * capacity() + 1, min_cap, std::numeric_limits<size_type>::max());
-
-         if (p_begin == p_first_element)
-         {
-            void* p_new = std::malloc(new_capacity * type_size);
-            if (!p_new)
-            {
-               handle_bad_alloc_error(
-                  "Hybrid dynamic_array capacity overflow during reallocation.");
-            }
-
-            memcpy(p_new, p_begin, size() * type_size);
-
-            p_begin = p_new;
-         }
-         else
-         {
-            void* p_new = std::realloc(p_begin, new_capacity * type_size);
-            if (!p_new)
-            {
-               handle_bad_alloc_error(
-                  "Hybrid dynamic_array capacity overflow during reallocation.");
-            }
-
-            p_begin = p_new;
-         }
-
-         cap = new_capacity;
-      }
-
-   public:
-      /**
-       * @brief Check if the container has no element.
-       *
-       * @return True if the container is empty, otherwise false.
-       */
-      [[nodiscard]] constexpr bool empty() const noexcept { return count == 0; }
-      /**
-       * @brief Return the number of elements in the container.
-       *
-       * @return The size of the container.
-       */
-      size_type size() const noexcept { return count; }
-      /**
-       * @brief Return the maximum size of the container.
-       *
-       * @return The maximum value held by the #difference_type.
-       */
-      size_type max_size() const noexcept { return std::numeric_limits<difference_type>::max(); }
-      /**
-       * @brief Return the container's capacity;
-       *
-       * @return The container's current memory capacity.
-       */
-      size_type capacity() const noexcept { return cap; }
-
-   protected:
-      void* p_begin{nullptr};
-      size_type count{0};
-      size_type cap{0};
-   };
-
-   /**
-    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp
-    * <epona_core/containers/dynamic_array.hpp>
+    * @class tiny_dynamic_array dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.
-    * @brief The memory layout with padding of a tiny_dynamic_array
+    * @brief A dynamic array data structure that allows for a small static memory storage.
     *
     * @tparam any_, The type of objects that can be contained in the container.
+    * @tparam buff_sz, The size of the static memory buffer in the container.
     * @tparam allocator_ The type of the allocator used by the container.
     */
-   template <class any_>
-   struct tiny_dynamic_array_align_and_size
+   template <class any_, std::size_t buff_sz>
+   class tiny_dynamic_array
    {
-      std::aligned_storage_t<sizeof(dynamic_array_base), alignof(dynamic_array_base)> base;
-      std::aligned_storage_t<sizeof(std::size_t), alignof(std::size_t)> padding;
-      std::aligned_storage_t<sizeof(any_), alignof(any_)> first_element;
-   };
-
-   /**
-    * @class tiny_dynamic_array_impl dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 29th, 2020
-    * @copyright MIT License.
-    * @brief The implementation of the common functions that all dynamic_arrays should use.
-    *
-    * @tparam any_, The type of objects that can be contained in the container.
-    * @tparam allocator_ The type of the allocator used by the container.
-    */
-   template <class any_>
-   class tiny_dynamic_array_impl : public dynamic_array_base
-   {
-      using super = dynamic_array_base;
-
    public:
       using value_type = any_;
       using reference = value_type&;
       using const_reference = const value_type&;
       using pointer = value_type*;
       using const_pointer = const value_type*;
-      using size_type = typename super::size_type;
-      using difference_type = typename super::difference_type;
+      using size_type = std::size_t;
+      using difference_type = std::ptrdiff_t;
       using iterator = random_access_iterator<value_type>;
       using const_iterator = random_access_iterator<const value_type>;
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-      /**
-       * @brief Sets the capacity and the allocator of the container.
-       *
-       * @param[in] capacity The default capacity of the container.
-       * @param[in] p_alloc The allocator from which memory will be fetched.
-       */
-      explicit tiny_dynamic_array_impl(size_type capacity) : super(get_first_element(), capacity) {}
-
-   protected:
-      tiny_dynamic_array_impl() = delete;
-
-      /**
-       * @brief Check if the container is currently using the static memory buffer.
-       *
-       * @return True if the container is using the static memory buffer, otherwise false.
-       */
-      bool is_static() const noexcept { return super::p_begin == get_first_element(); }
-
    public:
-      /**
-       * @brief Clear the container's data and surrenders the memory allocation.
-       *
-       * @details Clear the container's data and surrenders the memory allocation only if the
-       * dynamic_array is not using the static memory storage.
-       */
-      virtual ~tiny_dynamic_array_impl()
+      explicit tiny_dynamic_array() : p_begin{get_first_element()}, cap{buff_sz} {}
+      explicit tiny_dynamic_array(size_type count) requires std::default_initializable<value_type> :
+         p_begin{get_first_element()},
+         cap{buff_sz}
+      {
+         assign(count, value_type());
+      }
+      explicit tiny_dynamic_array(
+         size_type count, const_reference value) requires std::copyable<value_type> :
+         p_begin{get_first_element()},
+         cap{buff_sz}
+      {
+         assign(count, value);
+      }
+      template <std::input_iterator it_>
+      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type> :
+         p_begin{get_first_element()},
+         cap{buff_sz}
+      {
+         assign(first, last);
+      }
+      tiny_dynamic_array(const std::ranges::range auto& r) :
+         p_begin{get_first_element()}, cap{buff_sz}
+      {
+         assign(r);
+      }
+      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type> :
+         p_begin{get_first_element()},
+         cap{buff_sz}
+      {
+         assign(init);
+      }
+      tiny_dynamic_array(const tiny_dynamic_array& other) :
+         p_begin{get_first_element()}, cap{buff_sz}
+      {
+         if (!other.empty())
+         {
+            *this = other;
+         }
+      }
+      tiny_dynamic_array(tiny_dynamic_array&& other) : p_begin{get_first_element()}, cap{buff_sz}
+      {
+         if (!other.empty())
+         {
+            *this = std::move(other);
+         }
+      }
+      ~tiny_dynamic_array()
       {
          if (!is_static())
          {
             clear();
 
-            if (super::p_begin)
+            if (p_begin)
             {
-               free(super::p_begin);
+               free(static_cast<void*>(p_begin));
             }
          }
       }
 
-      /**
-       * @brief Replaces the content of the container with that of another.
-       *
-       * @param[in] rhs The container to use as data source.
-       *
-       * @return A reference to the current container.
-       */
-      tiny_dynamic_array_impl& operator=(tiny_dynamic_array_impl const& rhs)
+      tiny_dynamic_array& operator=(const tiny_dynamic_array& rhs)
       {
          if (this == &rhs)
          {
@@ -229,7 +120,7 @@ namespace core
          }
 
          size_type const other_sz = rhs.size();
-         size_type curr_sz = super::size();
+         size_type curr_sz = size();
 
          if (curr_sz >= other_sz)
          {
@@ -241,16 +132,16 @@ namespace core
 
             destroy_range(new_end, end());
 
-            super::count = other_sz;
+            elem_count = other_sz;
 
             return *this;
          }
          else
          {
-            if (other_sz > super::capacity())
+            if (other_sz > capacity())
             {
                destroy_range(begin(), end());
-               super::count = curr_sz = 0;
+               elem_count = curr_sz = 0;
 
                grow(other_sz);
             }
@@ -261,20 +152,13 @@ namespace core
 
             std::uninitialized_copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
 
-            super::count = other_sz;
+            elem_count = other_sz;
 
             return *this;
          }
       }
 
-      /**
-       * @brief Replaces the content of the container with that of another.
-       *
-       * @param[in] rhs The container to use as data source.
-       *
-       * @return A reference to the current container.
-       */
-      tiny_dynamic_array_impl& operator=(tiny_dynamic_array_impl&& rhs)
+      tiny_dynamic_array& operator=(tiny_dynamic_array&& rhs)
       {
          if (this == &rhs)
          {
@@ -285,25 +169,25 @@ namespace core
          if (!rhs.is_static())
          {
             destroy_range(begin(), end());
-            if (!is_static() && super::p_begin)
+            if (!is_static() && p_begin)
             {
-               free(super::p_begin);
+               free(static_cast<void*>(p_begin));
             }
 
-            super::count = rhs.count;
-            rhs.count = 0;
+            elem_count = rhs.elem_count;
+            rhs.elem_count = 0;
 
-            super::cap = rhs.cap;
+            cap = rhs.cap;
             rhs.cap = 0;
 
-            super::p_begin = rhs.p_begin;
+            p_begin = rhs.p_begin;
             rhs.p_begin = nullptr;
 
             return *this;
          }
 
          size_type const other_sz = rhs.size();
-         size_type curr_sz = super::size();
+         size_type curr_sz = size();
 
          // if we have enough space, move the data from static buffer
          // and delete the leftover data we have.
@@ -317,7 +201,7 @@ namespace core
 
             destroy_range(new_end, end());
 
-            super::count = other_sz;
+            elem_count = other_sz;
 
             rhs.clear();
 
@@ -325,10 +209,10 @@ namespace core
          }
          else // resize and move data from static buffer.
          {
-            if (other_sz > super::capacity())
+            if (other_sz > capacity())
             {
                destroy_range(begin(), end());
-               super::count = curr_sz = 0;
+               elem_count = curr_sz = 0;
 
                grow(other_sz);
             }
@@ -339,7 +223,7 @@ namespace core
 
             std::uninitialized_move(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
 
-            super::count = other_sz;
+            elem_count = other_sz;
 
             rhs.clear();
 
@@ -347,35 +231,13 @@ namespace core
          }
       }
 
-      /**
-       * @brief Compare the contents of two containers.
-       *
-       * @details Checks if the contents of the current container and rhs are equal, that is, they
-       * have the same number of elements and each element in lhs compares equal with the element in
-       * rhs at the same position. #value_type must meet the <a
-       * href="https://en.cppreference.com/w/cpp/concepts/equality_comparable">std::equality_comparable</a>
-       * to use this function.
-       *
-       * @tparam  other_   The allocator of the other dynamic_array.
-       * @param   rhs      The dynamic_array to compare against.
-       *
-       * @return True if the two dynamic_arrays have the same data, otherwise false
-       */
-      constexpr bool operator==(const tiny_dynamic_array_impl<value_type>& rhs) const
+      constexpr bool operator==(const tiny_dynamic_array<value_type, buff_sz>& rhs) const
          requires std::equality_comparable<value_type>
       {
          return std::equal(cbegin(), cend(), rhs.cbegin(), rhs.cend());
       }
 
-      /**
-       * @brief Perform a lexicographical compare on the elements of the two dynamic_arrays.
-       *
-       * @tparam  other_   The allocator of the other dynamic_array.
-       * @param   rhs      The dynamic_array to compare against.
-       *
-       * @return An ordering defining the relationship between the two dynamic_arrays.
-       */
-      constexpr auto operator<=>(const tiny_dynamic_array_impl<value_type>& rhs)
+      constexpr auto operator<=>(const tiny_dynamic_array<value_type, buff_sz>& rhs)
       {
          return std::lexicographical_compare_three_way(
             cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
@@ -397,12 +259,12 @@ namespace core
       {
          clear();
 
-         if (count > super::capacity())
+         if (count > capacity())
          {
             grow(count);
          }
 
-         super::count += count;
+         elem_count += count;
 
          std::uninitialized_fill(begin(), end(), value);
       }
@@ -428,13 +290,13 @@ namespace core
       {
          clear();
 
-         size_type const count = std::distance(first, last);
-         if (count > super::capacity())
+         size_type const new_count = std::distance(first, last);
+         if (new_count > capacity())
          {
-            grow(count);
+            grow(new_count);
          }
 
-         super::count += count;
+         elem_count += new_count;
 
          std::uninitialized_copy(first, last, begin());
       }
@@ -476,13 +338,13 @@ namespace core
        */
       reference at(size_type index)
       {
-         if (index >= super::count)
+         if (index >= size())
          {
             handle_out_of_range_error("Index: " + std::to_string(index) + " is out of bounds");
          }
          else
          {
-            return static_cast<value_type*>(super::p_begin)[index];
+            return p_begin[index];
          }
       }
       /**
@@ -499,13 +361,13 @@ namespace core
        */
       const_reference at(size_type index) const
       {
-         if (index >= super::count)
+         if (index >= size())
          {
             handle_out_of_range_error("Index: " + std::to_string(index) + " is out of bounds");
          }
          else
          {
-            return static_cast<value_type*>(super::p_begin)[index];
+            return p_begin[index];
          }
       }
 
@@ -521,9 +383,9 @@ namespace core
        */
       reference operator[](size_type index) noexcept
       {
-         assert(index < super::count && "Index out of bounds.");
+         assert(index < size() && "Index out of bounds.");
 
-         return static_cast<pointer>(super::p_begin)[index];
+         return p_begin[index];
       }
       /**
        * @brief Return a #const_reference to the element at the index position in the container.
@@ -537,9 +399,9 @@ namespace core
        */
       const_reference operator[](size_type index) const noexcept
       {
-         assert(index < super::count && "Index out of bounds.");
+         assert(index < size() && "Index out of bounds.");
 
-         return static_cast<pointer>(super::p_begin)[index];
+         return p_begin[index];
       }
 
       /**
@@ -549,7 +411,7 @@ namespace core
        */
       reference front() noexcept
       {
-         assert(!super::empty() && "No elements in the container");
+         assert(!empty() && "No elements in the container");
          return *begin();
       }
       /**
@@ -559,7 +421,7 @@ namespace core
        */
       const_reference front() const noexcept
       {
-         assert(!super::empty() && "No elements in the container");
+         assert(!empty() && "No elements in the container");
          return *cbegin();
       }
 
@@ -570,7 +432,7 @@ namespace core
        */
       reference back() noexcept
       {
-         assert(!super::empty() && "No elements in the container");
+         assert(!empty() && "No elements in the container");
          return *(end() - 1);
       }
       /**
@@ -580,7 +442,7 @@ namespace core
        */
       const_reference back() const noexcept
       {
-         assert(!super::empty() && "No elements in the container");
+         assert(!empty() && "No elements in the container");
          return *(cend() - 1);
       }
 
@@ -597,19 +459,13 @@ namespace core
        */
       const_pointer data() const noexcept { return const_pointer{&(*cbegin())}; }
 
-      iterator begin() noexcept { return iterator{static_cast<pointer>(super::p_begin)}; }
-      const_iterator begin() const noexcept
-      {
-         return const_iterator{static_cast<pointer>(super::p_begin)};
-      }
-      const_iterator cbegin() const noexcept
-      {
-         return const_iterator{static_cast<pointer>(super::p_begin)};
-      }
+      iterator begin() noexcept { return iterator{p_begin}; }
+      const_iterator begin() const noexcept { return const_iterator{p_begin}; }
+      const_iterator cbegin() const noexcept { return const_iterator{p_begin}; }
 
-      iterator end() noexcept { return iterator{begin() + super::count}; }
-      const_iterator end() const noexcept { return const_iterator{begin() + super::count}; }
-      const_iterator cend() const noexcept { return const_iterator{cbegin() + super::count}; }
+      iterator end() noexcept { return iterator{begin() + size()}; }
+      const_iterator end() const noexcept { return const_iterator{begin() + size()}; }
+      const_iterator cend() const noexcept { return const_iterator{cbegin() + size()}; }
 
       reverse_iterator rbegin() noexcept { return reverse_iterator{end()}; }
       const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator{cend()}; }
@@ -618,6 +474,31 @@ namespace core
       reverse_iterator rend() noexcept { return reverse_iterator{begin()}; }
       const_reverse_iterator rend() const noexcept { return const_reverse_iterator{cbegin()}; }
       const_reverse_iterator rcend() const noexcept { return const_reverse_iterator{cbegin()}; }
+
+      /**
+       * @brief Check if the container has no element.
+       *
+       * @return True if the container is empty, otherwise false.
+       */
+      [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+      /**
+       * @brief Return the number of elements in the container.
+       *
+       * @return The size of the container.
+       */
+      size_type size() const noexcept { return elem_count; }
+      /**
+       * @brief Return the maximum size of the container.
+       *
+       * @return The maximum value held by the #difference_type.
+       */
+      size_type max_size() const noexcept { return std::numeric_limits<difference_type>::max(); }
+      /**
+       * @brief Return the container's capacity;
+       *
+       * @return The container's current memory capacity.
+       */
+      size_type capacity() const noexcept { return cap; }
 
       /**
        * @brief Increase the capacity of the container to a value greater than or equal to new_cap.
@@ -633,7 +514,7 @@ namespace core
        */
       void reserve(size_type new_cap)
       {
-         if (new_cap > super::capacity())
+         if (new_cap > capacity())
          {
             grow(new_cap);
          }
@@ -650,7 +531,7 @@ namespace core
       void clear() noexcept
       {
          destroy_range(begin(), end());
-         super::count = 0;
+         elem_count = 0;
       }
 
       iterator insert(const_iterator pos, const_reference value) requires std::copyable<value_type>
@@ -666,7 +547,7 @@ namespace core
          assert(pos <= cend() && "Insertion iterator is past the end");
 
          iterator new_pos;
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             size_type offset = pos - cbegin();
             grow();
@@ -681,7 +562,7 @@ namespace core
 
          std::move_backward(new_pos, end() - 1, end());
 
-         ++super::count;
+         ++elem_count;
 
          const_pointer p_element = &value;
          if (pointer{&(*new_pos)} <= p_element && pointer{&(*end())} > p_element)
@@ -707,7 +588,7 @@ namespace core
          assert(pos <= cend() && "Insertion iterator is past the end");
 
          iterator new_pos;
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             size_type offset = pos - cbegin();
             grow();
@@ -722,7 +603,7 @@ namespace core
 
          std::move_backward(new_pos, end() - 1, end());
 
-         ++super::count;
+         ++elem_count;
 
          pointer p_element = &value;
          if (pointer{&(*new_pos)} <= p_element && pointer{&(*end())} > p_element)
@@ -742,14 +623,14 @@ namespace core
 
          if (pos == cend())
          {
-            if (super::size() + count >= super::capacity())
+            if (size() + count >= capacity())
             {
-               grow(super::size() + count);
+               grow(size() + count);
             }
 
             std::uninitialized_fill_n(end(), count, value);
 
-            super::count += count;
+            elem_count += count;
 
             return begin() + start_index;
          }
@@ -757,7 +638,7 @@ namespace core
          assert(pos >= cbegin() && "Insertion iterator is out of bounds");
          assert(pos <= cend() && "Insertion iterator is past the end");
 
-         reserve(super::size() + count);
+         reserve(size() + count);
 
          iterator updated_pos = begin() + start_index;
 
@@ -765,7 +646,7 @@ namespace core
          {
             std::uninitialized_move(end() - count, end(), end());
 
-            super::count += count;
+            elem_count += count;
 
             std::move_backward(updated_pos, old_end - count, old_end);
             std::fill_n(updated_pos, count, value);
@@ -773,7 +654,7 @@ namespace core
          else
          {
             size_type move_count = old_end - updated_pos;
-            super::count += count;
+            elem_count += count;
 
             std::uninitialized_move(updated_pos, old_end, end() - move_count);
             std::fill_n(updated_pos, move_count, value);
@@ -791,14 +672,14 @@ namespace core
 
          if (pos == cend())
          {
-            if (super::size() + count >= super::capacity())
+            if (size() + count >= capacity())
             {
-               grow(super::size() + count);
+               grow(size() + count);
             }
 
             std::uninitialized_copy(first, last, end());
 
-            super::count += count;
+            elem_count += count;
 
             return begin() + start_index;
          }
@@ -806,14 +687,14 @@ namespace core
          assert(pos >= cbegin() && "Insertion iterator is out of bounds");
          assert(pos <= cend() && "Insertion iterator is past the end");
 
-         reserve(super::size() + count);
+         reserve(size() + count);
 
          iterator updated_pos = begin() + start_index;
          if (iterator old_end = end(); end() - updated_pos >= count)
          {
             std::uninitialized_move(end() - count, end(), end());
 
-            super::count += count;
+            elem_count += count;
 
             std::move_backward(updated_pos, old_end - count, old_end);
             std::copy(first, last, updated_pos);
@@ -821,7 +702,7 @@ namespace core
          else
          {
             size_type move_count = old_end - updated_pos;
-            super::count += count;
+            elem_count += count;
 
             std::uninitialized_move(updated_pos, old_end, end() - move_count);
 
@@ -865,7 +746,7 @@ namespace core
          assert(pos <= cend() && "Insertion iterator is past the end");
 
          iterator new_pos;
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             size_type offset = pos - cbegin();
             grow();
@@ -880,7 +761,7 @@ namespace core
 
          std::move_backward(new_pos, end() - 1, end());
 
-         ++super::count;
+         ++elem_count;
 
          *new_pos = value_type(std::forward<args_>(args)...);
 
@@ -949,7 +830,7 @@ namespace core
 
          destroy_range(it, end());
 
-         super::count -= distance;
+         elem_count -= distance;
 
          return it_f;
       }
@@ -968,7 +849,7 @@ namespace core
        */
       void push_back(const_reference value) requires std::copyable<value_type>
       {
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             grow();
          }
@@ -982,7 +863,7 @@ namespace core
             new (static_cast<void*>(&(*end()))) value_type(value);
          }
 
-         ++super::count;
+         ++elem_count;
       };
 
       /**
@@ -999,14 +880,14 @@ namespace core
        */
       void push_back(value_type&& value) requires std::movable<value_type>
       {
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             grow();
          }
 
          new (static_cast<void*>(&(*end()))) value_type(std::move(value));
 
-         ++super::count;
+         ++elem_count;
       };
 
       /**
@@ -1029,7 +910,7 @@ namespace core
       template <class... args_>
       reference emplace_back(args_&&... args) requires std::constructible_from<value_type, args_...>
       {
-         if (super::size() >= super::capacity())
+         if (size() >= capacity())
          {
             grow();
          }
@@ -1037,7 +918,7 @@ namespace core
          iterator last = end();
          new (static_cast<void*>(&(*last))) value_type(std::forward<args_>(args)...);
 
-         ++super::count;
+         ++elem_count;
 
          return *last;
       }
@@ -1050,9 +931,9 @@ namespace core
        */
       void pop_back()
       {
-         if (super::count != 0)
+         if (size() != 0)
          {
-            --super::count;
+            --elem_count;
             end()->~value_type();
          }
       };
@@ -1071,24 +952,24 @@ namespace core
        */
       void resize(size_type count) requires std::default_initializable<value_type>
       {
-         if (super::size() > count)
+         if (size() > count)
          {
             destroy_range(begin() + count, end());
-            super::count = count;
+            elem_count = count;
          }
-         else if (super::size() < count)
+         else if (size() < count)
          {
-            if (super::capacity() < count)
+            if (capacity() < count)
             {
                grow(count);
             }
 
-            for (size_type i = super::size(); i < count; ++i)
+            for (size_type i = size(); i < count; ++i)
             {
-               new (static_cast<void*>(static_cast<pointer>(super::p_begin) + i)) value_type();
+               new (static_cast<void*>(p_begin + i)) value_type();
             }
 
-            super::count = count;
+            elem_count = count;
          }
       }
 
@@ -1106,31 +987,35 @@ namespace core
        */
       void resize(size_type count, const_reference value) requires std::copyable<value_type>
       {
-         if (super::size() > count)
+         if (size() > count)
          {
             destroy_range(begin() + count, end());
-            super::count = count;
+            elem_count = count;
          }
-         else if (super::size() < count)
+         else if (size() < count)
          {
-            if (super::capacity() < count)
+            if (capacity() < count)
             {
                grow(count);
             }
 
             std::uninitialized_fill(end(), begin() + count, value);
 
-            super::count = count;
+            elem_count = count;
          }
       }
 
    private:
-      void* get_first_element() const noexcept
-      {
-         using layout = tiny_dynamic_array_align_and_size<value_type>;
+      /**
+       * @brief Check if the container is currently using the static memory buffer.
+       *
+       * @return True if the container is using the static memory buffer, otherwise false.
+       */
+      bool is_static() const noexcept { return p_begin == get_first_element(); }
 
-         return const_cast<void*>(reinterpret_cast<void const*>(
-            reinterpret_cast<char const*>(this) + offsetof(layout, first_element)));
+      pointer get_first_element() const
+      {
+         return const_cast<pointer>(reinterpret_cast<const_pointer>(&storage));
       }
 
       void grow(size_type min_size = 0)
@@ -1142,12 +1027,41 @@ namespace core
 
          if constexpr (trivial<value_type>)
          {
-            super::grow_trivial(get_first_element(), min_size, sizeof(value_type));
+            size_type const new_capacity =
+               std::clamp(2 * capacity() + 1, min_size, std::numeric_limits<size_type>::max());
+
+            if (p_begin == get_first_element())
+            {
+               void* p_new = std::malloc(new_capacity * sizeof(value_type));
+               if (!p_new)
+               {
+                  handle_bad_alloc_error(
+                     "Hybrid dynamic_array capacity overflow during reallocation.");
+               }
+
+               memcpy(p_new, p_begin, size() * sizeof(value_type));
+
+               p_begin = static_cast<pointer>(p_new);
+            }
+            else
+            {
+               void* p_new =
+                  std::realloc(static_cast<void*>(p_begin), new_capacity * sizeof(value_type));
+               if (!p_new)
+               {
+                  handle_bad_alloc_error(
+                     "Hybrid dynamic_array capacity overflow during reallocation.");
+               }
+
+               p_begin = static_cast<pointer>(p_new);
+            }
+
+            cap = new_capacity;
          }
          else
          {
-            size_type new_cap = std::clamp(
-               2 * super::capacity() + 1, min_size, std::numeric_limits<size_type>::max());
+            size_type new_cap =
+               std::clamp(2 * capacity() + 1, min_size, std::numeric_limits<size_type>::max());
 
             pointer p_new{nullptr};
             if (is_static()) // memory is currently static
@@ -1172,15 +1086,15 @@ namespace core
             else
             {
                p_new = static_cast<value_type*>(
-                  std::realloc(super::p_begin, new_cap * sizeof(value_type)));
+                  std::realloc(static_cast<void*>(p_begin), new_cap * sizeof(value_type)));
                if (!p_new)
                {
                   handle_bad_alloc_error("Hybrid dynamic_array allocation error");
                }
             }
 
-            super::p_begin = static_cast<void*>(p_new);
-            super::cap = new_cap;
+            p_begin = p_new;
+            cap = new_cap;
          }
       }
 
@@ -1195,196 +1109,12 @@ namespace core
             }
          }
       }
-   };
-
-   /**
-    * @class tiny_dynamic_array dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Monday, April 29th, 2020
-    * @copyright MIT License.
-    * @brief A dynamic array data structure that allows for a small static memory storage.
-    *
-    * @tparam any_, The type of objects that can be contained in the container.
-    * @tparam buff_sz, The size of the static memory buffer in the container.
-    * @tparam allocator_ The type of the allocator used by the container.
-    */
-   template <class any_, std::size_t buff_sz>
-   class tiny_dynamic_array
-   {
-      using super = tiny_dynamic_array_impl<any_>;
-
-   public:
-      using value_type = typename super::value_type;
-      using reference = value_type&;
-      using const_reference = const value_type&;
-      using pointer = value_type*;
-      using const_pointer = const value_type*;
-      using size_type = std::size_t;
-      using difference_type = std::ptrdiff_t;
-      using iterator = random_access_iterator<value_type>;
-      using const_iterator = random_access_iterator<const value_type>;
-      using reverse_iterator = std::reverse_iterator<iterator>;
-      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-   public:
-      explicit tiny_dynamic_array() : impl(buff_sz) {}
-      explicit tiny_dynamic_array(size_type count) requires std::default_initializable<value_type> :
-         impl(buff_sz)
-      {
-         assign(count, value_type());
-      }
-      explicit tiny_dynamic_array(
-         size_type count, const_reference value) requires std::copyable<value_type> : impl(buff_sz)
-      {
-         assign(count, value);
-      }
-      template <std::input_iterator it_>
-      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type> : impl(buff_sz)
-      {
-         assign(first, last);
-      }
-      tiny_dynamic_array(const std::ranges::range auto& r) : impl(buff_sz) { assign(r); }
-      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type> :
-         impl(buff_sz)
-      {
-         assign(init);
-      }
-      tiny_dynamic_array(const tiny_dynamic_array& other) : impl(buff_sz)
-      {
-         if (!other.empty())
-         {
-            *this = other;
-         }
-      }
-      tiny_dynamic_array(tiny_dynamic_array&& other) : impl(buff_sz)
-      {
-         if (!other.empty())
-         {
-            *this = std::move(other);
-         }
-      }
-
-      tiny_dynamic_array& operator=(const tiny_dynamic_array& other)
-      {
-         impl = other.impl;
-         return *this;
-      }
-
-      tiny_dynamic_array& operator=(tiny_dynamic_array&& other)
-      {
-         impl = std::move(other.impl);
-         return *this;
-      }
-
-      constexpr bool operator==(const tiny_dynamic_array<value_type, buff_sz>& rhs) const
-         requires std::equality_comparable<value_type>
-      {
-         return impl == rhs.impl;
-      }
-
-      constexpr auto operator<=>(const tiny_dynamic_array<value_type, buff_sz>& rhs)
-      {
-         return std::lexicographical_compare_three_way(
-            cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
-      }
-
-      void assign(size_type count, const_reference value) { impl.assign(count, value); }
-      void assign(std::initializer_list<value_type> init) { impl.assign(init); }
-      template <std::input_iterator it_>
-      void assign(it_ first, it_ last)
-      {
-         impl.assign(first, last);
-      }
-      void assign(const std::ranges::range auto& r) { impl.assign(r); }
-
-      reference at(size_type pos) { return impl.at(pos); }
-      const_reference at(size_type pos) const { return impl.at(pos); }
-
-      reference operator[](size_type pos) noexcept { return impl[pos]; }
-      const_reference operator[](size_type pos) const noexcept { return impl[pos]; }
-
-      reference front() { return impl.front(); }
-      const_reference front() const { return impl.front(); }
-
-      reference back() { return impl.back(); }
-      const_reference back() const { return impl.back(); }
-
-      constexpr pointer data() noexcept { return impl.data(); }
-      constexpr const_pointer data() const noexcept { return impl.data(); }
-
-      iterator begin() noexcept { return impl.begin(); }
-      const_iterator begin() const noexcept { return impl.begin(); }
-      const_iterator cbegin() const noexcept { return impl.cbegin(); }
-
-      iterator end() noexcept { return impl.end(); }
-      const_iterator end() const noexcept { return impl.end(); }
-      const_iterator cend() const noexcept { return impl.cend(); }
-
-      reverse_iterator rbegin() noexcept { return impl.rbegin(); }
-      const_reverse_iterator rbegin() const noexcept { return impl.rbegin(); }
-      const_reverse_iterator rcbegin() const noexcept { return impl.rcbegin(); }
-
-      reverse_iterator rend() noexcept { return impl.rend(); }
-      const_reverse_iterator rend() const noexcept { return impl.rend(); }
-      const_reverse_iterator rcend() const noexcept { return impl.rcend(); }
-
-      [[nodiscard]] constexpr bool empty() const noexcept { return impl.empty(); }
-      size_type size() const noexcept { return impl.size(); }
-      size_type max_size() const noexcept { return impl.max_size(); }
-      size_type capacity() const noexcept { return impl.capacity(); }
-      void reserve(size_type new_cap) { impl.reserve(new_cap); }
-
-      void clear() noexcept { impl.clear(); }
-      iterator insert(const_iterator pos, const_reference value) { return impl.insert(pos, value); }
-      iterator insert(const_iterator pos, value_type&& value)
-      {
-         return impl.insert(pos, std::move(value));
-      }
-      iterator insert(const_iterator pos, size_type count, const_reference value)
-      {
-         return impl.insert(pos, count, value);
-      }
-      template <std::input_iterator it_>
-      iterator insert(const_iterator pos, it_ first, it_ last)
-      {
-         return impl.insert(pos, first, last);
-      }
-      iterator insert(const_iterator pos, const std::ranges::range auto& r)
-      {
-         return impl.insert(pos, r);
-      }
-
-      iterator insert(const_iterator pos, std::initializer_list<value_type> init)
-      {
-         return impl.insert(pos, init);
-      }
-
-      template <class... args_>
-      iterator emplace(const_iterator pos, args_&&... args)
-      {
-         return impl.emplace(pos, std::forward<args_>(args)...);
-      }
-
-      iterator erase(const_iterator pos) { return impl.erase(pos); }
-      iterator erase(const_iterator first, const_iterator last) { return impl.erase(first, last); }
-
-      void push_back(const_reference value) { impl.push_back(value); }
-      void push_back(value_type&& value) { impl.push_back(std::move(value)); }
-
-      template <class... args_>
-      reference emplace_back(args_&&... args)
-      {
-         return impl.emplace_back(std::forward<args_>(args)...);
-      }
-
-      void pop_back() { impl.pop_back(); }
-
-      void resize(size_type count) { impl.resize(count); }
-      void resize(size_type count, const_reference value) { impl.resize(count, value); }
 
    private:
-      tiny_dynamic_array_impl<any_> impl;
-      details::static_array_storage<any_, buff_sz> storage;
+      pointer p_begin{nullptr};
+      size_type elem_count{0};
+      size_type cap{0};
+      details::static_array_storage<value_type, buff_sz> storage;
    };
 
    template <class any_>

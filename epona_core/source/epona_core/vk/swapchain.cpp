@@ -189,6 +189,8 @@ namespace core::vk
          });
          // clang-format on
       }
+      return monad::to_right(detail::error{
+         .type = swapchain::make_error_code(swapchain::error::surface_handle_not_provided)});
    }
 
    swapchain_builder& swapchain_builder::set_desired_format(VkSurfaceFormatKHR format) noexcept

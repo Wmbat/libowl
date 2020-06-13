@@ -24,7 +24,7 @@ cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
 
 set( CLANG_DEBUG_FLAGS -o0 -g )
 set( CLANG_RELEASE_FLAGS -o3 )
-set( GNU_DEBUG_FLAGS -o0, -g )
+set( GNU_DEBUG_FLAGS -o0 -g -fsanitize=address -fsanitize=undefined )
 set( GNU_RELEASE_FLAGS -o3 )
 
 FetchContent_Declare( gtest
@@ -42,6 +42,9 @@ target_link_libraries( epona_core_test
    PUBLIC
       epona_core
       gtest
+   PRIVATE
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
 set_target_properties( epona_core_test
