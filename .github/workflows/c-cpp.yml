@@ -22,7 +22,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Download libxrandr
-      run: sudo apt-get install libxrandr-dev
+      run: |
+        sudo apt-get install libxrandr-dev
+        sudo apt-get instarr libxinerama-dev
     - name: Download gcc-10
       run: sudo apt-get install gcc-10
     - name: Download Ninja and CMake
