@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Download libxrandr
+      run: sudo apt-get install libxrandr
     - name: Download Ninja and CMake
       id: cmake_and_ninja
       shell: cmake -P {0}
@@ -54,6 +56,14 @@ jobs:
             COMMAND chmod +x ${cmake_dir}/cmake
           )
         endif() 
+    - name: Cache GCC-10
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-gcc-10
+      with:
+        path: ~/build
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
     - name: Download GCC-10
       run: |
         cd ~/
@@ -69,5 +79,11 @@ jobs:
         make -j 8
         sudo make install-strip
     - name: Build and Compile Project
-      run: python build.py -G make -C gcc -B release
-        
+      run: |
+        execute_process(
+          COMMAND python build.py -G make -C gcc -B release --build-test
+          RESULT_VARIABLE result
+        )
+        if (NOT result EQUAL 0)
+          message(FATAL_ERROR "Bad exit status")
+        endif() 
