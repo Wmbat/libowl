@@ -1,9 +1,19 @@
 cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
-include( FetchContent )
-project( epona
-   VERSION 0.0.2
+
+set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
+set(CPM_DOWNLOAD_VERSION 0.27)
+
+if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION} AND CPM_VERSION STREQUAL CPM_DOWNLOAD_VERSION))
+  message(STATUS "Downloading CPM.cmake")
+  file(DOWNLOAD https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake ${CPM_DOWNLOAD_LOCATION})
+endif()
+
+include(${CPM_DOWNLOAD_LOCATION})
+
+project(epona
+   VERSION 0.0.1
    DESCRIPTION "A Vulkan based rendering engine"
-   LANGUAGES CXX 
+   LANGUAGES CXX
 )
 
 option( BUILD_TESTS "Build unit tests" ON )
@@ -26,11 +36,6 @@ set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" )
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-set( CLANG_DEBUG_FLAGS -o0 -Wall -Wextra -Werror )
-set( CLANG_RELEASE_FLAGS -o3 )
-set( GNU_DEBUG_FLAGS -o0, -g -Wall -Wextra -Werror )
-set( GNU_RELEASE_FLAGS -o3 )
-
 message( STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}" )
 message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}" )
 
@@ -46,8 +51,8 @@ target_compile_options( ${PROJECT_NAME}
    PRIVATE
       $<$<PLATFORM_ID:UNIX>:-pthread>
 
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -Wall -Wextra -Werror>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
         -Wconversion -fsanitize=address>

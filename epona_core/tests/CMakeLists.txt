@@ -22,19 +22,12 @@
 
 cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
 
-set( CLANG_DEBUG_FLAGS -o0 -g )
-set( CLANG_RELEASE_FLAGS -o3 )
-set( GNU_DEBUG_FLAGS -o0 -g -fsanitize=address -fsanitize=undefined )
-set( GNU_RELEASE_FLAGS -o3 )
-
-FetchContent_Declare( gtest
-    GIT_REPOSITORY https://github.com/google/googletest
+CPMAddPackage(
+    NAME gtest
+    VERSION 1.10.0
+    GITHUB_REPOSITORY google/googletest
     GIT_TAG release-1.10.0
 )
-
-FetchContent_MakeAvailable( gtest )
-
-message( STATUS "[${PROJECT_NAME}] Fetching gtest 1.10.0" )
 
 add_executable( epona_core_test )
 
@@ -59,11 +52,11 @@ target_compile_features( epona_core_test
 
 target_compile_options( epona_core_test
    PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:${CLANG_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:${CLANG_RELEASE_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:${GNU_DEBUG_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:${GNU_RELEASE_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -fsanitize=address -fsanitize=undefined>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
 target_precompile_headers( epona_core_test
