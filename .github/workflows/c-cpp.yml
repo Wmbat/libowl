@@ -94,9 +94,6 @@ jobs:
             -D CMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
           RESULT_VARIABLE result
         )
-        if (NOT result EQUAL 0)
-          message(FATAL_ERROR "Bad exit status")
-        endif()
     - name: Build
       shell: cmake -P {0}
       run: |
