@@ -23,7 +23,7 @@
  */
 
 #include "epona_core/gui/window.hpp"
-#include "epona_core/vk/details/result.hpp"
+#include "epona_core/vk/detail/result.hpp"
 
 #include <memory>
 
@@ -34,8 +34,9 @@ namespace core
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-      p_wnd = wnd_ptr(
-         glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr), glfwDestroyWindow);
+      p_wnd = wnd_ptr(glfwCreateWindow(static_cast<int>(width), static_cast<int>(height),
+                         title.c_str(), nullptr, nullptr),
+         glfwDestroyWindow);
    }
 
    window::window(std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in) :
@@ -44,25 +45,26 @@ namespace core
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-      p_wnd = wnd_ptr(
-         glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr), glfwDestroyWindow);
+      p_wnd = wnd_ptr(glfwCreateWindow(static_cast<int>(width), static_cast<int>(height),
+                         title.c_str(), nullptr, nullptr),
+         glfwDestroyWindow);
    }
 
    bool window::is_open() { return !glfwWindowShouldClose(p_wnd.get()); }
 
-   vk::details::result<VkSurfaceKHR> window::get_surface(VkInstance inst) const noexcept
+   vk::detail::result<VkSurfaceKHR> window::get_surface(VkInstance inst) const noexcept
    {
       VkSurfaceKHR surface = VK_NULL_HANDLE;
       const auto res = glfwCreateWindowSurface(inst, p_wnd.get(), nullptr, &surface);
 
       if (res != VK_SUCCESS)
       {
-         vk::details::error err{};
+         vk::detail::error err{};
          err.result = res;
 
-         return monads::right_t<vk::details::error>{err};
+         return monad::right_t<vk::detail::error>{err};
       }
 
-      return monads::left_t<VkSurfaceKHR>{surface};
+      return monad::left_t<VkSurfaceKHR>{surface};
    }
 } // namespace core

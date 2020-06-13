@@ -5,7 +5,7 @@
 
 namespace core::vk
 {
-   namespace details
+   namespace detail
    {
       option<uint32_t> get_graphics_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept
@@ -135,7 +135,7 @@ namespace core::vk
       };
 
       const physical_device_error_category physical_device_error_cat;
-   } // namespace details
+   } // namespace detail
 
    std::string physical_device::to_string(error err)
    {
@@ -156,7 +156,7 @@ namespace core::vk
 
    std::error_code physical_device::make_error_code(error err)
    {
-      return {static_cast<int>(err), details::physical_device_error_cat};
+      return {static_cast<int>(err), detail::physical_device_error_cat};
    }
 
    physical_device::physical_device(physical_device&& other) noexcept { *this = std::move(other); }
@@ -200,20 +200,20 @@ namespace core::vk
 
    bool physical_device::has_dedicated_compute_queue() const
    {
-      return details::get_dedicated_compute_queue_index(queue_families).has_value();
+      return detail::get_dedicated_compute_queue_index(queue_families).has_value();
    }
    bool physical_device::has_dedicated_transfer_queue() const
    {
-      return details::get_dedicated_transfer_queue_index(queue_families).has_value();
+      return detail::get_dedicated_transfer_queue_index(queue_families).has_value();
    }
 
    bool physical_device::has_separated_compute_queue() const
    {
-      return details::get_separated_compute_queue_index(queue_families).has_value();
+      return detail::get_separated_compute_queue_index(queue_families).has_value();
    }
    bool physical_device::has_separated_transfer_queue() const
    {
-      return details::get_separated_transfer_queue_index(queue_families).has_value();
+      return detail::get_separated_transfer_queue_index(queue_families).has_value();
    }
 
    physical_device_selector::physical_device_selector(const instance& inst, logger* p_logger) :
@@ -223,7 +223,7 @@ namespace core::vk
       sys_info.instance_extensions = inst.extensions;
    }
 
-   details::result<physical_device> physical_device_selector::select()
+   detail::result<physical_device> physical_device_selector::select()
    {
       tiny_dynamic_array<VkPhysicalDevice, 4> physical_devices;
 
@@ -232,13 +232,13 @@ namespace core::vk
       uint32_t device_count = 0;
       if (vkEnumeratePhysicalDevices(sys_info.instance, &device_count, nullptr) != VK_SUCCESS)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             physical_device::make_error_code(error::failed_retrieve_physical_device_count)};
       }
 
       if (device_count == 0)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             physical_device::make_error_code(error::no_physical_device_found)};
       }
 
@@ -247,7 +247,7 @@ namespace core::vk
       if (vkEnumeratePhysicalDevices(sys_info.instance, &device_count, physical_devices.data()) !=
          VK_SUCCESS)
       {
-         return monads::right_t<details::error>{physical_device::make_error_code(
+         return monad::right_t<detail::error>{physical_device::make_error_code(
             physical_device::error::failed_enumerate_physical_devices)};
       }
 
@@ -282,7 +282,7 @@ namespace core::vk
 
       if (selected.phys_device == VK_NULL_HANDLE)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             physical_device::make_error_code(error::no_suitable_device)};
       }
 
@@ -298,7 +298,7 @@ namespace core::vk
       device.queue_families = selected.queue_families;
       device.name = device.properties.deviceName;
 
-      return monads::left_t<physical_device>{std::move(device)};
+      return monad::left_t<physical_device>{std::move(device)};
    }
 
    physical_device_selector& physical_device_selector::set_prefered_gpu_type(
@@ -378,31 +378,31 @@ namespace core::vk
       const physical_device_description& desc) const noexcept -> suitable
    {
       if (selection_info.require_dedicated_compute &&
-         !details::get_dedicated_compute_queue_index(desc.queue_families))
+         !detail::get_dedicated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (selection_info.require_dedicated_transfer &&
-         !details::get_dedicated_transfer_queue_index(desc.queue_families))
+         !detail::get_dedicated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (selection_info.require_separated_compute &&
-         !details::get_separated_compute_queue_index(desc.queue_families))
+         !detail::get_separated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (selection_info.require_separated_transfer &&
-         !details::get_separated_transfer_queue_index(desc.queue_families))
+         !detail::get_separated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (selection_info.require_present &&
-         !details::get_present_queue_index(desc.phys_device, sys_info.surface, desc.queue_families))
+         !detail::get_present_queue_index(desc.phys_device, sys_info.surface, desc.queue_families))
       {
          return suitable::no;
       }

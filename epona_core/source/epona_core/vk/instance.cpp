@@ -51,6 +51,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
    }
    else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
    {
+      /*
       if (!type.empty())
       {
          LOG_INFO_P(p_logger, "{1} - {2}", type, p_callback_data->pMessage);
@@ -59,6 +60,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
       {
          LOG_INFO_P(p_logger, "{1}", p_callback_data->pMessage);
       }
+      */
    }
 
    return VK_FALSE;
@@ -137,17 +139,21 @@ namespace core::vk
       return {static_cast<int>(err), inst_err_cat};
    }
 
-   vk::details::result<instance> instance_builder::build(const runtime& rt, logger* const p_logger)
+   instance_builder::instance_builder(const runtime& rt, logger* const p_logger) :
+      rt{rt}, p_logger{p_logger}
+   {}
+
+   vk::detail::result<instance> instance_builder::build()
    {
       if (rt.api_version == 0)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             instance::make_error_code(instance::error::vulkan_version_unavailable)};
       }
 
       if (VK_VERSION_MINOR(rt.api_version) < 2)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             instance::make_error_code(instance::error::vulkan_version_1_2_unavailable)};
       }
 
@@ -165,7 +171,7 @@ namespace core::vk
          extensions.push_back(str);
       });
 
-      if constexpr (vk::details::ENABLE_VALIDATION_LAYERS)
+      if constexpr (vk::detail::ENABLE_VALIDATION_LAYERS)
       {
          if (rt.debug_utils_available)
          {
@@ -205,7 +211,7 @@ namespace core::vk
 
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             instance::make_error_code(instance::error::window_extensions_not_present)};
       }
 
@@ -222,12 +228,12 @@ namespace core::vk
 
          if (!is_present)
          {
-            return monads::right_t<details::error>{
+            return monad::right_t<detail::error>{
                instance::make_error_code(instance::error::instance_extension_not_supported)};
          }
       }
 
-      std::ranges::for_each(extensions, [p_logger](const char* name) {
+      std::ranges::for_each(extensions, [&](const char* name) {
          LOG_INFO_P(p_logger, "Instance extension: {1} - ENABLED", name)
       });
 
@@ -241,7 +247,7 @@ namespace core::vk
       instance_create_info.enabledLayerCount = 0;
       instance_create_info.ppEnabledLayerNames = nullptr;
 
-      if constexpr (details::ENABLE_VALIDATION_LAYERS)
+      if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
          tiny_dynamic_array<const char*, 8> layers;
          std::ranges::for_each(info.layers, [&layers](const char* str) {
@@ -265,7 +271,7 @@ namespace core::vk
 
                if (!is_present)
                {
-                  return monads::right_t<details::error>{
+                  return monad::right_t<detail::error>{
                      instance::make_error_code(instance::error::instance_layer_not_supported)};
                }
             }
@@ -274,7 +280,7 @@ namespace core::vk
             instance_create_info.ppEnabledLayerNames = layers.data();
          }
 
-         std::ranges::for_each(layers, [p_logger](const char* name) {
+         std::ranges::for_each(layers, [&](const char* name) {
             LOG_INFO_P(p_logger, "Instance layers: {1} - ENABLED", name)
          });
       }
@@ -288,13 +294,13 @@ namespace core::vk
       const VkResult inst_res = vkCreateInstance(&instance_create_info, nullptr, &inst.vk_instance);
       if (inst_res != VK_SUCCESS)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             instance::make_error_code(instance::error::failed_create_instance), inst_res};
       }
 
       volkLoadInstance(inst.vk_instance);
 
-      if constexpr (details::ENABLE_VALIDATION_LAYERS)
+      if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
          // clang-format off
          const VkDebugUtilsMessengerCreateInfoEXT debug_create_info
@@ -317,12 +323,12 @@ namespace core::vk
             inst.vk_instance, &debug_create_info, nullptr, &inst.vk_debug_messenger);
          if (debug_res != VK_SUCCESS)
          {
-            return monads::right_t<details::error>{
+            return monad::right_t<detail::error>{
                instance::make_error_code(instance::error::failed_create_debug_utils), debug_res};
          }
       }
 
-      return monads::left_t<instance>{std::move(inst)};
+      return monad::left_t<instance>{std::move(inst)};
    }
 
    instance_builder& instance_builder::set_application_name(std::string_view app_name)

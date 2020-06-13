@@ -8,11 +8,12 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/vk/details/includes.hpp"
-#include "epona_core/vk/details/result.hpp"
+#include "epona_core/vk/detail/includes.hpp"
+#include "epona_core/vk/detail/result.hpp"
 #include "epona_core/vk/runtime.hpp"
 
 #include <system_error>
+#include <type_traits>
 
 namespace core::vk
 {
@@ -88,16 +89,14 @@ namespace core::vk
    class instance_builder
    {
    public:
+      instance_builder(const vk::runtime& rt, logger* const p_logger = nullptr);
+
       /**
        * @brief Constructs an instance using the information provided.
        *
-       * @param[in] runtime The vulkan runtime information
-       * @param[in] p_logger A pointer to a logger for registering certain information.
-       *
        * @return An instance object or an error code.
        */
-      vk::details::result<instance> build(
-         const vk::runtime& runtime, logger* const p_logger = nullptr);
+      vk::detail::result<instance> build();
 
       /**
        * @brief Set the information regarding the application name.
@@ -142,6 +141,10 @@ namespace core::vk
       instance_builder& enable_extension(const std::string& extension_name);
 
    private:
+      const vk::runtime& rt;
+
+      logger* const p_logger;
+
       struct info
       {
          std::string app_name{};
@@ -154,4 +157,13 @@ namespace core::vk
 
       } info;
    };
+
 } // namespace core::vk
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<core::vk::instance::error> : true_type
+   {
+   };
+} // namespace std

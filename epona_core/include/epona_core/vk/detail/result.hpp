@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "epona_core/details/monads/either.hpp"
-#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/details/monad/either.hpp"
+#include "epona_core/vk/detail/includes.hpp"
 
 #include <cassert>
 #include <system_error>
 
-namespace core::vk::details
+namespace core::vk::detail
 {
    /**
     * @class error result.hpp "epona_core/vk/details/result.hpp"
@@ -31,4 +31,4 @@ namespace core::vk::details
    template <typename any_>
    using result = either<any_, error>;
 
-} // namespace core::vk::details
+} // namespace core::vk::detail

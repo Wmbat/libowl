@@ -2,7 +2,7 @@
 
 #include "epona_core/containers/dynamic_array.hpp"
 #include "epona_core/details/logger.hpp"
-#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/vk/detail/includes.hpp"
 
 namespace core::vk
 {

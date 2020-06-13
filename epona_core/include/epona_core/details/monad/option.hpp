@@ -163,7 +163,7 @@ namespace core
       }
 
       constexpr auto map(const std::invocable<value_type> auto& fun) && 
-         -> option<decltype(fun(std::move(val)))> requires std::movable<value_type>
+         -> option<decltype(fun(std::move(val)))>
       {
          if (!has_value())
          {

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/vk/detail/includes.hpp"
 #include "epona_core/vk/physical_device.hpp"
+#include <type_traits>
 
 namespace core::vk
 {
@@ -52,11 +53,11 @@ namespace core::vk
       device& operator=(const device& other) = delete;
       device& operator=(device&& other);
 
-      details::result<uint32_t> get_queue_index(queue::type type) const;
-      details::result<uint32_t> get_dedicated_queue_index(queue::type type) const;
+      detail::result<uint32_t> get_queue_index(queue::type type) const;
+      detail::result<uint32_t> get_dedicated_queue_index(queue::type type) const;
 
-      details::result<VkQueue> get_queue(queue::type type) const;
-      details::result<VkQueue> get_dedicated_queue(queue::type type) const;
+      detail::result<VkQueue> get_queue(queue::type type) const;
+      detail::result<VkQueue> get_dedicated_queue(queue::type type) const;
 
       static std::string to_string(error err);
       static std::error_code make_error_code(error err);
@@ -76,7 +77,7 @@ namespace core::vk
    public:
       device_builder(physical_device&& phys_device, logger* p_logger = nullptr);
 
-      details::result<device> build();
+      detail::result<device> build();
 
       device_builder& set_queue_setup(const dynamic_array<queue::description>& descriptions);
       device_builder& add_desired_extension(const std::string& extension_name);
@@ -94,3 +95,16 @@ namespace core::vk
       } info;
    };
 } // namespace core::vk
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<core::vk::queue::error> : true_type
+   {
+   };
+
+   template <>
+   struct is_error_code_enum<core::vk::device::error> : true_type
+   {
+   };
+} // namespace std

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/details/monads/option.hpp"
-#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/details/monad/option.hpp"
+#include "epona_core/vk/detail/includes.hpp"
 #include "epona_core/vk/instance.hpp"
+#include <type_traits>
 
 namespace core::vk
 {
-   namespace details
+   namespace detail
    {
       option<uint32_t> get_graphics_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
@@ -27,7 +28,7 @@ namespace core::vk
 
       option<uint32_t> get_separated_transfer_queue_index(
          const tiny_dynamic_array<VkQueueFamilyProperties, 5>& families) noexcept;
-   } // namespace details
+   } // namespace detail
 
    struct physical_device
    {
@@ -87,7 +88,7 @@ namespace core::vk
    public:
       physical_device_selector(const instance& inst, logger* p_logger = nullptr);
 
-      details::result<physical_device> select();
+      detail::result<physical_device> select();
 
       physical_device_selector& set_prefered_gpu_type(physical_device::type type) noexcept;
       physical_device_selector& set_surface(VkSurfaceKHR surface) noexcept;
@@ -146,3 +147,11 @@ namespace core::vk
       suitable is_device_suitable(const physical_device_description& desc) const noexcept;
    };
 } // namespace core::vk
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<core::vk::physical_device::error> : true_type
+   {
+   };
+} // namespace std

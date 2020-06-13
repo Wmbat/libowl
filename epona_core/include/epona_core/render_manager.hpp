@@ -9,8 +9,8 @@
 
 #include "epona_core/details/logger.hpp"
 #include "epona_core/gui/window.hpp"
-#include "epona_core/vk/details/includes.hpp"
-#include "epona_core/vk/details/result.hpp"
+#include "epona_core/vk/detail/includes.hpp"
+#include "epona_core/vk/detail/result.hpp"
 #include "epona_core/vk/device.hpp"
 #include "epona_core/vk/instance.hpp"
 #include "epona_core/vk/runtime.hpp"
@@ -20,11 +20,11 @@ namespace core
    class render_manager
    {
    public:
-      render_manager(window* p_wnd, logger* p_logger = nullptr);
+      render_manager(window* const p_wnd, logger* const p_logger = nullptr);
 
    private:
-      window* p_window;
-      logger* p_logger;
+      window* const p_window;
+      logger* const p_logger;
 
       std::string engine_name = "Epona";
 

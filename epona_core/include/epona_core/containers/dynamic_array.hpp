@@ -130,7 +130,8 @@ namespace core
    };
 
    /**
-    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
+    * @struct tiny_dynamic_array_align_and_size dynamic_array.hpp
+    * <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
     * @date Monday, April 29th, 2020
     * @copyright MIT License.

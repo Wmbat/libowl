@@ -25,8 +25,8 @@
 #pragma once
 
 #include "epona_core/gui/widget.hpp"
-#include "epona_core/vk/details/includes.hpp"
-#include "epona_core/vk/details/result.hpp"
+#include "epona_core/vk/detail/includes.hpp"
+#include "epona_core/vk/detail/result.hpp"
 
 #include <functional>
 #include <memory>
@@ -45,7 +45,7 @@ namespace core
 
       bool is_open();
 
-      vk::details::result<VkSurfaceKHR> get_surface(VkInstance inst) const noexcept;
+      vk::detail::result<VkSurfaceKHR> get_surface(VkInstance inst) const noexcept;
 
    private:
       std::string title{"EGL standard window"};

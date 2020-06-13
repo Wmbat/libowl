@@ -1,13 +1,13 @@
 #pragma once
 
-#include "epona_core/details/monads/option.hpp"
+#include "epona_core/details/monad/option.hpp"
 
 #include <cassert>
 #include <utility>
 
 namespace core
 {
-   namespace monads
+   namespace monad
    {
       template <typename any_>
       struct left_t
@@ -20,7 +20,31 @@ namespace core
       {
          any_ value;
       };
-   } // namespace monads
+
+      template <typename any_>
+      constexpr auto to_left(const any_& any) -> left_t<any_>
+      {
+         return {any};
+      }
+
+      template <std::movable any_>
+      constexpr auto to_left(any_&& any) -> left_t<any_>
+      {
+         return {std::move(any)};
+      }
+
+      template <typename any_>
+      constexpr auto to_right(const any_& any) -> right_t<any_>
+      {
+         return {any};
+      }
+
+      template <std::movable any_>
+      constexpr auto to_right(any_&& any) -> right_t<any_>
+      {
+         return {std::move(any)};
+      }
+   } // namespace monad
 
    template <typename left_, typename right_>
    class either
@@ -30,15 +54,15 @@ namespace core
       using right_type = right_;
 
    public:
-      constexpr either(const monads::left_t<left_type>& left) : left_val{left.value}, is_left{true}
+      constexpr either(const monad::left_t<left_type>& left) : left_val{left.value}, is_left{true}
       {}
-      constexpr either(monads::left_t<left_type>&& left) :
+      constexpr either(monad::left_t<left_type>&& left) :
          left_val{std::move(left.value)}, is_left{true}
       {}
-      constexpr either(const monads::right_t<right_type>& right) :
+      constexpr either(const monad::right_t<right_type>& right) :
          right_val{right.value}, is_left{false}
       {}
-      constexpr either(monads::right_t<right_type>&& right) :
+      constexpr either(monad::right_t<right_type>&& right) :
          right_val{std::move(right.value)}, is_left{false}
       {}
       constexpr either(const either& other) : is_left{other.is_left}
@@ -67,7 +91,7 @@ namespace core
       }
       ~either() { destroy(); }
 
-      constexpr either& operator=(const monads::left_t<left_type>& left)
+      constexpr either& operator=(const monad::left_t<left_type>& left)
       {
          destroy();
 
@@ -76,7 +100,7 @@ namespace core
 
          return *this;
       }
-      constexpr either& operator=(monads::left_t<left_type>&& left)
+      constexpr either& operator=(monad::left_t<left_type>&& left)
       {
          destroy();
 
@@ -85,7 +109,7 @@ namespace core
 
          return *this;
       }
-      constexpr either& operator=(const monads::right_t<right_type>& right)
+      constexpr either& operator=(const monad::right_t<right_type>& right)
       {
          destroy();
 
@@ -94,7 +118,7 @@ namespace core
 
          return *this;
       }
-      constexpr either& operator=(monads::right_t<right_type>&& right)
+      constexpr either& operator=(monad::right_t<right_type>&& right)
       {
          destroy();
 
@@ -190,19 +214,19 @@ namespace core
 
    public:
       template <std::copyable inner_left_ = left_type, std::copyable inner_right_ = right_type>
-      auto join() const -> std::common_type_t<inner_left_, inner_right_>
+      constexpr auto join() const -> std::common_type_t<inner_left_, inner_right_>
       {
          return is_left ? left_val : right_val;
       }
 
       template <std::movable inner_left_ = left_type, std::movable inner_right_ = right_type>
-      auto join() && -> std::common_type_t<inner_left_, inner_right_>
+      constexpr auto join() && -> std::common_type_t<inner_left_, inner_right_>
       {
          return is_left ? std::move(left_val) : std::move(right_val);
       }
 
       template <std::movable inner_left_ = left_type, std::movable inner_right_ = right_type>
-      auto join() & -> std::common_type_t<inner_left_, inner_right_>
+      constexpr auto join() & -> std::common_type_t<inner_left_, inner_right_>
       {
          return is_left ? std::move(left_val) : std::move(right_val);
       }
@@ -229,11 +253,11 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<decltype(fun(left_val))>{fun(left_val)};
+            return monad::left_t<decltype(fun(left_val))>{fun(left_val)};
          }
          else
          {
-            return monads::right_t<inner_right_>{right_val};
+            return monad::right_t<inner_right_>{right_val};
          }
       }
 
@@ -243,11 +267,11 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
+            return monad::left_t<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
          }
          else
          {
-            return monads::right_t<inner_right_>{std::move(right_val)};
+            return monad::right_t<inner_right_>{std::move(right_val)};
          }
       }
 
@@ -257,11 +281,11 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
+            return monad::left_t<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
          }
          else
          {
-            return monads::right_t<inner_right_>{std::move(right_val)};
+            return monad::right_t<inner_right_>{std::move(right_val)};
          }
       }
       
@@ -271,11 +295,11 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<inner_left_>{left_val};
+            return monad::left_t<inner_left_>{left_val};
          }
          else
          {
-            return monads::right_t<decltype(fun(right_val))>{fun(right_val)};
+            return monad::right_t<decltype(fun(right_val))>{fun(right_val)};
          }
       }
 
@@ -285,11 +309,11 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<inner_left_>{std::move(left_val)};
+            return monad::left_t<inner_left_>{std::move(left_val)};
          }
          else
          {
-            return monads::right_t<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
+            return monad::right_t<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
          }
       }
 
@@ -299,13 +323,34 @@ namespace core
       {
          if (is_left)
          {
-            return monads::left_t<inner_left_>{std::move(left_val)};
+            return monad::left_t<inner_left_>{std::move(left_val)};
          }
          else
          {
-            return monads::right_t<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
+            return monad::right_t<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
          }
       }
       // clang-format on
    };
+
+   namespace monad
+   {
+      // clang-format off
+      template <class error_, class fun_, class... args_>
+         requires std::invocable<fun_, args_...> 
+      constexpr auto try_wrap(const fun_& fun, args_&&... args) 
+         -> either<std::invoke_result_t<fun_, args_...>, error_>
+      {
+         using ret_type = std::invoke_result_t<fun_, args_...>;
+         try
+         {
+            return monad::left_t<ret_type>(fun(std::forward<args_>(args)...));
+         }
+         catch (const error_& e)
+         {
+            return monad::right_t<error_>(e);
+         }
+      }
+      // clang-format on
+   } // namespace monad
 } // namespace core

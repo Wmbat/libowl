@@ -1,7 +1,7 @@
 #pragma once
 
 #include "epona_core/details/logger.hpp"
-#include "epona_core/vk/details/includes.hpp"
+#include "epona_core/vk/detail/includes.hpp"
 
 #if defined(_WIN32) || defined(WIN32)
 #   if defined(EPONA_CORE_STATIC)
@@ -25,7 +25,7 @@ namespace core
          // error
       }
 
-      LOG_INFO(p_logger, "Volk initialized");
+      LOG_INFO(p_logger, "volk initialized");
 
       if (auto result = glfwInit(); result != GLFW_TRUE)
       {

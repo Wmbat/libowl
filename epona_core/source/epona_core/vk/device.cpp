@@ -6,7 +6,7 @@
 
 namespace core::vk
 {
-   namespace details
+   namespace detail
    {
       std::string to_string(queue::error err)
       {
@@ -55,7 +55,7 @@ namespace core::vk
       };
 
       const device_error_category device_err_cat;
-   } // namespace details
+   } // namespace detail
 
    device::device(device&& other) noexcept { *this = std::move(other); }
 
@@ -83,129 +83,129 @@ namespace core::vk
       return *this;
    }
 
-   details::result<uint32_t> device::get_queue_index(queue::type type) const
+   detail::result<uint32_t> device::get_queue_index(queue::type type) const
    {
       using error = queue::error;
 
       if (type == queue::type::present)
       {
-         const auto index = details::get_present_queue_index(
+         const auto index = detail::get_present_queue_index(
             phys_device.vk_physical_device, phys_device.vk_surface, phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(error::present_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(error::present_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else if (type == queue::type::graphics)
       {
-         const auto index = details::get_graphics_queue_index(phys_device.queue_families);
+         const auto index = detail::get_graphics_queue_index(phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(error::graphics_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(error::graphics_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else if (type == queue::type::compute)
       {
-         const auto index = details::get_separated_compute_queue_index(phys_device.queue_families);
+         const auto index = detail::get_separated_compute_queue_index(phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(error::compute_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(error::compute_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else if (type == queue::type::transfer)
       {
-         const auto index = details::get_separated_transfer_queue_index(phys_device.queue_families);
+         const auto index = detail::get_separated_transfer_queue_index(phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(queue::error::transfer_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(queue::error::transfer_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else
       {
-         return monads::right_t<details::error>{
-            details::make_error_code(queue::error::invalid_queue_family_index)};
+         return monad::right_t<detail::error>{
+            detail::make_error_code(queue::error::invalid_queue_family_index)};
       }
    }
 
-   details::result<uint32_t> device::get_dedicated_queue_index(queue::type type) const
+   detail::result<uint32_t> device::get_dedicated_queue_index(queue::type type) const
    {
       if (type == queue::type::compute)
       {
-         const auto index = details::get_dedicated_compute_queue_index(phys_device.queue_families);
+         const auto index = detail::get_dedicated_compute_queue_index(phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(queue::error::compute_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(queue::error::compute_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else if (type == queue::type::transfer)
       {
-         const auto index = details::get_dedicated_transfer_queue_index(phys_device.queue_families);
+         const auto index = detail::get_dedicated_transfer_queue_index(phys_device.queue_families);
          if (!index)
          {
-            return monads::right_t<details::error>{
-               details::make_error_code(queue::error::transfer_unavailable)};
+            return monad::right_t<detail::error>{
+               detail::make_error_code(queue::error::transfer_unavailable)};
          }
          else
          {
-            return monads::left_t<uint32_t>{.value = *index};
+            return monad::left_t<uint32_t>{.value = *index};
          }
       }
       else
       {
-         return monads::right_t<details::error>{
-            details::make_error_code(queue::error::invalid_queue_family_index)};
+         return monad::right_t<detail::error>{
+            detail::make_error_code(queue::error::invalid_queue_family_index)};
       }
    }
 
-   details::result<VkQueue> device::get_queue(queue::type type) const
+   detail::result<VkQueue> device::get_queue(queue::type type) const
    {
       // clang-format off
       return get_queue_index(type)
          .join(
-            [&](uint32_t i) -> details::result<VkQueue> {
-               return monads::left_t<VkQueue>{get_queue(i)};
+            [&](uint32_t i) -> detail::result<VkQueue> {
+               return monad::left_t<VkQueue>{get_queue(i)};
             },
-            [](const details::error& err) -> details::result<VkQueue> {
-               return monads::right_t<details::error>{err};
+            [](const detail::error& err) -> detail::result<VkQueue> {
+               return monad::right_t<detail::error>{err};
             });
       // clang-format on
    }
 
-   details::result<VkQueue> device::get_dedicated_queue(queue::type type) const
+   detail::result<VkQueue> device::get_dedicated_queue(queue::type type) const
    {
       // clang-format off
       return get_dedicated_queue_index(type)
          .join(
-            [&](uint32_t i) -> details::result<VkQueue> {
-               return monads::left_t<VkQueue>{get_queue(i)};
+            [&](uint32_t i) -> detail::result<VkQueue> {
+               return monad::left_t<VkQueue>{get_queue(i)};
             },
-            [](const details::error& err) -> details::result<VkQueue> {
-               return monads::right_t<details::error>{err};
+            [](const detail::error& err) -> detail::result<VkQueue> {
+               return monad::right_t<detail::error>{err};
             });
       // clang-format on
    }
@@ -231,7 +231,7 @@ namespace core::vk
 
    std::error_code device::make_error_code(error err)
    {
-      return {static_cast<int>(err), details::device_err_cat};
+      return {static_cast<int>(err), detail::device_err_cat};
    }
 
    device_builder::device_builder(physical_device&& phys_device, logger* p_logger) :
@@ -240,7 +240,7 @@ namespace core::vk
       info.phys_device = std::move(phys_device);
    }
 
-   details::result<device> device_builder::build()
+   detail::result<device> device_builder::build()
    {
       dynamic_array<queue::description> descriptions;
       descriptions.insert(descriptions.cend(), info.queue_descriptions);
@@ -305,7 +305,7 @@ namespace core::vk
 
          if (!is_present)
          {
-            return monads::right_t<details::error>{
+            return monad::right_t<detail::error>{
                device::make_error_code(device::error::device_extension_not_supported)};
          }
       }
@@ -334,7 +334,7 @@ namespace core::vk
       const VkResult res = vkCreateDevice(vk_gpu, &device_create_info, nullptr, &vk_device);
       if (res != VK_SUCCESS)
       {
-         return monads::right_t<details::error>{
+         return monad::right_t<detail::error>{
             device::make_error_code(device::error::failed_create_device), res};
       }
 
@@ -345,7 +345,7 @@ namespace core::vk
       device.phys_device = std::move(info.phys_device);
       device.extensions = extensions;
 
-      return monads::left_t<vk::device>{std::move(device)};
+      return monad::left_t<vk::device>{std::move(device)};
    }
 
    device_builder& device_builder::set_queue_setup(

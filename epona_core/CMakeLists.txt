@@ -89,7 +89,7 @@ target_compile_options( ${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
-        -Wconversion -fsanitize=address>
+        -Wconversion -fsanitize=address -fsanitize=undefined>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
@@ -111,6 +111,7 @@ target_link_libraries( ${PROJECT_NAME}
       spdlog::spdlog
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
 if ( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0" ) 
@@ -140,6 +141,7 @@ target_sources( ${PROJECT_NAME}
       source/epona_core/vk/instance.cpp
       source/epona_core/vk/physical_device.cpp
       source/epona_core/vk/defines.cpp
+      source/epona_core/vk/swapchain.cpp
 
       source/epona_core/render_manager.cpp
 )
