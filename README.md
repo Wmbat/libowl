@@ -1,5 +1,6 @@
 # Epona
 
+![C/C++ CI](https://github.com/Wmbat/Epona/workflows/C/C++%20CI/badge.svg)
 [![Documentation](https://codedocs.xyz/Wmbat/Epona.svg)](https://codedocs.xyz/Wmbat/Epona/)
 
 [Epona](https://github.com/Wmbat/Epona) is a small game engine project made using
