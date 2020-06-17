@@ -52,6 +52,7 @@ namespace core
 
    bool window::is_open() { return !glfwWindowShouldClose(p_wnd.get()); }
 
+   /*
    vk::detail::result<VkSurfaceKHR> window::get_surface(VkInstance inst) const noexcept
    {
       VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -67,4 +68,5 @@ namespace core
 
       return monad::left_t<VkSurfaceKHR>{surface};
    }
+   */
 } // namespace core

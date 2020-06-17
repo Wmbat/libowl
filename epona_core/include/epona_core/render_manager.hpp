@@ -8,12 +8,15 @@
 #pragma once
 
 #include "epona_core/details/logger.hpp"
+#include "epona_core/graphics/vk/core.hpp"
 #include "epona_core/gui/window.hpp"
+/*
 #include "epona_core/vk/detail/includes.hpp"
 #include "epona_core/vk/detail/result.hpp"
 #include "epona_core/vk/device.hpp"
 #include "epona_core/vk/instance.hpp"
 #include "epona_core/vk/runtime.hpp"
+*/
 
 namespace core
 {
@@ -28,8 +31,12 @@ namespace core
 
       std::string engine_name = "Epona";
 
+      gfx::vkn::loader loader;
+
+      /*
       vk::runtime runtime;
       vk::instance instance;
       vk::device device;
+      */
    };
 } // namespace core

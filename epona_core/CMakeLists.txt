@@ -79,6 +79,8 @@ target_compile_options(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}
+    SYSTEM PUBLIC   
+        vulkan/vulkan.hpp
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -90,7 +92,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         spdlog::spdlog
         Vulkan-Headers
-        volk_headers
         glfw
         glslang
         SPIRV
@@ -105,7 +106,6 @@ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
             <algorithm> <concepts> <type_traits>
             <cassert> <compare> <cstdint> <cstddef>
             <memory> <spdlog/spdlog.h>
-
     )
 endif()
 
@@ -121,12 +121,15 @@ target_sources(${PROJECT_NAME}
 
         source/epona_core/details/logger.cpp
 
-        source/epona_core/vk/runtime.cpp
-        source/epona_core/vk/device.cpp
-        source/epona_core/vk/instance.cpp
-        source/epona_core/vk/physical_device.cpp
-        source/epona_core/vk/defines.cpp
-        source/epona_core/vk/swapchain.cpp
+        source/epona_core/graphics/instance.cpp
+        source/epona_core/graphics/vk/core.cpp
+
+        #source/epona_core/vk/runtime.cpp
+        #source/epona_core/vk/device.cpp
+        #source/epona_core/vk/instance.cpp
+        #source/epona_core/vk/physical_device.cpp
+        #source/epona_core/vk/defines.cpp
+        #source/epona_core/vk/swapchain.cpp
 
         source/epona_core/render_manager.cpp
 )

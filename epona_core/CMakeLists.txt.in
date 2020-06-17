@@ -32,15 +32,8 @@ CPMAddPackage(
 
 CPMAddPackage(
     NAME Vulkan-Headers
-    VERSION 1.2.135
+    VERSION 1.2.140
     GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
-) 
-
-CPMAddPackage(
-    NAME volk
-    VERSION 1.2.135
-    GITHUB_REPOSITORY zeux/volk
-    GIT_TAG 486f7a86ffdf4444f36aeb53afc50d6b68a5c5a0
 ) 
 
 CPMAddPackage(

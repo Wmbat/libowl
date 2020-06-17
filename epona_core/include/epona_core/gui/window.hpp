@@ -25,8 +25,12 @@
 #pragma once
 
 #include "epona_core/gui/widget.hpp"
+/*
 #include "epona_core/vk/detail/includes.hpp"
 #include "epona_core/vk/detail/result.hpp"
+*/
+
+#include <GLFW/glfw3.h>
 
 #include <functional>
 #include <memory>
@@ -45,7 +49,9 @@ namespace core
 
       bool is_open();
 
+      /*
       vk::detail::result<VkSurfaceKHR> get_surface(VkInstance inst) const noexcept;
+      */
 
    private:
       std::string title{"EGL standard window"};

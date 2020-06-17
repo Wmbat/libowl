@@ -4,50 +4,50 @@ set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
 set(CPM_DOWNLOAD_VERSION 0.27)
 
 if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION} AND CPM_VERSION STREQUAL CPM_DOWNLOAD_VERSION))
-  message(STATUS "Downloading CPM.cmake")
-  file(DOWNLOAD https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake ${CPM_DOWNLOAD_LOCATION})
+    message(STATUS "Downloading CPM.cmake")
+    file(DOWNLOAD https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake ${CPM_DOWNLOAD_LOCATION})
 endif()
 
 include(${CPM_DOWNLOAD_LOCATION})
 
 project(epona
-   VERSION 0.0.1
-   DESCRIPTION "A Vulkan based rendering engine"
-   LANGUAGES CXX
+    VERSION 0.0.1
+    DESCRIPTION "A Vulkan based rendering engine"
+    LANGUAGES CXX
 )
 
-option( BUILD_TESTS "Build unit tests" ON )
-option( BUILD_BENCH "Build benchmarks" ON )
+option(BUILD_TESTS "Build unit tests" ON)
+option(BUILD_BENCH "Build benchmarks" ON)
 
-if ( NOT CMAKE_BUILD_TYPE )
-   set( CMAKE_BUILD_TYPE Release )
-endif( )
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
-message( STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}" )
+message(STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}")
 
-set( EPONA_CORE_STATIC ON CACHE BOOL "" FORCE )
+set(EPONA_CORE_STATIC ON CACHE BOOL "" FORCE)
 
-if ( BUILD_TESTS )
-   set( EPONA_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE )
-endif ( )
+if (BUILD_TESTS)
+   set(EPONA_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
+endif ()
 
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE )
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake" )
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-message( STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}" )
-message( STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}" )
+message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
+message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
-add_subdirectory( epona_core )
+add_subdirectory(epona_core)
 
-add_executable( ${PROJECT_NAME} )
+add_executable(${PROJECT_NAME})
 
-set_target_properties( ${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF )
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-target_compile_features( ${PROJECT_NAME} PRIVATE cxx_std_20 )
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
-target_compile_options( ${PROJECT_NAME}
+target_compile_options(${PROJECT_NAME}
    PRIVATE
       $<$<PLATFORM_ID:UNIX>:-pthread>
 
@@ -59,7 +59,7 @@ target_compile_options( ${PROJECT_NAME}
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
-target_link_libraries( ${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}
    PUBLIC
       epona_core
 
@@ -67,7 +67,7 @@ target_link_libraries( ${PROJECT_NAME}
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
 )
 
-target_sources( ${PROJECT_NAME}
+target_sources(${PROJECT_NAME}
    PRIVATE
       source/main.cpp
 )
