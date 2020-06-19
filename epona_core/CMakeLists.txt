@@ -119,10 +119,10 @@ target_sources(${PROJECT_NAME}
         source/epona_core/memory/pool_allocator.cpp
         source/epona_core/memory/stack_allocator.cpp
 
-        source/epona_core/details/logger.cpp
+        source/epona_core/detail/logger.cpp
 
-        source/epona_core/graphics/instance.cpp
-        source/epona_core/graphics/vk/core.cpp
+        source/epona_core/graphics/vkn/core.cpp
+        source/epona_core/graphics/vkn/instance.cpp
 
         #source/epona_core/vk/runtime.cpp
         #source/epona_core/vk/device.cpp

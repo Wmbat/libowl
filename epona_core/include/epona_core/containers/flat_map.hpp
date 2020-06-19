@@ -9,8 +9,8 @@
 
 #include "epona_core/containers/details.hpp"
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/details/concepts.hpp"
-#include "epona_core/details/error_handling.hpp"
+#include "epona_core/detail/concepts.hpp"
+#include "epona_core/detail/error_handling.hpp"
 #include "epona_core/memory/details.hpp"
 #include "epona_core/memory/multipool_allocator.hpp"
 

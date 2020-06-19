@@ -1,6 +1,6 @@
 #pragma once
 
-#include "epona_core/details/monad/maybe.hpp"
+#include "epona_core/detail/monad/maybe.hpp"
 
 #include <cassert>
 #include <utility>
@@ -20,6 +20,18 @@ namespace core
       {
          any_ val;
       };
+
+      template <class any_>
+      constexpr left<any_> to_left(any_&& value)
+      {
+         return left<any_>{std::forward<any_>(value)};
+      }
+
+      template <class any_>
+      constexpr right<any_> to_right(any_&& value)
+      {
+         return right<any_>{std::forward<any_>(value)};
+      }
    } // namespace monad
 
    template <class left_, class right_>

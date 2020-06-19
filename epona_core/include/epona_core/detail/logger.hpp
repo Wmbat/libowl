@@ -31,18 +31,13 @@ namespace core
       void info(std::string const& msg)
       {
          log.info(msg);
-
-#ifndef NDEBUG
          log.flush();
-#endif
       }
 
       void debug(std::string const& msg)
       {
-#ifndef NDEBUG
          log.debug(msg);
          log.flush();
-#endif
       }
 
       void warn(std::string const& msg)
@@ -122,7 +117,7 @@ namespace core
       std::string buffer = "[{0}] ";                                                               \
       buffer.append(message);                                                                      \
                                                                                                    \
-      p_logger->info(buffer, __FUNCTION__)                                                         \
+      p_logger->debug(buffer, __FUNCTION__);                                                       \
    }
 
 #define LOG_DEBUG_P(p_logger, message, ...)                                                        \
@@ -140,7 +135,7 @@ namespace core
       std::string buffer = "[{0}] ";                                                               \
       buffer.append(message);                                                                      \
                                                                                                    \
-      p_logger->warn(buffer, __FUNCTION__)                                                         \
+      p_logger->warn(buffer, __FUNCTION__);                                                        \
    }
 
 #define LOG_WARN_P(p_logger, message, ...)                                                         \

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/graphics/vk/core.hpp"
+#include "epona_core/graphics/vkn/core.hpp"
 
 namespace core::gfx::vkn
 {
@@ -41,7 +41,7 @@ namespace core::gfx::vkn
        *
        * @return An instance object or an error code.
        */
-      detail::result<instance> build();
+      result<instance> build();
 
       /**
        * @brief Set the information regarding the application name.
@@ -89,7 +89,7 @@ namespace core::gfx::vkn
       bool has_validation_layer_support(const dynamic_array<vk::LayerProperties>& properties) const;
       bool has_debug_utils_support(const dynamic_array<vk::ExtensionProperties>& properties) const;
 
-      detail::result<tiny_dynamic_array<const char*, 16>> get_all_ext(
+      result<tiny_dynamic_array<const char*, 16>> get_all_ext(
          const dynamic_array<vk::ExtensionProperties>& properties,
          bool are_debug_utils_available) const;
 

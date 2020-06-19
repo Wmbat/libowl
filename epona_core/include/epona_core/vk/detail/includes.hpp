@@ -8,8 +8,8 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/details/concepts.hpp"
-#include "epona_core/details/monad/either.hpp"
+#include "epona_core/detail/concepts.hpp"
+#include "epona_core/detail/monad/either.hpp"
 
 #include <vulkan/vulkan.hpp>
 

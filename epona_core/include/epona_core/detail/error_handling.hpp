@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "epona_core/details/logger.hpp"
+#include "epona_core/detail/logger.hpp"
 
 #include <string_view>
 

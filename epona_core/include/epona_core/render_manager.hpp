@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "epona_core/details/logger.hpp"
-#include "epona_core/graphics/vk/core.hpp"
+#include "epona_core/detail/logger.hpp"
+#include "epona_core/graphics/vkn/instance.hpp"
+#include "epona_core/graphics/vkn/core.hpp"
 #include "epona_core/gui/window.hpp"
 /*
 #include "epona_core/vk/detail/includes.hpp"
@@ -32,6 +33,7 @@ namespace core
       std::string engine_name = "Epona";
 
       gfx::vkn::loader loader;
+      gfx::vkn::instance instance;
 
       /*
       vk::runtime runtime;

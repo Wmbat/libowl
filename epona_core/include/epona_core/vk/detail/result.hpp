@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "epona_core/details/monad/either.hpp"
+#include "epona_core/detail/monad/either.hpp"
 #include "epona_core/vk/detail/includes.hpp"
 
 #include <cassert>

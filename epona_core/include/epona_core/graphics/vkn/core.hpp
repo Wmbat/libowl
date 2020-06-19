@@ -1,6 +1,7 @@
 #pragma once
 
-#include "epona_core/details/monad/either.hpp"
+#include "epona_core/detail/logger.hpp"
+#include "epona_core/detail/monad/either.hpp"
 
 #if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -19,24 +20,29 @@ namespace core::gfx::vkn
 #else
       static constexpr bool ENABLE_VALIDATION_LAYERS = true;
 #endif
-
-      struct error
-      {
-         std::error_code type;
-         ::vk::Result result;
-      };
-
-      template <class any_>
-      using result = either<error, any_>;
    } // namespace detail
+
+   struct error
+   {
+      std::error_code type;
+      ::vk::Result result;
+   };
+
+   template <class any_>
+   using result = either<error, any_>;
 
    class loader
    {
    public:
    public:
-      loader();
+      loader(logger* const p_logger = nullptr);
 
       void load_instance(const ::vk::Instance& instance) const;
       void load_device(const ::vk::Device& device) const;
+
+   private:
+      logger* const p_logger;
+
+      ::vk::DynamicLoader dynamic_loader;
    };
 }; // namespace core::gfx::vkn

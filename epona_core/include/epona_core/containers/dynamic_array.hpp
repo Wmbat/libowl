@@ -8,10 +8,10 @@
 #pragma once
 
 #include "epona_core/containers/details.hpp"
-#include "epona_core/details/compare.hpp"
-#include "epona_core/details/concepts.hpp"
-#include "epona_core/details/error_handling.hpp"
-#include "epona_core/details/iterators/random_access_iterator.hpp"
+#include "epona_core/detail/compare.hpp"
+#include "epona_core/detail/concepts.hpp"
+#include "epona_core/detail/error_handling.hpp"
+#include "epona_core/detail/iterators/random_access_iterator.hpp"
 
 #include <algorithm>
 #include <cassert>

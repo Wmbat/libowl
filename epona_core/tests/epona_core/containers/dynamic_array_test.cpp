@@ -23,7 +23,7 @@
  */
 
 #include <epona_core/containers/dynamic_array.hpp>
-#include <epona_core/details/iterators/random_access_iterator.hpp>
+#include <epona_core/detail/iterators/random_access_iterator.hpp>
 
 #include <gtest/gtest.h>
 

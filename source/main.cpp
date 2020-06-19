@@ -23,11 +23,11 @@
  */
 
 /**
- * @mainpage Test main page
+ * @mainpage Epona 
  */
 
 #include <epona_core/core.hpp>
-#include <epona_core/details/logger.hpp>
+#include <epona_core/detail/logger.hpp>
 #include <epona_core/memory/pool_allocator.hpp>
 #include <epona_core/render_manager.hpp>
 
@@ -35,12 +35,12 @@
 
 int main()
 {
-   auto main_logger = core::logger{"main_logger"};
+   core::logger main_logger{"epona_core"};
 
    core::initialize(&main_logger);
 
-   auto main_window = core::window{"Engine", 1080, 720};
-   auto render_manager = core::render_manager{&main_window, &main_logger};
+   core::window main_window{"Engine", 1080, 720};
+   core::render_manager render_manager{&main_window, &main_logger};
 
    /*
    while (main_window.is_open())
