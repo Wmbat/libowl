@@ -12,15 +12,15 @@ option(EPONA_CORE_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
 option(EPONA_CORE_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE Release CACHE FORCE)
+    set(CMAKE_BUILD_TYPE Release CACHE FORCE)
 endif ()
 
 message(STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}")
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
-   message(STATUS "[${PROJECT_NAME}] Build type: Release")
+    message(STATUS "[${PROJECT_NAME}] Build type: Release")
 else ()
-   message(STATUS "[${PROJECT_NAME}] Build type: Debug")
+    message(STATUS "[${PROJECT_NAME}] Build type: Debug")
 endif ()
 
 message(STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_CORE_STATIC}")
@@ -40,15 +40,15 @@ endif ()
 add_library(${PROJECT_NAME} STATIC)
 
 if (EPONA_CORE_STATIC)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DEPONA_STATIC) 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE EPONA_STATIC) 
 endif ()
 
 if (EPONA_CORE_NO_EXCEPTIONS)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DESL_NO_EXCEPTIONS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ESL_NO_EXCEPTIONS)
 endif ()
 
 if (EPONA_CORE_NO_LOGGING) 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DESL_NO_LOGGING)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ESL_NO_LOGGING)
 endif ()
 
 set_target_properties(${PROJECT_NAME}
@@ -111,9 +111,6 @@ endif()
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        source/epona_core/gui/widget.cpp
-        source/epona_core/gui/window.cpp
-
         source/epona_core/memory/monotonic_allocator.cpp
         source/epona_core/memory/multipool_allocator.cpp
         source/epona_core/memory/pool_allocator.cpp
@@ -121,15 +118,11 @@ target_sources(${PROJECT_NAME}
 
         source/epona_core/detail/logger.cpp
 
+        source/epona_core/graphics/gui/widget.cpp
+        source/epona_core/graphics/gui/window.cpp
         source/epona_core/graphics/vkn/core.cpp
         source/epona_core/graphics/vkn/instance.cpp
-
-        #source/epona_core/vk/runtime.cpp
-        #source/epona_core/vk/device.cpp
-        #source/epona_core/vk/instance.cpp
-        #source/epona_core/vk/physical_device.cpp
-        #source/epona_core/vk/defines.cpp
-        #source/epona_core/vk/swapchain.cpp
+        source/epona_core/graphics/vkn/physical_device.cpp
 
         source/epona_core/render_manager.cpp
 )

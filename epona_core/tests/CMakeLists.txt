@@ -62,6 +62,8 @@ target_sources(epona_core_test
    PRIVATE
       epona_core/main.cpp
       epona_core/containers/flat_map_test.cpp
-      epona_core/containers/dynamic_array_test.cpp)
+      epona_core/containers/dynamic_array_test.cpp
+      epona_core/detail/monad/either_test.cpp
+      epona_core/detail/monad/maybe_test.cpp)
 
 add_test( NAME epona_core_test COMMAND epona_core_test )

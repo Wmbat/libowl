@@ -1,11 +1,18 @@
-#pragma once
+/**
+ * @file core.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Saturday, 20th of April, 2020
+ * @copyright MIT License.
+ */
 
-#include "epona_core/detail/logger.hpp"
-#include "epona_core/detail/monad/either.hpp"
+#pragma once
 
 #if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
+
+#include "epona_core/detail/logger.hpp"
+#include "epona_core/detail/monad/either.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -22,15 +29,34 @@ namespace core::gfx::vkn
 #endif
    } // namespace detail
 
+   /**
+    * @class error <epona_core/graphics/vkn/core.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Saturday, 20th of June, 2020
+    * @copyright MIT License
+    *
+    * @brief The default error type for all code within the vkn namespace.
+    */
    struct error
    {
       std::error_code type;
       ::vk::Result result;
    };
 
+   /**
+    * @brief An alias for an either monad using an error as the left type.
+    */
    template <class any_>
    using result = either<error, any_>;
 
+   /**
+    * @class error <epona_core/graphics/vkn/core.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Saturday, 20th of June, 2020
+    * @copyright MIT License
+    *
+    * @brief Class used for the dynamic loading of the Vulkan API functions.
+    */
    class loader
    {
    public:

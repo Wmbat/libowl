@@ -2,6 +2,7 @@
 
 #include "epona_core/detail/monad/maybe.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <utility>
 
@@ -45,8 +46,14 @@ namespace core
       template <class any_>
       using left_map_result = std::invoke_result_t<any_, left_type>;
 
+      template <class fun_>
+      using left_map_either = either<left_map_result<fun_>, right_type>;
+
       template <class any_>
       using right_map_result = std::invoke_result_t<any_, right_type>;
+
+      template <class fun_>
+      using right_map_either = either<left_type, right_map_result<fun_>>;
 
    public:
       constexpr either(const monad::left<left_type>& left) : left_val{left.val}, is_left_val{true}
@@ -157,62 +164,116 @@ namespace core
       }
 
       // clang-format off
-      template<std::copyable inner_left_ = left_type>
-      constexpr auto right_map(const std::invocable<right_type> auto& fun) const&
-         -> either<inner_left_, right_map_result<decltype(fun)>> requires std::copyable<right_type>
+      constexpr auto left_map(const std::invocable<left_type> auto& fun) const& 
+         -> left_map_either<decltype(fun)> requires std::copyable<left_type>
       {
-         if (is_left_val)
+         if (is_left())
          {
-            return monad::left<inner_left_>{left_val};
+            return monad::to_left(fun(left_val));
          }
          else
          {
-            return monad::right<decltype(fun(right_val))>{fun(right_val)};
+            return monad::to_right(right_val);
+         }
+      }
+
+      constexpr auto left_map(const std::invocable<left_type> auto& fun) &
+         -> left_map_either<decltype(fun)> requires std::movable<left_type>
+      {
+         if (is_left_val)
+         {
+            return monad::to_left(fun(std::move(left_val)));
+         }
+         else
+         {
+            return monad::to_right(std::move(right_val));
+         }
+      }
+
+      constexpr auto left_map(const std::invocable<left_type> auto& fun) &&
+         -> left_map_either<decltype(fun)>
+      {
+         if (is_left_val)
+         {
+            return monad::to_left(fun(std::move(left_val)));
+         }
+         else
+         {
+            return monad::to_right(std::move(right_val));
+         }
+      }
+
+      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) const& 
+         -> left_map_either<decltype(fun)> requires std::copyable<left_type>
+      {
+         return left_map(fun);
+      };
+
+      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) &
+         -> left_map_either<decltype(fun)> requires std::movable<left_type>
+      {
+         return left_map(fun);
+      };
+
+      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) &&
+         -> left_map_either<decltype(fun)> requires std::movable<left_type>
+      {
+         return left_map(fun);
+      };
+
+      constexpr auto right_map(const std::invocable<right_type> auto& fun) const&
+         -> right_map_either<decltype(fun)> requires std::copyable<right_type>
+      {
+         if (is_left_val)
+         {
+            return monad::to_left(left_val);
+         }
+         else
+         {
+            return monad::to_right(fun(right_val));
          }
       }
       
-      template<std::movable inner_left_ = left_type>
-         constexpr auto right_map(const std::invocable<right_type> auto& fun) &
-         -> either<inner_left_, right_map_result<decltype(fun)>> requires std::movable<right_type>
-         {
-            if (is_left_val)
-            {
-               return monad::left<inner_left_>{std::move(left_val)};
-            }
-            else
-            {
-               return monad::right<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
-            }
-         }
-
-      template<std::movable inner_left_ = left_type>
-      constexpr auto right_map(const std::invocable<right_type> auto& fun) &&
-         -> either<inner_left_, right_map_result<decltype(fun)>>
+      constexpr auto right_map(const std::invocable<right_type> auto& fun) &
+         -> right_map_either<decltype(fun)> requires std::movable<right_type>
       {
          if (is_left_val)
          {
-            return monad::left<inner_left_>{std::move(left_val)};
+            return monad::to_left(std::move(left_val));
          }
          else
          {
-            return monad::right<decltype(fun(std::move(right_val)))>{fun(std::move(right_val))};
+            return monad::to_right(fun(std::move(right_val)));
+         }
+      }
+
+      constexpr auto right_map(const std::invocable<right_type> auto& fun) &&
+         -> either<left_type, right_map_result<decltype(fun)>>
+      {
+         if (is_left_val)
+         {
+            return monad::to_left(std::move(left_val));
+         }
+         else
+         {
+            return monad::to_right(fun(std::move(right_val)));
          }
       }
 
       constexpr auto operator>>=(const std::invocable<right_type> auto& fun) const&
-         -> either<left_type, right_map_result<decltype(fun)>> requires std::copyable<right_type>
+         -> right_map_either<decltype(fun)> requires std::copyable<right_type>
       {
          return right_map(fun); 
       }
 
       constexpr auto operator>>=(const std::invocable<right_type> auto& fun) &
-         -> either<left_type, right_map_result<decltype(fun)>> requires std::movable<right_type>
+         -> right_map_either<decltype(fun)> requires std::movable<right_type>
       {
          return right_map(fun); 
       }
 
       constexpr auto operator>>=(const std::invocable<right_type> auto& fun) &&
-         -> either<left_type, right_map_result<decltype(fun)>>
+         -> right_map_either<decltype(fun)>
       {
          return right_map(fun); 
       }
@@ -274,66 +335,6 @@ namespace core
       {
          return is_left() ? left_fun(std::move(left_val)) : right_fun(std::move(right_val));
       }
-
-      template <std::copyable inner_right_ = right_type>
-      constexpr auto left_map(const std::invocable<left_type> auto& fun) const& 
-         -> either<decltype(fun(left_val)), inner_right_> requires std::copyable<left_type>
-      {
-         if (is_left())
-         {
-            return monad::left<decltype(fun(left_val))>{fun(left_val)};
-         }
-         else
-         {
-            return monad::right<inner_right_>{right_val};
-         }
-      }
-
-      template <std::movable inner_right_ = right_type>
-      constexpr auto left_map(const std::invocable<left_type> auto& fun) &&
-         -> either<decltype(fun(std::move(left_val))), inner_right_>
-      {
-         if (is_left_val)
-         {
-            return monad::left<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
-         }
-         else
-         {
-            return monad::right<inner_right_>{std::move(right_val)};
-         }
-      }
-
-      template <std::movable inner_right_ = right_type>
-      constexpr auto left_map(const std::invocable<left_type> auto& fun) &
-         -> either<decltype(fun(std::move(left_val))), inner_right_> requires std::movable<left_type>
-      {
-         if (is_left_val)
-         {
-            return monad::left<decltype(fun(std::move(left_val)))>{fun(std::move(left_val))};
-         }
-         else
-         {
-            return monad::right<inner_right_>{std::move(right_val)};
-         }
-      }
-     
-      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) const& 
-         -> either<decltype(fun(left_val)), right_type> requires std::copyable<left_type>
-      {
-         return left_map(fun);
-      };
-
-      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) &&
-         -> either<decltype(fun(std::move(left_val))), right_type> requires std::movable<left_type>
-      {
-         return left_map(fun);
-      };
-
-      constexpr auto operator<<=(const std::invocable<left_type> auto& fun) &
-         -> either<decltype(fun(std::move(left_val))), right_type> requires std::movable<left_type>
-      {
-         return left_map(fun);
-      };
       // clang-format on
    };
 
@@ -345,14 +346,13 @@ namespace core
       auto try_wrap(const fun_& fun, args_&&... args) 
          -> either<error_, std::invoke_result_t<fun_, args_...>>
       {
-         using result_t = std::invoke_result_t<fun_, args_...>;
          try
          {
-            return monad::right<result_t>{.val = fun(std::forward<args_>(args)...)};
+            return monad::to_right(fun(std::forward<args_>(args)...));
          }
          catch (const error_& e)
          {
-            return monad::left{.val = e};
+            return monad::left{e};
          }
       }
       // clang-format on  

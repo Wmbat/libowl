@@ -11,6 +11,7 @@
 #include "epona_core/detail/compare.hpp"
 #include "epona_core/detail/concepts.hpp"
 #include "epona_core/detail/error_handling.hpp"
+#include "epona_core/detail/iterators/input_iterator.hpp"
 #include "epona_core/detail/iterators/random_access_iterator.hpp"
 
 #include <algorithm>
@@ -20,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
+#include <ranges>
 #include <type_traits>
 
 namespace core

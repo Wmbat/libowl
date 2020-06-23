@@ -22,12 +22,12 @@
  * SOFTWARE.
  */
 
-#include "epona_core/gui/window.hpp"
+#include "epona_core/graphics/gui/window.hpp"
 #include "epona_core/vk/detail/result.hpp"
 
 #include <memory>
 
-namespace core
+namespace core::gfx
 {
    window::window()
    {

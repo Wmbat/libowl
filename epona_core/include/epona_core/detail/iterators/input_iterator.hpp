@@ -46,7 +46,7 @@ namespace core
       constexpr explicit input_iterator() = default;
       constexpr explicit input_iterator(pointer p_type) noexcept : p_type(p_type) {}
 
-      constexpr bool operator==(self_type rhs) const noexcept = default;
+      constexpr bool operator==(const self_type& rhs) const noexcept = default;
 
       constexpr const_reference operator*() const noexcept
       {

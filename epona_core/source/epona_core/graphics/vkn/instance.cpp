@@ -115,21 +115,23 @@ namespace core::gfx::vkn
 
    result<instance> instance_builder::build()
    {
-      auto version_res = monad::try_wrap<vk::SystemError>([&] {
+      auto version_res = monad::try_wrap<vk::SystemError>([] {
          return vk::enumerateInstanceVersion(); // may throw
       });
 
       if (version_res.is_left())
       {
+         /*
          return monad::left<error>{.val = *(version_res.left() >>= [](const vk::SystemError& e) {
             return error{
                .type = detail::make_error_code(instance::error::vulkan_version_unavailable),
                .result = static_cast<vk::Result>(e.code().value())};
          })};
+         */
       }
 
       // clang-format off
-      const auto available_layers = monad::try_wrap<vk::SystemError>([&] {
+      const auto sys_layers = monad::try_wrap<vk::SystemError>([&] {
             return vk::enumerateInstanceLayerProperties();
          })
          .join(
@@ -141,7 +143,7 @@ namespace core::gfx::vkn
                return dynamic_array<vk::LayerProperties>(data.begin(), data.end());
          });
 
-      const auto available_exts = monad::try_wrap<vk::SystemError>([&] {
+      const auto sys_exts = monad::try_wrap<vk::SystemError>([&] {
             return vk::enumerateInstanceExtensionProperties();
          })
          .join(
@@ -155,8 +157,8 @@ namespace core::gfx::vkn
       // clang-format on
 
       const uint32_t api_version = version_res.right().value();
-      const bool validation_layers_available = has_validation_layer_support(available_layers);
-      const bool debug_utils_available = has_debug_utils_support(available_exts);
+      const bool validation_layers_available = has_validation_layer_support(sys_layers);
+      const bool debug_utils_available = has_debug_utils_support(sys_exts);
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
@@ -178,16 +180,17 @@ namespace core::gfx::vkn
          .setApiVersion(api_version);
       // clang-format on
 
-      auto extension_names_res = get_all_ext(available_exts, debug_utils_available);
-      if (const auto left = extension_names_res.left())
+      auto extension_names_res = get_all_ext(sys_exts, debug_utils_available);
+      if (extension_names_res.is_left())
       {
-         return monad::left<error>{.val = left.value()};
+         return monad::left<error>{.val = extension_names_res.left().value()};
       }
 
-      auto extensions = std::move(extension_names_res.right().value());
-      std::ranges::for_each(extensions, [&](const char* name) {
+      const auto extensions = std::move(extension_names_res.right().value());
+      for (const char* name : extensions)
+      {
          LOG_INFO_P(p_logger, "vk - instance extension: {1} - ENABLED", name)
-      });
+      }
 
       // clang-format off
       auto instance_create_info = vk::InstanceCreateInfo{}
@@ -202,25 +205,17 @@ namespace core::gfx::vkn
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
-         tiny_dynamic_array<const char*, 8> layers;
-         std::ranges::for_each(info.layers, [&layers](const char* str) {
-            layers.push_back(str);
-         });
+         tiny_dynamic_array<const char*, 8> layers{info.layers};
 
          if (validation_layers_available)
          {
             layers.push_back("VK_LAYER_KHRONOS_validation");
 
-            for (const auto& desired : layers)
+            for (const char* name : layers)
             {
-               bool is_present = false;
-               for (const auto& available : available_layers)
-               {
-                  if (strcmp(desired, available.layerName) == 0)
-                  {
-                     is_present = true;
-                  }
-               }
+               const bool is_present = std::ranges::find_if(sys_layers, [name](const auto& ext) {
+                  return strcmp(name, ext.layerName) == 0;
+               }) != sys_layers.cend();
 
                if (!is_present)
                {
@@ -237,9 +232,10 @@ namespace core::gfx::vkn
             instance_create_info.ppEnabledLayerNames = layers.data();
          }
 
-         std::ranges::for_each(layers, [&](const char* name) {
+         for (const char* name : layers)
+         {
             LOG_INFO_P(p_logger, "vk - instance layers: {1} - ENABLED", name)
-         });
+         }
       }
 
       auto instance_res = monad::try_wrap<vk::SystemError>([&] {
@@ -324,19 +320,19 @@ namespace core::gfx::vkn
       info.engine_version = VK_MAKE_VERSION(major, minor, patch);
       return *this;
    }
-   instance_builder& instance_builder::enable_layer(const std::string& layer_name)
+   instance_builder& instance_builder::enable_layer(std::string_view layer_name)
    {
       if (!layer_name.empty())
       {
-         info.layers.push_back(layer_name.c_str());
+         info.layers.push_back(layer_name.data());
       }
       return *this;
    }
-   instance_builder& instance_builder::enable_extension(const std::string& extension_name)
+   instance_builder& instance_builder::enable_extension(std::string_view extension_name)
    {
       if (!extension_name.empty())
       {
-         info.extensions.push_back(extension_name.c_str());
+         info.extensions.push_back(extension_name.data());
       }
       return *this;
    }
@@ -361,10 +357,7 @@ namespace core::gfx::vkn
       const dynamic_array<vk::ExtensionProperties>& properties,
       bool are_debug_utils_available) const
    {
-      tiny_dynamic_array<const char*, 16> extensions;
-      std::ranges::for_each(info.extensions, [&extensions](const char* str) {
-         extensions.push_back(str);
-      });
+      tiny_dynamic_array<const char*, 16> extensions{info.extensions};
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
@@ -375,7 +368,7 @@ namespace core::gfx::vkn
       }
 
       const auto check_ext_and_add = [&](const char* name) -> bool {
-         auto it = std::ranges::find_if(properties, [&name](const VkExtensionProperties& ext) {
+         const auto it = std::ranges::find_if(properties, [name](const VkExtensionProperties& ext) {
             return strcmp(name, ext.extensionName) == 0;
          });
 
@@ -414,16 +407,11 @@ namespace core::gfx::vkn
          // clang-format on
       }
 
-      for (const auto& desired : extensions)
+      for (const char* name : extensions)
       {
-         bool is_present = false;
-         for (const auto& available : properties)
-         {
-            if (strcmp(desired, available.extensionName) == 0)
-            {
-               is_present = true;
-            }
-         }
+         const bool is_present = std::ranges::find_if(properties, [name](const auto& ext) {
+            return strcmp(name, ext.extensionName) == 0;
+         }) != properties.cend();
 
          if (!is_present)
          {

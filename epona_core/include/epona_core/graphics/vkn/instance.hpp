@@ -1,10 +1,27 @@
+/**
+ * @file instance.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Saturday, 20th of June, 2020
+ * @copyright MIT License
+ */
+
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
 #include "epona_core/graphics/vkn/core.hpp"
 
+#include <ranges>
+
 namespace core::gfx::vkn
 {
+   /**
+    * @class instance <epona_core/graphics/vkn/instance.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Saturday, 20th of June, 2020
+    * @copyright MIT License
+    *
+    * @brief A wrapper struct around the elements associated with a Vulkan instance
+    */
    struct instance
    {
       /**
@@ -26,11 +43,19 @@ namespace core::gfx::vkn
       vk::UniqueInstance inst;
       vk::UniqueDebugUtilsMessengerEXT debug_utils;
 
-      uint32_t version = 0;
-
       tiny_dynamic_array<const char*, 16> extensions;
+
+      uint32_t version = 0;
    };
 
+   /**
+    * @class instance <epona_core/graphics/vkn/instance.hpp>
+    * @author wmbat wmbat@protonmail.com
+    * @date Saturday, 20th of June, 2020
+    * @copyright MIT License
+    *
+    * @brief A class used for a parametrized creation of an instance.
+    */
    class instance_builder
    {
    public:
@@ -77,13 +102,13 @@ namespace core::gfx::vkn
        *
        * @param[in] layer_name The name of the layer to enable.
        */
-      instance_builder& enable_layer(const std::string& layer_name);
+      instance_builder& enable_layer(std::string_view layer_name);
       /**
        * @brief Set the information about an instance extension to enable.
        *
        * @param[in] layer_name The name of the extension to enable.
        */
-      instance_builder& enable_extension(const std::string& extension_name);
+      instance_builder& enable_extension(std::string_view extension_name);
 
    private:
       bool has_validation_layer_support(const dynamic_array<vk::LayerProperties>& properties) const;
@@ -111,3 +136,11 @@ namespace core::gfx::vkn
       } info;
    };
 } // namespace core::gfx::vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<core::gfx::vkn::instance::error> : true_type
+   {
+   };
+} // namespace std

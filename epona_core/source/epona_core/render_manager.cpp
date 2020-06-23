@@ -9,11 +9,6 @@
 #include "epona_core/detail/logger.hpp"
 #include "epona_core/detail/monad/either.hpp"
 #include "epona_core/detail/monad/maybe.hpp"
-/*
-#include "epona_core/vk/device.hpp"
-#include "epona_core/vk/instance.hpp"
-#include "epona_core/vk/physical_device.hpp"
-*/
 
 #include <functional>
 #include <string>
@@ -26,7 +21,7 @@ namespace core
    vk::device handle_device_error(const vk::detail::error& err, logger* p_logger);
    */
 
-   render_manager::render_manager(window* const p_wnd, logger* const p_logger) :
+   render_manager::render_manager(gfx::window* const p_wnd, logger* const p_logger) :
       p_window{p_wnd}, p_logger{p_logger}, loader{p_logger}
    {
       using namespace std::placeholders;
