@@ -75,7 +75,7 @@ namespace core
       {
          assign(first, last);
       }
-      tiny_dynamic_array(const std::ranges::range auto& r) :
+      tiny_dynamic_array(const range_over<value_type> auto& r) :
          p_begin{get_first_element()}, cap{buff_sz}
       {
          assign(r);
@@ -303,7 +303,7 @@ namespace core
          std::uninitialized_copy(first, last, begin());
       }
 
-      void assign(const std::ranges::range auto& r) { assign(r.begin(), r.end()); }
+      void assign(const range_over<value_type> auto& r) { assign(r.begin(), r.end()); }
 
       /**
        * @brief Replaces the contents of the container with the elements from the <a

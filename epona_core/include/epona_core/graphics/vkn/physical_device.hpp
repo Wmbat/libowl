@@ -12,6 +12,28 @@
 
 namespace core::gfx::vkn
 {
+   namespace detail
+   {
+      maybe<uint32_t> get_graphics_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families);
+
+      maybe<uint32_t> get_present_queue_index(vk::PhysicalDevice physical_device,
+         vk::SurfaceKHR surface,
+         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+
+      maybe<uint32_t> get_dedicated_compute_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+
+      maybe<uint32_t> get_dedicated_transfer_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+
+      maybe<uint32_t> get_separated_compute_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+
+      maybe<uint32_t> get_separated_transfer_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+   } // namespace detail
+
    /**
     * @class physical_device <epona_core/graphics/vkn/physical_device.hpp>
     * @author wmbat wmbat@protonmail.com
@@ -36,6 +58,25 @@ namespace core::gfx::vkn
          no_physical_device_found,
          no_suitable_device
       };
+
+      bool has_dedicated_compute_queue() const;
+      bool has_dedicated_transfer_queue() const;
+
+      bool has_separated_compute_queue() const;
+      bool has_separated_transfer_queue() const;
+
+      std::string name{};
+
+      vk::PhysicalDeviceFeatures features{};
+      vk::PhysicalDeviceProperties properties{};
+      vk::PhysicalDeviceMemoryProperties mem_properties{};
+
+      vk::Instance h_instance{};
+
+      vk::PhysicalDevice h_device{};
+      vk::UniqueSurfaceKHR h_surface{};
+
+      tiny_dynamic_array<vk::QueueFamilyProperties, 5> queue_families{};
    };
 
    /**
@@ -52,7 +93,7 @@ namespace core::gfx::vkn
       result<physical_device> select();
 
       physical_device_selector& set_prefered_gpu_type(physical_device::type type) noexcept;
-      physical_device_selector& set_surface(VkSurfaceKHR surface) noexcept;
+      physical_device_selector& set_surface(vk::UniqueSurfaceKHR surface) noexcept;
       physical_device_selector& allow_any_gpu_type(bool allow = true) noexcept;
       physical_device_selector& require_present(bool require = true) noexcept;
       physical_device_selector& require_dedicated_compute() noexcept;
@@ -67,7 +108,7 @@ namespace core::gfx::vkn
       struct system_info
       {
          vk::Instance instance{};
-         vk::SurfaceKHR surface{};
+         vk::UniqueSurfaceKHR surface{};
 
          dynamic_array<const char*> instance_extensions;
       } sys_info;
@@ -103,8 +144,7 @@ namespace core::gfx::vkn
       };
 
    private:
-      physical_device_description populate_device_details(
-         const vk::PhysicalDevice& device) const noexcept;
+      physical_device_description populate_device_details(vk::PhysicalDevice) const noexcept;
 
       suitable is_device_suitable(const physical_device_description& desc) const noexcept;
    };

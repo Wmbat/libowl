@@ -44,6 +44,31 @@ namespace core
       }
       ~maybe() { destroy(); }
 
+      constexpr maybe& operator=(const value_type& value)
+      {
+         if (is_init)
+         {
+            destroy();
+         }
+
+         is_init = true;
+         val = value;
+
+         return *this;
+      }
+      constexpr maybe& operator=(value_type&& value)
+      {
+         if (is_init)
+         {
+            destroy();
+         }
+
+         is_init = true;
+         val = std::move(value);
+
+         return *this;
+      }
+
       constexpr const value_type* operator->() const
       {
          assert(is_init);

@@ -121,40 +121,38 @@ namespace core::gfx::vkn
 
       if (version_res.is_left())
       {
-         /*
          return monad::left<error>{.val = *(version_res.left() >>= [](const vk::SystemError& e) {
             return error{
                .type = detail::make_error_code(instance::error::vulkan_version_unavailable),
                .result = static_cast<vk::Result>(e.code().value())};
          })};
-         */
       }
 
-      // clang-format off
-      const auto sys_layers = monad::try_wrap<vk::SystemError>([&] {
+      const auto sys_layers =
+         monad::try_wrap<vk::SystemError>([&] {
             return vk::enumerateInstanceLayerProperties();
          })
-         .join(
-            [&]([[maybe_unused]] const vk::SystemError& e) {
-               LOG_ERROR_P(p_logger, "Instance layer enumeration error: {1}", e.what());
-               return dynamic_array<vk::LayerProperties>();  // handle error.
-            },
-            [](const std::vector<vk::LayerProperties>& data) {
-               return dynamic_array<vk::LayerProperties>(data.begin(), data.end());
-         });
+            .join(
+               [&]([[maybe_unused]] const vk::SystemError& e) {
+                  LOG_ERROR_P(p_logger, "Instance layer enumeration error: {1}", e.what());
+                  return dynamic_array<vk::LayerProperties>(); // handle error.
+               },
+               [](const std::vector<vk::LayerProperties>& data) {
+                  return dynamic_array<vk::LayerProperties>(data.begin(), data.end());
+               });
 
-      const auto sys_exts = monad::try_wrap<vk::SystemError>([&] {
+      const auto sys_exts =
+         monad::try_wrap<vk::SystemError>([&] {
             return vk::enumerateInstanceExtensionProperties();
          })
-         .join(
-            [&]([[maybe_unused]] const vk::SystemError& e) {
-               LOG_ERROR_P(p_logger, "Instance ext enumeration error: {1}", e.what());
-               return dynamic_array<vk::ExtensionProperties>();  // handle error.
-            },
-            [](const std::vector<vk::ExtensionProperties>& data) {
-               return dynamic_array<vk::ExtensionProperties>(data.begin(), data.end());
-         });
-      // clang-format on
+            .join(
+               [&]([[maybe_unused]] const vk::SystemError& e) {
+                  LOG_ERROR_P(p_logger, "Instance ext enumeration error: {1}", e.what());
+                  return dynamic_array<vk::ExtensionProperties>(); // handle error.
+               },
+               [](const std::vector<vk::ExtensionProperties>& data) {
+                  return dynamic_array<vk::ExtensionProperties>(data.begin(), data.end());
+               });
 
       const uint32_t api_version = version_res.right().value();
       const bool validation_layers_available = has_validation_layer_support(sys_layers);
@@ -240,25 +238,35 @@ namespace core::gfx::vkn
 
       auto instance_res = monad::try_wrap<vk::SystemError>([&] {
          return vk::createInstanceUnique(instance_create_info); // may throw
+      }).left_map([](const vk::SystemError& e) {
+         // clang-format off
+         return error{
+            .type = detail::make_error_code(instance::error::failed_to_create_instance),
+            .result = static_cast<vk::Result>(e.code().value())
+         };
+         // clang-format on
       });
 
       if (instance_res.is_left())
       {
-         return monad::left<error>{.val = *(instance_res.left() >>= [](const vk::SystemError& e) {
-            return error{
-               .type = detail::make_error_code(instance::error::failed_to_create_instance),
-               .result = static_cast<vk::Result>(e.code().value())};
-         })};
+         // clang-format off
+         return monad::left<error>{.val = instance_res
+            .right_map([](vk::UniqueInstance) { return error{}; })
+            .join()
+         };
+         // clang-format on
       }
 
       instance data;
-      data.inst = *instance_res.right();
+      data.h_instance = instance_res
+         .left_map([](const auto&){ return vk::UniqueInstance{}; })
+         .join();
       data.extensions = extensions;
       data.version = api_version;
 
       LOG_INFO(p_logger, "vk - instance created");
 
-      vk_loader.load_instance(data.inst.get());
+      vk_loader.load_instance(data.h_instance.get());
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
@@ -277,7 +285,7 @@ namespace core::gfx::vkn
          // clang-format on
 
          auto debug_res = monad::try_wrap<vk::SystemError>([&] {
-            return data.inst->createDebugUtilsMessengerEXTUnique(debug_create_info);
+            return data.h_instance->createDebugUtilsMessengerEXTUnique(debug_create_info);
          });
 
          if (debug_res.is_left())
@@ -292,7 +300,7 @@ namespace core::gfx::vkn
 
          LOG_INFO(p_logger, "vk - debug utils created");
 
-         data.debug_utils = *debug_res.right();
+         data.h_debug_utils = *debug_res.right();
       }
 
       return monad::right<instance>{std::move(data)};
@@ -338,7 +346,7 @@ namespace core::gfx::vkn
    }
 
    bool instance_builder::has_validation_layer_support(
-      const dynamic_array<vk::LayerProperties>& properties) const
+      const range_over<vk::LayerProperties> auto& properties) const
    {
       return std::ranges::find_if(properties, [](const VkLayerProperties& layer) {
          return strcmp(layer.layerName, "VK_LAYER_KHRONOS_validation") == 0;
@@ -346,7 +354,7 @@ namespace core::gfx::vkn
    }
 
    bool instance_builder::has_debug_utils_support(
-      const dynamic_array<vk::ExtensionProperties>& properties) const
+      const range_over<vk::ExtensionProperties> auto& properties) const
    {
       return std::ranges::find_if(properties, [](const VkExtensionProperties& ext) {
          return strcmp(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
@@ -357,7 +365,7 @@ namespace core::gfx::vkn
       const dynamic_array<vk::ExtensionProperties>& properties,
       bool are_debug_utils_available) const
    {
-      tiny_dynamic_array<const char*, 16> extensions{info.extensions};
+      tiny_dynamic_array<const char*, 16> extensions = info.extensions;
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {

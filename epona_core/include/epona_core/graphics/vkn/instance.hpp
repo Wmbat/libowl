@@ -8,6 +8,7 @@
 #pragma once
 
 #include "epona_core/containers/dynamic_array.hpp"
+#include "epona_core/detail/concepts.hpp"
 #include "epona_core/graphics/vkn/core.hpp"
 
 #include <ranges>
@@ -40,8 +41,8 @@ namespace core::gfx::vkn
          failed_to_create_debug_utils
       };
 
-      vk::UniqueInstance inst;
-      vk::UniqueDebugUtilsMessengerEXT debug_utils;
+      vk::UniqueInstance h_instance;
+      vk::UniqueDebugUtilsMessengerEXT h_debug_utils;
 
       tiny_dynamic_array<const char*, 16> extensions;
 
@@ -111,8 +112,10 @@ namespace core::gfx::vkn
       instance_builder& enable_extension(std::string_view extension_name);
 
    private:
-      bool has_validation_layer_support(const dynamic_array<vk::LayerProperties>& properties) const;
-      bool has_debug_utils_support(const dynamic_array<vk::ExtensionProperties>& properties) const;
+      bool has_validation_layer_support(
+         const range_over<vk::LayerProperties> auto& properties) const;
+      bool has_debug_utils_support(
+         const range_over<vk::ExtensionProperties> auto& properties) const;
 
       result<tiny_dynamic_array<const char*, 16>> get_all_ext(
          const dynamic_array<vk::ExtensionProperties>& properties,
