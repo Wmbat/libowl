@@ -22,12 +22,11 @@
  * SOFTWARE.
  */
 
-#include "epona_core/gui/window.hpp"
-#include "epona_core/vk/detail/result.hpp"
+#include "epona_core/graphics/gui/window.hpp"
 
 #include <memory>
 
-namespace core
+namespace core::gfx
 {
    window::window()
    {
@@ -52,21 +51,18 @@ namespace core
 
    bool window::is_open() { return !glfwWindowShouldClose(p_wnd.get()); }
 
-   /*
-   vk::detail::result<VkSurfaceKHR> window::get_surface(VkInstance inst) const noexcept
+   vkn::result<vk::SurfaceKHR> window::get_surface(vk::Instance instance) const
    {
       VkSurfaceKHR surface = VK_NULL_HANDLE;
-      const auto res = glfwCreateWindowSurface(inst, p_wnd.get(), nullptr, &surface);
+      const auto res = glfwCreateWindowSurface(instance, p_wnd.get(), nullptr, &surface);
 
       if (res != VK_SUCCESS)
       {
-         vk::detail::error err{};
-         err.result = res;
-
-         return monad::right_t<vk::detail::error>{err};
+         return monad::to_left(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
       }
-
-      return monad::left_t<VkSurfaceKHR>{surface};
+      else
+      {
+         return monad::to_right(vk::SurfaceKHR{surface});
+      }
    }
-   */
-} // namespace core
+} // namespace core::gfx

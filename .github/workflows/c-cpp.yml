@@ -69,6 +69,8 @@ jobs:
           )
         endif() 
     - name: Configure
-      run: cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ./
+      run: cmake -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10 -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ./
     - name: Build
       run: make
+    - name: Run unit tests
+      run: cd out/gcc/debug/epona_core && ./epona_core_test

@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,21 +22,16 @@
  * SOFTWARE.
  */
 
-#pragma once
+#include "epona_core/graphics/gui/widget.hpp"
 
-#include <concepts>
-
-namespace core
+namespace core::gfx
 {
-   class widget
+   widget& widget::setParent(widget* p_parent_in)
    {
-   public:
-      widget() = default;
+      p_parent = p_parent_in;
 
-      widget& setParent(widget* p_parent_in);
-      widget* getParent();
+      return *this;
+   }
 
-   private:
-      widget* p_parent{nullptr};
-   };
-} // namespace core
+   widget* widget::getParent() { return p_parent; }
+} // namespace core::gfx

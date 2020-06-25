@@ -1,6 +1,6 @@
 #pragma once
 
-#include "epona_core/details/logger.hpp"
+#include "epona_core/detail/logger.hpp"
 
 #include <GLFW/glfw3.h>
 

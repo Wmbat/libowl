@@ -8,10 +8,11 @@
 #pragma once
 
 #include "epona_core/containers/details.hpp"
-#include "epona_core/details/compare.hpp"
-#include "epona_core/details/concepts.hpp"
-#include "epona_core/details/error_handling.hpp"
-#include "epona_core/details/iterators/random_access_iterator.hpp"
+#include "epona_core/detail/compare.hpp"
+#include "epona_core/detail/concepts.hpp"
+#include "epona_core/detail/error_handling.hpp"
+#include "epona_core/detail/iterators/input_iterator.hpp"
+#include "epona_core/detail/iterators/random_access_iterator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -20,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
+#include <ranges>
 #include <type_traits>
 
 namespace core
@@ -73,7 +75,7 @@ namespace core
       {
          assign(first, last);
       }
-      tiny_dynamic_array(const std::ranges::range auto& r) :
+      tiny_dynamic_array(const range_over<value_type> auto& r) :
          p_begin{get_first_element()}, cap{buff_sz}
       {
          assign(r);
@@ -301,7 +303,7 @@ namespace core
          std::uninitialized_copy(first, last, begin());
       }
 
-      void assign(const std::ranges::range auto& r) { assign(r.begin(), r.end()); }
+      void assign(const range_over<value_type> auto& r) { assign(r.begin(), r.end()); }
 
       /**
        * @brief Replaces the contents of the container with the elements from the <a
