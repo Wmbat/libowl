@@ -23,20 +23,23 @@ namespace core
       };
 
       template <class any_>
-      constexpr left<any_> to_left(any_&& value)
+      constexpr left<std::remove_reference_t<any_>> to_left(any_&& value)
       {
-         return left<any_>{std::forward<any_>(value)};
+         return left<std::remove_reference_t<any_>>{std::forward<any_>(value)};
       }
 
       template <class any_>
-      constexpr right<any_> to_right(any_&& value)
+      constexpr right<std::remove_reference_t<any_>> to_right(any_&& value)
       {
-         return right<any_>{std::forward<any_>(value)};
+         return {.val = std::forward<std::remove_reference_t<any_>>(value)};
       }
    } // namespace monad
 
-   template <class left_, class right_>
+   // clang-format off
+   template <class left_, class right_> 
+      requires (!(std::is_reference_v<left_> || std::is_reference_v<right_>))
    class either
+   // clang-format on
    {
    public:
       using left_type = left_;
@@ -99,25 +102,18 @@ namespace core
       {
          if (is_left_val)
          {
-            return {.val = left_val};
+            return to_maybe(left_type{left_val});
          }
          else
          {
             return monad::none;
          }
       }
-      constexpr auto left() & -> maybe<left_type>
+      constexpr auto left() & -> maybe<left_type> requires std::movable<left_type>
       {
          if (is_left())
          {
-            if constexpr (std::movable<left_type>)
-            {
-               return {.val = std::move(left_val)};
-            }
-            else
-            {
-               return {.val = left_val};
-            }
+            return to_maybe(std::move(left_val));
          }
          else
          {
@@ -128,7 +124,7 @@ namespace core
       {
          if (is_left_val)
          {
-            return {.val = std::move(left_val)};
+            return to_maybe(std::move(left_val));
          }
          else
          {
@@ -143,10 +139,10 @@ namespace core
          }
          else
          {
-            return {.val = right_val};
+            return to_maybe(right_type{right_val});
          }
       }
-      constexpr auto right() & -> maybe<right_type>
+      constexpr auto right() & -> maybe<right_type> requires std::movable<left_type>
       {
          if (is_left())
          {
@@ -156,11 +152,11 @@ namespace core
          {
             if constexpr (std::movable<right_type>)
             {
-               return {.val = std::move(right_val)};
+               return to_maybe(std::move(right_val));
             }
             else
             {
-               return {.val = right_val};
+               return to_maybe(right_val);
             }
          }
       }
@@ -172,7 +168,7 @@ namespace core
          }
          else
          {
-            return {.val = std::move(right_val)};
+            return to_maybe(std::move(right_val));
          }
       }
 

@@ -221,9 +221,9 @@ namespace core
    };
 
    template <class any_>
-   auto to_maybe(any_&& value)
+   auto to_maybe(any_&& value) -> maybe<std::remove_reference_t<any_>>
    {
-      return maybe<any_>{std::forward<any_>(value)};
+      return {std::forward<any_>(value)};
    }
 
    template <class any_ = void>
