@@ -13,6 +13,8 @@
 
 #include <ranges>
 
+#include <iostream>
+
 namespace core::gfx::vkn
 {
    /**
@@ -41,8 +43,16 @@ namespace core::gfx::vkn
          failed_to_create_debug_utils
       };
 
-      vk::UniqueInstance h_instance;
-      vk::UniqueDebugUtilsMessengerEXT h_debug_utils;
+      instance() = default;
+      instance(const instance&) = delete;
+      instance(instance&&);
+      ~instance();
+
+      instance& operator=(const instance&) = delete;
+      instance& operator=(instance&&);
+
+      vk::Instance h_instance;
+      vk::DebugUtilsMessengerEXT h_debug_utils;
 
       tiny_dynamic_array<const char*, 16> extensions;
 

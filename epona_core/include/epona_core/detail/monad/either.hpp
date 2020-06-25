@@ -95,71 +95,178 @@ namespace core
 
       constexpr bool is_left() const { return is_left_val; }
 
-      constexpr maybe<left_type> left() const& requires std::copyable<right_type>
+      constexpr auto left() const& -> maybe<left_type>
       {
          if (is_left_val)
          {
-            return to_maybe(left_val);
+            return {.val = left_val};
          }
          else
          {
             return monad::none;
          }
       }
-      constexpr maybe<left_type> left() & requires std::movable<left_type>
+      constexpr auto left() & -> maybe<left_type>
       {
-         if (is_left_val)
+         if (is_left())
          {
-            return to_maybe(std::move(left_val));
+            if constexpr (std::movable<left_type>)
+            {
+               return {.val = std::move(left_val)};
+            }
+            else
+            {
+               return {.val = left_val};
+            }
          }
          else
          {
             return monad::none;
          }
       }
-      constexpr maybe<left_type> left() &&
+      constexpr auto left() && -> maybe<left_type>
       {
          if (is_left_val)
          {
-            return to_maybe(std::move(left_val));
+            return {.val = std::move(left_val)};
          }
          else
          {
             return monad::none;
+         }
+      }
+      constexpr auto right() const& -> maybe<right_type>
+      {
+         if (is_left())
+         {
+            return monad::none;
+         }
+         else
+         {
+            return {.val = right_val};
+         }
+      }
+      constexpr auto right() & -> maybe<right_type>
+      {
+         if (is_left())
+         {
+            return monad::none;
+         }
+         else
+         {
+            if constexpr (std::movable<right_type>)
+            {
+               return {.val = std::move(right_val)};
+            }
+            else
+            {
+               return {.val = right_val};
+            }
+         }
+      }
+      constexpr auto right() && -> maybe<right_type>
+      {
+         if (is_left_val)
+         {
+            return monad::none;
+         }
+         else
+         {
+            return {.val = std::move(right_val)};
          }
       }
 
-      constexpr maybe<right_type> right() const& requires std::copyable<right_type>
+      template <class any_>
+      constexpr auto left_or(any_&& default_value) const& -> left_type
+         requires std::constructible_from<left_type, any_>
       {
-         if (is_left_val)
+         if (is_left())
          {
-            return monad::none;
+            return left_val;
          }
          else
          {
-            return to_maybe(right_val);
+            return static_cast<left_type>(std::forward<any_>(default_value));
          }
       }
-      constexpr maybe<right_type> right() & requires std::movable<right_type>
+      template <class any_>
+      constexpr auto left_or(any_&& default_value) & -> left_type
+         requires std::constructible_from<left_type, any_>
       {
-         if (is_left_val)
+         if (is_left())
          {
-            return monad::none;
+            if constexpr (std::movable<left_type>)
+            {
+               return std::move(left_val);
+            }
+            else
+            {
+               return left_val;
+            }
          }
          else
          {
-            return to_maybe(std::move(right_val));
+            return static_cast<left_type>(std::forward<any_>(default_value));
          }
       }
-      constexpr maybe<right_type> right() &&
+      template <class any_>
+      constexpr auto left_or(any_&& default_value) && -> left_type
+         requires std::constructible_from<left_type, any_>
       {
-         if (is_left_val)
+         if (is_left())
          {
-            return monad::none;
+            return std::move(left_val);
          }
          else
          {
-            return to_maybe(std::move(right_val));
+            return static_cast<left_type>(std::forward<any_>(default_value));
+         }
+      }
+
+      template <class any_>
+      constexpr auto right_or(any_&& default_value) const& -> right_type
+         requires std::constructible_from<right_type, any_>
+      {
+         if (is_left())
+         {
+            return static_cast<right_type>(std::forward<any_>(default_value));
+         }
+         else
+         {
+            return right_val;
+         }
+      }
+      template <class any_>
+      constexpr auto right_or(any_&& default_value) & -> right_type
+         requires std::constructible_from<right_type, any_>
+      {
+         if (is_left())
+         {
+            return static_cast<right_type>(std::forward<any_>(default_value));
+         }
+         else
+         {
+            if constexpr (std::movable<right_type>)
+            {
+               return std::move(right_val);
+            }
+            else
+            {
+               return right_val;
+            }
+         }
+      }
+      template <class any_>
+      constexpr auto right_or(any_&& default_value) && -> right_type
+         requires std::constructible_from<right_type, any_>
+      {
+         if (is_left())
+         {
+            return static_cast<right_type>(std::forward<any_>(default_value));
+         }
+         else
+         {
+            return std::move(right_val);
          }
       }
 
@@ -173,7 +280,7 @@ namespace core
          }
          else
          {
-            return monad::to_right(right_val);
+            return monad::right<right_type>{right_val};
          }
       }
 
@@ -226,7 +333,7 @@ namespace core
       {
          if (is_left_val)
          {
-            return monad::to_left(left_val);
+            return monad::left<left_type>(left_val);
          }
          else
          {

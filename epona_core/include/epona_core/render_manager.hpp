@@ -10,6 +10,7 @@
 #include "epona_core/detail/logger.hpp"
 #include "epona_core/graphics/gui/window.hpp"
 #include "epona_core/graphics/vkn/core.hpp"
+#include "epona_core/graphics/vkn/device.hpp"
 #include "epona_core/graphics/vkn/instance.hpp"
 
 namespace core
@@ -27,11 +28,6 @@ namespace core
 
       gfx::vkn::loader loader;
       gfx::vkn::instance instance;
-
-      /*
-      vk::runtime runtime;
-      vk::instance instance;
-      vk::device device;
-      */
+      gfx::vkn::device device;
    };
 } // namespace core

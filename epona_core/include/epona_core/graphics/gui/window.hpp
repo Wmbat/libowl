@@ -22,7 +22,7 @@ namespace core::gfx
 
       bool is_open();
 
-      vkn::result<vk::UniqueSurfaceKHR> get_surface(vk::Instance instance) const;
+      vkn::result<vk::SurfaceKHR> get_surface(vk::Instance instance) const;
 
    private:
       std::string title{"EGL standard window"};

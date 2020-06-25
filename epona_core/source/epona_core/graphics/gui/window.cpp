@@ -51,7 +51,7 @@ namespace core::gfx
 
    bool window::is_open() { return !glfwWindowShouldClose(p_wnd.get()); }
 
-   vkn::result<vk::UniqueSurfaceKHR> window::get_surface(vk::Instance instance) const
+   vkn::result<vk::SurfaceKHR> window::get_surface(vk::Instance instance) const
    {
       VkSurfaceKHR surface = VK_NULL_HANDLE;
       const auto res = glfwCreateWindowSurface(instance, p_wnd.get(), nullptr, &surface);
@@ -62,7 +62,7 @@ namespace core::gfx
       }
       else
       {
-         return monad::to_right(vk::UniqueSurfaceKHR(surface));
+         return monad::to_right(vk::SurfaceKHR{surface});
       }
    }
 } // namespace core::gfx

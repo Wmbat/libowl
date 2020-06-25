@@ -37,135 +37,41 @@ namespace core::gfx::vkn
       {
          return {static_cast<int>(err), physical_device_error_cat};
       }
-
-      maybe<uint32_t> get_graphics_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
-      {
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if (fam.queueFlags & vk::QueueFlagBits::eGraphics)
-            {
-               return i;
-            }
-
-            ++i;
-         }
-
-         return monad::none;
-      }
-
-      maybe<uint32_t> get_present_queue_index(vk::PhysicalDevice physical_device,
-         vk::SurfaceKHR surface,
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept
-      {
-         for (uint32_t i = 0; i < families.size(); ++i)
-         {
-            VkBool32 present_support = VK_FALSE;
-            if (surface)
-            {
-               if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
-                  vk::Result::eSuccess)
-               {
-                  return monad::none;
-               }
-            }
-
-            if (present_support == VK_TRUE)
-            {
-               return i;
-            }
-         }
-
-         return monad::none;
-      }
-
-      maybe<uint32_t> get_dedicated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept
-      {
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
-            {
-               return i;
-            }
-
-            ++i;
-         }
-
-         return monad::none;
-      }
-
-      maybe<uint32_t> get_dedicated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept
-      {
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
-            {
-               return i;
-            }
-
-            ++i;
-         }
-
-         return monad::none;
-      }
-
-      maybe<uint32_t> get_separated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept
-      {
-         maybe<uint32_t> compute{};
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
-            {
-               if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) ==
-                  0)
-               {
-                  return i;
-               }
-               else
-               {
-                  compute = i;
-               }
-            }
-
-            ++i;
-         }
-
-         return compute;
-      }
-
-      maybe<uint32_t> get_separated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept
-      {
-         maybe<uint32_t> transfer = monad::none;
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
-            {
-               if (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0)
-               {
-                  return i;
-               }
-               else
-               {
-                  transfer = i;
-               }
-            }
-
-            ++i;
-         }
-
-         return transfer;
-      }
    } // namespace detail
+
+   physical_device::physical_device(physical_device&& rhs) { *this = std::move(rhs); }
+   physical_device::~physical_device()
+   {
+      if (h_instance && h_surface)
+      {
+         h_instance.destroySurfaceKHR(h_surface);
+      }
+   }
+
+   physical_device& physical_device::operator=(physical_device&& rhs)
+   {
+      if (this != &rhs)
+      {
+         name = std::move(rhs.name);
+
+         features = rhs.features;
+         properties = rhs.properties;
+         mem_properties = rhs.mem_properties;
+
+         h_instance = std::move(rhs.h_instance);
+         rhs.h_instance = vk::Instance{};
+
+         h_device = std::move(rhs.h_device);
+         rhs.h_device = vk::PhysicalDevice{};
+
+         h_surface = std::move(rhs.h_surface);
+         rhs.h_surface = vk::SurfaceKHR{};
+
+         queue_families = std::move(rhs.queue_families);
+      }
+
+      return *this;
+   }
 
    bool physical_device::has_dedicated_compute_queue() const
    {
@@ -191,7 +97,7 @@ namespace core::gfx::vkn
       const instance& inst, logger* const p_logger) :
       p_logger{p_logger}
    {
-      sys_info.instance = inst.h_instance.get();
+      sys_info.instance = inst.h_instance;
       sys_info.instance_extensions = inst.extensions;
    }
 
@@ -199,25 +105,21 @@ namespace core::gfx::vkn
    {
       auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
          return sys_info.instance.enumeratePhysicalDevices();
-      }).left_map([](const std::system_error& e) {
-         // clang-format off
-         return error{
-            .type = detail::make_error_code(
-               physical_device::error::failed_to_enumerate_physical_devices),
-            .result = static_cast<vk::Result>(e.code().value())
-         };
-         // clang-format on
       });
 
       if (physical_devices_res.is_left())
       {
          // clang-format off
-         return monad::left<error>{physical_devices_res.left().value()};
+         return monad::to_left(error{
+            .type = detail::make_error_code(
+               physical_device::error::failed_to_enumerate_physical_devices), 
+            .result = static_cast<vk::Result>(physical_devices_res.left()->code().value())
+         });
          // clang-format on
       }
 
       tiny_dynamic_array<vk::PhysicalDevice, 2> physical_devices =
-         physical_devices_res.right().value();
+         std::move(physical_devices_res.right().value());
 
       tiny_dynamic_array<physical_device_description, 2> physical_device_descriptions;
       for (const auto& device : physical_devices)
@@ -247,7 +149,7 @@ namespace core::gfx::vkn
          }
       }
 
-      if (selected.phys_device)
+      if (!selected.phys_device)
       {
          // clang-format off
          return monad::to_left(error{
@@ -259,19 +161,20 @@ namespace core::gfx::vkn
 
       LOG_INFO_P(p_logger, "Selected physical device: {1}", selected.properties.deviceName);
 
+      physical_device gpu{};
+      gpu.name = selected.properties.deviceName;
+      gpu.features = selected.features;
+      gpu.properties = selected.properties;
+      gpu.mem_properties = selected.mem_properties;
+      gpu.h_instance = sys_info.instance;
+      gpu.h_device = selected.phys_device;
+      gpu.h_surface = std::move(sys_info.surface);
+      gpu.queue_families = selected.queue_families;
+
       // clang-format off
-      return monad::to_right(physical_device{
-         .name = selected.properties.deviceName,
-         .features = selected.features,
-         .properties = selected.properties,
-         .mem_properties = selected.mem_properties,
-         .h_instance = sys_info.instance,
-         .h_device = selected.phys_device,
-         .h_surface = std::move(sys_info.surface),
-         .queue_families = selected.queue_families
-      });
+      return monad::to_right(std::move(gpu));
       // clang-format on
-   }
+   } // namespace core::gfx::vkn
 
    physical_device_selector& physical_device_selector::set_prefered_gpu_type(
       physical_device::type type) noexcept
@@ -281,7 +184,7 @@ namespace core::gfx::vkn
    }
 
    physical_device_selector& physical_device_selector::set_surface(
-      vk::UniqueSurfaceKHR surface) noexcept
+      vk::SurfaceKHR&& surface) noexcept
    {
       sys_info.surface = std::move(surface);
       return *this;
@@ -381,21 +284,20 @@ namespace core::gfx::vkn
       }
 
       if (selection_info.require_present &&
-         !detail::get_present_queue_index(
-            desc.phys_device, sys_info.surface.get(), desc.queue_families))
+         !detail::get_present_queue_index(desc.phys_device, sys_info.surface, desc.queue_families))
       {
          return suitable::no;
       }
 
       // clang-format off
       const auto formats = monad::try_wrap<vk::SystemError>([&] {
-         return desc.phys_device.getSurfaceFormatsKHR(sys_info.surface.get());
+         return desc.phys_device.getSurfaceFormatsKHR(sys_info.surface);
       }).left_map([](const vk::SystemError&) {
          return dynamic_array<vk::SurfaceFormatKHR>{};
       }).join();
 
       const auto present_modes = monad::try_wrap<vk::SystemError>([&] {
-         return desc.phys_device.getSurfacePresentModesKHR(sys_info.surface.get());
+         return desc.phys_device.getSurfacePresentModesKHR(sys_info.surface);
       }).left_map([](const vk::SystemError&) {
          return dynamic_array<vk::PresentModeKHR>{};
       }).join();

@@ -121,6 +121,7 @@ target_sources(${PROJECT_NAME}
         source/epona_core/graphics/gui/widget.cpp
         source/epona_core/graphics/gui/window.cpp
         source/epona_core/graphics/vkn/core.cpp
+        source/epona_core/graphics/vkn/device.cpp
         source/epona_core/graphics/vkn/instance.cpp
         source/epona_core/graphics/vkn/physical_device.cpp
 

@@ -157,6 +157,19 @@ namespace core
             return maybe<result_type>(fun(val));
          }
       }
+      constexpr auto map(const std::invocable<value_type> auto& fun) &
+         requires std::movable<value_type>
+      {
+         using result_type = std::invoke_result_t<decltype(fun), value_type>;
+         if (!has_value())
+         {
+            return maybe<result_type>{};
+         }
+         else
+         {
+            return maybe<result_type>(fun(std::move(val)));
+         }
+      }
 
       constexpr auto map(const std::invocable<value_type> auto& fun) && 
       {
@@ -173,6 +186,12 @@ namespace core
 
       constexpr auto operator>>=(const std::invocable<value_type> auto& fun) const& 
          requires std::copyable<value_type>
+      {
+         return map(fun);
+      };
+      
+      constexpr auto operator>>=(const std::invocable<value_type> auto& fun) &
+         requires std::movable<value_type>
       {
          return map(fun);
       };

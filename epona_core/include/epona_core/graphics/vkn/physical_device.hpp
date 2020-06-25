@@ -5,33 +5,141 @@
  * @copyright MIT License
  */
 
+#pragma once
+
 #include <epona_core/detail/monad/either.hpp>
 #include <epona_core/graphics/vkn/instance.hpp>
-
-#pragma once
 
 namespace core::gfx::vkn
 {
    namespace detail
    {
       maybe<uint32_t> get_graphics_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families);
+         const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if (fam.queueFlags & vk::QueueFlagBits::eGraphics)
+            {
+               return i;
+            }
+
+            ++i;
+         }
+
+         return monad::none;
+      }
 
       maybe<uint32_t> get_present_queue_index(vk::PhysicalDevice physical_device,
-         vk::SurfaceKHR surface,
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+         vk::SurfaceKHR surface, const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         for (uint32_t i = 0; i < families.size(); ++i)
+         {
+            VkBool32 present_support = VK_FALSE;
+            if (surface)
+            {
+               if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
+                  vk::Result::eSuccess)
+               {
+                  return monad::none;
+               }
+            }
+
+            if (present_support == VK_TRUE)
+            {
+               return i;
+            }
+         }
+
+         return monad::none;
+      }
 
       maybe<uint32_t> get_dedicated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+         const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
+            {
+               return i;
+            }
+
+            ++i;
+         }
+
+         return monad::none;
+      }
 
       maybe<uint32_t> get_dedicated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+         const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
+            {
+               return i;
+            }
+
+            ++i;
+         }
+
+         return monad::none;
+      }
 
       maybe<uint32_t> get_separated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+         const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         maybe<uint32_t> compute{};
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+            {
+               if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) ==
+                  0)
+               {
+                  return i;
+               }
+               else
+               {
+                  compute = i;
+               }
+            }
+
+            ++i;
+         }
+
+         return compute;
+      }
 
       maybe<uint32_t> get_separated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) noexcept;
+         const range_over<vk::QueueFamilyProperties> auto& families)
+      {
+         maybe<uint32_t> transfer = monad::none;
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
+               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+            {
+               if (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0)
+               {
+                  return i;
+               }
+               else
+               {
+                  transfer = i;
+               }
+            }
+
+            ++i;
+         }
+
+         return transfer;
+      }
    } // namespace detail
 
    /**
@@ -59,6 +167,14 @@ namespace core::gfx::vkn
          no_suitable_device
       };
 
+      physical_device() = default;
+      physical_device(const physical_device&) = delete;
+      physical_device(physical_device&&);
+      ~physical_device();
+
+      physical_device& operator=(const physical_device&) = delete;
+      physical_device& operator=(physical_device&&);
+
       bool has_dedicated_compute_queue() const;
       bool has_dedicated_transfer_queue() const;
 
@@ -74,7 +190,7 @@ namespace core::gfx::vkn
       vk::Instance h_instance{};
 
       vk::PhysicalDevice h_device{};
-      vk::UniqueSurfaceKHR h_surface{};
+      vk::SurfaceKHR h_surface{};
 
       tiny_dynamic_array<vk::QueueFamilyProperties, 5> queue_families{};
    };
@@ -93,7 +209,7 @@ namespace core::gfx::vkn
       result<physical_device> select();
 
       physical_device_selector& set_prefered_gpu_type(physical_device::type type) noexcept;
-      physical_device_selector& set_surface(vk::UniqueSurfaceKHR surface) noexcept;
+      physical_device_selector& set_surface(vk::SurfaceKHR&& surface) noexcept;
       physical_device_selector& allow_any_gpu_type(bool allow = true) noexcept;
       physical_device_selector& require_present(bool require = true) noexcept;
       physical_device_selector& require_dedicated_compute() noexcept;
@@ -108,7 +224,7 @@ namespace core::gfx::vkn
       struct system_info
       {
          vk::Instance instance{};
-         vk::UniqueSurfaceKHR surface{};
+         vk::SurfaceKHR surface{};
 
          dynamic_array<const char*> instance_extensions;
       } sys_info;
