@@ -36,22 +36,24 @@ namespace core
    template <class type_>
    using auto_ptr = std::unique_ptr<type_, std::function<void(type_*)>>;
 
-   constexpr std::size_t get_backward_padding(std::uintptr_t address, std::size_t aligment) noexcept
+   constexpr auto get_backward_padding(std::uintptr_t address, std::size_t aligment) noexcept
+      -> std::size_t
    {
       auto const padding = address & (aligment - 1);
 
       return padding == aligment ? 0 : padding;
    }
 
-   constexpr std::size_t get_forward_padding(std::uintptr_t address, std::size_t alignment) noexcept
+   constexpr auto get_forward_padding(std::uintptr_t address, std::size_t alignment) noexcept
+      -> std::size_t
    {
       auto const padding = alignment - (address & (alignment - 1));
 
       return padding == alignment ? 0 : padding;
    }
 
-   constexpr std::size_t get_forward_padding(
-      std::uintptr_t address, std::size_t alignment, std::size_t header_size) noexcept
+   constexpr auto get_forward_padding(std::uintptr_t address, std::size_t alignment,
+      std::size_t header_size) noexcept -> std::size_t
    {
       auto padding = get_forward_padding(address, alignment);
 

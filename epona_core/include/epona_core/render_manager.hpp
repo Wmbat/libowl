@@ -22,14 +22,14 @@ namespace core
       render_manager(gfx::window* const p_wnd, logger* const p_logger = nullptr);
 
    private:
-      gfx::window* const p_window;
-      logger* const p_logger;
+      gfx::window* const m_pwindow;
+      logger* const m_plogger;
 
-      std::string engine_name = "Epona";
+      std::string m_engine_name = "Epona";
 
-      gfx::vkn::loader loader;
-      gfx::vkn::instance instance;
-      gfx::vkn::device device;
-      gfx::vkn::swapchain swapchain;
+      gfx::vkn::loader m_loader;
+      gfx::vkn::instance m_instance;
+      gfx::vkn::device m_device;
+      gfx::vkn::swapchain m_swapchain;
    };
 } // namespace core

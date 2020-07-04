@@ -46,29 +46,29 @@ namespace core
       constexpr explicit input_iterator() = default;
       constexpr explicit input_iterator(pointer p_type) noexcept : p_type(p_type) {}
 
-      constexpr bool operator==(const self_type& rhs) const noexcept = default;
+      constexpr auto operator==(const self_type& rhs) const noexcept -> bool = default;
 
-      constexpr const_reference operator*() const noexcept
+      constexpr auto operator*() const noexcept -> const_reference
       {
          assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return *p_type;
       }
-      constexpr const_pointer operator->() const noexcept
+      constexpr auto operator->() const noexcept -> const_pointer
       {
          assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return p_type;
       };
 
-      constexpr self_type& operator++() noexcept
+      constexpr auto operator++() noexcept -> self_type&
       {
          ++p_type;
 
          return *this;
       }
 
-      constexpr self_type operator++(int) const noexcept
+      constexpr auto operator++(int) const noexcept -> self_type
       {
          self_type it = *this;
          ++*this;

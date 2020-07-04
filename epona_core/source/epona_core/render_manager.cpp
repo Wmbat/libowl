@@ -12,78 +12,76 @@
 #include <epona_core/graphics/vkn/physical_device.hpp>
 #include <epona_core/render_manager.hpp>
 
-#include <functional>
-#include <string>
-
 namespace core
 {
-   gfx::vkn::instance handle_instance_error(const gfx::vkn::error&, logger* const);
-   gfx::vkn::physical_device handle_physical_device_error(const gfx::vkn::error&, logger* const);
-   gfx::vkn::device handle_device_error(const gfx::vkn::error&, logger* const);
+   auto handle_instance_error(const gfx::vkn::error&, logger* const) -> gfx::vkn::instance;
+   auto handle_physical_device_error(const gfx::vkn::error&, logger* const)
+      -> gfx::vkn::physical_device;
+   auto handle_device_error(const gfx::vkn::error&, logger* const) -> gfx::vkn::device;
+   auto handle_surface_error(const gfx::vkn::error&, logger* const) -> vk::SurfaceKHR;
 
-   vk::SurfaceKHR handle_surface_error(const gfx::vkn::error&, logger* const);
-
-   render_manager::render_manager(gfx::window* const p_wnd, logger* const p_logger) :
-      p_window{p_wnd}, p_logger{p_logger}, loader{p_logger}
+   render_manager::render_manager(gfx::window* const p_wnd, logger* const plogger) :
+      m_pwindow{p_wnd}, m_plogger{plogger}, m_loader{m_plogger}
    {
-      using namespace std::placeholders;
-
       // clang-format off
-      instance = gfx::vkn::instance::builder{loader, p_logger}
+      m_instance = gfx::vkn::instance::builder{m_loader, m_plogger}
          .set_application_name("")
          .set_application_version(0, 0, 0)
-         .set_engine_name(engine_name)
+         .set_engine_name(m_engine_name)
          .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
          .build()
-         .error_map(std::bind(handle_instance_error, _1, p_logger))
+         .error_map([plogger](auto&& err) { return handle_instance_error(err, plogger); })
          .join();
 
-      device = gfx::vkn::device::builder{loader,
-         gfx::vkn::physical_device::selector{instance, p_logger}
-            .set_surface(p_wnd->get_surface(instance.value())
-               .error_map(std::bind(handle_surface_error, _1, p_logger))
+      m_device = gfx::vkn::device::builder{m_loader,
+         gfx::vkn::physical_device::selector{m_instance, m_plogger}
+            .set_surface(p_wnd->get_surface(m_instance.value())
+               .error_map([plogger](auto&& err) { return handle_surface_error(err, plogger); })
                .join())
             .set_prefered_gpu_type(gfx::vkn::physical_device::type::discrete)
             .allow_any_gpu_type()
             .require_present()
             .select()
-            .error_map(std::bind(handle_physical_device_error, _1, p_logger))
-            .join(), p_logger}
+            .error_map([plogger](auto&& err) { 
+               return handle_physical_device_error(err, plogger); 
+            })
+            .join(), m_plogger}
          .build()
-         .error_map(std::bind(handle_device_error, _1, p_logger))
+         .error_map([plogger](auto&& PH1) { return handle_device_error(PH1, plogger); })
          .join();
 
-      auto test = gfx::vkn::swapchain::builder{device};
+      auto test = gfx::vkn::swapchain::builder{m_device};
       // clang-format on
    }
 
-   gfx::vkn::instance handle_instance_error(const gfx::vkn::error& err, logger* const p_logger)
+   auto handle_instance_error(const gfx::vkn::error& err, logger* const m_plogger)
+      -> gfx::vkn::instance
    {
-      log_error(p_logger, "Failed to create instance: {0}", std::make_tuple(err.type.message()));
+      log_error(m_plogger, "Failed to create instance: {0}", std::make_tuple(err.type.message()));
       abort();
 
       return {};
    }
-   gfx::vkn::physical_device handle_physical_device_error(
-      const gfx::vkn::error& err, logger* const p_logger)
+   auto handle_physical_device_error(const gfx::vkn::error& err, logger* const m_plogger)
+      -> gfx::vkn::physical_device
    {
       log_error(
-         p_logger, "Failed to create physical device: {0}", std::make_tuple(err.type.message()));
+         m_plogger, "Failed to create physical device: {0}", std::make_tuple(err.type.message()));
       abort();
 
       return {};
    }
-   gfx::vkn::device handle_device_error(const gfx::vkn::error& err, logger* const p_logger)
+   auto handle_device_error(const gfx::vkn::error& err, logger* const m_plogger) -> gfx::vkn::device
    {
-      log_error(p_logger, "Failed to create device: {0}", std::make_tuple(err.type.message()));
+      log_error(m_plogger, "Failed to create device: {0}", std::make_tuple(err.type.message()));
       abort();
 
       return {};
    }
 
-   vk::SurfaceKHR handle_surface_error(const gfx::vkn::error& err, logger* const p_logger)
+   auto handle_surface_error(const gfx::vkn::error& err, logger* const m_plogger) -> vk::SurfaceKHR
    {
-      log_error(p_logger, "Failed to create surface: {0}", std::make_tuple(err.type.message()));
+      log_error(m_plogger, "Failed to create surface: {0}", std::make_tuple(err.type.message()));
       abort();
 
       return {};

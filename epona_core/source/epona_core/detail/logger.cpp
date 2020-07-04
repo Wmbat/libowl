@@ -16,8 +16,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "epona_core/detail/logger.hpp"
-#include "spdlog/common.h"
+#include <epona_core/detail/logger.hpp>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -54,5 +53,7 @@ namespace core
       log.set_level(spdlog::level::trace);
    }
 
-   spdlog::logger& logger::get_logger() { return log; }
+   auto logger::get_logger() -> spdlog::logger& { return log; }
+
+   auto logger::get_logger() const -> const spdlog::logger& { return log; }
 } // namespace core

@@ -55,43 +55,44 @@ namespace core
       constexpr random_access_iterator() noexcept = default;
       constexpr explicit random_access_iterator(pointer p_type) noexcept : p_type(p_type) {}
 
-      constexpr bool operator==(self_type const& rhs) const noexcept = default;
-      constexpr std::strong_ordering operator<=>(self_type const& rhs) const noexcept = default;
+      constexpr auto operator==(self_type const& rhs) const noexcept -> bool = default;
+      constexpr auto operator<=>(self_type const& rhs) const noexcept
+         -> std::strong_ordering = default;
 
-      constexpr reference operator*() const noexcept
+      constexpr auto operator*() const noexcept -> reference
       {
          assert(p_type != nullptr && "Cannot use derefence a nullptr");
 
          return *p_type;
       }
-      constexpr pointer operator->() const noexcept
+      constexpr auto operator->() const noexcept -> pointer
       {
          assert(p_type != nullptr && "Cannot use derefence a nullptr");
 
          return p_type;
       }
 
-      constexpr self_type& operator++() noexcept
+      constexpr auto operator++() noexcept -> self_type&
       {
          ++p_type;
 
          return *this;
       }
-      constexpr self_type& operator--() noexcept
+      constexpr auto operator--() noexcept -> self_type&
       {
          --p_type;
 
          return *this;
       }
 
-      constexpr self_type operator++(int) const noexcept
+      constexpr auto operator++(int) const noexcept -> self_type
       {
          self_type it = *this;
          ++*this;
 
          return it;
       }
-      constexpr self_type operator--(int) const noexcept
+      constexpr auto operator--(int) const noexcept -> self_type
       {
          self_type it = *this;
          --*this;
@@ -99,27 +100,27 @@ namespace core
          return it;
       }
 
-      constexpr self_type& operator+=(difference_type diff) noexcept
+      constexpr auto operator+=(difference_type diff) noexcept -> self_type&
       {
          this->p_type += diff;
 
          return *this;
       }
-      constexpr self_type& operator-=(difference_type diff) noexcept
+      constexpr auto operator-=(difference_type diff) noexcept -> self_type&
       {
          this->p_type -= diff;
 
          return *this;
       }
 
-      constexpr self_type operator+(difference_type rhs) const noexcept
+      constexpr auto operator+(difference_type rhs) const noexcept -> self_type
       {
          self_type it = *this;
          it += rhs;
 
          return it;
       }
-      constexpr self_type operator-(difference_type rhs) const noexcept
+      constexpr auto operator-(difference_type rhs) const noexcept -> self_type
       {
          self_type it = *this;
          it -= rhs;
@@ -127,16 +128,16 @@ namespace core
          return it;
       }
 
-      constexpr difference_type operator+(self_type const& it) const noexcept
+      constexpr auto operator+(self_type const& it) const noexcept -> difference_type
       {
          return p_type + it.p_type;
       }
-      constexpr difference_type operator-(self_type const& it) const noexcept
+      constexpr auto operator-(self_type const& it) const noexcept -> difference_type
       {
          return p_type - it.p_type;
       }
 
-      constexpr reference operator[](difference_type diff) const noexcept
+      constexpr auto operator[](difference_type diff) const noexcept -> reference
       {
          assert(p_type != nullptr && "Cannot use derefence a nullptr");
 

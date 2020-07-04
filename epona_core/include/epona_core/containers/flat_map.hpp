@@ -7,12 +7,10 @@
 
 #pragma once
 
-#include "epona_core/containers/details.hpp"
-#include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/detail/concepts.hpp"
-#include "epona_core/detail/error_handling.hpp"
-#include "epona_core/memory/details.hpp"
-#include "epona_core/memory/multipool_allocator.hpp"
+#include <epona_core/containers/details.hpp>
+#include <epona_core/containers/dynamic_array.hpp>
+#include <epona_core/detail/concepts.hpp>
+#include <epona_core/detail/error_handling.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -49,7 +47,7 @@ namespace core
    public:
       tiny_flat_map() = default;
 
-      mapped_type& at(const key_type& key)
+      auto at(const key_type& key) -> mapped_type&
       {
          auto it = find(key);
          if (it == end())
@@ -59,7 +57,7 @@ namespace core
 
          return it->second;
       }
-      const mapped_type& at(const key_type& key) const
+      auto at(const key_type& key) const -> const mapped_type&
       {
          auto it = find(key);
          if (it == cend())
@@ -70,26 +68,26 @@ namespace core
          return it->second;
       }
 
-      iterator begin() noexcept { return data.begin(); }
-      const_iterator begin() const noexcept { return data.begin(); }
-      const_iterator cbegin() const noexcept { return data.cbegin(); }
+      auto begin() noexcept -> iterator { return data.begin(); }
+      auto begin() const noexcept -> const_iterator { return data.begin(); }
+      auto cbegin() const noexcept -> const_iterator { return data.cbegin(); }
 
-      iterator end() noexcept { return data.end(); }
-      const_iterator end() const noexcept { return data.end(); }
-      const_iterator cend() const noexcept { return data.cend(); }
+      auto end() noexcept -> iterator { return data.end(); }
+      auto end() const noexcept -> const_iterator { return data.end(); }
+      auto cend() const noexcept -> const_iterator { return data.cend(); }
 
-      reverse_iterator rbegin() noexcept { return data.rbegin(); }
-      const_reverse_iterator rbegin() const noexcept { return data.rbegin(); }
-      const_reverse_iterator rcbegin() const noexcept { return data.rcbegin(); }
+      auto rbegin() noexcept -> reverse_iterator { return data.rbegin(); }
+      auto rbegin() const noexcept -> const_reverse_iterator { return data.rbegin(); }
+      auto rcbegin() const noexcept -> const_reverse_iterator { return data.rcbegin(); }
 
-      reverse_iterator rend() noexcept { return data.rend(); }
-      const_reverse_iterator rend() const noexcept { return data.rend(); }
-      const_reverse_iterator rcend() const noexcept { return data.rcend(); }
+      auto rend() noexcept -> reverse_iterator { return data.rend(); }
+      auto rend() const noexcept -> const_reverse_iterator { return data.rend(); }
+      auto rcend() const noexcept -> const_reverse_iterator { return data.rcend(); }
 
-      [[nodiscard]] bool empty() const noexcept { return data.empty(); }
-      size_type size() const noexcept { return data.size(); }
-      size_type max_size() const noexcept { return data.max_size(); }
-      size_type capacity() const noexcept { return data.capacity(); }
+      [[nodiscard]] auto empty() const noexcept -> bool { return data.empty(); }
+      auto size() const noexcept -> size_type { return data.size(); }
+      auto max_size() const noexcept -> size_type { return data.max_size(); }
+      auto capacity() const noexcept -> size_type { return data.capacity(); }
 
       /**
        * @brief Erase all elements from the container
@@ -100,7 +98,8 @@ namespace core
        */
       void clear() noexcept { data.clear(); }
 
-      std::pair<iterator, bool> insert(const_reference value) requires std::copyable<value_type>
+      auto insert(const_reference value)
+         -> std::pair<iterator, bool> requires std::copyable<value_type>
       {
          if (empty())
          {
@@ -131,7 +130,7 @@ namespace core
          return std::make_pair(data.insert(cbegin() + left, value), true);
       }
 
-      std::pair<iterator, bool> insert(value_type&& value) requires std::movable<value_type>
+      auto insert(value_type&& value) -> std::pair<iterator, bool> requires std::movable<value_type>
       {
          if (empty())
          {
@@ -164,7 +163,7 @@ namespace core
 
       // clang-format off
       template <class value_>
-      std::pair<iterator, bool> insert(value_&& value) 
+      auto insert(value_&& value) -> std::pair<iterator, bool> 
          requires std::constructible_from<value_type, value_&&>
       {
          return emplace(std::forward<value_>(value));
@@ -183,8 +182,8 @@ namespace core
       void insert(std::initializer_list<value_type> init) { insert(init.begin(), init.end()); }
 
       template <class... args_>
-      std::pair<iterator, bool> emplace(
-         args_&&... args) requires std::constructible_from<value_type, args_...>
+      auto emplace(args_&&... args)
+         -> std::pair<iterator, bool> requires std::constructible_from<value_type, args_...>
       {
          if (empty())
          {
@@ -218,8 +217,8 @@ namespace core
       }
 
       template <class... args_>
-      std::pair<iterator, bool> try_emplace(const key_type& key,
-         args_&&... args) requires std::constructible_from<mapped_type, args_...>
+      auto try_emplace(const key_type& key, args_&&... args)
+         -> std::pair<iterator, bool> requires std::constructible_from<mapped_type, args_...>
       {
          if (empty())
          {
@@ -262,7 +261,7 @@ namespace core
        *
        * @return The iterator to the following element
        */
-      iterator erase(const_iterator pos) { return data.erase(pos); }
+      auto erase(const_iterator pos) -> iterator { return data.erase(pos); }
       /**
        * @brief Removes specified elements from the container
        *
@@ -275,9 +274,12 @@ namespace core
        *
        * @return The iterator to the following element
        */
-      iterator erase(const_iterator first, const_iterator last) { return data.erase(first, last); }
+      auto erase(const_iterator first, const_iterator last) -> iterator
+      {
+         return data.erase(first, last);
+      }
 
-      size_type count(const key_type& key) const
+      auto count(const key_type& key) const -> size_type
       {
          if (find(key) != cend())
          {
@@ -289,7 +291,7 @@ namespace core
          }
       }
 
-      iterator find(const key_type& key)
+      auto find(const key_type& key) -> iterator
       {
          int32_t left = 0;
          int32_t right = size() - 1;
@@ -313,7 +315,7 @@ namespace core
          return end();
       }
 
-      const_iterator find(const key_type& key) const
+      auto find(const key_type& key) const -> const_iterator
       {
          int32_t left = 0;
          int32_t right = size() - 1;
@@ -337,7 +339,7 @@ namespace core
          return cend();
       }
 
-      bool contains(const key_type& key) const { return find(key) != cend(); }
+      auto contains(const key_type& key) const -> bool { return find(key) != cend(); }
 
    private:
       container_type data;

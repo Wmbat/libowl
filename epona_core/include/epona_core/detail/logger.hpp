@@ -93,7 +93,8 @@ namespace core
          log.flush();
       }
 
-      spdlog::logger& get_logger();
+      auto get_logger() -> spdlog::logger&;
+      auto get_logger() const -> const spdlog::logger&;
 
    private:
       spdlog::logger log;

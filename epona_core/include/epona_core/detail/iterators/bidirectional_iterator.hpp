@@ -43,57 +43,57 @@ namespace core
       using difference_type = std::ptrdiff_t;
 
    public:
-      constexpr bidirectional_iterator( ) noexcept = default;
-      constexpr explicit bidirectional_iterator( pointer p_type ) noexcept : p_type( p_type ) {}
+      constexpr bidirectional_iterator() noexcept = default;
+      constexpr explicit bidirectional_iterator(pointer p_type) noexcept : p_type(p_type) {}
 
-      constexpr bool operator==( self_type rhs ) const noexcept = default;
+      constexpr auto operator==(self_type rhs) const noexcept -> bool = default;
 
-      constexpr reference operator*( ) noexcept
+      constexpr auto operator*() noexcept -> reference
       {
-         assert( p_type != nullptr && "Cannot derefence a nullptr" );
+         assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return *p_type;
       }
-      constexpr const_reference operator*( ) const noexcept
+      constexpr auto operator*() const noexcept -> const_reference
       {
-         assert( p_type != nullptr && "Cannot derefence a nullptr" );
+         assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return *p_type;
       }
-      constexpr pointer operator->( ) noexcept
+      constexpr auto operator->() noexcept -> pointer
       {
-         assert( p_type != nullptr && "Cannot use derefence a nullptr" );
+         assert(p_type != nullptr && "Cannot use derefence a nullptr");
 
          return p_type;
       }
-      constexpr const_pointer operator->( ) const noexcept
+      constexpr auto operator->() const noexcept -> const_pointer
       {
-         assert( p_type != nullptr && "Cannot derefence a nullptr" );
+         assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return p_type;
       };
 
-      constexpr self_type& operator++( ) noexcept
+      constexpr auto operator++() noexcept -> self_type&
       {
          ++p_type;
 
          return *this;
       }
-      constexpr self_type& operator--( ) noexcept
+      constexpr auto operator--() noexcept -> self_type&
       {
          --p_type;
 
          return *this;
       }
 
-      constexpr self_type operator++( int ) const noexcept
+      constexpr auto operator++(int) const noexcept -> self_type
       {
          self_type it = *this;
          ++*this;
 
          return it;
       }
-      constexpr self_type operator--( int ) const noexcept
+      constexpr auto operator--(int) const noexcept -> self_type
       {
          self_type it = *this;
          --*this;
@@ -101,9 +101,9 @@ namespace core
          return it;
       }
 
-      constexpr void swap( self_type& rhs ) noexcept { std::swap( p_type, rhs.get_ptr( ) ); }
+      constexpr void swap(self_type& rhs) noexcept { std::swap(p_type, rhs.get_ptr()); }
 
    private:
-      pointer p_type{ nullptr };
+      pointer p_type{nullptr};
    };
-} // namespace ESL
+} // namespace core
