@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/graphics/vkn/core.hpp"
-#include "epona_core/graphics/vkn/physical_device.hpp"
+#include <epona_core/containers/dynamic_array.hpp>
+#include <epona_core/graphics/vkn/core.hpp>
+#include <epona_core/graphics/vkn/physical_device.hpp>
 
 namespace core::gfx::vkn
 {
@@ -41,8 +41,9 @@ namespace core::gfx::vkn
       };
    } // namespace queue
 
-   struct device
+   class device
    {
+   public:
       enum class error
       {
          device_extension_not_supported,
@@ -50,53 +51,56 @@ namespace core::gfx::vkn
       };
 
       device() = default;
+      device(
+         physical_device physical_device, vk::Device device, dynamic_array<const char*> extensions);
       device(const device&) = delete;
-      device(device&&);
+      device(device&&) noexcept;
       ~device();
 
-      device& operator=(const device&) = delete;
-      device& operator=(device&&);
+      auto operator=(const device&) -> device& = delete;
+      auto operator=(device&&) noexcept -> device&;
 
-      device&& set_physical_device(physical_device&& phys);
-      device&& set_device(vk::Device&& device);
-      device&& set_extensions(dynamic_array<const char*> extensions);
+      [[nodiscard]] auto get_queue_index(queue::type type) const -> vkn::result<uint32_t>;
+      [[nodiscard]] auto get_dedicated_queue_index(queue::type type) const -> vkn::result<uint32_t>;
 
-      result<uint32_t> get_queue_index(queue::type type) const;
-      result<uint32_t> get_dedicated_queue_index(queue::type type) const;
+      [[nodiscard]] auto get_queue(queue::type) const -> vkn::result<vk::Queue>;
+      [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
+         -> vkn::result<vk::Queue>;
 
-      result<vk::Queue> get_queue(queue::type) const;
-      result<vk::Queue> get_dedicated_queue(queue::type type) const;
-
-      physical_device phys_device;
-
-      vk::Device h_device;
-
-      dynamic_array<const char*> extensions;
-   };
-
-   class device_builder
-   {
-   public:
-      device_builder(
-         const loader& vk_loader, physical_device&& phys_device, logger* const p_logger = nullptr);
-
-      result<device> build();
-
-      device_builder& set_queue_setup(const range_over<queue::description> auto& descriptions);
-      device_builder& add_desired_extension(const std::string& extension_name);
+      [[nodiscard]] auto value() const -> const vk::Device&;
+      [[nodiscard]] auto physical() const -> const physical_device&;
 
    private:
-      const loader& vk_loader;
+      vkn::physical_device m_physical_device;
 
-      logger* const p_logger;
+      vk::Device m_device;
 
-      struct info
+      dynamic_array<const char*> m_extensions;
+
+   public:
+      class builder
       {
-         physical_device phys_device;
+      public:
+         builder(const loader& vk_loader, physical_device&& phys_device,
+            logger* const plogger = nullptr);
 
-         dynamic_array<queue::description> queue_descriptions;
-         dynamic_array<const char*> desired_extensions;
-      } info;
+         [[nodiscard]] auto build() -> vkn::result<device>;
+
+         auto set_queue_setup(const dynamic_array<queue::description>& descriptions) -> builder&;
+         auto add_desired_extension(const std::string& extension_name) -> builder&;
+
+      private:
+         const loader& m_loader;
+
+         logger* const m_plogger;
+
+         struct info
+         {
+            physical_device phys_device;
+
+            dynamic_array<queue::description> queue_descriptions;
+            dynamic_array<const char*> desired_extensions;
+         } m_info;
+      };
    };
-
 } // namespace core::gfx::vkn

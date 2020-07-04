@@ -2,14 +2,14 @@
  * @mainpage Epona
  */
 
-#include <epona_core/core.hpp>
-#include <epona_core/detail/logger.hpp>
-#include <epona_core/memory/pool_allocator.hpp>
-#include <epona_core/render_manager.hpp>
+#include "epona_core/core.hpp"
+#include "epona_core/detail/logger.hpp"
+#include "epona_core/memory/pool_allocator.hpp"
+#include "epona_core/render_manager.hpp"
 
 #include <map>
 
-int main()
+auto main() -> int
 {
    core::logger main_logger{"epona_core"};
 

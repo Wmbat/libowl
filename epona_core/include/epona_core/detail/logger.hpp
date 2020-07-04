@@ -20,8 +20,18 @@
 
 #include <spdlog/spdlog.h>
 
+#include <cstring>
+#include <experimental/source_location>
+#include <string_view>
+
+#if !defined(__FILENAME__)
+#   define SHORT_FILE(name) (strrchr(name, '/') ? strrchr(name, '/') + 1 : name)
+#endif
+
 namespace core
 {
+   using src_location = std::experimental::source_location;
+
    class logger
    {
    public:
@@ -54,8 +64,7 @@ namespace core
 
       void flush() { log.flush(); }
 
-      template <typename... _args>
-      void info(std::string_view msg, _args const&... args)
+      void info(std::string_view msg, const auto&... args)
       {
          log.info(msg, args...);
 
@@ -64,8 +73,7 @@ namespace core
 #endif
       }
 
-      template <typename... _args>
-      void debug(std::string_view msg, _args const&... args)
+      void debug(std::string_view msg, const auto&... args)
       {
 #ifndef NDEBUG
          log.debug(msg, args...);
@@ -73,15 +81,13 @@ namespace core
 #endif
       }
 
-      template <typename... _args>
-      void warn(std::string_view msg, _args const&... args)
+      void warn(std::string_view msg, const auto&... args)
       {
          log.warn(msg, args...);
          log.flush();
       }
 
-      template <typename... _args>
-      void error(std::string_view msg, _args const&... args)
+      void error(std::string_view msg, const auto&... args)
       {
          log.error(msg, args...);
          log.flush();
@@ -93,75 +99,113 @@ namespace core
       spdlog::logger log;
    };
 
-#define LOG_INFO(p_logger, message)                                                                \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->info(buffer, __FUNCTION__);                                                        \
+   inline void log_info(logger* const plogger, std::string_view message,
+      const src_location& loc = src_location::current())
+   {
+      if (plogger)
+      {
+         plogger->info(
+            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+      }
+   }
+   inline void log_debug(logger* const plogger, std::string_view message,
+      const src_location& loc = src_location::current())
+   {
+      if (plogger)
+      {
+         plogger->debug(
+            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+      }
+   }
+   inline void log_warn(logger* const plogger, std::string_view message,
+      const src_location& loc = src_location::current())
+   {
+      if (plogger)
+      {
+         plogger->warn(
+            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+      }
+   }
+   inline void log_error(logger* const plogger, std::string_view message,
+      const src_location& loc = src_location::current())
+   {
+      if (plogger)
+      {
+         plogger->error(
+            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+      }
    }
 
-#define LOG_INFO_P(p_logger, message, ...)                                                         \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->info(buffer, __FUNCTION__, __VA_ARGS__);                                           \
-   }
+   template <typename... args_>
+   void log_info(logger* const plogger, std::string_view message, std::tuple<args_...> args,
+      const src_location& loc = src_location::current())
+   {
+      constexpr size_t n = sizeof...(args_);
 
-#define LOG_DEBUG(p_logger, message)                                                               \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->debug(buffer, __FUNCTION__);                                                       \
-   }
+      const std::string buff =
+         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
 
-#define LOG_DEBUG_P(p_logger, message, ...)                                                        \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->debug(buffer, __FUNCTION__, __VA_ARGS__);                                          \
+      if (plogger)
+      {
+         std::apply(
+            [&](auto&&... data) {
+               plogger->info(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
+            },
+            args);
+      }
    }
+   template <typename... args_>
+   void log_debug(logger* const plogger, std::string_view message, std::tuple<args_...> args,
+      const src_location& loc = src_location::current())
+   {
+      constexpr size_t n = sizeof...(args_);
 
-#define LOG_WARN(p_logger, message)                                                                \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->warn(buffer, __FUNCTION__);                                                        \
+      const std::string buff =
+         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
+
+      if (plogger)
+      {
+         std::apply(
+            [&](auto&&... data) {
+               plogger->debug(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
+            },
+            args);
+      }
    }
+   template <typename... args_>
+   void log_warn(logger* const plogger, std::string_view message, std::tuple<args_...> args,
+      const src_location& loc = src_location::current())
+   {
+      constexpr size_t n = sizeof...(args_);
 
-#define LOG_WARN_P(p_logger, message, ...)                                                         \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->warn(buffer, __FUNCTION__, __VA_ARGS__);                                           \
+      const std::string buff =
+         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
+
+      if (plogger)
+      {
+         std::apply(
+            [&](auto&&... data) {
+               plogger->warn(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
+            },
+            args);
+      }
    }
+   template <typename... args_>
+   void log_error(logger* const plogger, std::string_view message, std::tuple<args_...> args,
+      const src_location& loc = src_location::current())
+   {
+      constexpr size_t n = sizeof...(args_);
 
-#define LOG_ERROR(p_logger, message)                                                               \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->error(buffer, __FUNCTION__);                                                       \
-   }
+      const std::string buff =
+         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
 
-#define LOG_ERROR_P(p_logger, message, ...)                                                        \
-   if (p_logger)                                                                                   \
-   {                                                                                               \
-      std::string buffer = "[{0}] ";                                                               \
-      buffer.append(message);                                                                      \
-                                                                                                   \
-      p_logger->error(buffer, __FUNCTION__, __VA_ARGS__);                                          \
+      if (plogger)
+      {
+         std::apply(
+            [&](auto&&... data) {
+               plogger->error(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
+            },
+            args);
+      }
    }
 } // namespace core

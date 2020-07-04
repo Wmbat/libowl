@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "epona_core/containers/dynamic_array.hpp"
-#include "epona_core/detail/concepts.hpp"
-#include "epona_core/graphics/vkn/core.hpp"
+#include <epona_core/containers/dynamic_array.hpp>
+#include <epona_core/detail/concepts.hpp>
+#include <epona_core/graphics/vkn/core.hpp>
 
 #include <ranges>
 
@@ -22,11 +22,10 @@ namespace core::gfx::vkn
     * @author wmbat wmbat@protonmail.com
     * @date Saturday, 20th of June, 2020
     * @copyright MIT License
-    *
-    * @brief A wrapper struct around the elements associated with a Vulkan instance
     */
-   struct instance
+   class instance
    {
+   public:
       /**
        * @brief An enum used for error handling.
        *
@@ -44,109 +43,72 @@ namespace core::gfx::vkn
       };
 
       instance() = default;
+      instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
+         dynamic_array<const char*> extension, uint32_t version);
       instance(const instance&) = delete;
-      instance(instance&&);
+      instance(instance&&) noexcept;
       ~instance();
 
-      instance& operator=(const instance&) = delete;
-      instance& operator=(instance&&);
+      auto operator=(const instance&) -> instance& = delete;
+      auto operator=(instance&&) noexcept -> instance&;
 
-      vk::Instance h_instance;
-      vk::DebugUtilsMessengerEXT h_debug_utils;
+      auto value() noexcept -> vk::Instance&;
+      [[nodiscard]] auto value() const noexcept -> const vk::Instance&;
 
-      tiny_dynamic_array<const char*, 16> extensions;
+      [[nodiscard]] auto extensions() const -> const dynamic_array<const char*>&;
 
-      uint32_t version = 0;
-   };
+   private:
+      vk::Instance m_instance;
+      vk::DebugUtilsMessengerEXT m_debug_utils;
 
-   /**
-    * @class instance <epona_core/graphics/vkn/instance.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Saturday, 20th of June, 2020
-    * @copyright MIT License
-    *
-    * @brief A class used for a parametrized creation of an instance.
-    */
-   class instance_builder
-   {
+      dynamic_array<const char*> m_extensions;
+
+      uint32_t m_version = 0;
+
    public:
-      instance_builder(const loader& vk_loader, logger* const p_logger = nullptr);
-
-      /**
-       * @brief Constructs an instance using the information provided.
-       *
-       * @return An instance object or an error code.
-       */
-      result<instance> build();
-
-      /**
-       * @brief Set the information regarding the application name.
-       *
-       * @param[in] app_name The name of the application.
-       */
-      instance_builder& set_application_name(std::string_view app_name);
-      /**
-       * @brief Set the information regarding the engine name.
-       *
-       * @param[in] app_name The name of the engine.
-       */
-      instance_builder& set_engine_name(std::string_view engine_name);
-      /**
-       * @brief Set the information regarding the application version.
-       *
-       * @param[in] major The version major of the application.
-       * @param[in] minor The version minor of the application.
-       * @param[in] patch The version patch of the application.
-       */
-      instance_builder& set_application_version(uint32_t major, uint32_t minor, uint32_t patch);
-      /**
-       * @brief Set the information regarding the engine version.
-       *
-       * @param[in] major The version major of the engine.
-       * @param[in] minor The version minor of the engine.
-       * @param[in] patch The version patch of the engine.
-       */
-      instance_builder& set_engine_version(uint32_t major, uint32_t minor, uint32_t patch);
-
-      /**
-       * @brief Set the information about an instance layer to enable.
-       *
-       * @param[in] layer_name The name of the layer to enable.
-       */
-      instance_builder& enable_layer(std::string_view layer_name);
-      /**
-       * @brief Set the information about an instance extension to enable.
-       *
-       * @param[in] layer_name The name of the extension to enable.
-       */
-      instance_builder& enable_extension(std::string_view extension_name);
-
-   private:
-      bool has_validation_layer_support(
-         const range_over<vk::LayerProperties> auto& properties) const;
-      bool has_debug_utils_support(
-         const range_over<vk::ExtensionProperties> auto& properties) const;
-
-      result<tiny_dynamic_array<const char*, 16>> get_all_ext(
-         const dynamic_array<vk::ExtensionProperties>& properties,
-         bool are_debug_utils_available) const;
-
-   private:
-      const loader& vk_loader;
-
-      logger* const p_logger;
-
-      struct info
+      class builder
       {
-         std::string app_name{};
-         std::string engine_name{};
-         uint32_t app_version{0};
-         uint32_t engine_version{0};
+         static constexpr uint32_t AVG_EXT_COUNT = 16;
+         static constexpr uint32_t AVG_LAYER_COUNT = 8;
 
-         dynamic_array<const char*> layers;
-         dynamic_array<const char*> extensions;
+      public:
+         builder(const loader& vk_loader, logger* const p_logger = nullptr);
 
-      } info;
+         [[nodiscard]] auto build() -> vkn::result<instance>;
+
+         auto set_application_name(std::string_view app_name) -> builder&;
+         auto set_engine_name(std::string_view engine_name) -> builder&;
+         auto set_application_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&;
+         auto set_engine_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&;
+         auto enable_layer(std::string_view layer_name) -> builder&;
+         auto enable_extension(std::string_view extension_name) -> builder&;
+
+      private:
+         auto has_validation_layer_support(
+            const range_over<vk::LayerProperties> auto& properties) const -> bool;
+         auto has_debug_utils_support(
+            const range_over<vk::ExtensionProperties> auto& properties) const -> bool;
+
+         [[nodiscard]] auto get_all_ext(const dynamic_array<vk::ExtensionProperties>& properties,
+            bool are_debug_utils_available) const
+            -> vkn::result<tiny_dynamic_array<const char*, AVG_EXT_COUNT>>;
+
+      private:
+         const loader& m_loader;
+
+         logger* const m_plogger;
+
+         struct info
+         {
+            std::string app_name{};
+            std::string engine_name{};
+            uint32_t app_version{0};
+            uint32_t engine_version{0};
+
+            dynamic_array<const char*> layers;
+            dynamic_array<const char*> extensions;
+         } m_info;
+      };
    };
 } // namespace core::gfx::vkn
 

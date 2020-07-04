@@ -1,6 +1,6 @@
 #pragma once
 
-#include "epona_core/detail/monad/maybe.hpp"
+#include <epona_core/detail/monad/maybe.hpp>
 
 #include <algorithm>
 #include <cassert>

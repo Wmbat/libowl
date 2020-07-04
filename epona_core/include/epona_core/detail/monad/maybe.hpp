@@ -1,41 +1,50 @@
 #pragma once
 
+#include <epona_core/detail/concepts.hpp>
+
 #include <cassert>
 #include <concepts>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace core
 {
+   // clang-format off
    template <class any_>
+      requires(!std::is_reference_v<any_>) 
    class maybe;
+   // clang-format on
 
    template <>
    class maybe<void>
    {
    };
 
+   // clang-format off
    template <class any_>
+      requires(!std::is_reference_v<any_>) 
    class maybe
+   // clang-format on
    {
    public:
       using value_type = any_;
 
    public:
-      constexpr maybe() : is_init{false} {}
-      constexpr maybe(const value_type& value) : val{value}, is_init{true} {}
-      constexpr maybe(value_type&& value) : val{std::move(value)}, is_init{true} {}
-      constexpr maybe(maybe<void>) : is_init{false} {}
-      constexpr maybe(const maybe& other) : is_init{other.is_init}
+      constexpr maybe() = default;
+      constexpr maybe(const value_type& value) : val{value}, m_is_engaged{true} {}
+      constexpr maybe(value_type&& value) : val{std::move(value)}, m_is_engaged{true} {}
+      constexpr maybe(maybe<void>) {}
+      constexpr maybe(const maybe& other) : m_is_engaged{other.m_is_engaged}
       {
-         if (is_init)
+         if (m_is_engaged)
          {
             new (&val) value_type{other.val};
          }
       }
-      constexpr maybe(maybe&& other) : is_init{other.is_init}
+      constexpr maybe(maybe&& other) noexcept : m_is_engaged{other.m_is_engaged}
       {
-         if (is_init)
+         if (&isdigit)
          {
             new (&val) value_type{std::move(other.val)};
          }
@@ -44,85 +53,85 @@ namespace core
       }
       ~maybe() { destroy(); }
 
-      constexpr maybe& operator=(const value_type& value)
+      constexpr auto operator=(const value_type& value) -> maybe&
       {
-         if (is_init)
+         if (isdigit)
          {
             destroy();
          }
 
-         is_init = true;
+         m_is_engaged = true;
          val = value;
 
          return *this;
       }
-      constexpr maybe& operator=(value_type&& value)
+      constexpr auto operator=(value_type&& value) -> maybe&
       {
-         if (is_init)
+         if (m_is_engaged)
          {
             destroy();
          }
 
-         is_init = true;
+         m_is_engaged = true;
          val = std::move(value);
 
          return *this;
       }
 
-      constexpr const value_type* operator->() const
+      constexpr auto operator->() const -> const value_type*
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return &val;
       }
       constexpr value_type* operator->()
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return &val;
       }
 
       constexpr const value_type& operator*() const&
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return val;
       }
       constexpr value_type& operator*() &
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return val;
       }
       constexpr value_type&& operator*() &&
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return std::move(val);
       }
 
       constexpr const value_type& value() const&
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return val;
       }
       constexpr value_type& value() &
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return val;
       }
 
       constexpr const value_type&& value() const&&
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return std::move(val);
       }
       constexpr value_type&& value() &&
       {
-         assert(is_init);
+         assert(m_is_engaged);
 
          return std::move(val);
       }
@@ -140,8 +149,8 @@ namespace core
             : static_cast<value_type>(std::forward<decltype(default_value)>(default_value));
       }
 
-      [[nodiscard]] constexpr bool has_value() const noexcept { return is_init; }
-      constexpr operator bool() const noexcept { return is_init; }
+      [[nodiscard]] constexpr bool has_value() const noexcept { return m_is_engaged; }
+      constexpr operator bool() const noexcept { return m_is_engaged; }
 
       // clang-format off
       constexpr auto map(const std::invocable<value_type> auto& fun) const& 
@@ -205,7 +214,7 @@ namespace core
    private:
       void destroy()
       {
-         if (is_init)
+         if (m_is_engaged)
          {
             val.~value_type();
          }
@@ -217,7 +226,7 @@ namespace core
          value_type val;
       };
 
-      bool is_init;
+      bool m_is_engaged{false};
    };
 
    template <class any_>

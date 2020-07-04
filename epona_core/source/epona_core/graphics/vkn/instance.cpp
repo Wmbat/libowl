@@ -1,16 +1,17 @@
-#include "epona_core/graphics/vkn/instance.hpp"
-#include "epona_core/detail/monad/either.hpp"
+#include <epona_core/detail/monad/either.hpp>
+#include <epona_core/graphics/vkn/instance.hpp>
 
 #include <functional>
+#include <utility>
 
 namespace core::gfx::vkn
 {
-   static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+   static VKAPI_ATTR auto VKAPI_CALL debug_callback(
       VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
       VkDebugUtilsMessageTypeFlagsEXT messageType,
-      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
+      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) -> VkBool32
    {
-      core::logger* p_logger = static_cast<core::logger*>(p_user_data);
+      auto* p_logger = static_cast<core::logger*>(p_user_data);
 
       std::string type;
       if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
@@ -30,22 +31,22 @@ namespace core::gfx::vkn
       {
          if (!type.empty())
          {
-            LOG_ERROR_P(p_logger, "{1} - {2}", type, p_callback_data->pMessage);
+            log_error(p_logger, "{0} - {1}", std::make_tuple(type, p_callback_data->pMessage));
          }
          else
          {
-            LOG_ERROR_P(p_logger, "{1}", p_callback_data->pMessage);
+            log_error(p_logger, "{0}", std::make_tuple(p_callback_data->pMessage));
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
       {
          if (!type.empty())
          {
-            LOG_WARN_P(p_logger, "{1} - {2}", type, p_callback_data->pMessage);
+            log_warn(p_logger, "{0} - {1}", std::make_tuple(type, p_callback_data->pMessage));
          }
          else
          {
-            LOG_WARN_P(p_logger, "{1}", p_callback_data->pMessage);
+            log_warn(p_logger, "{0}", std::make_tuple(p_callback_data->pMessage));
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
@@ -67,7 +68,7 @@ namespace core::gfx::vkn
 
    namespace detail
    {
-      std::string to_string(instance::error err)
+      auto to_string(instance::error err) -> std::string
       {
          using error = instance::error;
 
@@ -94,8 +95,8 @@ namespace core::gfx::vkn
 
       struct instance_error_category : std::error_category
       {
-         const char* name() const noexcept override { return "vk_instance"; }
-         std::string message(int err) const override
+         [[nodiscard]] auto name() const noexcept -> const char* override { return "vk_instance"; }
+         [[nodiscard]] auto message(int err) const -> std::string override
          {
             return to_string(static_cast<instance::error>(err));
          }
@@ -103,45 +104,66 @@ namespace core::gfx::vkn
 
       const instance_error_category inst_err_cat;
 
-      std::error_code make_error_code(instance::error err)
+      auto make_error_code(instance::error err) -> std::error_code
       {
          return {static_cast<int>(err), inst_err_cat};
       }
    } // namespace detail
 
-   instance::instance(instance&& rhs) { *this = std::move(rhs); }
+   /* INSTANCE */
+
+   instance::instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
+      dynamic_array<const char*> extension, uint32_t version) :
+      m_instance{instance},
+      m_debug_utils{debug_utils}, m_extensions(std::move(extension)), m_version(version)
+   {}
+   instance::instance(instance&& rhs) noexcept { *this = std::move(rhs); }
    instance::~instance()
    {
-      if (h_instance && h_debug_utils)
+      if (m_instance)
       {
-         h_instance.destroyDebugUtilsMessengerEXT(h_debug_utils);
-         h_instance.destroy();
+         if (m_debug_utils)
+         {
+            m_instance.destroyDebugUtilsMessengerEXT(m_debug_utils);
+         }
+
+         m_instance.destroy();
       }
    }
 
-   instance& instance::operator=(instance&& rhs)
+   auto instance::operator=(instance&& rhs) noexcept -> instance&
    {
       if (this != &rhs)
       {
-         h_instance = std::move(rhs.h_instance);
-         rhs.h_instance = vk::Instance{};
+         m_instance = rhs.m_instance;
+         rhs.m_instance = nullptr;
 
-         h_debug_utils = std::move(rhs.h_debug_utils);
-         rhs.h_debug_utils = vk::DebugUtilsMessengerEXT{};
+         m_debug_utils = rhs.m_debug_utils;
+         rhs.m_debug_utils = nullptr;
 
-         extensions = std::move(rhs.extensions);
-         version = std::move(rhs.version);
+         m_extensions = std::move(rhs.m_extensions);
+         m_version = rhs.m_version;
       }
 
       return *this;
    }
 
-   instance_builder::instance_builder(const loader& vk_loader, logger* const p_logger) :
-      vk_loader{vk_loader}, p_logger{p_logger}
+   auto instance::value() noexcept -> vk::Instance& { return m_instance; }
+   auto instance::value() const noexcept -> const vk::Instance& { return m_instance; }
+
+   auto instance::extensions() const -> const dynamic_array<const char*>& { return m_extensions; }
+
+   /* INSTANCE BUILDER */
+   using builder = instance::builder;
+
+   builder::builder(const loader& vk_loader, logger* const plogger) :
+      m_loader{vk_loader}, m_plogger{plogger}
    {}
 
-   result<instance> instance_builder::build()
+   auto builder::build() -> vkn::result<instance>
    {
+      using err_t = vkn::error;
+
       const auto version_res = monad::try_wrap<vk::SystemError>([] {
          return vk::enumerateInstanceVersion(); // may throw
       });
@@ -149,7 +171,7 @@ namespace core::gfx::vkn
       if (version_res.is_left())
       {
          // clang-format off
-         return monad::to_left(error{
+         return monad::to_error(err_t{
             .type = detail::make_error_code(instance::error::vulkan_version_unavailable),
             .result = static_cast<vk::Result>(version_res.left()->code().value())
          });
@@ -164,8 +186,8 @@ namespace core::gfx::vkn
       {
          if (system_layers_res.is_left())
          {
-            LOG_ERROR_P(
-               p_logger, "Instance layer enumeration error: {1}", system_layers_res.left()->what());
+            log_warn(m_plogger, "Instance layer enumeration error: {0}",
+               std::make_tuple(system_layers_res.left()->what()));
          }
       }
 
@@ -175,8 +197,8 @@ namespace core::gfx::vkn
 
       if (system_layers_res.is_left())
       {
-         LOG_ERROR_P(
-            p_logger, "Instance layer enumeration error: {1}", system_exts_res.left()->what());
+         log_warn(m_plogger, "Instance layer enumeration error: {1}",
+            std::make_tuple(system_exts_res.left()->what()));
       }
 
       const auto sys_layers = system_layers_res.right_or(std::vector<vk::LayerProperties>{});
@@ -186,13 +208,17 @@ namespace core::gfx::vkn
       const bool validation_layers_available = has_validation_layer_support(sys_layers);
       const bool debug_utils_available = has_debug_utils_support(sys_exts);
 
-      LOG_INFO_P(p_logger, "vk - version {1}.{2}.{3}", VK_VERSION_MAJOR(api_version),
-         VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
+      log_info(m_plogger, "vk - version {0}.{1}.{2}",
+         std::make_tuple(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version),
+            VK_VERSION_PATCH(api_version)));
+
+      // LOG_INFO_P(m_plogger, "vk - version {1}.{2}.{3}", VK_VERSION_MAJOR(api_version),
+      //   VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
          // clang-format off
-         return monad::left<error>{.val = {
+         return monad::error<err_t>{.val = {
             .type = detail::make_error_code(instance::error::vulkan_version_1_2_unavailable),
             .result = {}
          }};
@@ -202,23 +228,23 @@ namespace core::gfx::vkn
       // clang-format off
       const auto app_info = vk::ApplicationInfo{}
          .setPNext(nullptr)
-         .setPApplicationName(info.app_name.c_str())
-         .setApplicationVersion(info.app_version)
-         .setPEngineName(info.engine_name.c_str())
-         .setEngineVersion(info.engine_version)
+         .setPApplicationName(m_info.app_name.c_str())
+         .setApplicationVersion(m_info.app_version)
+         .setPEngineName(m_info.engine_name.c_str())
+         .setEngineVersion(m_info.engine_version)
          .setApiVersion(api_version);
       // clang-format on
 
       auto extension_names_res = get_all_ext(sys_exts, debug_utils_available);
-      if (extension_names_res.is_left())
+      if (extension_names_res)
       {
-         return monad::left<error>{.val = extension_names_res.left().value()};
+         return monad::error<err_t>{.val = extension_names_res.error().value()};
       }
 
-      const auto extensions = std::move(extension_names_res.right().value());
+      const auto extensions = std::move(extension_names_res.value().value());
       for (const char* name : extensions)
       {
-         LOG_INFO_P(p_logger, "vk - instance extension: {1} - ENABLED", name)
+         log_info(m_plogger, "vk - instance extension: {0} - ENABLED", std::make_tuple(name));
       }
 
       // clang-format off
@@ -234,7 +260,7 @@ namespace core::gfx::vkn
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
-         tiny_dynamic_array<const char*, 8> layers{info.layers};
+         tiny_dynamic_array<const char*, AVG_LAYER_COUNT> layers{m_info.layers};
 
          if (validation_layers_available)
          {
@@ -243,13 +269,13 @@ namespace core::gfx::vkn
             for (const char* name : layers)
             {
                const bool is_present = std::ranges::find_if(sys_layers, [name](const auto& ext) {
-                  return strcmp(name, ext.layerName) == 0;
+                  return strcmp(name, static_cast<const char*>(ext.layerName)) == 0;
                }) != sys_layers.cend();
 
                if (!is_present)
                {
                   // clang-format off
-                  return monad::left<error>{.val = {
+                  return monad::error<err_t>{.val = {
                      .type = detail::make_error_code(instance::error::instance_layer_not_supported),
                      .result = {}
                   }};
@@ -263,7 +289,7 @@ namespace core::gfx::vkn
 
          for (const char* name : layers)
          {
-            LOG_INFO_P(p_logger, "vk - instance layers: {1} - ENABLED", name)
+            log_info(m_plogger, "vk - instance layers: {0} - ENABLED", std::make_tuple(name));
          }
       }
 
@@ -274,21 +300,19 @@ namespace core::gfx::vkn
       if (instance_res.is_left())
       {
          // clang-format off
-         return monad::to_left(error{
+         return monad::to_error(err_t{
             .type = detail::make_error_code(instance::error::failed_to_create_instance),
             .result = static_cast<vk::Result>(instance_res.left()->code().value())
          });
          // clang-format on
       }
 
-      instance data;
-      data.h_instance = instance_res.right_or(vk::Instance{});
-      data.extensions = extensions;
-      data.version = api_version;
+      vk::Instance vk_inst = instance_res.right().value();
+      vk::DebugUtilsMessengerEXT vk_mess = nullptr;
 
-      LOG_INFO(p_logger, "vk - instance created");
+      log_info(m_plogger, "vk - instance created");
 
-      vk_loader.load_instance(data.h_instance);
+      m_loader.load_instance(vk_inst);
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
@@ -303,93 +327,95 @@ namespace core::gfx::vkn
                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
             .setPfnUserCallback(debug_callback)
-            .setPUserData(static_cast<void*>(p_logger));
+            .setPUserData(static_cast<void*>(m_plogger));
          // clang-format on
 
          auto debug_res = monad::try_wrap<vk::SystemError>([&] {
-            return data.h_instance.createDebugUtilsMessengerEXT(debug_create_info);
+            return vk_inst.createDebugUtilsMessengerEXT(debug_create_info);
          });
 
          if (debug_res.is_left())
          {
-            return monad::left<error>{
-               .val = *(debug_res.left() >>= [](const vk::SystemError& e) -> error {
-                  return error{
-                     .type = detail::make_error_code(instance::error::failed_to_create_debug_utils),
-                     .result = static_cast<vk::Result>(e.code().value())};
-               })};
+            // clang-format off
+            return monad::to_error(err_t{
+               .type = detail::make_error_code(instance::error::failed_to_create_debug_utils),
+               .result = static_cast<vk::Result>(debug_res.left()->code().value())
+            });
+            // clang-format on
          }
 
-         LOG_INFO(p_logger, "vk - debug utils created");
+         log_info(m_plogger, "vk - debug utils created");
 
          // clang-format off
-         data.h_debug_utils = debug_res.right().value();
+         vk_mess = debug_res.right().value();
          // clang-format on
       }
 
-      return monad::right<instance>{std::move(data)};
+      return monad::to_value(instance(vk_inst, vk_mess, extensions, api_version));
    } // namespace core::gfx::vkn
 
-   instance_builder& instance_builder::set_application_name(std::string_view app_name)
+   auto builder::set_application_name(std::string_view app_name) -> builder&
    {
-      info.app_name = app_name;
+      m_info.app_name = app_name;
       return *this;
    }
-   instance_builder& instance_builder::set_engine_name(std::string_view engine_name)
+   auto builder::set_engine_name(std::string_view engine_name) -> builder&
    {
-      info.engine_name = engine_name;
+      m_info.engine_name = engine_name;
       return *this;
    }
-   instance_builder& instance_builder::set_application_version(
-      uint32_t major, uint32_t minor, uint32_t patch)
+   auto builder::set_application_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&
    {
-      info.app_version = VK_MAKE_VERSION(major, minor, patch);
+      m_info.app_version = VK_MAKE_VERSION(major, minor, patch);
       return *this;
    }
-   instance_builder& instance_builder::set_engine_version(
-      uint32_t major, uint32_t minor, uint32_t patch)
+   auto builder::set_engine_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&
    {
-      info.engine_version = VK_MAKE_VERSION(major, minor, patch);
+      m_info.engine_version = VK_MAKE_VERSION(major, minor, patch);
       return *this;
    }
-   instance_builder& instance_builder::enable_layer(std::string_view layer_name)
+   auto instance::builder::enable_layer(std::string_view layer_name) -> builder&
    {
       if (!layer_name.empty())
       {
-         info.layers.push_back(layer_name.data());
+         m_info.layers.push_back(layer_name.data());
       }
       return *this;
    }
-   instance_builder& instance_builder::enable_extension(std::string_view extension_name)
+   auto builder::enable_extension(std::string_view extension_name) -> builder&
    {
       if (!extension_name.empty())
       {
-         info.extensions.push_back(extension_name.data());
+         m_info.extensions.push_back(extension_name.data());
       }
       return *this;
    }
 
-   bool instance_builder::has_validation_layer_support(
-      const range_over<vk::LayerProperties> auto& properties) const
+   auto builder::has_validation_layer_support(
+      const range_over<vk::LayerProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkLayerProperties& layer) {
-         return strcmp(layer.layerName, "VK_LAYER_KHRONOS_validation") == 0;
+         return strcmp(static_cast<const char*>(layer.layerName), "VK_LAYER_KHRONOS_validation") ==
+            0;
       }) != properties.end();
    }
 
-   bool instance_builder::has_debug_utils_support(
-      const range_over<vk::ExtensionProperties> auto& properties) const
+   auto instance::builder::has_debug_utils_support(
+      const range_over<vk::ExtensionProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkExtensionProperties& ext) {
-         return strcmp(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
+         return strcmp(static_cast<const char*>(ext.extensionName),
+                   VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
       }) != properties.end();
    }
 
-   result<tiny_dynamic_array<const char*, 16>> instance_builder::get_all_ext(
-      const dynamic_array<vk::ExtensionProperties>& properties,
+   auto builder::get_all_ext(const dynamic_array<vk::ExtensionProperties>& properties,
       bool are_debug_utils_available) const
+      -> vkn::result<tiny_dynamic_array<const char*, AVG_EXT_COUNT>>
    {
-      tiny_dynamic_array<const char*, 16> extensions = info.extensions;
+      using err_t = vkn::error;
+
+      tiny_dynamic_array<const char*, AVG_EXT_COUNT> extensions = m_info.extensions;
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
@@ -401,7 +427,7 @@ namespace core::gfx::vkn
 
       const auto check_ext_and_add = [&](const char* name) -> bool {
          const auto it = std::ranges::find_if(properties, [name](const VkExtensionProperties& ext) {
-            return strcmp(name, ext.extensionName) == 0;
+            return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
          });
 
          if (it != properties.cend())
@@ -415,6 +441,8 @@ namespace core::gfx::vkn
       };
 
       const bool has_khr_surface_ext = check_ext_and_add("VK_KHR_surface");
+
+      // maybe look into GLFW extensions stuff
 
 #if defined(__linux__)
       // clang-format off
@@ -432,7 +460,7 @@ namespace core::gfx::vkn
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
          // clang-format off
-         return monad::left<error>{.val = {
+         return monad::error<err_t>{.val = {
             .type = detail::make_error_code(instance::error::window_extensions_not_present),
             .result = {}
          }};
@@ -442,13 +470,13 @@ namespace core::gfx::vkn
       for (const char* name : extensions)
       {
          const bool is_present = std::ranges::find_if(properties, [name](const auto& ext) {
-            return strcmp(name, ext.extensionName) == 0;
+            return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
          }) != properties.cend();
 
          if (!is_present)
          {
             // clang-format off
-            return monad::left<error>{.val = {
+            return monad::error<err_t>{.val = {
                .type = detail::make_error_code(instance::error::instance_extension_not_supported),
                .result = {}
             }};
@@ -456,6 +484,6 @@ namespace core::gfx::vkn
          }
       }
 
-      return monad::right<decltype(extensions)>{.val = extensions};
+      return monad::value<decltype(extensions)>{.val = extensions};
    }
 } // namespace core::gfx::vkn

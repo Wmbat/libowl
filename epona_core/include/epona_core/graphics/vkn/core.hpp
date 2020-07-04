@@ -13,6 +13,7 @@
 
 #include "epona_core/detail/logger.hpp"
 #include "epona_core/detail/monad/either.hpp"
+#include <epona_core/detail/monad/result.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -40,14 +41,14 @@ namespace core::gfx::vkn
    struct error
    {
       std::error_code type;
-      ::vk::Result result;
+      vk::Result result{};
    };
 
    /**
     * @brief An alias for an either monad using an error as the left type.
     */
    template <class any_>
-   using result = either<error, any_>;
+   using result = core::result<error, any_>;
 
    /**
     * @class error <epona_core/graphics/vkn/core.hpp>

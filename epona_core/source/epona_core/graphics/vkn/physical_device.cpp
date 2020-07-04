@@ -1,10 +1,10 @@
-#include "epona_core/graphics/vkn/physical_device.hpp"
+#include <epona_core/graphics/vkn/physical_device.hpp>
 
 namespace core::gfx::vkn
 {
    namespace detail
    {
-      std::string to_string(physical_device::error err)
+      auto to_string(physical_device::error err) -> std::string
       {
          using error = physical_device::error;
          switch (err)
@@ -24,8 +24,11 @@ namespace core::gfx::vkn
 
       struct physical_device_error_category : std::error_category
       {
-         const char* name() const noexcept override { return "vk_physical_device"; }
-         std::string message(int err) const override
+         [[nodiscard]] auto name() const noexcept -> const char* override
+         {
+            return "vk_physical_device";
+         }
+         [[nodiscard]] auto message(int err) const -> std::string override
          {
             return to_string(static_cast<physical_device::error>(err));
          }
@@ -33,84 +36,101 @@ namespace core::gfx::vkn
 
       const physical_device_error_category physical_device_error_cat;
 
-      std::error_code make_error_code(physical_device::error err)
+      auto make_error_code(physical_device::error err) -> std::error_code
       {
          return {static_cast<int>(err), physical_device_error_cat};
       }
    } // namespace detail
 
-   physical_device::physical_device(physical_device&& rhs) { *this = std::move(rhs); }
+   physical_device::physical_device(const create_info& info) :
+      m_name{info.name}, m_features{info.features}, m_properties{info.properties},
+      m_mem_properties{info.mem_properties}, m_instance{info.instance}, m_device{info.device},
+      m_surface{info.surface}, m_queue_families{info.queue_families}
+   {}
+   physical_device::physical_device(physical_device&& rhs) noexcept { *this = std::move(rhs); }
    physical_device::~physical_device()
    {
-      if (h_instance && h_surface)
+      if (m_instance && m_surface)
       {
-         h_instance.destroySurfaceKHR(h_surface);
+         m_instance.destroySurfaceKHR(m_surface);
       }
    }
 
-   physical_device& physical_device::operator=(physical_device&& rhs)
+   auto physical_device::operator=(physical_device&& rhs) noexcept -> physical_device&
    {
       if (this != &rhs)
       {
-         name = std::move(rhs.name);
+         m_name = std::move(rhs.m_name);
 
-         features = rhs.features;
-         properties = rhs.properties;
-         mem_properties = rhs.mem_properties;
+         m_features = rhs.m_features;
+         m_properties = rhs.m_properties;
+         m_mem_properties = rhs.m_mem_properties;
 
-         h_instance = std::move(rhs.h_instance);
-         rhs.h_instance = vk::Instance{};
+         m_instance = rhs.m_instance;
+         rhs.m_instance = nullptr;
 
-         h_device = std::move(rhs.h_device);
-         rhs.h_device = vk::PhysicalDevice{};
+         m_device = rhs.m_device;
+         rhs.m_device = nullptr;
 
-         h_surface = std::move(rhs.h_surface);
-         rhs.h_surface = vk::SurfaceKHR{};
+         m_surface = rhs.m_surface;
+         rhs.m_surface = nullptr;
 
-         queue_families = std::move(rhs.queue_families);
+         m_queue_families = std::move(rhs.m_queue_families);
       }
 
       return *this;
    }
 
-   bool physical_device::has_dedicated_compute_queue() const
+   auto physical_device::has_dedicated_compute_queue() const -> bool
    {
-      return detail::get_dedicated_compute_queue_index(queue_families).has_value();
+      return detail::get_dedicated_compute_queue_index(m_queue_families).has_value();
    }
-   bool physical_device::has_dedicated_transfer_queue() const
+   auto physical_device::has_dedicated_transfer_queue() const -> bool
    {
-      return detail::get_dedicated_transfer_queue_index(queue_families).has_value();
-   }
-
-   bool physical_device::has_separated_compute_queue() const
-   {
-      return detail::get_separated_compute_queue_index(queue_families).has_value();
-   }
-   bool physical_device::has_separated_transfer_queue() const
-   {
-      return detail::get_separated_transfer_queue_index(queue_families).has_value();
+      return detail::get_dedicated_transfer_queue_index(m_queue_families).has_value();
    }
 
+   auto physical_device::has_separated_compute_queue() const -> bool
+   {
+      return detail::get_separated_compute_queue_index(m_queue_families).has_value();
+   }
+   auto physical_device::has_separated_transfer_queue() const -> bool
+   {
+      return detail::get_separated_transfer_queue_index(m_queue_families).has_value();
+   }
+
+   auto physical_device::value() const noexcept -> const vk::PhysicalDevice& { return m_device; }
+   auto physical_device::features() const noexcept -> const vk::PhysicalDeviceFeatures&
+   {
+      return m_features;
+   }
+   auto physical_device::surface() const noexcept -> const vk::SurfaceKHR& { return m_surface; }
+   auto physical_device::queue_families() const -> const dynamic_array<vk::QueueFamilyProperties>
+   {
+      return m_queue_families;
+   }
    // physical_device_selector
 
-   physical_device_selector::physical_device_selector(
-      const instance& inst, logger* const p_logger) :
-      p_logger{p_logger}
+   using selector = physical_device::selector;
+
+   selector::selector(const instance& inst, logger* const plogger) : m_plogger{plogger}
    {
-      sys_info.instance = inst.h_instance;
-      sys_info.instance_extensions = inst.extensions;
+      m_system_info.instance = inst.value();
+      m_system_info.instance_extensions = inst.extensions();
    }
 
-   result<physical_device> physical_device_selector::select()
+   auto selector::select() -> vkn::result<physical_device>
    {
-      auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
-         return sys_info.instance.enumeratePhysicalDevices();
+      using err_t = vkn::error;
+
+      const auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
+         return m_system_info.instance.enumeratePhysicalDevices();
       });
 
       if (physical_devices_res.is_left())
       {
          // clang-format off
-         return monad::to_left(error{
+         return monad::to_error(err_t{
             .type = detail::make_error_code(
                physical_device::error::failed_to_enumerate_physical_devices), 
             .result = static_cast<vk::Result>(physical_devices_res.left()->code().value())
@@ -119,7 +139,7 @@ namespace core::gfx::vkn
       }
 
       tiny_dynamic_array<vk::PhysicalDevice, 2> physical_devices =
-         std::move(physical_devices_res.right().value());
+         physical_devices_res.right().value();
 
       tiny_dynamic_array<physical_device_description, 2> physical_device_descriptions;
       for (const auto& device : physical_devices)
@@ -128,7 +148,7 @@ namespace core::gfx::vkn
       }
 
       physical_device_description selected{};
-      if (selection_info.select_first_gpu)
+      if (m_selection_info.select_first_gpu)
       {
          selected = physical_device_descriptions[0];
       }
@@ -152,87 +172,85 @@ namespace core::gfx::vkn
       if (!selected.phys_device)
       {
          // clang-format off
-         return monad::to_left(error{
+         return monad::to_error(err_t{
             .type = detail::make_error_code(physical_device::error::no_suitable_device),
             .result = {}
          });
          // clang-format on
       }
 
-      LOG_INFO_P(p_logger, "Selected physical device: {1}", selected.properties.deviceName);
-
-      physical_device gpu{};
-      gpu.name = selected.properties.deviceName;
-      gpu.features = selected.features;
-      gpu.properties = selected.properties;
-      gpu.mem_properties = selected.mem_properties;
-      gpu.h_instance = sys_info.instance;
-      gpu.h_device = selected.phys_device;
-      gpu.h_surface = std::move(sys_info.surface);
-      gpu.queue_families = selected.queue_families;
+      log_info(m_plogger, "Selected physical device: {0}",
+         std::make_tuple(selected.properties.deviceName));
 
       // clang-format off
-      return monad::to_right(std::move(gpu));
+      return monad::to_value(physical_device{{
+         .name = static_cast<const char*>(selected.properties.deviceName),
+         .features = selected.features,
+         .properties = selected.properties,
+         .mem_properties = selected.mem_properties,
+         .instance = m_system_info.instance,
+         .device = selected.phys_device,
+         .surface = m_system_info.surface,
+         .queue_families = selected.queue_families
+      }});
       // clang-format on
    } // namespace core::gfx::vkn
 
-   physical_device_selector& physical_device_selector::set_prefered_gpu_type(
-      physical_device::type type) noexcept
+   auto selector::set_prefered_gpu_type(physical_device::type type) noexcept -> selector&
    {
-      selection_info.prefered_type = type;
+      m_selection_info.prefered_type = type;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::set_surface(
-      vk::SurfaceKHR&& surface) noexcept
+   auto selector::set_surface(vk::SurfaceKHR&& surface) noexcept -> selector&
    {
-      sys_info.surface = std::move(surface);
+      m_system_info.surface = surface;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::allow_any_gpu_type(bool allow) noexcept
+   auto selector::allow_any_gpu_type(bool allow) noexcept -> selector&
    {
-      selection_info.allow_any_gpu_type = allow;
+      m_selection_info.allow_any_gpu_type = allow;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::require_present(bool require) noexcept
+   auto selector::require_present(bool require) noexcept -> selector&
    {
-      selection_info.require_present = require;
+      m_selection_info.require_present = require;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::require_dedicated_compute() noexcept
+   auto selector::require_dedicated_compute() noexcept -> selector&
    {
-      selection_info.require_dedicated_compute = true;
+      m_selection_info.require_dedicated_compute = true;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::require_dedicated_transfer() noexcept
+   auto selector::require_dedicated_transfer() noexcept -> selector&
    {
-      selection_info.require_dedicated_transfer = true;
+      m_selection_info.require_dedicated_transfer = true;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::require_separated_compute() noexcept
+   auto selector::require_separated_compute() noexcept -> selector&
    {
-      selection_info.require_separated_compute = true;
+      m_selection_info.require_separated_compute = true;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::require_separated_transfer() noexcept
+   auto selector::require_separated_transfer() noexcept -> selector&
    {
-      selection_info.require_separated_transfer = true;
+      m_selection_info.require_separated_transfer = true;
       return *this;
    }
 
-   physical_device_selector& physical_device_selector::select_first_gpu() noexcept
+   auto selector::select_first_gpu() noexcept -> selector&
    {
-      selection_info.select_first_gpu = true;
+      m_selection_info.select_first_gpu = true;
       return *this;
    }
 
-   auto physical_device_selector::populate_device_details(vk::PhysicalDevice device) const noexcept
+   auto selector::populate_device_details(vk::PhysicalDevice device) const
       -> physical_device_description
    {
       physical_device_description desc{};
@@ -256,48 +274,48 @@ namespace core::gfx::vkn
       return desc;
    };
 
-   auto physical_device_selector::is_device_suitable(
-      const physical_device_description& desc) const noexcept -> suitable
+   auto selector::is_device_suitable(const physical_device_description& desc) const -> suitable
    {
-      if (selection_info.require_dedicated_compute &&
+      if (m_selection_info.require_dedicated_compute &&
          !detail::get_dedicated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
-      if (selection_info.require_dedicated_transfer &&
+      if (m_selection_info.require_dedicated_transfer &&
          !detail::get_dedicated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
-      if (selection_info.require_separated_compute &&
+      if (m_selection_info.require_separated_compute &&
          !detail::get_separated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
-      if (selection_info.require_separated_transfer &&
+      if (m_selection_info.require_separated_transfer &&
          !detail::get_separated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
-      if (selection_info.require_present &&
-         !detail::get_present_queue_index(desc.phys_device, sys_info.surface, desc.queue_families))
+      if (m_selection_info.require_present &&
+         !detail::get_present_queue_index(
+            desc.phys_device, m_system_info.surface, desc.queue_families))
       {
          return suitable::no;
       }
 
       // clang-format off
       const auto formats = monad::try_wrap<vk::SystemError>([&] {
-         return desc.phys_device.getSurfaceFormatsKHR(sys_info.surface);
+         return desc.phys_device.getSurfaceFormatsKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
          return dynamic_array<vk::SurfaceFormatKHR>{};
       }).join();
 
       const auto present_modes = monad::try_wrap<vk::SystemError>([&] {
-         return desc.phys_device.getSurfacePresentModesKHR(sys_info.surface);
+         return desc.phys_device.getSurfacePresentModesKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
          return dynamic_array<vk::PresentModeKHR>{};
       }).join();
@@ -309,13 +327,13 @@ namespace core::gfx::vkn
       }
 
       if (desc.properties.deviceType ==
-         static_cast<vk::PhysicalDeviceType>(selection_info.prefered_type))
+         static_cast<vk::PhysicalDeviceType>(m_selection_info.prefered_type))
       {
          return suitable::yes;
       }
       else
       {
-         if (selection_info.allow_any_gpu_type)
+         if (m_selection_info.allow_any_gpu_type)
          {
             return suitable::partial;
          }

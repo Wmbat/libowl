@@ -1,9 +1,16 @@
+# CMake project initialization
+
 cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
+
+# Set the project language toolchain, version and description
+
 project(epona_core
    VERSION 0.0.1
    DESCRIPTION "Main components of the epona renderer"
    LANGUAGES CXX
 )
+
+# User interface declarations
 
 option(EPONA_CORE_STATIC "Build ${PROJECT_NAME} as a static library" ON)
 option(EPONA_CORE_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
@@ -29,6 +36,8 @@ message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${EPONA_CORE_BUILD_BENCH}
 message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${EPONA_CORE_NO_EXCEPTIONS}")
 message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${EPONA_CORE_NO_LOGGING}")
 
+# Define imported targets
+
 include(CMakeLists.txt.in)
 
 if (EPONA_CORE_BUILD_TESTS) 
@@ -36,6 +45,8 @@ if (EPONA_CORE_BUILD_TESTS)
 
     add_subdirectory(tests)
 endif ()
+
+# Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
 
@@ -124,6 +135,7 @@ target_sources(${PROJECT_NAME}
         source/epona_core/graphics/vkn/device.cpp
         source/epona_core/graphics/vkn/instance.cpp
         source/epona_core/graphics/vkn/physical_device.cpp
+        source/epona_core/graphics/vkn/swapchain.cpp
 
         source/epona_core/render_manager.cpp
 )

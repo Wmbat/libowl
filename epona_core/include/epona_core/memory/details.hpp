@@ -102,5 +102,4 @@ namespace core
          { a.template make_unique<any_>( args... ) } -> std::same_as<auto_ptr<any_>>;
       };
    // clang-format on
-
-} // namespace ESL
+} // namespace core

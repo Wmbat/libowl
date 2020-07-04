@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "epona_core/detail/logger.hpp"
-#include "epona_core/graphics/gui/window.hpp"
-#include "epona_core/graphics/vkn/core.hpp"
-#include "epona_core/graphics/vkn/device.hpp"
-#include "epona_core/graphics/vkn/instance.hpp"
+#include <epona_core/detail/logger.hpp>
+#include <epona_core/graphics/gui/window.hpp>
+#include <epona_core/graphics/vkn/core.hpp>
+#include <epona_core/graphics/vkn/device.hpp>
+#include <epona_core/graphics/vkn/instance.hpp>
+#include <epona_core/graphics/vkn/swapchain.hpp>
 
 namespace core
 {
@@ -29,5 +30,6 @@ namespace core
       gfx::vkn::loader loader;
       gfx::vkn::instance instance;
       gfx::vkn::device device;
+      gfx::vkn::swapchain swapchain;
    };
 } // namespace core

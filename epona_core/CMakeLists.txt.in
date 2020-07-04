@@ -6,29 +6,30 @@ CPMAddPackage(
     OPTIONS
         "GLFW_BUILD_EXAMPLES OFF"
         "GLFW_BUILD_TESTS OFF"
+        "GLFW_BUILD_DOCS OFF"
 )
 
-CPMAddPackage(
-    NAME glslang
-    VERSION 8.13.3743
-    GITHUB_REPOSITORY KhronosGroup/glslang 
-    GIT_TAG 8.13.3743
-)
+#CPMAddPackage(
+#    NAME glslang
+#    VERSION 8.13.3743
+#    GITHUB_REPOSITORY KhronosGroup/glslang 
+#    GIT_TAG 8.13.3743
+#)
 
-CPMAddPackage(
-    NAME SPIRV-cross
-    VERSION 2020-04-03
-    GITHUB_REPOSITORY KhronosGroup/SPIRV-cross
-    GIT_TAG 2020-04-03
-    OPTIONS
-        "SPIRV_CROSS_SHARED OFF"
-        "SPIRV_CROSS_STATIC ON"
-        "SPIRV_CROSS_CLI OFF"
-        "SPIRV_CROSS_ENABLE_MSL OFF"
-        "SPIRV_CROSS_ENABLE_HLSL OFF"
-        "SPIRV_CROSS_ENABLE_TESTS OFF"
-        "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON"
-)
+#CPMAddPackage(
+#    NAME SPIRV-cross
+#    VERSION 2020-04-03
+#    GITHUB_REPOSITORY KhronosGroup/SPIRV-cross
+#    GIT_TAG 2020-04-03
+#    OPTIONS
+#        "SPIRV_CROSS_SHARED OFF"
+#        "SPIRV_CROSS_STATIC ON"
+#        "SPIRV_CROSS_CLI OFF"
+#        "SPIRV_CROSS_ENABLE_MSL OFF"
+#        "SPIRV_CROSS_ENABLE_HLSL OFF"
+#        "SPIRV_CROSS_ENABLE_TESTS OFF"
+#        "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON"
+#)
 
 CPMAddPackage(
     NAME Vulkan-Headers

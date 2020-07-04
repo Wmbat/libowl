@@ -14,8 +14,8 @@ namespace core::gfx::vkn
 {
    namespace detail
    {
-      maybe<uint32_t> get_graphics_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_graphics_queue_index(const range_over<vk::QueueFamilyProperties> auto& families)
+         -> maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -30,8 +30,8 @@ namespace core::gfx::vkn
          return monad::none;
       }
 
-      maybe<uint32_t> get_present_queue_index(vk::PhysicalDevice physical_device,
-         vk::SurfaceKHR surface, const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
+         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
          for (uint32_t i = 0; i < families.size(); ++i)
          {
@@ -54,8 +54,8 @@ namespace core::gfx::vkn
          return monad::none;
       }
 
-      maybe<uint32_t> get_dedicated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_dedicated_compute_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -72,8 +72,8 @@ namespace core::gfx::vkn
          return monad::none;
       }
 
-      maybe<uint32_t> get_dedicated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_dedicated_transfer_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -90,8 +90,8 @@ namespace core::gfx::vkn
          return monad::none;
       }
 
-      maybe<uint32_t> get_separated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_separated_compute_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
          maybe<uint32_t> compute{};
          for (uint32_t i = 0; const auto& fam : families)
@@ -116,8 +116,8 @@ namespace core::gfx::vkn
          return compute;
       }
 
-      maybe<uint32_t> get_separated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families)
+      auto get_separated_transfer_queue_index(
+         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
          maybe<uint32_t> transfer = monad::none;
          for (uint32_t i = 0; const auto& fam : families)
@@ -148,8 +148,9 @@ namespace core::gfx::vkn
     * @date Saturday, 20th of June, 2020
     * @copyright MIT License
     */
-   struct physical_device
+   class physical_device
    {
+   public:
       enum class type
       {
          other = 0,
@@ -167,102 +168,118 @@ namespace core::gfx::vkn
          no_suitable_device
       };
 
-      physical_device() = default;
-      physical_device(const physical_device&) = delete;
-      physical_device(physical_device&&);
-      ~physical_device();
-
-      physical_device& operator=(const physical_device&) = delete;
-      physical_device& operator=(physical_device&&);
-
-      bool has_dedicated_compute_queue() const;
-      bool has_dedicated_transfer_queue() const;
-
-      bool has_separated_compute_queue() const;
-      bool has_separated_transfer_queue() const;
-
-      std::string name{};
-
-      vk::PhysicalDeviceFeatures features{};
-      vk::PhysicalDeviceProperties properties{};
-      vk::PhysicalDeviceMemoryProperties mem_properties{};
-
-      vk::Instance h_instance{};
-
-      vk::PhysicalDevice h_device{};
-      vk::SurfaceKHR h_surface{};
-
-      tiny_dynamic_array<vk::QueueFamilyProperties, 5> queue_families{};
-   };
-
-   /**
-    * @class physical_device_selector <epona_core/graphics/vkn/physical_device.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Saturday, 20th of June, 2020
-    * @copyright MIT License
-    */
-   class physical_device_selector
-   {
-   public:
-      physical_device_selector(const instance& inst, logger* p_logger = nullptr);
-
-      result<physical_device> select();
-
-      physical_device_selector& set_prefered_gpu_type(physical_device::type type) noexcept;
-      physical_device_selector& set_surface(vk::SurfaceKHR&& surface) noexcept;
-      physical_device_selector& allow_any_gpu_type(bool allow = true) noexcept;
-      physical_device_selector& require_present(bool require = true) noexcept;
-      physical_device_selector& require_dedicated_compute() noexcept;
-      physical_device_selector& require_dedicated_transfer() noexcept;
-      physical_device_selector& require_separated_compute() noexcept;
-      physical_device_selector& require_separated_transfer() noexcept;
-      physical_device_selector& select_first_gpu() noexcept;
-
-   private:
-      logger* p_logger;
-
-      struct system_info
+      struct create_info
       {
-         vk::Instance instance{};
-         vk::SurfaceKHR surface{};
-
-         dynamic_array<const char*> instance_extensions;
-      } sys_info;
-
-      struct selection_info
-      {
-         physical_device::type prefered_type = physical_device::type::discrete;
-         bool allow_any_gpu_type = true;
-         bool require_present = true;
-         bool require_dedicated_compute = false;
-         bool require_dedicated_transfer = false;
-         bool require_separated_compute = false;
-         bool require_separated_transfer = false;
-         bool select_first_gpu = false;
-      } selection_info;
-
-      struct physical_device_description
-      {
-         vk::PhysicalDevice phys_device;
-
-         tiny_dynamic_array<vk::QueueFamilyProperties, 5> queue_families{};
-
+         std::string_view name{};
          vk::PhysicalDeviceFeatures features{};
          vk::PhysicalDeviceProperties properties{};
          vk::PhysicalDeviceMemoryProperties mem_properties{};
+         vk::Instance instance{nullptr};
+         vk::PhysicalDevice device{nullptr};
+         vk::SurfaceKHR surface{nullptr};
+         dynamic_array<vk::QueueFamilyProperties> queue_families{};
       };
 
-      enum class suitable
-      {
-         yes,
-         partial,
-         no
-      };
+   public:
+      physical_device() = default;
+      physical_device(const create_info& info);
+      physical_device(const physical_device&) = delete;
+      physical_device(physical_device&&) noexcept;
+      ~physical_device();
+
+      auto operator=(const physical_device&) -> physical_device& = delete;
+      auto operator=(physical_device&&) noexcept -> physical_device&;
+
+      [[nodiscard]] auto has_dedicated_compute_queue() const -> bool;
+      [[nodiscard]] auto has_dedicated_transfer_queue() const -> bool;
+
+      [[nodiscard]] auto has_separated_compute_queue() const -> bool;
+      [[nodiscard]] auto has_separated_transfer_queue() const -> bool;
+
+      [[nodiscard]] auto value() const noexcept -> const vk::PhysicalDevice&;
+      [[nodiscard]] auto features() const noexcept -> const vk::PhysicalDeviceFeatures&;
+      [[nodiscard]] auto surface() const noexcept -> const vk::SurfaceKHR&;
+      [[nodiscard]] auto queue_families() const -> const dynamic_array<vk::QueueFamilyProperties>;
 
    private:
-      physical_device_description populate_device_details(vk::PhysicalDevice) const noexcept;
+      std::string m_name{};
 
-      suitable is_device_suitable(const physical_device_description& desc) const noexcept;
+      vk::PhysicalDeviceFeatures m_features{};
+      vk::PhysicalDeviceProperties m_properties{};
+      vk::PhysicalDeviceMemoryProperties m_mem_properties{};
+
+      vk::Instance m_instance{nullptr};
+      vk::PhysicalDevice m_device{nullptr};
+      vk::SurfaceKHR m_surface{nullptr};
+
+      dynamic_array<vk::QueueFamilyProperties> m_queue_families{};
+
+   public:
+      class selector
+      {
+      public:
+         selector(const instance& instance, logger* plogger = nullptr);
+
+         [[nodiscard]] auto select() -> vkn::result<physical_device>;
+
+         auto set_prefered_gpu_type(physical_device::type type) noexcept -> selector&;
+         auto set_surface(vk::SurfaceKHR&& surface) noexcept -> selector&;
+         auto allow_any_gpu_type(bool allow = true) noexcept -> selector&;
+         auto require_present(bool require = true) noexcept -> selector&;
+         auto require_dedicated_compute() noexcept -> selector&;
+         auto require_dedicated_transfer() noexcept -> selector&;
+         auto require_separated_compute() noexcept -> selector&;
+         auto require_separated_transfer() noexcept -> selector&;
+         auto select_first_gpu() noexcept -> selector&;
+
+      private:
+         logger* m_plogger;
+
+         struct system_info
+         {
+            vk::Instance instance{};
+            vk::SurfaceKHR surface{};
+
+            dynamic_array<const char*> instance_extensions;
+         } m_system_info;
+
+         struct selection_info
+         {
+            physical_device::type prefered_type = physical_device::type::discrete;
+            bool allow_any_gpu_type = true;
+            bool require_present = true;
+            bool require_dedicated_compute = false;
+            bool require_dedicated_transfer = false;
+            bool require_separated_compute = false;
+            bool require_separated_transfer = false;
+            bool select_first_gpu = false;
+         } m_selection_info;
+
+         struct physical_device_description
+         {
+            vk::PhysicalDevice phys_device;
+
+            dynamic_array<vk::QueueFamilyProperties> queue_families{};
+
+            vk::PhysicalDeviceFeatures features{};
+            vk::PhysicalDeviceProperties properties{};
+            vk::PhysicalDeviceMemoryProperties mem_properties{};
+         };
+
+         enum class suitable
+         {
+            yes,
+            partial,
+            no
+         };
+
+      private:
+         [[nodiscard]] auto populate_device_details(vk::PhysicalDevice) const
+            -> physical_device_description;
+
+         [[nodiscard]] auto is_device_suitable(const physical_device_description& desc) const
+            -> suitable;
+      };
    };
 } // namespace core::gfx::vkn
 

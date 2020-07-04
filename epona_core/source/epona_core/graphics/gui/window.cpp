@@ -58,11 +58,11 @@ namespace core::gfx
 
       if (res != VK_SUCCESS)
       {
-         return monad::to_left(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
+         return monad::to_error(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
       }
       else
       {
-         return monad::to_right(vk::SurfaceKHR{surface});
+         return monad::to_value(vk::SurfaceKHR{surface});
       }
    }
 } // namespace core::gfx

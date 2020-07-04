@@ -16,27 +16,16 @@
 
 namespace core
 {
-   inline void initialize(logger* p_logger)
+   inline void initialize(logger* const plogger)
    {
-      /*
-      if (auto result = volkInitialize(); result != VK_SUCCESS)
-      {
-         LOG_ERROR(p_logger, "Failed to initialize volk");
-
-         abort();
-         // error
-      }
-
-      LOG_INFO(p_logger, "volk initialized");
-      */
       if (auto result = glfwInit(); result != GLFW_TRUE)
       {
-         LOG_ERROR(p_logger, "Failed to initialize glfw");
+         log_error(plogger, "Failed to initialize glfw");
 
          abort();
          // error
       }
 
-      LOG_INFO(p_logger, "glfw initialized");
+      log_info(plogger, "glfw initialized");
    }
 }; // namespace core
