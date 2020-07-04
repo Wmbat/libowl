@@ -34,7 +34,7 @@ namespace core::gfx::vkn
          }
       };
 
-      const physical_device_error_category physical_device_error_cat;
+      static const physical_device_error_category physical_device_error_cat{};
 
       auto make_error_code(physical_device::error err) -> std::error_code
       {

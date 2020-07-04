@@ -51,7 +51,7 @@ namespace core::gfx::vkn
          }
       };
 
-      const surface_support_error_category surface_support_err_cat;
+      static const surface_support_error_category surface_support_err_cat{};
 
       auto make_error_code(surface_support::error err) -> std::error_code
       {
@@ -88,7 +88,7 @@ namespace core::gfx::vkn
          }
       };
 
-      const swapchain_error_category inst_err_cat;
+      static const swapchain_error_category inst_err_cat{};
 
       auto make_error_code(swapchain::error err) -> std::error_code
       {

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <type_traits>
 
@@ -26,7 +27,7 @@ namespace core::details
    template <class any_, std::size_t buff_sz>
    struct static_array_storage
    {
-      std::aligned_storage_t<sizeof(any_), alignof(any_)> buffer[buff_sz];
+      std::array<std::aligned_storage_t<sizeof(any_), alignof(any_)>, buff_sz> buffer;
    };
 
    template <class any_>

@@ -102,7 +102,7 @@ namespace core::gfx::vkn
          }
       };
 
-      const instance_error_category inst_err_cat;
+      static const instance_error_category inst_err_cat{};
 
       auto make_error_code(instance::error err) -> std::error_code
       {
@@ -236,9 +236,9 @@ namespace core::gfx::vkn
       // clang-format on
 
       auto extension_names_res = get_all_ext(sys_exts, debug_utils_available);
-      if (extension_names_res)
+      if (!extension_names_res)
       {
-         return monad::error<err_t>{.val = extension_names_res.error().value()};
+         return monad::to_error(extension_names_res.error().value());
       }
 
       const auto extensions = std::move(extension_names_res.value().value());
@@ -484,6 +484,6 @@ namespace core::gfx::vkn
          }
       }
 
-      return monad::value<decltype(extensions)>{.val = extensions};
+      return monad::to_value(extensions);
    }
 } // namespace core::gfx::vkn

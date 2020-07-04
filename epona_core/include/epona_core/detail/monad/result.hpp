@@ -110,33 +110,33 @@ namespace core
       {
          if (has_value())
          {
-            return to_maybe(error_type{m_error});
+            return monad::none;
          }
          else
          {
-            return monad::none;
+            return to_maybe(error_type{m_error});
          }
       }
       constexpr auto error() & -> maybe<error_type> requires std::movable<error_type>
       {
          if (has_value())
          {
-            return to_maybe(std::move(m_error));
+            return monad::none;
          }
          else
          {
-            return monad::none;
+            return to_maybe(std::move(m_error));
          }
       }
       constexpr auto error() && -> maybe<error_type>
       {
          if (has_value())
          {
-            return to_maybe(std::move(m_error));
+            return monad::none;
          }
          else
          {
-            return monad::none;
+            return to_maybe(std::move(m_error));
          }
       }
 
@@ -144,33 +144,33 @@ namespace core
       {
          if (has_value())
          {
-            return monad::none;
+            return to_maybe(value_type{m_value});
          }
          else
          {
-            return to_maybe(value_type{m_value});
+            return monad::none;
          }
       }
       constexpr auto value() & -> maybe<value_type> requires std::movable<value_type>
       {
          if (has_value())
          {
-            return monad::none;
+            return to_maybe(std::move(m_value));
          }
          else
          {
-            return to_maybe(std::move(m_value));
+            return monad::none;
          }
       }
-      constexpr auto right() && -> maybe<value_type>
+      constexpr auto value() && -> maybe<value_type>
       {
          if (has_value())
          {
-            return monad::none;
+            return to_maybe(std::move(m_value));
          }
          else
          {
-            return to_maybe(std::move(m_value));
+            return monad::none;
          }
       }
 

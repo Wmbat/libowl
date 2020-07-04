@@ -39,7 +39,7 @@ namespace core::gfx::vkn
          }
       };
 
-      const queue_error_category queue_error_cat;
+      static const queue_error_category queue_error_cat{};
 
       auto make_error_code(queue::error err) -> std::error_code
       {
