@@ -27,7 +27,7 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return monad::none;
+         return to_maybe();
       }
 
       auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
@@ -41,7 +41,7 @@ namespace core::gfx::vkn
                if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
                   vk::Result::eSuccess)
                {
-                  return monad::none;
+                  return to_maybe();
                }
             }
 
@@ -51,7 +51,7 @@ namespace core::gfx::vkn
             }
          }
 
-         return monad::none;
+         return to_maybe();
       }
 
       auto get_dedicated_compute_queue_index(
@@ -69,7 +69,7 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return monad::none;
+         return to_maybe();
       }
 
       auto get_dedicated_transfer_queue_index(
@@ -87,7 +87,7 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return monad::none;
+         return to_maybe();
       }
 
       auto get_separated_compute_queue_index(
@@ -119,7 +119,7 @@ namespace core::gfx::vkn
       auto get_separated_transfer_queue_index(
          const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
       {
-         maybe<uint32_t> transfer = monad::none;
+         maybe<uint32_t> transfer = to_maybe();
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&

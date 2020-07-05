@@ -32,16 +32,19 @@ namespace core
 {
    // clang-format off
    template <typename any_>
+   concept trivially_default_constructible = std::is_trivially_default_constructible_v<any_>;
+
+   template <typename any_>
    concept trivially_copyable = std::is_trivially_copyable_v<any_>;
 
    template <typename any_>
    concept trivially_destructible = std::is_trivially_destructible_v<any_>;
 
    template <typename any_>
-   concept trivially_default_constructible = std::is_trivially_default_constructible_v<any_>;
-
-   template <typename any_>
-   concept trivial = trivially_copyable<any_> && trivially_default_constructible<any_>;
+   concept trivial = 
+      trivially_default_constructible<any_> &&
+      trivially_copyable<any_> &&  
+      trivially_destructible<any_>;
 
    template <class B>
    concept boolean = std::movable<std::remove_cvref_t<B>> && 

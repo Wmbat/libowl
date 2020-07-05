@@ -12,118 +12,12 @@ namespace core
 {
    namespace detail
    {
-      template <class any_>
-      struct maybe_storage
+      consteval auto max(size_t size) noexcept -> size_t { return size; }
+      consteval auto max(size_t first, size_t second, std::unsigned_integral auto... rest) noexcept
+         -> size_t
       {
-         using value_type = any_;
-
-         maybe_storage() = default;
-         maybe_storage(const value_type& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{value};
-            }
-         }
-         maybe_storage(value_type&& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{std::move(value)};
-            }
-         }
-         maybe_storage(const maybe_storage& rhs) : is_engaged{rhs.is_engaged}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{*static_cast<value_type*>(data.data())};
-            }
-         }
-         maybe_storage(maybe_storage&& rhs) noexcept : is_engaged{rhs.is_engaged}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{std::move(*static_cast<value_type*>(data.data()))};
-            }
-         }
-         ~maybe_storage()
-         {
-            if (is_engaged)
-            {
-               reinterpret_cast<value_type*>(data.data())->~value_type(); // NOLINT
-            }
-         }
-
-         auto operator=(const maybe_storage& rhs) -> maybe_storage&
-         {
-            if (this != &rhs)
-            {
-               if (is_engaged)
-               {
-                  reinterpret_cast<value_type*>(data.data())->~value_type(); // NOLINT
-               }
-
-               is_engaged = rhs.is_engaged;
-
-               if (is_engaged)
-               {
-                  new (data.data())
-                     value_type{*reinterpret_cast<value_type*>(rhs.data.data())}; // NOLINT
-               }
-            }
-
-            return *this;
-         }
-         auto operator=(maybe_storage&& rhs) noexcept -> maybe_storage&
-         {
-            if (this != &rhs)
-            {
-               if (is_engaged)
-               {
-                  reinterpret_cast<value_type*>(data.data())->~value_type(); // NOLINT
-               }
-
-               is_engaged = rhs.is_engaged;
-               rhs.is_engaged = false;
-
-               if (is_engaged)
-               {
-                  new (data.data()) value_type{
-                     std::move(*reinterpret_cast<value_type*>(rhs.data.data()))}; // NOLINT
-               }
-            }
-
-            return *this;
-         }
-
-         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
-         bool is_engaged{false};
-      };
-
-      template <trivially_destructible any_>
-      struct maybe_storage<any_>
-      {
-         using value_type = any_;
-
-         maybe_storage() = default;
-         maybe_storage(const value_type& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (&data) value_type{value};
-            }
-         }
-         maybe_storage(value_type&& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (&data) value_type{std::move(value)};
-            }
-         }
-
-         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
-         bool is_engaged{false};
-      };
+         return first >= second ? max(first, rest...) : max(second, rest...);
+      }
    } // namespace detail
 
    // clang-format off
@@ -143,8 +37,11 @@ namespace core
    class maybe
    // clang-format on
    {
+      template <class type_>
+      struct storage;
+
    public:
-      using value_type = typename detail::maybe_storage<any_>::value_type;
+      using value_type = any_;
 
    public:
       constexpr maybe() = default;
@@ -156,44 +53,46 @@ namespace core
       {
          assert(has_value());
 
-         return reinterpret_cast<const value_type*>(&m_storage.data); // NOLINT
+         return m_storage.pointer();
       }
       constexpr auto operator->() -> value_type*
       {
          assert(has_value());
 
-         return reinterpret_cast<value_type*>(m_storage.data.data()); // NOLINT
+         return m_storage.pointer();
       }
 
-      constexpr auto operator*() const& -> const value_type& { return value(); }
-      constexpr auto operator*() & -> value_type& { return value(); }
-      constexpr auto operator*() const&& -> value_type&& { return std::move(value()); }
-      constexpr auto operator*() && -> value_type&& { return std::move(value()); }
+      constexpr auto operator*() & -> value_type& { return m_storage.value(); }
+      constexpr auto operator*() const& -> const value_type& { return m_storage.value(); }
+      constexpr auto operator*() && -> value_type&& { return std::move(m_storage.value()); }
+      constexpr auto operator*() const&& -> const value_type&&
+      {
+         return std::move(m_storage.value());
+      }
 
       constexpr auto value() const& -> const value_type&
       {
          assert(has_value());
 
-         return *reinterpret_cast<const value_type*>(m_storage.data.data()); // NOLINT
+         return m_storage.value();
       }
       constexpr auto value() & -> value_type&
       {
          assert(has_value());
 
-         return *reinterpret_cast<value_type*>(m_storage.data.data()); // NOLINT
+         return m_storage.value();
       }
-
       constexpr auto value() const&& -> const value_type&&
       {
          assert(has_value());
 
-         return std::move(*reinterpret_cast<value_type*>(m_storage.data.data())); // NOLINT
+         return std::move(m_storage.value());
       }
       constexpr auto value() && -> value_type&&
       {
          assert(has_value());
 
-         return std::move(*reinterpret_cast<value_type*>(m_storage.data.data())); // NOLINT
+         return std::move(m_storage.value());
       }
 
       constexpr auto value_or(
@@ -276,7 +175,171 @@ namespace core
       // clang-format on
 
    private:
-      detail::maybe_storage<value_type> m_storage{};
+      storage<value_type> m_storage{};
+
+   private:
+      template <class type_>
+      struct storage
+      {
+         using value_type = type_;
+
+         constexpr storage() = default;
+         constexpr storage(const value_type& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{value};
+            }
+         }
+         constexpr storage(value_type&& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{std::move(value)};
+            }
+         }
+         constexpr storage(const storage& rhs) : is_engaged{rhs.is_engaged}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{rhs.value()};
+            }
+         }
+         constexpr storage(storage&& rhs) noexcept : is_engaged{rhs.is_engaged}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{std::move(rhs.value())};
+            }
+         }
+         ~storage()
+         {
+            if (is_engaged)
+            {
+               value().~value_type();
+            }
+         }
+
+         constexpr auto operator=(const storage& rhs) -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (is_engaged)
+               {
+                  value().~value_type();
+               }
+
+               is_engaged = rhs.is_engaged;
+
+               if (is_engaged)
+               {
+                  new (data.data()) value_type{rhs.value()};
+               }
+            }
+
+            return *this;
+         }
+         constexpr auto operator=(storage&& rhs) noexcept -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (is_engaged)
+               {
+                  value().~value_type();
+               }
+
+               is_engaged = rhs.is_engaged;
+               rhs.is_engaged = false;
+
+               if (is_engaged)
+               {
+                  new (data.data()) value_type{std::move(rhs.value())};
+               }
+            }
+
+            return *this;
+         }
+
+         constexpr auto pointer() -> value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto pointer() const -> const value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+
+         constexpr auto value() & -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() const& -> const value_type&
+         {
+            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() && -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+         constexpr auto value() const&& -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+
+         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
+         bool is_engaged{false};
+      };
+
+      template <trivial type_>
+      struct storage<type_>
+      {
+         using value_type = any_;
+
+         constexpr storage() = default;
+         constexpr storage(const value_type& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (&data) value_type{value};
+            }
+         }
+         constexpr storage(value_type&& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (&data) value_type{std::move(value)};
+            }
+         }
+
+         constexpr auto pointer() -> value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto pointer() const -> const value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+
+         constexpr auto value() & -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() const& -> const value_type&
+         {
+            return *reinterpret_cast<const value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() && -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+         constexpr auto value() const&& -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+
+         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
+         bool is_engaged{false};
+      };
    };
 
    template <class any_>
@@ -290,9 +353,4 @@ namespace core
    {
       return maybe<any_>{};
    }
-
-   namespace monad
-   {
-      inline static const auto none = to_maybe();
-   } // namespace monad
 } // namespace core

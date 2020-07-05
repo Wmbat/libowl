@@ -106,7 +106,7 @@ namespace core
          }
          else
          {
-            return monad::none;
+            return to_maybe();
          }
       }
       constexpr auto left() & -> maybe<left_type> requires std::movable<left_type>
@@ -117,7 +117,7 @@ namespace core
          }
          else
          {
-            return monad::none;
+            return to_maybe();
          }
       }
       constexpr auto left() && -> maybe<left_type>
@@ -128,14 +128,14 @@ namespace core
          }
          else
          {
-            return monad::none;
+            return to_maybe();
          }
       }
       constexpr auto right() const& -> maybe<right_type>
       {
          if (is_left())
          {
-            return monad::none;
+            return to_maybe();
          }
          else
          {
@@ -146,7 +146,7 @@ namespace core
       {
          if (is_left())
          {
-            return monad::none;
+            return to_maybe();
          }
          else
          {
@@ -164,7 +164,7 @@ namespace core
       {
          if (is_left_val)
          {
-            return monad::none;
+            return to_maybe();
          }
          else
          {
