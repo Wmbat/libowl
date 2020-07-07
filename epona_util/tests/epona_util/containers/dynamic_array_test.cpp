@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#include <epona_core/containers/dynamic_array.hpp>
-#include <epona_core/detail/iterators/random_access_iterator.hpp>
+#include <epona_util/containers/dynamic_array.hpp>
+#include <epona_util/iterators/random_access_iterator.hpp>
 
 #include <gtest/gtest.h>
 
@@ -59,17 +59,35 @@ struct tiny_dynamic_array_test : public testing::Test
    tiny_dynamic_array_test() = default;
 };
 
+TEST_F(tiny_dynamic_array_test, temp_test)
+{
+   util::test<int, 0> vec{};
+
+   EXPECT_EQ(vec.size(), 0);
+   EXPECT_EQ(vec.capacity(), 0);
+
+   vec.assign(10, 10);
+
+   EXPECT_EQ(vec.size(), 10);
+   EXPECT_EQ(vec.capacity(), 10);
+
+   for (auto i : vec)
+   {
+      EXPECT_EQ(i, 10);
+   }
+}
+
 TEST_F(tiny_dynamic_array_test, default_ctor)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
    }
 
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -79,7 +97,7 @@ TEST_F(tiny_dynamic_array_test, default_ctor)
 TEST_F(tiny_dynamic_array_test, ctor_count)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10};
+      util::tiny_dynamic_array<copyable, 0> vec{10};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -90,7 +108,7 @@ TEST_F(tiny_dynamic_array_test, ctor_count)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 5> vec{5};
+      util::tiny_dynamic_array<copyable, 5> vec{5};
 
       EXPECT_EQ(vec.size(), 5);
       EXPECT_EQ(vec.capacity(), 5);
@@ -105,7 +123,7 @@ TEST_F(tiny_dynamic_array_test, ctor_count)
 TEST_F(tiny_dynamic_array_test, ctor_count_values)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -116,7 +134,7 @@ TEST_F(tiny_dynamic_array_test, ctor_count_values)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 5> vec{5, copyable{20}};
+      util::tiny_dynamic_array<copyable, 5> vec{5, copyable{20}};
 
       EXPECT_EQ(vec.size(), 5);
       EXPECT_EQ(vec.capacity(), 5);
@@ -131,7 +149,7 @@ TEST_F(tiny_dynamic_array_test, ctor_count_values)
 TEST_F(tiny_dynamic_array_test, ctor_range)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -141,7 +159,7 @@ TEST_F(tiny_dynamic_array_test, ctor_range)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 5> vec2{vec.begin(), vec.end()};
+      util::tiny_dynamic_array<copyable, 5> vec2{vec.begin(), vec.end()};
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 11);
@@ -156,7 +174,7 @@ TEST_F(tiny_dynamic_array_test, ctor_range)
 TEST_F(tiny_dynamic_array_test, ctor_initializer_list)
 {
    {
-      core::tiny_dynamic_array<copyable, 10> vec{{copyable{1}, copyable{1}, copyable{1}}};
+      util::tiny_dynamic_array<copyable, 10> vec{{copyable{1}, copyable{1}, copyable{1}}};
 
       EXPECT_EQ(vec.size(), 3);
       EXPECT_EQ(vec.capacity(), 10);
@@ -171,7 +189,7 @@ TEST_F(tiny_dynamic_array_test, ctor_initializer_list)
 TEST_F(tiny_dynamic_array_test, ctor_copy)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -181,7 +199,7 @@ TEST_F(tiny_dynamic_array_test, ctor_copy)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 0> vec2{vec};
+      util::tiny_dynamic_array<copyable, 0> vec2{vec};
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
@@ -196,7 +214,7 @@ TEST_F(tiny_dynamic_array_test, ctor_copy)
 TEST_F(tiny_dynamic_array_test, ctor_move)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -206,7 +224,7 @@ TEST_F(tiny_dynamic_array_test, ctor_move)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 0> vec2{std::move(vec)};
+      util::tiny_dynamic_array<copyable, 0> vec2{std::move(vec)};
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
@@ -220,7 +238,7 @@ TEST_F(tiny_dynamic_array_test, ctor_move)
       EXPECT_EQ(vec.capacity(), 0);
    }
    {
-      core::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -230,7 +248,7 @@ TEST_F(tiny_dynamic_array_test, ctor_move)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 10> vec2{std::move(vec)};
+      util::tiny_dynamic_array<copyable, 10> vec2{std::move(vec)};
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
@@ -248,7 +266,7 @@ TEST_F(tiny_dynamic_array_test, ctor_move)
 TEST_F(tiny_dynamic_array_test, copy_assignment_operator)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -258,7 +276,7 @@ TEST_F(tiny_dynamic_array_test, copy_assignment_operator)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 0> vec2 = vec;
+      util::tiny_dynamic_array<copyable, 0> vec2 = vec;
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
@@ -273,7 +291,7 @@ TEST_F(tiny_dynamic_array_test, copy_assignment_operator)
 TEST_F(tiny_dynamic_array_test, move_assignment_operator)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -301,7 +319,7 @@ TEST_F(tiny_dynamic_array_test, move_assignment_operator)
 TEST_F(tiny_dynamic_array_test, equality_operator)
 {
    {
-      core::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 0> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -311,7 +329,7 @@ TEST_F(tiny_dynamic_array_test, equality_operator)
          EXPECT_EQ(val.i, 5);
       }
 
-      core::tiny_dynamic_array<copyable, 0> vec2 = vec;
+      util::tiny_dynamic_array<copyable, 0> vec2 = vec;
 
       EXPECT_EQ(vec2.size(), 10);
       EXPECT_EQ(vec2.capacity(), 10);
@@ -327,7 +345,7 @@ TEST_F(tiny_dynamic_array_test, equality_operator)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
+      util::tiny_dynamic_array<copyable, 10> vec{10, copyable{5}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 10);
@@ -360,7 +378,7 @@ TEST_F(tiny_dynamic_array_test, equality_operator)
 TEST_F(tiny_dynamic_array_test, assign_n_values)
 {
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -390,7 +408,7 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -410,7 +428,7 @@ TEST_F(tiny_dynamic_array_test, assign_n_values)
 TEST_F(tiny_dynamic_array_test, assign_range)
 {
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -439,7 +457,7 @@ TEST_F(tiny_dynamic_array_test, assign_range)
          EXPECT_EQ(val.i, 0);
       }
 
-      core::tiny_dynamic_array<copyable, 10> vec2{};
+      util::tiny_dynamic_array<copyable, 10> vec2{};
 
       vec2.assign(vec.begin(), vec.end());
 
@@ -456,7 +474,7 @@ TEST_F(tiny_dynamic_array_test, assign_range)
 TEST_F(tiny_dynamic_array_test, assign_initializer_list)
 {
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -483,7 +501,7 @@ TEST_F(tiny_dynamic_array_test, assign_initializer_list)
 TEST_F(tiny_dynamic_array_test, clear)
 {
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -533,7 +551,7 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
    {
       int one = 1;
       int two = 2;
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -577,7 +595,7 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -620,7 +638,7 @@ TEST_F(tiny_dynamic_array_test, insert_lvalue_ref)
 TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -659,7 +677,7 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
    }
 
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -699,7 +717,7 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
    }
 
    {
-      core::tiny_dynamic_array<moveable, 4> vec{};
+      util::tiny_dynamic_array<moveable, 4> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 4);
@@ -742,7 +760,7 @@ TEST_F(tiny_dynamic_array_test, insert_rvalue_ref)
 TEST_F(tiny_dynamic_array_test, insert_n_values)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -779,7 +797,7 @@ TEST_F(tiny_dynamic_array_test, insert_n_values)
 
 TEST_F(tiny_dynamic_array_test, insert_range)
 {
-   core::tiny_dynamic_array<int, 0> vec{};
+   util::tiny_dynamic_array<int, 0> vec{};
 
    EXPECT_EQ(vec.size(), 0);
    EXPECT_EQ(vec.capacity(), 0);
@@ -813,7 +831,7 @@ TEST_F(tiny_dynamic_array_test, insert_range)
    }
 
    {
-      core::tiny_dynamic_array<int, 2> vec_range{};
+      util::tiny_dynamic_array<int, 2> vec_range{};
 
       EXPECT_EQ(vec_range.size(), 0);
       EXPECT_EQ(vec_range.capacity(), 2);
@@ -829,7 +847,7 @@ TEST_F(tiny_dynamic_array_test, insert_range)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0> vec_range{};
+      util::tiny_dynamic_array<int, 0> vec_range{};
 
       EXPECT_EQ(vec_range.size(), 0);
       EXPECT_EQ(vec_range.capacity(), 0);
@@ -849,7 +867,7 @@ TEST_F(tiny_dynamic_array_test, insert_range)
 TEST_F(tiny_dynamic_array_test, insert_initializer_list)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -885,7 +903,7 @@ TEST_F(tiny_dynamic_array_test, insert_initializer_list)
    }
 
    {
-      core::tiny_dynamic_array<copyable, 0> vec{};
+      util::tiny_dynamic_array<copyable, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -905,7 +923,7 @@ TEST_F(tiny_dynamic_array_test, insert_initializer_list)
 TEST_F(tiny_dynamic_array_test, emplace)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -944,7 +962,7 @@ TEST_F(tiny_dynamic_array_test, emplace)
    }
 
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -985,7 +1003,7 @@ TEST_F(tiny_dynamic_array_test, emplace)
 TEST_F(tiny_dynamic_array_test, erase)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1051,7 +1069,7 @@ TEST_F(tiny_dynamic_array_test, erase)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1100,7 +1118,7 @@ TEST_F(tiny_dynamic_array_test, erase)
 TEST_F(tiny_dynamic_array_test, erase_range)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1146,7 +1164,7 @@ TEST_F(tiny_dynamic_array_test, erase_range)
       }
    }
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1195,7 +1213,7 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       int three = 3;
       int four = 4;
 
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1235,7 +1253,7 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 0> vec{};
+      util::tiny_dynamic_array<copyable, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1275,7 +1293,7 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
       copyable three{3};
       copyable four{4};
 
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -1314,7 +1332,7 @@ TEST_F(tiny_dynamic_array_test, push_back_lvalue_ref)
 TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1349,7 +1367,7 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 0> vec{};
+      util::tiny_dynamic_array<moveable, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1384,7 +1402,7 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 4> vec{};
+      util::tiny_dynamic_array<moveable, 4> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 4);
@@ -1419,7 +1437,7 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 2> vec{};
+      util::tiny_dynamic_array<moveable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -1458,7 +1476,7 @@ TEST_F(tiny_dynamic_array_test, push_back_rvalue_ref)
 TEST_F(tiny_dynamic_array_test, emplace_back)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1493,7 +1511,7 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<int*, 0> vec{};
+      util::tiny_dynamic_array<int*, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1528,7 +1546,7 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 3> vec{};
+      util::tiny_dynamic_array<copyable, 3> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 3);
@@ -1563,7 +1581,7 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
       }
    }
    {
-      core::tiny_dynamic_array<moveable, 0> vec{};
+      util::tiny_dynamic_array<moveable, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1602,7 +1620,7 @@ TEST_F(tiny_dynamic_array_test, emplace_back)
 TEST_F(tiny_dynamic_array_test, pop_back)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1657,7 +1675,7 @@ TEST_F(tiny_dynamic_array_test, pop_back)
       }
    }
    {
-      core::tiny_dynamic_array<copyable, 2> vec{};
+      util::tiny_dynamic_array<copyable, 2> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 2);
@@ -1692,7 +1710,7 @@ TEST_F(tiny_dynamic_array_test, pop_back)
 TEST_F(tiny_dynamic_array_test, resize)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1737,7 +1755,7 @@ TEST_F(tiny_dynamic_array_test, resize)
       EXPECT_EQ(vec[1], 1);
    }
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1791,7 +1809,7 @@ TEST_F(tiny_dynamic_array_test, resize)
 TEST_F(tiny_dynamic_array_test, resize_value)
 {
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);
@@ -1836,7 +1854,7 @@ TEST_F(tiny_dynamic_array_test, resize_value)
       EXPECT_EQ(vec[1], 1);
    }
    {
-      core::tiny_dynamic_array<int, 0> vec{};
+      util::tiny_dynamic_array<int, 0> vec{};
 
       EXPECT_EQ(vec.size(), 0);
       EXPECT_EQ(vec.capacity(), 0);

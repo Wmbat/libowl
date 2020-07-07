@@ -4,7 +4,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
 namespace core::gfx::vkn
 {
-   loader::loader(logger *const p_logger) : p_logger{p_logger}
+   loader::loader(util::logger *const p_logger) : p_logger{p_logger}
    {
       VULKAN_HPP_DEFAULT_DISPATCHER.init(
          dynamic_loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));

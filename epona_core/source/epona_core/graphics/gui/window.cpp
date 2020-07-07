@@ -49,20 +49,21 @@ namespace core::gfx
          glfwDestroyWindow);
    }
 
-   bool window::is_open() { return !glfwWindowShouldClose(p_wnd.get()); }
+   auto window::is_open() -> bool { return !glfwWindowShouldClose(p_wnd.get()); }
 
-   vkn::result<vk::SurfaceKHR> window::get_surface(vk::Instance instance) const
+   auto window::get_surface(vk::Instance instance) const -> vkn::result<vk::SurfaceKHR>
    {
       VkSurfaceKHR surface = VK_NULL_HANDLE;
       const auto res = glfwCreateWindowSurface(instance, p_wnd.get(), nullptr, &surface);
 
       if (res != VK_SUCCESS)
       {
-         return monad::to_error(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
+         return util::monad::to_error(
+            vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
       }
       else
       {
-         return monad::to_value(vk::SurfaceKHR{surface});
+         return util::monad::to_value(vk::SurfaceKHR{surface});
       }
    }
 } // namespace core::gfx

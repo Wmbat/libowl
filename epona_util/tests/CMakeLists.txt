@@ -28,25 +28,25 @@ CPMAddPackage(
     GITHUB_REPOSITORY google/googletest
     GIT_TAG release-1.10.0)
 
-add_executable(epona_core_test)
+add_executable(epona_util_test)
 
-target_link_libraries(epona_core_test
+target_link_libraries(epona_util_test
    PUBLIC
-      epona_core
+      epona_util
       gtest
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>)
 
-set_target_properties(epona_core_test
+set_target_properties(epona_util_test
    PROPERTIES
       CXX_EXTENSIONS OFF)
 
-target_compile_features(epona_core_test
+target_compile_features(epona_util_test
    PRIVATE
       cxx_std_20)
 
-target_compile_options(epona_core_test
+target_compile_options(epona_util_test
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
@@ -54,16 +54,16 @@ target_compile_options(epona_core_test
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -fsanitize=address -fsanitize=undefined>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>)
 
-target_precompile_headers(epona_core_test
+target_precompile_headers(epona_util_test
    PRIVATE
       <gtest/gtest.h>)
 
-target_sources(epona_core_test
+target_sources(epona_util_test
    PRIVATE
-      epona_core/main.cpp
-      epona_core/containers/flat_map_test.cpp
-      epona_core/containers/dynamic_array_test.cpp
-      epona_core/detail/monad/either_test.cpp
-      epona_core/detail/monad/maybe_test.cpp)
+      epona_util/main.cpp
+      epona_util/containers/flat_map_test.cpp
+      epona_util/containers/dynamic_array_test.cpp
+      epona_util/detail/monad/either_test.cpp
+      epona_util/detail/monad/maybe_test.cpp)
 
-add_test( NAME epona_core_test COMMAND epona_core_test )
+add_test( NAME epona_util_test COMMAND epona_util_test )

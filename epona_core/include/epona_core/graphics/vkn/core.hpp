@@ -11,9 +11,9 @@
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 
-#include "epona_core/detail/logger.hpp"
-#include "epona_core/detail/monad/either.hpp"
-#include <epona_core/detail/monad/result.hpp>
+#include <epona_util/logger.hpp>
+#include <epona_util/monad/either.hpp>
+#include <epona_util/monad/result.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -48,7 +48,7 @@ namespace core::gfx::vkn
     * @brief An alias for an either monad using an error as the left type.
     */
    template <class any_>
-   using result = core::result<error, any_>;
+   using result = util::result<error, any_>;
 
    /**
     * @class error <epona_core/graphics/vkn/core.hpp>
@@ -62,13 +62,13 @@ namespace core::gfx::vkn
    {
    public:
    public:
-      loader(logger* const p_logger = nullptr);
+      loader(util::logger* const p_logger = nullptr);
 
       void load_instance(const ::vk::Instance& instance) const;
       void load_device(const ::vk::Device& device) const;
 
    private:
-      logger* const p_logger;
+      util::logger* const p_logger;
 
       ::vk::DynamicLoader dynamic_loader;
    };

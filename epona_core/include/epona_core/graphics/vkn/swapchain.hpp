@@ -81,9 +81,9 @@ namespace core::gfx::vkn
 
       private:
          [[nodiscard]] auto add_desired_formats() const
-            -> tiny_dynamic_array<vk::SurfaceFormatKHR, 2>;
+            -> util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>;
          [[nodiscard]] auto add_desired_present_modes() const
-            -> tiny_dynamic_array<vk::PresentModeKHR, 2>;
+            -> util::tiny_dynamic_array<vk::PresentModeKHR, 2>;
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
@@ -95,8 +95,8 @@ namespace core::gfx::vkn
             vk::SurfaceKHR surface{nullptr};
             vk::SwapchainKHR old_swapchain{nullptr};
 
-            dynamic_array<vk::SurfaceFormatKHR> desired_formats{};
-            dynamic_array<vk::PresentModeKHR> desired_present_modes{};
+            util::dynamic_array<vk::SurfaceFormatKHR> desired_formats{};
+            util::dynamic_array<vk::PresentModeKHR> desired_present_modes{};
 
             uint32_t desired_width{DEFAULT_SIZE};
             uint32_t desired_height{DEFAULT_SIZE};

@@ -16,14 +16,14 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <epona_core/detail/logger.hpp>
+#include <epona_util/logger.hpp>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <memory>
 
-namespace core
+namespace util
 {
    logger::logger() : log("Default logger")
    {

@@ -1,7 +1,7 @@
-#include <array>
 #include <epona_core/graphics/vkn/swapchain.hpp>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 
 namespace core::gfx::vkn
@@ -11,8 +11,8 @@ namespace core::gfx::vkn
       struct surface_support
       {
          vk::SurfaceCapabilitiesKHR capabilities;
-         dynamic_array<vk::SurfaceFormatKHR> formats;
-         dynamic_array<vk::PresentModeKHR> present_modes;
+         util::dynamic_array<vk::SurfaceFormatKHR> formats;
+         util::dynamic_array<vk::PresentModeKHR> present_modes;
 
          enum class error
          {
@@ -101,49 +101,49 @@ namespace core::gfx::vkn
          if (surface)
          {
             // clang-format off
-            return monad::to_error(error{
+            return util::monad::to_error(error{
                .type = make_error_code(surface_support::error::surface_handle_not_provided),
                .result = {}
             });
             // clang-format on
          }
 
-         const auto capabilities_res = monad::try_wrap<vk::SystemError>([=] {
+         const auto capabilities_res = util::monad::try_wrap<vk::SystemError>([=] {
             return physical_device.getSurfaceCapabilitiesKHR(surface);
          });
 
          if (capabilities_res.is_left())
          {
             // clang-format off
-            return monad::to_error(error{
+            return util::monad::to_error(error{
                .type = make_error_code(surface_support::error::failed_to_get_surface_capabilities),
                .result = static_cast<vk::Result>(capabilities_res.left()->code().value())
             });
             // clang-format on
          }
 
-         const auto format_res = monad::try_wrap<std::system_error>([=] {
+         const auto format_res = util::monad::try_wrap<std::system_error>([=] {
             return physical_device.getSurfaceFormatsKHR(surface);
          });
 
          if (format_res.is_left())
          {
             // clang-format off
-            return monad::to_error(error{
+            return util::monad::to_error(error{
                .type = make_error_code(surface_support::error::failed_to_enumerate_formats),
                .result = static_cast<vk::Result>(format_res.left()->code().value())
             });
             // clang-format on
          }
 
-         const auto present_mode_res = monad::try_wrap<std::system_error>([=] {
+         const auto present_mode_res = util::monad::try_wrap<std::system_error>([=] {
             return physical_device.getSurfacePresentModesKHR(surface);
          });
 
          if (present_mode_res.is_left())
          {
             // clang-format off
-            return monad::to_error(error{
+            return util::monad::to_error(error{
                .type = make_error_code(surface_support::error::failed_to_enumerate_formats),
                .result = static_cast<vk::Result>(present_mode_res.left()->code().value())
             });
@@ -151,7 +151,7 @@ namespace core::gfx::vkn
          }
 
          // clang-format off
-         return monad::to_value(surface_support{
+         return util::monad::to_value(surface_support{
             .capabilities = capabilities_res.right().value(), 
             .formats = format_res.right().value(), 
             .present_modes = present_mode_res.right().value()
@@ -159,8 +159,8 @@ namespace core::gfx::vkn
          // clang-format on
       }
 
-      auto find_surface_format(const range_over<vk::SurfaceFormatKHR> auto& available_formats,
-         const range_over<vk::SurfaceFormatKHR> auto& desired_formats) -> vk::SurfaceFormatKHR
+      auto find_surface_format(const util::range_over<vk::SurfaceFormatKHR> auto& available_formats,
+         const util::range_over<vk::SurfaceFormatKHR> auto& desired_formats) -> vk::SurfaceFormatKHR
       {
          for (const vk::SurfaceFormatKHR& desired : desired_formats)
          {
@@ -176,8 +176,10 @@ namespace core::gfx::vkn
          return available_formats[0];
       }
 
-      auto find_present_mode(const range_over<vk::PresentModeKHR> auto& available_present_modes,
-         const range_over<vk::PresentModeKHR> auto& desired_present_modes) -> vk::PresentModeKHR
+      auto find_present_mode(
+         const util::range_over<vk::PresentModeKHR> auto& available_present_modes,
+         const util::range_over<vk::PresentModeKHR> auto& desired_present_modes)
+         -> vk::PresentModeKHR
       {
          for (const vk::PresentModeKHR& desired : desired_present_modes)
          {
@@ -274,7 +276,7 @@ namespace core::gfx::vkn
       if (!m_info.surface)
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(swapchain::error::surface_handle_not_provided),
             .result = {}
          });
@@ -286,7 +288,7 @@ namespace core::gfx::vkn
       if (!surface_support_res)
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(swapchain::error::failed_to_query_surface_support_details),
             .result = surface_support_res.error().value().result
          });
@@ -295,13 +297,13 @@ namespace core::gfx::vkn
 
       const auto surface_support = *surface_support_res.value();
 
-      tiny_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
+      util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
       if (desired_formats.empty())
       {
          desired_formats = add_desired_formats();
       }
 
-      tiny_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
+      util::tiny_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
          m_info.desired_present_modes;
       if (desired_present_modes.empty())
       {
@@ -348,14 +350,14 @@ namespace core::gfx::vkn
          .setClipped(m_info.clipped);
       // clang-format on  
   
-      const auto creation_res = monad::try_wrap<vk::SystemError>([&]{
+      const auto creation_res = util::monad::try_wrap<vk::SystemError>([&]{
          return m_info.device.createSwapchainKHR(create_info);
       });
 
       if(creation_res.is_left())
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(error::failed_to_create_swapchain), 
             .result = static_cast<vk::Result>(creation_res.left()->code().value())
          });
@@ -371,7 +373,7 @@ namespace core::gfx::vkn
       };
       // clang-format on
 
-      return monad::to_value(swapchain{swap_create_info});
+      return util::monad::to_value(swapchain{swap_create_info});
    }
 
    auto builder::set_old_swapchain(const swapchain& swap) noexcept -> builder&
@@ -455,19 +457,20 @@ namespace core::gfx::vkn
       return *this;
    }
 
-   auto builder::add_desired_formats() const -> tiny_dynamic_array<vk::SurfaceFormatKHR, 2>
+   auto builder::add_desired_formats() const -> util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>
    {
       // clang-format off
-      return tiny_dynamic_array<vk::SurfaceFormatKHR, 2>{{
+      return util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>{{
          vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
          vk::SurfaceFormatKHR{vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear}
       }};
       // clang-format on
    }
-   auto builder::add_desired_present_modes() const -> tiny_dynamic_array<vk::PresentModeKHR, 2>
+   auto builder::add_desired_present_modes() const
+      -> util::tiny_dynamic_array<vk::PresentModeKHR, 2>
    {
       // clang-format off
-      return tiny_dynamic_array<vk::PresentModeKHR, 2>{{
+      return util::tiny_dynamic_array<vk::PresentModeKHR, 2>{{
          vk::PresentModeKHR::eMailbox,
          vk::PresentModeKHR::eFifo
       }};

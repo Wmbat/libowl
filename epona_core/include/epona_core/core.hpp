@@ -1,6 +1,6 @@
 #pragma once
 
-#include "epona_core/detail/logger.hpp"
+#include <epona_util/logger.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -16,7 +16,7 @@
 
 namespace core
 {
-   inline void initialize(logger* const plogger)
+   inline void initialize(util::logger* const plogger)
    {
       if (auto result = glfwInit(); result != GLFW_TRUE)
       {

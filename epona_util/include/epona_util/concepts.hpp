@@ -28,7 +28,7 @@
 #include <ranges>
 #include <type_traits>
 
-namespace core
+namespace util
 {
    // clang-format off
    template <typename any_>
@@ -84,4 +84,4 @@ namespace core
       std::ranges::range<range_> && 
       std::is_same_v<std::ranges::range_value_t<range_>, type_>;
    // clang-format on
-} // namespace core
+} // namespace util

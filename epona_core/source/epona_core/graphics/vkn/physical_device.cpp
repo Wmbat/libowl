@@ -105,7 +105,8 @@ namespace core::gfx::vkn
       return m_features;
    }
    auto physical_device::surface() const noexcept -> const vk::SurfaceKHR& { return m_surface; }
-   auto physical_device::queue_families() const -> const dynamic_array<vk::QueueFamilyProperties>
+   auto physical_device::queue_families() const
+      -> const util::dynamic_array<vk::QueueFamilyProperties>
    {
       return m_queue_families;
    }
@@ -113,7 +114,7 @@ namespace core::gfx::vkn
 
    using selector = physical_device::selector;
 
-   selector::selector(const instance& inst, logger* const plogger) : m_plogger{plogger}
+   selector::selector(const instance& inst, util::logger* const plogger) : m_plogger{plogger}
    {
       m_system_info.instance = inst.value();
       m_system_info.instance_extensions = inst.extensions();
@@ -123,14 +124,14 @@ namespace core::gfx::vkn
    {
       using err_t = vkn::error;
 
-      const auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
+      const auto physical_devices_res = util::monad::try_wrap<std::system_error>([&] {
          return m_system_info.instance.enumeratePhysicalDevices();
       });
 
       if (physical_devices_res.is_left())
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(
                physical_device::error::failed_to_enumerate_physical_devices), 
             .result = static_cast<vk::Result>(physical_devices_res.left()->code().value())
@@ -138,10 +139,10 @@ namespace core::gfx::vkn
          // clang-format on
       }
 
-      tiny_dynamic_array<vk::PhysicalDevice, 2> physical_devices =
+      util::tiny_dynamic_array<vk::PhysicalDevice, 2> physical_devices =
          physical_devices_res.right().value();
 
-      tiny_dynamic_array<physical_device_description, 2> physical_device_descriptions;
+      util::tiny_dynamic_array<physical_device_description, 2> physical_device_descriptions;
       for (const auto& device : physical_devices)
       {
          physical_device_descriptions.push_back(populate_device_details(device));
@@ -172,7 +173,7 @@ namespace core::gfx::vkn
       if (!selected.phys_device)
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(physical_device::error::no_suitable_device),
             .result = {}
          });
@@ -183,7 +184,7 @@ namespace core::gfx::vkn
          std::make_tuple(selected.properties.deviceName));
 
       // clang-format off
-      return monad::to_value(physical_device{{
+      return util::monad::to_value(physical_device{{
          .name = static_cast<const char*>(selected.properties.deviceName),
          .features = selected.features,
          .properties = selected.properties,
@@ -258,7 +259,7 @@ namespace core::gfx::vkn
 
       device.getQueueFamilyProperties();
 
-      auto properties_res = monad::try_wrap<vk::SystemError>([&] {
+      auto properties_res = util::monad::try_wrap<vk::SystemError>([&] {
          return device.getQueueFamilyProperties();
       });
 
@@ -308,16 +309,16 @@ namespace core::gfx::vkn
       }
 
       // clang-format off
-      const auto formats = monad::try_wrap<vk::SystemError>([&] {
+      const auto formats = util::monad::try_wrap<vk::SystemError>([&] {
          return desc.phys_device.getSurfaceFormatsKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
-         return dynamic_array<vk::SurfaceFormatKHR>{};
+         return util::dynamic_array<vk::SurfaceFormatKHR>{};
       }).join();
 
-      const auto present_modes = monad::try_wrap<vk::SystemError>([&] {
+      const auto present_modes = util::monad::try_wrap<vk::SystemError>([&] {
          return desc.phys_device.getSurfacePresentModesKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
-         return dynamic_array<vk::PresentModeKHR>{};
+         return util::dynamic_array<vk::PresentModeKHR>{};
       }).join();
       // clang-format on
 

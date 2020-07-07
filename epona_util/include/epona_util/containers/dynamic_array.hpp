@@ -7,12 +7,13 @@
 
 #pragma once
 
-#include "epona_core/containers/details.hpp"
-#include "epona_core/detail/compare.hpp"
-#include "epona_core/detail/concepts.hpp"
-#include "epona_core/detail/error_handling.hpp"
-#include "epona_core/detail/iterators/input_iterator.hpp"
-#include "epona_core/detail/iterators/random_access_iterator.hpp"
+#include <epona_util/compare.hpp>
+#include <epona_util/concepts.hpp>
+#include <epona_util/containers/details.hpp>
+#include <epona_util/containers/error_handling.hpp>
+#include <epona_util/iterators/input_iterator.hpp>
+#include <epona_util/iterators/random_access_iterator.hpp>
+#include <epona_util/monad/either.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -24,8 +25,228 @@
 #include <ranges>
 #include <type_traits>
 
-namespace core
+namespace util
 {
+   template <class any_, std::size_t buffer_size_>
+   class test
+   {
+   public:
+      using value_type = any_;
+      using reference = value_type&;
+      using const_reference = const value_type&;
+      using pointer = value_type*;
+      using const_pointer = const value_type*;
+      using size_type = std::size_t;
+      using difference_type = std::ptrdiff_t;
+      using iterator = random_access_iterator<value_type>;
+      using const_iterator = random_access_iterator<const value_type>;
+      using reverse_iterator = std::reverse_iterator<iterator>;
+      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+   public:
+      explicit test() : m_capacity{buffer_size_} {}
+      explicit test(size_type count) requires std::default_initializable<value_type> :
+         m_capacity{buffer_size_}
+      {
+         if (!assign(count, value_type{}))
+         {
+            handle_bad_alloc_error("Failed to allocate memory for dynamic array creation");
+         }
+      }
+
+      void assign(size_type count, const_reference value) noexcept
+         requires std::copyable<value_type>
+      {
+         clear();
+
+         if (count > m_capacity)
+         {
+            grow(count);
+         }
+
+         m_size += count;
+
+         std::uninitialized_fill(begin(), end(), value);
+      }
+
+      auto begin() noexcept -> iterator
+      {
+         if (m_data)
+         {
+            return iterator{m_data.get()};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<value_type*>(&m_storage)}; // NOLINT
+         }
+      }
+      auto begin() const noexcept -> const_iterator
+      {
+         if (m_data)
+         {
+            return const_iterator{m_data.get()};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<const value_type*>(&m_storage)}; // NOLINT
+         }
+      }
+      auto cbegin() const noexcept -> const_iterator
+      {
+         if (m_data)
+         {
+            return const_iterator{m_data.get()};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<const value_type*>(&m_storage)}; // NOLINT
+         }
+      }
+
+      auto end() noexcept -> iterator
+      {
+         if (m_data)
+         {
+            return iterator{m_data.get() + m_size};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<value_type*>(&m_storage) + m_size}; // NOLINT
+         }
+      }
+      auto end() const noexcept -> const_iterator
+      {
+         if (m_data)
+         {
+            return const_iterator{m_data.get() + m_size};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<const value_type*>(&m_storage) + m_size}; // NOLINT
+         }
+      }
+      auto cend() const noexcept -> const_iterator
+      {
+         if (m_data)
+         {
+            return const_iterator{m_data.get() + m_size};
+         }
+         else
+         {
+            return iterator{reinterpret_cast<const value_type*>(&m_storage) + m_size}; // NOLINT
+         }
+      }
+
+      auto rbegin() noexcept -> reverse_iterator { return reverse_iterator{end()}; }
+      auto rbegin() const noexcept -> const_reverse_iterator
+      {
+         return const_reverse_iterator{cend()};
+      }
+      auto rcbegin() const noexcept -> const_reverse_iterator
+      {
+         return const_reverse_iterator{cend()};
+      }
+
+      auto rend() noexcept -> reverse_iterator { return reverse_iterator{begin()}; }
+      auto rend() const noexcept -> const_reverse_iterator
+      {
+         return const_reverse_iterator{cbegin()};
+      }
+      auto rcend() const noexcept -> const_reverse_iterator
+      {
+         return const_reverse_iterator{cbegin()};
+      }
+
+      [[nodiscard]] constexpr auto empty() const noexcept -> bool { return size() == 0; }
+      [[nodiscard]] constexpr auto size() const noexcept -> size_type { return m_size; }
+      [[nodiscard]] constexpr auto max_size() const noexcept -> size_type
+      {
+         return std::numeric_limits<difference_type>::max();
+      }
+      [[nodiscard]] constexpr auto capacity() const noexcept -> size_type { return m_capacity; }
+
+      void clear() noexcept
+      {
+         destroy_range(begin(), end());
+         m_size = 0;
+      }
+
+   private:
+      void grow(size_type min_size = 0)
+      {
+         if (min_size > std::numeric_limits<difference_type>::max())
+         {
+            handle_bad_alloc_error("new size is too big");
+         }
+
+         const auto new_capacity =
+            std::clamp(2 * m_capacity + 1, min_size, std::numeric_limits<size_type>::max());
+
+         if (m_data) // already on the heap
+         {
+            try
+            {
+               auto new_alloc = std::make_unique<value_type[]>(new_capacity); // NOLINT
+
+               if constexpr (std::movable<value_type>)
+               {
+                  std::uninitialized_move(begin(), end(), iterator{new_alloc.get()});
+               }
+               else
+               {
+                  std::uninitialized_copy(begin(), end(), iterator{new_alloc.get()});
+               }
+
+               m_data = std::move(new_alloc);
+            }
+            catch (const std::bad_alloc&)
+            {
+               handle_bad_alloc_error("Failed to allocate new memory");
+            }
+         }
+         else // still using the static storage
+         {
+            try
+            {
+               m_data = std::make_unique<value_type[]>(new_capacity); // NOLINT
+
+               if constexpr (std::movable<value_type>)
+               {
+                  std::uninitialized_move(begin(), end(), iterator{m_data.get()});
+               }
+               else
+               {
+                  std::uninitialized_copy(begin(), end(), iterator{m_data.get()});
+               }
+            }
+            catch (const std::bad_alloc&)
+            {
+               handle_bad_alloc_error("Failed to allocate new memory");
+            }
+         }
+
+         m_capacity = new_capacity;
+      }
+
+      static void destroy_range(iterator first, iterator last)
+      {
+         if constexpr (!trivial<value_type>)
+         {
+            while (first != last)
+            {
+               first->~value_type();
+               ++first;
+            }
+         }
+      }
+
+   private:
+      std::unique_ptr<value_type[]> m_data; // NOLINT
+      size_type m_size{0};
+      size_type m_capacity{0};
+      details::static_array_storage<value_type, buffer_size_> m_storage;
+   };
+
    /**
     * @class tiny_dynamic_array dynamic_array.hpp <epona_core/containers/dynamic_array.hpp>
     * @author wmbat wmbat@protonmail.com
@@ -248,9 +469,9 @@ namespace core
       /**
        * @brief Replaces the content of the container with count copies of value value.
        *
-       * @details Removes all elements currently present in the container and places count copies of
-       * value value.All iterators, pointers and references to the elements of the container are
-       * invalidated. The past-the-end iterator is also invalidated. To call this function,
+       * @details Removes all elements currently present in the container and places count copies
+       * of value value.All iterators, pointers and references to the elements of the container
+       * are invalidated. The past-the-end iterator is also invalidated. To call this function,
        * #value_type must satisfy the <a
        * href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
        *
@@ -275,8 +496,8 @@ namespace core
        * @brief Replaces the contents of the container with copies of those in the range [first,
        * last).
        *
-       * @details Removes all elements currently present in the container and places copies of the
-       * range [first, last}. All iterators, pointers and references to the elements of the
+       * @details Removes all elements currently present in the container and places copies of
+       * the range [first, last}. All iterators, pointers and references to the elements of the
        * container are invalidated. The past-the-end iterator is also invalidated. To call this
        * function, #value_type must satisfy the <a
        * href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
@@ -310,12 +531,12 @@ namespace core
        * href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a>
        * initializer_list.
        *
-       * @details Removes all elements currently present in the container and places copies of the
-       * elements contained within the <a
+       * @details Removes all elements currently present in the container and places copies of
+       * the elements contained within the <a
        * href="https://en.cppreference.com/w/cpp/utility/initializer_list">std::initializer_list</a>
-       * initializer_list. All iterators, pointers and references to the elements of the container
-       * are invalidated. The past-the-end iterator is also invalidated. To call this function,
-       * #value_type must satisfy the <a
+       * initializer_list. All iterators, pointers and references to the elements of the
+       * container are invalidated. The past-the-end iterator is also invalidated. To call this
+       * function, #value_type must satisfy the <a
        * href="https://en.cppreference.com/w/cpp/concepts/copyable">std::copyable</a>
        *
        * @param[in] initializer_list The initializer list to copy the values from.
@@ -352,8 +573,8 @@ namespace core
       /**
        * @brief Return a #const_reference to the element at the index position in the container.
        *
-       * @details Return a #const_reference to the element at the index position in the container.
-       * Performs bounds checking. Will not throw if ESL_NO_EXCEPTIONS is defined.
+       * @details Return a #const_reference to the element at the index position in the
+       * container. Performs bounds checking. Will not throw if ESL_NO_EXCEPTIONS is defined.
        *
        * @throw std::out_of_range if index >= size().
        *
@@ -392,8 +613,8 @@ namespace core
       /**
        * @brief Return a #const_reference to the element at the index position in the container.
        *
-       * @details Return a #const_reference to the element at the index position in the container.
-       * Does not perform any bounds checking.
+       * @details Return a #const_reference to the element at the index position in the
+       * container. Does not perform any bounds checking.
        *
        * @param[in] index The index position of the desired element.
        *
@@ -503,14 +724,15 @@ namespace core
       size_type capacity() const noexcept { return cap; }
 
       /**
-       * @brief Increase the capacity of the container to a value greater than or equal to new_cap.
+       * @brief Increase the capacity of the container to a value greater than or equal to
+       * new_cap.
        *
-       * @details Increase the capacity of the dynamic_array to a value that's greater or equal to
-       * new_cap. If new_cap is greater than the current capacity(), new storage is allocated,
-       * otherwise the method does nothing. reserve() does not change the size of the dynamic_array.
-       * If new_cap is greater than capacity(), all iterators, including the past-the-end iterator,
-       * and all references to the elements are invalidated. Otherwise, no iterators or references
-       * are invalidated.
+       * @details Increase the capacity of the dynamic_array to a value that's greater or equal
+       * to new_cap. If new_cap is greater than the current capacity(), new storage is allocated,
+       * otherwise the method does nothing. reserve() does not change the size of the
+       * dynamic_array. If new_cap is greater than capacity(), all iterators, including the
+       * past-the-end iterator, and all references to the elements are invalidated. Otherwise, no
+       * iterators or references are invalidated.
        *
        * @param[in] new_cap The new capacity of the dynamic_array.
        */
@@ -775,8 +997,8 @@ namespace core
        *
        * @details Erases the element at pos. Invalidates iterators and references at or after the
        * point of the erase, including the end() iterator. The iterator pos must be valid and
-       * dereferenceable. Thus the end() iterator (which is valid, but is not dereferencable) cannot
-       * be used as a value for pos.
+       * dereferenceable. Thus the end() iterator (which is valid, but is not dereferencable)
+       * cannot be used as a value for pos.
        *
        * @param[in] pos The iterator to the element to remove.
        *
@@ -804,9 +1026,9 @@ namespace core
        * @brief Erases the specified elements from the container.
        *
        * @details Removes the elements in the range [first, last). Invalidates iterators and
-       * references at or after the point of the erase, including the end() iterator. The iterator
-       * first does not need to be dereferenceable if first==last: erasing an empty range is a
-       * no-op.
+       * references at or after the point of the erase, including the end() iterator. The
+       * iterator first does not need to be dereferenceable if first==last: erasing an empty
+       * range is a no-op.
        *
        * @param[in] first The first element inclusive of the range.
        * @param[in] last The last element exclusive of the range.
@@ -844,8 +1066,8 @@ namespace core
        * new size() is greater than capacity() then all iterators and references (including the
        * past-the-end iterator) are invalidated. Otherwise only the past-the-end iterator is
        * invalidated. #value_type must meet the <a
-       * href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a> requirements to
-       * use this function
+       * href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a> requirements
+       * to use this function
        *
        * @param[in] value The value of the element to append.
        */
@@ -871,12 +1093,12 @@ namespace core
       /**
        * @brief Appends the given element value to the end of the container.
        *
-       * @details Move the value into the new element at the end of the container. If the new size()
-       * is greater than capacity() then all iterators and references (including the past-the-end
-       * iterator) are invalidated. Otherwise only the past-the-end iterator is invalidated.
-       * #value_type must meet the <a
-       * href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a> requirements to
-       * use this function
+       * @details Move the value into the new element at the end of the container. If the new
+       * size() is greater than capacity() then all iterators and references (including the
+       * past-the-end iterator) are invalidated. Otherwise only the past-the-end iterator is
+       * invalidated. #value_type must meet the <a
+       * href="https://en.cppreference.com/w/cpp/concepts/movable">std::movable</a> requirements
+       * to use this function
        *
        * @param[in] value The value of the element to append.
        */
@@ -896,10 +1118,10 @@ namespace core
        * @brief Appends a new element at the end of the container.
        *
        * @details Constructs in place a new element at the end of the container. The arguments
-       * args... are forwarded to the constructor of the #value_type. If the new size() is greater
-       * than capacity() then all iterators and references (including the past-the-end iterator) are
-       * invalidated. Otherwise only the past-the-end iterator is invalidated. #value_type must meet
-       * the <a
+       * args... are forwarded to the constructor of the #value_type. If the new size() is
+       * greater than capacity() then all iterators and references (including the past-the-end
+       * iterator) are invalidated. Otherwise only the past-the-end iterator is invalidated.
+       * #value_type must meet the <a
        * href="https://en.cppreference.com/w/cpp/concepts/constructible_from">std::constructible_from<value_type,
        * args_...></a> requirements to use this function
        *
@@ -928,8 +1150,8 @@ namespace core
       /**
        * @brief Removes the last element of the container.
        *
-       * @brief Removels the last element in the container unless empty. Iterators and references to
-       * the last element, as well as the end() iterator, are invalidated.
+       * @brief Removels the last element in the container unless empty. Iterators and references
+       * to the last element, as well as the end() iterator, are invalidated.
        */
       void pop_back()
       {
@@ -943,10 +1165,10 @@ namespace core
       /**
        * @brief Resizes the container to container count elements.
        *
-       * @details  Resizes the container to container count elements. If the current size is greater
-       * that count, the container is reduced to its first count elements. If the current size is
-       * less than count, additional default-inserted elements are appended. #value_type must meet
-       * the <a
+       * @details  Resizes the container to container count elements. If the current size is
+       * greater that count, the container is reduced to its first count elements. If the current
+       * size is less than count, additional default-inserted elements are appended. #value_type
+       * must meet the <a
        * href="https://en.cppreference.com/w/cpp/concepts/default_initializable">std::default_initializable</a>
        * requirements to use this function
        *
@@ -978,9 +1200,10 @@ namespace core
       /**
        * @brief Resizes the container to container count elements.
        *
-       * @details  Resizes the container to container count elements. If the current size is greater
-       * that count, the container is reduced to its first count elements. If the current size is
-       * less than count, additional copies of value are appended. #value_type must meet the <a
+       * @details  Resizes the container to container count elements. If the current size is
+       * greater that count, the container is reduced to its first count elements. If the current
+       * size is less than count, additional copies of value are appended. #value_type must meet
+       * the <a
        * href="https://en.cppreference.com/w/cpp/concepts/default_initializable">std::default_initializable</a>
        * requirements to use this function
        *
@@ -1121,4 +1344,4 @@ namespace core
 
    template <class any_>
    using dynamic_array = tiny_dynamic_array<any_, 0>;
-} // namespace core
+} // namespace util

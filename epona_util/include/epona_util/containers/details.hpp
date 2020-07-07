@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace core::details
+namespace util::details
 {
    /**
     * @struct static_array_storage details.hpp <ESL/containers/details.hpp>
@@ -34,4 +34,4 @@ namespace core::details
    struct alignas(alignof(any_)) static_array_storage<any_, 0>
    {
    };
-} // namespace core::details
+} // namespace util::details

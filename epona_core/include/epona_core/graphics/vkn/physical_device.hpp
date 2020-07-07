@@ -7,15 +7,16 @@
 
 #pragma once
 
-#include <epona_core/detail/monad/either.hpp>
 #include <epona_core/graphics/vkn/instance.hpp>
+
+#include <epona_util/monad/either.hpp>
 
 namespace core::gfx::vkn
 {
    namespace detail
    {
-      auto get_graphics_queue_index(const range_over<vk::QueueFamilyProperties> auto& families)
-         -> maybe<uint32_t>
+      auto get_graphics_queue_index(
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -27,11 +28,11 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return to_maybe();
+         return util::to_maybe();
       }
 
       auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
-         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
          for (uint32_t i = 0; i < families.size(); ++i)
          {
@@ -41,7 +42,7 @@ namespace core::gfx::vkn
                if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
                   vk::Result::eSuccess)
                {
-                  return to_maybe();
+                  return util::to_maybe();
                }
             }
 
@@ -51,11 +52,11 @@ namespace core::gfx::vkn
             }
          }
 
-         return to_maybe();
+         return util::to_maybe();
       }
 
       auto get_dedicated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -69,11 +70,11 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return to_maybe();
+         return util::to_maybe();
       }
 
       auto get_dedicated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -87,13 +88,13 @@ namespace core::gfx::vkn
             ++i;
          }
 
-         return to_maybe();
+         return util::to_maybe();
       }
 
       auto get_separated_compute_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
-         maybe<uint32_t> compute{};
+         util::maybe<uint32_t> compute{};
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
@@ -117,9 +118,9 @@ namespace core::gfx::vkn
       }
 
       auto get_separated_transfer_queue_index(
-         const range_over<vk::QueueFamilyProperties> auto& families) -> maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
       {
-         maybe<uint32_t> transfer = to_maybe();
+         util::maybe<uint32_t> transfer = util::to_maybe();
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
@@ -177,7 +178,7 @@ namespace core::gfx::vkn
          vk::Instance instance{nullptr};
          vk::PhysicalDevice device{nullptr};
          vk::SurfaceKHR surface{nullptr};
-         dynamic_array<vk::QueueFamilyProperties> queue_families{};
+         util::dynamic_array<vk::QueueFamilyProperties> queue_families{};
       };
 
    public:
@@ -199,7 +200,8 @@ namespace core::gfx::vkn
       [[nodiscard]] auto value() const noexcept -> const vk::PhysicalDevice&;
       [[nodiscard]] auto features() const noexcept -> const vk::PhysicalDeviceFeatures&;
       [[nodiscard]] auto surface() const noexcept -> const vk::SurfaceKHR&;
-      [[nodiscard]] auto queue_families() const -> const dynamic_array<vk::QueueFamilyProperties>;
+      [[nodiscard]] auto queue_families() const
+         -> const util::dynamic_array<vk::QueueFamilyProperties>;
 
    private:
       std::string m_name{};
@@ -212,13 +214,13 @@ namespace core::gfx::vkn
       vk::PhysicalDevice m_device{nullptr};
       vk::SurfaceKHR m_surface{nullptr};
 
-      dynamic_array<vk::QueueFamilyProperties> m_queue_families{};
+      util::dynamic_array<vk::QueueFamilyProperties> m_queue_families{};
 
    public:
       class selector
       {
       public:
-         selector(const instance& instance, logger* plogger = nullptr);
+         selector(const instance& instance, util::logger* plogger = nullptr);
 
          [[nodiscard]] auto select() -> vkn::result<physical_device>;
 
@@ -233,14 +235,14 @@ namespace core::gfx::vkn
          auto select_first_gpu() noexcept -> selector&;
 
       private:
-         logger* m_plogger;
+         util::logger* m_plogger;
 
          struct system_info
          {
             vk::Instance instance{};
             vk::SurfaceKHR surface{};
 
-            dynamic_array<const char*> instance_extensions;
+            util::dynamic_array<const char*> instance_extensions;
          } m_system_info;
 
          struct selection_info
@@ -259,7 +261,7 @@ namespace core::gfx::vkn
          {
             vk::PhysicalDevice phys_device;
 
-            dynamic_array<vk::QueueFamilyProperties> queue_families{};
+            util::dynamic_array<vk::QueueFamilyProperties> queue_families{};
 
             vk::PhysicalDeviceFeatures features{};
             vk::PhysicalDeviceProperties properties{};

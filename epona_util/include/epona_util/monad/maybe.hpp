@@ -1,6 +1,6 @@
 #pragma once
 
-#include <epona_core/detail/concepts.hpp>
+#include <epona_util/concepts.hpp>
 
 #include <cassert>
 #include <concepts>
@@ -8,7 +8,7 @@
 #include <utility>
 #include <variant>
 
-namespace core
+namespace util
 {
    namespace detail
    {
@@ -353,4 +353,4 @@ namespace core
    {
       return maybe<any_>{};
    }
-} // namespace core
+} // namespace util

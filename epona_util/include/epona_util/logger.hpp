@@ -28,7 +28,7 @@
 #   define SHORT_FILE(name) (strrchr(name, '/') ? strrchr(name, '/') + 1 : name)
 #endif
 
-namespace core
+namespace util
 {
    using src_location = std::experimental::source_location;
 
@@ -209,4 +209,4 @@ namespace core
             args);
       }
    }
-} // namespace core
+} // namespace util

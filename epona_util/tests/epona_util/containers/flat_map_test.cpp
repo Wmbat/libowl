@@ -1,4 +1,4 @@
-#include <epona_core/containers/flat_map.hpp>
+#include <epona_util/containers/flat_map.hpp>
 
 #include <gtest/gtest.h>
 #include <string>
@@ -37,12 +37,12 @@ struct tiny_flat_avl_map_test : public testing::Test
 
 TEST_F(tiny_flat_avl_map_test, default_ctor)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 }
 
 TEST_F(tiny_flat_avl_map_test, clear)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -80,7 +80,7 @@ TEST_F(tiny_flat_avl_map_test, clear)
 
 TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -114,7 +114,7 @@ TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
 
 TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -148,7 +148,7 @@ TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
 
 TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    {
       EXPECT_EQ(map.size(), 0);
@@ -181,14 +181,14 @@ TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
       EXPECT_EQ(map.size(), 2);
    }
 
-   core::tiny_flat_map<int, int, 16> map_2{};
+   util::tiny_flat_map<int, int, 16> map_2{};
 
    map_2.insert(map.cbegin(), map.cend());
 }
 
 TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
 {
-   core::tiny_flat_map<int, copyable, 2> map{};
+   util::tiny_flat_map<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -211,7 +211,7 @@ TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
 
 TEST_F(tiny_flat_avl_map_test, emplace)
 {
-   core::tiny_flat_map<int, std::string, 8> map{};
+   util::tiny_flat_map<int, std::string, 8> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 8);
@@ -247,7 +247,7 @@ TEST_F(tiny_flat_avl_map_test, emplace)
 
 TEST_F(tiny_flat_avl_map_test, try_emplace)
 {
-   core::tiny_flat_map<int, std::string, 16> map{};
+   util::tiny_flat_map<int, std::string, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -282,7 +282,7 @@ TEST_F(tiny_flat_avl_map_test, try_emplace)
 
 TEST_F(tiny_flat_avl_map_test, erase)
 {
-   core::tiny_flat_map<int, copyable, 2> map{};
+   util::tiny_flat_map<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -319,7 +319,7 @@ TEST_F(tiny_flat_avl_map_test, erase)
 
 TEST_F(tiny_flat_avl_map_test, erase_iterator_range)
 {
-   core::tiny_flat_map<int, copyable, 2> map{};
+   util::tiny_flat_map<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -344,7 +344,7 @@ TEST_F(tiny_flat_avl_map_test, erase_iterator_range)
 
 TEST_F(tiny_flat_avl_map_test, count)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -381,7 +381,7 @@ TEST_F(tiny_flat_avl_map_test, count)
 
 TEST_F(tiny_flat_avl_map_test, find)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -428,7 +428,7 @@ TEST_F(tiny_flat_avl_map_test, find)
 
 TEST_F(tiny_flat_avl_map_test, find_const)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -471,7 +471,7 @@ TEST_F(tiny_flat_avl_map_test, find_const)
 
 TEST_F(tiny_flat_avl_map_test, contains)
 {
-   core::tiny_flat_map<int, int, 16> map{};
+   util::tiny_flat_map<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);

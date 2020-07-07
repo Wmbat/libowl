@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <epona_core/containers/dynamic_array.hpp>
-#include <epona_core/detail/concepts.hpp>
 #include <epona_core/graphics/vkn/core.hpp>
+
+#include <epona_util/concepts.hpp>
+#include <epona_util/containers/dynamic_array.hpp>
 
 #include <ranges>
 
@@ -44,7 +45,7 @@ namespace core::gfx::vkn
 
       instance() = default;
       instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-         dynamic_array<const char*> extension, uint32_t version);
+         util::dynamic_array<const char*> extension, uint32_t version);
       instance(const instance&) = delete;
       instance(instance&&) noexcept;
       ~instance();
@@ -55,13 +56,13 @@ namespace core::gfx::vkn
       auto value() noexcept -> vk::Instance&;
       [[nodiscard]] auto value() const noexcept -> const vk::Instance&;
 
-      [[nodiscard]] auto extensions() const -> const dynamic_array<const char*>&;
+      [[nodiscard]] auto extensions() const -> const util::dynamic_array<const char*>&;
 
    private:
       vk::Instance m_instance;
       vk::DebugUtilsMessengerEXT m_debug_utils;
 
-      dynamic_array<const char*> m_extensions;
+      util::dynamic_array<const char*> m_extensions;
 
       uint32_t m_version = 0;
 
@@ -72,7 +73,7 @@ namespace core::gfx::vkn
          static constexpr uint32_t AVG_LAYER_COUNT = 8;
 
       public:
-         builder(const loader& vk_loader, logger* const p_logger = nullptr);
+         builder(const loader& vk_loader, util::logger* const p_logger = nullptr);
 
          [[nodiscard]] auto build() -> vkn::result<instance>;
 
@@ -85,18 +86,19 @@ namespace core::gfx::vkn
 
       private:
          auto has_validation_layer_support(
-            const range_over<vk::LayerProperties> auto& properties) const -> bool;
+            const util::range_over<vk::LayerProperties> auto& properties) const -> bool;
          auto has_debug_utils_support(
-            const range_over<vk::ExtensionProperties> auto& properties) const -> bool;
+            const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool;
 
-         [[nodiscard]] auto get_all_ext(const dynamic_array<vk::ExtensionProperties>& properties,
+         [[nodiscard]] auto get_all_ext(
+            const util::dynamic_array<vk::ExtensionProperties>& properties,
             bool are_debug_utils_available) const
-            -> vkn::result<tiny_dynamic_array<const char*, AVG_EXT_COUNT>>;
+            -> vkn::result<util::tiny_dynamic_array<const char*, AVG_EXT_COUNT>>;
 
       private:
          const loader& m_loader;
 
-         logger* const m_plogger;
+         util::logger* const m_plogger;
 
          struct info
          {
@@ -105,8 +107,8 @@ namespace core::gfx::vkn
             uint32_t app_version{0};
             uint32_t engine_version{0};
 
-            dynamic_array<const char*> layers;
-            dynamic_array<const char*> extensions;
+            util::dynamic_array<const char*> layers;
+            util::dynamic_array<const char*> extensions;
          } m_info;
       };
    };

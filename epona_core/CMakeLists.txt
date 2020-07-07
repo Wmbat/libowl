@@ -43,7 +43,7 @@ include(CMakeLists.txt.in)
 if (EPONA_CORE_BUILD_TESTS) 
     enable_testing( )
 
-    add_subdirectory(tests)
+    #    add_subdirectory(tests)
 endif ()
 
 # Define exported targets
@@ -101,7 +101,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        spdlog::spdlog
+        epona_util
         Vulkan-Headers
         glfw
         glslang
@@ -126,8 +126,6 @@ target_sources(${PROJECT_NAME}
         source/epona_core/memory/multipool_allocator.cpp
         source/epona_core/memory/pool_allocator.cpp
         source/epona_core/memory/stack_allocator.cpp
-
-        source/epona_core/detail/logger.cpp
 
         source/epona_core/graphics/gui/widget.cpp
         source/epona_core/graphics/gui/window.cpp

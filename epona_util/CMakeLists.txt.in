@@ -1,0 +1,5 @@
+CPMAddPackage(
+    NAME spdlog
+    VERSION 1.6.1
+    GITHUB_REPOSITORY gabime/spdlog
+) 

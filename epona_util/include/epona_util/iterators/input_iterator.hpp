@@ -27,44 +27,32 @@
 #include <cstdint>
 #include <iterator>
 
-namespace core
+namespace util
 {
-   template <class any_>
-   class bidirectional_iterator
+   template <class type_>
+   class input_iterator
    {
    public:
-      using iterator_category = std::bidirectional_iterator_tag;
-      using self_type = bidirectional_iterator;
-      using value_type = any_;
-      using reference = value_type&;
-      using const_reference = value_type const&;
-      using pointer = value_type*;
-      using const_pointer = value_type const*;
+      using iterator_category = std::input_iterator_tag;
+      using self_type = input_iterator;
+      using value_type = type_;
+      using reference = type_&;
+      using const_reference = type_ const&;
+      using pointer = type_*;
+      using const_pointer = type_ const*;
       using difference_type = std::ptrdiff_t;
 
    public:
-      constexpr bidirectional_iterator() noexcept = default;
-      constexpr explicit bidirectional_iterator(pointer p_type) noexcept : p_type(p_type) {}
+      constexpr explicit input_iterator() = default;
+      constexpr explicit input_iterator(pointer p_type) noexcept : p_type(p_type) {}
 
-      constexpr auto operator==(self_type rhs) const noexcept -> bool = default;
+      constexpr auto operator==(const self_type& rhs) const noexcept -> bool = default;
 
-      constexpr auto operator*() noexcept -> reference
-      {
-         assert(p_type != nullptr && "Cannot derefence a nullptr");
-
-         return *p_type;
-      }
       constexpr auto operator*() const noexcept -> const_reference
       {
          assert(p_type != nullptr && "Cannot derefence a nullptr");
 
          return *p_type;
-      }
-      constexpr auto operator->() noexcept -> pointer
-      {
-         assert(p_type != nullptr && "Cannot use derefence a nullptr");
-
-         return p_type;
       }
       constexpr auto operator->() const noexcept -> const_pointer
       {
@@ -79,24 +67,11 @@ namespace core
 
          return *this;
       }
-      constexpr auto operator--() noexcept -> self_type&
-      {
-         --p_type;
-
-         return *this;
-      }
 
       constexpr auto operator++(int) const noexcept -> self_type
       {
          self_type it = *this;
          ++*this;
-
-         return it;
-      }
-      constexpr auto operator--(int) const noexcept -> self_type
-      {
-         self_type it = *this;
-         --*this;
 
          return it;
       }
@@ -106,4 +81,4 @@ namespace core
    private:
       pointer p_type{nullptr};
    };
-} // namespace core
+} // namespace util

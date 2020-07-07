@@ -7,24 +7,24 @@
 
 #pragma once
 
-#include "epona_core/detail/logger.hpp"
+#include <epona_util/logger.hpp>
 
 #include <string_view>
 
-namespace core
+namespace util
 {
-#ifndef ESL_NO_LOGGING
+#ifndef UTIL_NO_LOGGING
 
-   inline static logger ESL_error_logger{"ESL error logger"};
+   inline static logger util_error_logger{"epone_util_logger"};
 #endif
 
    static inline void handle_bad_alloc_error([[maybe_unused]] std::string_view error_msg)
    {
-#ifndef ESL_NO_EXCEPTIONS
+#ifndef UTIL_NO_EXCEPTIONS
       throw std::bad_alloc{};
 #else
-#   ifndef ESL_NO_LOGGING
-      ESL_error_logger.error(error_msg);
+#   ifndef UTIL_NO_LOGGING
+      util_error_logger.error(error_msg);
 #   endif
 
       abort();
@@ -33,14 +33,14 @@ namespace core
 
    static inline void handle_out_of_range_error([[maybe_unused]] std::string_view error_msg)
    {
-#ifndef ESL_NO_EXCEPTIONS
+#ifndef UTIL_NO_EXCEPTIONS
       throw std::out_of_range{error_msg.data()};
 #else
-#   ifndef ESL_NO_LOGGING
-      ESL_error_logger.error(error_msg);
+#   ifndef UTIL_NO_LOGGING
+      util_error_logger.error(error_msg);
 #   endif
 
       abort();
 #endif
    }
-} // namespace core
+} // namespace util

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "epona_core/graphics/gui/widget.hpp"
-#include "epona_core/graphics/vkn/core.hpp"
+#include <epona_core/graphics/gui/widget.hpp>
+#include <epona_core/graphics/vkn/core.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -20,9 +20,9 @@ namespace core::gfx
       window();
       window(std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in);
 
-      bool is_open();
+      auto is_open() -> bool;
 
-      vkn::result<vk::SurfaceKHR> get_surface(vk::Instance instance) const;
+      [[nodiscard]] auto get_surface(vk::Instance instance) const -> vkn::result<vk::SurfaceKHR>;
 
    private:
       std::string title{"EGL standard window"};

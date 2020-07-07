@@ -1,12 +1,12 @@
 #pragma once
 
-#include <epona_core/detail/monad/maybe.hpp>
+#include <epona_util/monad/maybe.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <utility>
 
-namespace core
+namespace util
 {
    namespace monad
    {
@@ -460,4 +460,4 @@ namespace core
       }
       // clang-format on  
    } // namespace monad
-} // namespace core
+} // namespace util

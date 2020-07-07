@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <epona_core/containers/details.hpp>
-#include <epona_core/containers/dynamic_array.hpp>
-#include <epona_core/detail/concepts.hpp>
-#include <epona_core/detail/error_handling.hpp>
+#include <epona_util/concepts.hpp>
+#include <epona_util/containers/details.hpp>
+#include <epona_util/containers/dynamic_array.hpp>
+#include <epona_util/containers/error_handling.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -20,7 +20,7 @@
 #include <tuple>
 #include <utility>
 
-namespace core
+namespace util
 {
    template <std::equality_comparable key_, class val_, std::size_t buff_sz,
       class compare_ = std::less<key_>>
@@ -344,4 +344,4 @@ namespace core
    private:
       container_type data;
    };
-} // namespace core
+} // namespace util

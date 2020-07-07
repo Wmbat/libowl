@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <epona_core/containers/dynamic_array.hpp>
+#include <epona_util/containers/dynamic_array.hpp>
+
 #include <epona_core/graphics/vkn/core.hpp>
 #include <epona_core/graphics/vkn/physical_device.hpp>
 
@@ -37,7 +38,7 @@ namespace core::gfx::vkn
       {
          uint32_t index = 0;
          uint32_t count = 0;
-         dynamic_array<float> priorities;
+         util::dynamic_array<float> priorities;
       };
    } // namespace queue
 
@@ -51,8 +52,8 @@ namespace core::gfx::vkn
       };
 
       device() = default;
-      device(
-         physical_device physical_device, vk::Device device, dynamic_array<const char*> extensions);
+      device(physical_device physical_device, vk::Device device,
+         util::dynamic_array<const char*> extensions);
       device(const device&) = delete;
       device(device&&) noexcept;
       ~device();
@@ -75,31 +76,32 @@ namespace core::gfx::vkn
 
       vk::Device m_device;
 
-      dynamic_array<const char*> m_extensions;
+      util::dynamic_array<const char*> m_extensions;
 
    public:
       class builder
       {
       public:
          builder(const loader& vk_loader, physical_device&& phys_device,
-            logger* const plogger = nullptr);
+            util::logger* const plogger = nullptr);
 
          [[nodiscard]] auto build() -> vkn::result<device>;
 
-         auto set_queue_setup(const dynamic_array<queue::description>& descriptions) -> builder&;
+         auto set_queue_setup(const util::dynamic_array<queue::description>& descriptions)
+            -> builder&;
          auto add_desired_extension(const std::string& extension_name) -> builder&;
 
       private:
          const loader& m_loader;
 
-         logger* const m_plogger;
+         util::logger* const m_plogger;
 
          struct info
          {
             physical_device phys_device;
 
-            dynamic_array<queue::description> queue_descriptions;
-            dynamic_array<const char*> desired_extensions;
+            util::dynamic_array<queue::description> queue_descriptions;
+            util::dynamic_array<const char*> desired_extensions;
          } m_info;
       };
    };

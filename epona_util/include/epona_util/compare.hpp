@@ -27,7 +27,7 @@
 #include <compare>
 #include <concepts>
 
-namespace core
+namespace util
 {
    template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
    constexpr auto synth_three_way(lhs_ const& lhs, rhs_ const& rhs)
@@ -52,4 +52,4 @@ namespace core
          }
       }
    }
-} // namespace core
+} // namespace util

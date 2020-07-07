@@ -28,7 +28,7 @@
 #include <cstdint>
 #include <iterator>
 
-namespace core
+namespace util
 {
    /**
     * @class random_access_iterator random_access_iterator.hpp
@@ -149,4 +149,4 @@ namespace core
    private:
       pointer p_type{nullptr};
    };
-} // namespace core
+} // namespace util

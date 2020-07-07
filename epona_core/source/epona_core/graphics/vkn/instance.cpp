@@ -1,4 +1,3 @@
-#include <epona_core/detail/monad/either.hpp>
 #include <epona_core/graphics/vkn/instance.hpp>
 
 #include <functional>
@@ -11,7 +10,7 @@ namespace core::gfx::vkn
       VkDebugUtilsMessageTypeFlagsEXT messageType,
       const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) -> VkBool32
    {
-      auto* p_logger = static_cast<core::logger*>(p_user_data);
+      auto* p_logger = static_cast<util::logger*>(p_user_data);
 
       std::string type;
       if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
@@ -113,7 +112,7 @@ namespace core::gfx::vkn
    /* INSTANCE */
 
    instance::instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-      dynamic_array<const char*> extension, uint32_t version) :
+      util::dynamic_array<const char*> extension, uint32_t version) :
       m_instance{instance},
       m_debug_utils{debug_utils}, m_extensions(std::move(extension)), m_version(version)
    {}
@@ -151,12 +150,15 @@ namespace core::gfx::vkn
    auto instance::value() noexcept -> vk::Instance& { return m_instance; }
    auto instance::value() const noexcept -> const vk::Instance& { return m_instance; }
 
-   auto instance::extensions() const -> const dynamic_array<const char*>& { return m_extensions; }
+   auto instance::extensions() const -> const util::dynamic_array<const char*>&
+   {
+      return m_extensions;
+   }
 
    /* INSTANCE BUILDER */
    using builder = instance::builder;
 
-   builder::builder(const loader& vk_loader, logger* const plogger) :
+   builder::builder(const loader& vk_loader, util::logger* const plogger) :
       m_loader{vk_loader}, m_plogger{plogger}
    {}
 
@@ -164,21 +166,21 @@ namespace core::gfx::vkn
    {
       using err_t = vkn::error;
 
-      const auto version_res = monad::try_wrap<vk::SystemError>([] {
+      const auto version_res = util::monad::try_wrap<vk::SystemError>([] {
          return vk::enumerateInstanceVersion(); // may throw
       });
 
       if (version_res.is_left())
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(instance::error::vulkan_version_unavailable),
             .result = static_cast<vk::Result>(version_res.left()->code().value())
          });
          // clang-format on
       }
 
-      const auto system_layers_res = monad::try_wrap<vk::SystemError>([&] {
+      const auto system_layers_res = util::monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceLayerProperties();
       });
 
@@ -191,7 +193,7 @@ namespace core::gfx::vkn
          }
       }
 
-      const auto system_exts_res = monad::try_wrap<vk::SystemError>([&] {
+      const auto system_exts_res = util::monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceExtensionProperties();
       });
 
@@ -218,7 +220,7 @@ namespace core::gfx::vkn
       if (VK_VERSION_MINOR(api_version) < 2)
       {
          // clang-format off
-         return monad::error<err_t>{.val = {
+         return util::monad::error<err_t>{.val = {
             .type = detail::make_error_code(instance::error::vulkan_version_1_2_unavailable),
             .result = {}
          }};
@@ -238,7 +240,7 @@ namespace core::gfx::vkn
       auto extension_names_res = get_all_ext(sys_exts, debug_utils_available);
       if (!extension_names_res)
       {
-         return monad::to_error(extension_names_res.error().value());
+         return util::monad::to_error(extension_names_res.error().value());
       }
 
       const auto extensions = std::move(extension_names_res.value().value());
@@ -260,7 +262,7 @@ namespace core::gfx::vkn
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
-         tiny_dynamic_array<const char*, AVG_LAYER_COUNT> layers{m_info.layers};
+         util::tiny_dynamic_array<const char*, AVG_LAYER_COUNT> layers{m_info.layers};
 
          if (validation_layers_available)
          {
@@ -275,7 +277,7 @@ namespace core::gfx::vkn
                if (!is_present)
                {
                   // clang-format off
-                  return monad::error<err_t>{.val = {
+                  return util::monad::error<err_t>{.val = {
                      .type = detail::make_error_code(instance::error::instance_layer_not_supported),
                      .result = {}
                   }};
@@ -293,14 +295,14 @@ namespace core::gfx::vkn
          }
       }
 
-      auto instance_res = monad::try_wrap<vk::SystemError>([&] {
+      auto instance_res = util::monad::try_wrap<vk::SystemError>([&] {
          return vk::createInstance(instance_create_info); // may throw
       });
 
       if (instance_res.is_left())
       {
          // clang-format off
-         return monad::to_error(err_t{
+         return util::monad::to_error(err_t{
             .type = detail::make_error_code(instance::error::failed_to_create_instance),
             .result = static_cast<vk::Result>(instance_res.left()->code().value())
          });
@@ -330,14 +332,14 @@ namespace core::gfx::vkn
             .setPUserData(static_cast<void*>(m_plogger));
          // clang-format on
 
-         auto debug_res = monad::try_wrap<vk::SystemError>([&] {
+         auto debug_res = util::monad::try_wrap<vk::SystemError>([&] {
             return vk_inst.createDebugUtilsMessengerEXT(debug_create_info);
          });
 
          if (debug_res.is_left())
          {
             // clang-format off
-            return monad::to_error(err_t{
+            return util::monad::to_error(err_t{
                .type = detail::make_error_code(instance::error::failed_to_create_debug_utils),
                .result = static_cast<vk::Result>(debug_res.left()->code().value())
             });
@@ -351,7 +353,7 @@ namespace core::gfx::vkn
          // clang-format on
       }
 
-      return monad::to_value(instance(vk_inst, vk_mess, extensions, api_version));
+      return util::monad::to_value(instance(vk_inst, vk_mess, extensions, api_version));
    } // namespace core::gfx::vkn
 
    auto builder::set_application_name(std::string_view app_name) -> builder&
@@ -392,7 +394,7 @@ namespace core::gfx::vkn
    }
 
    auto builder::has_validation_layer_support(
-      const range_over<vk::LayerProperties> auto& properties) const -> bool
+      const util::range_over<vk::LayerProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkLayerProperties& layer) {
          return strcmp(static_cast<const char*>(layer.layerName), "VK_LAYER_KHRONOS_validation") ==
@@ -401,7 +403,7 @@ namespace core::gfx::vkn
    }
 
    auto instance::builder::has_debug_utils_support(
-      const range_over<vk::ExtensionProperties> auto& properties) const -> bool
+      const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkExtensionProperties& ext) {
          return strcmp(static_cast<const char*>(ext.extensionName),
@@ -409,13 +411,13 @@ namespace core::gfx::vkn
       }) != properties.end();
    }
 
-   auto builder::get_all_ext(const dynamic_array<vk::ExtensionProperties>& properties,
+   auto builder::get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
       bool are_debug_utils_available) const
-      -> vkn::result<tiny_dynamic_array<const char*, AVG_EXT_COUNT>>
+      -> vkn::result<util::tiny_dynamic_array<const char*, AVG_EXT_COUNT>>
    {
       using err_t = vkn::error;
 
-      tiny_dynamic_array<const char*, AVG_EXT_COUNT> extensions = m_info.extensions;
+      util::tiny_dynamic_array<const char*, AVG_EXT_COUNT> extensions = m_info.extensions;
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
@@ -460,7 +462,7 @@ namespace core::gfx::vkn
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
          // clang-format off
-         return monad::error<err_t>{.val = {
+         return util::monad::error<err_t>{.val = {
             .type = detail::make_error_code(instance::error::window_extensions_not_present),
             .result = {}
          }};
@@ -476,7 +478,7 @@ namespace core::gfx::vkn
          if (!is_present)
          {
             // clang-format off
-            return monad::error<err_t>{.val = {
+            return util::monad::error<err_t>{.val = {
                .type = detail::make_error_code(instance::error::instance_extension_not_supported),
                .result = {}
             }};
@@ -484,6 +486,6 @@ namespace core::gfx::vkn
          }
       }
 
-      return monad::to_value(extensions);
+      return util::monad::to_value(extensions);
    }
 } // namespace core::gfx::vkn

@@ -36,9 +36,3 @@ CPMAddPackage(
     VERSION 1.2.135
     GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
 ) 
-
-CPMAddPackage(
-    NAME spdlog
-    VERSION 1.6.1
-    GITHUB_REPOSITORY gabime/spdlog
-) 
