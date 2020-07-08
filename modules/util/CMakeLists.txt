@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
 
 # Set the project language toolchain, version and description
 
-project(epona_util
+project(util
    VERSION 0.0.1
    DESCRIPTION "The general utilities used by the engine"
    LANGUAGES CXX
@@ -49,6 +49,7 @@ endif ()
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
+add_library(epona::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if (EPONA_UTIL_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_STATIC) 

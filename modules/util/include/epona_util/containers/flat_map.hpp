@@ -8,7 +8,6 @@
 #pragma once
 
 #include <epona_util/concepts.hpp>
-#include <epona_util/containers/details.hpp>
 #include <epona_util/containers/dynamic_array.hpp>
 #include <epona_util/containers/error_handling.hpp>
 

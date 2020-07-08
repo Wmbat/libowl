@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
 
 # Set the project language toolchain, version and description
 
-project(epona_core
+project(core
    VERSION 0.0.1
    DESCRIPTION "Main components of the epona renderer"
    LANGUAGES CXX
@@ -49,6 +49,7 @@ endif ()
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
+add_library(epona::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if (EPONA_CORE_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE EPONA_STATIC) 
@@ -101,7 +102,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        epona_util
+        epona::util 
         Vulkan-Headers
         glfw
         glslang

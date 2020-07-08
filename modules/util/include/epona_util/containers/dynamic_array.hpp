@@ -9,7 +9,6 @@
 
 #include <epona_util/compare.hpp>
 #include <epona_util/concepts.hpp>
-#include <epona_util/containers/details.hpp>
 #include <epona_util/containers/error_handling.hpp>
 #include <epona_util/iterators/input_iterator.hpp>
 #include <epona_util/iterators/random_access_iterator.hpp>
@@ -27,6 +26,31 @@
 
 namespace util
 {
+   namespace detail
+   {
+      /**
+       * @struct static_array_storage details.hpp <ESL/containers/tiny_dynamic_array.hpp>
+       * @author wmbat wmbat@protonmail.com
+       * @date Monday, April 29th, 2020
+       * @copyright MIT License.
+       * @brief A small buffer class that represents an array.
+       *
+       * @tparam any_, The type of objects that can be contained in the static storage of the
+       * container.
+       * @tparam buff_sz, The size of the storage.
+       */
+      template <class any_, std::size_t buff_sz>
+      struct static_array_storage
+      {
+         std::array<std::aligned_storage_t<sizeof(any_), alignof(any_)>, buff_sz> buffer;
+      };
+
+      template <class any_>
+      struct alignas(alignof(any_)) static_array_storage<any_, 0>
+      {
+      };
+   } // namespace detail
+
    template <class any_, std::size_t buffer_size_>
    class test
    {
@@ -44,8 +68,9 @@ namespace util
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit test() : m_capacity{buffer_size_} {}
+      explicit test() : m_pbegin{get_first_element()}, m_capacity{buffer_size_} {}
       explicit test(size_type count) requires std::default_initializable<value_type> :
+         m_pbegin{get_first_element()},
          m_capacity{buffer_size_}
       {
          if (!assign(count, value_type{}))
@@ -69,72 +94,41 @@ namespace util
          std::uninitialized_fill(begin(), end(), value);
       }
 
-      auto begin() noexcept -> iterator
+      constexpr auto at(size_type pos) -> reference
       {
-         if (m_data)
+         if (index >= size())
          {
-            return iterator{m_data.get()};
+            handle_out_of_range_error("Index: " + std::to_string(pos) + " is out of bounds");
          }
          else
          {
-            return iterator{reinterpret_cast<value_type*>(&m_storage)}; // NOLINT
+            return m_pbegin[pos];
          }
       }
-      auto begin() const noexcept -> const_iterator
+      constexpr auto at(size_type pos) const -> const_reference
       {
-         if (m_data)
+         if (index >= size())
          {
-            return const_iterator{m_data.get()};
+            handle_out_of_range_error("Index: " + std::to_string(pos) + " is out of bounds");
          }
          else
          {
-            return iterator{reinterpret_cast<const value_type*>(&m_storage)}; // NOLINT
-         }
-      }
-      auto cbegin() const noexcept -> const_iterator
-      {
-         if (m_data)
-         {
-            return const_iterator{m_data.get()};
-         }
-         else
-         {
-            return iterator{reinterpret_cast<const value_type*>(&m_storage)}; // NOLINT
+            return m_pbegin[pos];
          }
       }
 
-      auto end() noexcept -> iterator
+      constexpr auto begin() noexcept -> iterator { return iterator{m_pbegin}; }
+      constexpr auto begin() const noexcept -> const_iterator { return const_iterator{m_pbegin}; }
+      constexpr auto cbegin() const noexcept -> const_iterator { return const_iterator{m_pbegin}; }
+
+      constexpr auto end() noexcept -> iterator { return iterator{m_pbegin + m_size}; }
+      constexpr auto end() const noexcept -> const_iterator
       {
-         if (m_data)
-         {
-            return iterator{m_data.get() + m_size};
-         }
-         else
-         {
-            return iterator{reinterpret_cast<value_type*>(&m_storage) + m_size}; // NOLINT
-         }
+         return const_iterator{m_pbegin + m_size};
       }
-      auto end() const noexcept -> const_iterator
+      constexpr auto cend() const noexcept -> const_iterator
       {
-         if (m_data)
-         {
-            return const_iterator{m_data.get() + m_size};
-         }
-         else
-         {
-            return iterator{reinterpret_cast<const value_type*>(&m_storage) + m_size}; // NOLINT
-         }
-      }
-      auto cend() const noexcept -> const_iterator
-      {
-         if (m_data)
-         {
-            return const_iterator{m_data.get() + m_size};
-         }
-         else
-         {
-            return iterator{reinterpret_cast<const value_type*>(&m_storage) + m_size}; // NOLINT
-         }
+         return const_iterator{m_pbegin + m_size};
       }
 
       auto rbegin() noexcept -> reverse_iterator { return reverse_iterator{end()}; }
@@ -172,6 +166,16 @@ namespace util
       }
 
    private:
+      [[nodiscard]] auto is_static() const noexcept -> bool
+      {
+         return m_pbegin == get_first_element();
+      }
+
+      auto get_first_element() -> pointer
+      {
+         return reinterpret_cast<pointer>(&m_storage); // NOLINT
+      }
+
       void grow(size_type min_size = 0)
       {
          if (min_size > std::numeric_limits<difference_type>::max())
@@ -182,47 +186,26 @@ namespace util
          const auto new_capacity =
             std::clamp(2 * m_capacity + 1, min_size, std::numeric_limits<size_type>::max());
 
-         if (m_data) // already on the heap
+         try
          {
-            try
-            {
-               auto new_alloc = std::make_unique<value_type[]>(new_capacity); // NOLINT
+            pointer new_alloc = new value_type[new_capacity]; // NOLINT
 
-               if constexpr (std::movable<value_type>)
-               {
-                  std::uninitialized_move(begin(), end(), iterator{new_alloc.get()});
-               }
-               else
-               {
-                  std::uninitialized_copy(begin(), end(), iterator{new_alloc.get()});
-               }
-
-               m_data = std::move(new_alloc);
-            }
-            catch (const std::bad_alloc&)
+            if constexpr (std::movable<value_type>)
             {
-               handle_bad_alloc_error("Failed to allocate new memory");
+               std::uninitialized_move(begin(), end(), iterator{new_alloc});
             }
+            else
+            {
+               std::uninitialized_copy(begin(), end(), iterator{new_alloc});
+            }
+
+            destroy_range(begin(), end());
+
+            m_pbegin = new_alloc;
          }
-         else // still using the static storage
+         catch (const std::bad_alloc&)
          {
-            try
-            {
-               m_data = std::make_unique<value_type[]>(new_capacity); // NOLINT
-
-               if constexpr (std::movable<value_type>)
-               {
-                  std::uninitialized_move(begin(), end(), iterator{m_data.get()});
-               }
-               else
-               {
-                  std::uninitialized_copy(begin(), end(), iterator{m_data.get()});
-               }
-            }
-            catch (const std::bad_alloc&)
-            {
-               handle_bad_alloc_error("Failed to allocate new memory");
-            }
+            handle_bad_alloc_error("Failed to allocate new memory");
          }
 
          m_capacity = new_capacity;
@@ -241,10 +224,10 @@ namespace util
       }
 
    private:
-      std::unique_ptr<value_type[]> m_data; // NOLINT
+      pointer m_pbegin{nullptr};
       size_type m_size{0};
       size_type m_capacity{0};
-      details::static_array_storage<value_type, buffer_size_> m_storage;
+      detail::static_array_storage<value_type, buffer_size_> m_storage;
    };
 
    /**
@@ -1339,7 +1322,7 @@ namespace util
       pointer p_begin{nullptr};
       size_type elem_count{0};
       size_type cap{0};
-      details::static_array_storage<value_type, buff_sz> storage;
+      detail::static_array_storage<value_type, buff_sz> storage;
    };
 
    template <class any_>

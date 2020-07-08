@@ -54,8 +54,8 @@ set(EPONA_CORE_STATIC ON CACHE BOOL "" FORCE)
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
-add_subdirectory(epona_core)
-add_subdirectory(epona_util)
+add_subdirectory(modules/core)
+add_subdirectory(modules/util)
 
 add_executable(${PROJECT_NAME})
 
@@ -78,7 +78,7 @@ target_compile_options(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
    PUBLIC
       epona_core
-      epona_util
+      epona::util
 
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>

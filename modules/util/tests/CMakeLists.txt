@@ -32,7 +32,7 @@ add_executable(epona_util_test)
 
 target_link_libraries(epona_util_test
    PUBLIC
-      epona_util
+      epona::util 
       gtest
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
