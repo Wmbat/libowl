@@ -2,11 +2,11 @@
  * @mainpage Epona
  */
 
-#include <epona_core/core.hpp>
-#include <epona_core/memory/pool_allocator.hpp>
-#include <epona_core/render_manager.hpp>
+#include <core/core.hpp>
+#include <core/memory/pool_allocator.hpp>
+#include <core/render_manager.hpp>
 
-#include <epona_util/logger.hpp>
+#include <util/logger.hpp>
 
 #include <map>
 

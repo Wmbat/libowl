@@ -117,24 +117,24 @@ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
         PRIVATE 
             <algorithm> <concepts> <type_traits>
             <cassert> <compare> <cstdint> <cstddef>
-            <memory> <spdlog/spdlog.h>
+            <memory>
     )
 endif()
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        source/epona_core/memory/monotonic_allocator.cpp
-        source/epona_core/memory/multipool_allocator.cpp
-        source/epona_core/memory/pool_allocator.cpp
-        source/epona_core/memory/stack_allocator.cpp
+        source/core/memory/monotonic_allocator.cpp
+        source/core/memory/multipool_allocator.cpp
+        source/core/memory/pool_allocator.cpp
+        source/core/memory/stack_allocator.cpp
 
-        source/epona_core/graphics/gui/widget.cpp
-        source/epona_core/graphics/gui/window.cpp
-        source/epona_core/graphics/vkn/core.cpp
-        source/epona_core/graphics/vkn/device.cpp
-        source/epona_core/graphics/vkn/instance.cpp
-        source/epona_core/graphics/vkn/physical_device.cpp
-        source/epona_core/graphics/vkn/swapchain.cpp
+        source/core/graphics/gui/widget.cpp
+        source/core/graphics/gui/window.cpp
+        source/core/graphics/vkn/core.cpp
+        source/core/graphics/vkn/device.cpp
+        source/core/graphics/vkn/instance.cpp
+        source/core/graphics/vkn/physical_device.cpp
+        source/core/graphics/vkn/swapchain.cpp
 
-        source/epona_core/render_manager.cpp
+        source/core/render_manager.cpp
 )

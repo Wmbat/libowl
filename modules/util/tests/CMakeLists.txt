@@ -60,10 +60,10 @@ target_precompile_headers(epona_util_test
 
 target_sources(epona_util_test
    PRIVATE
-      epona_util/main.cpp
-      epona_util/containers/flat_map_test.cpp
-      epona_util/containers/dynamic_array_test.cpp
-      epona_util/detail/monad/either_test.cpp
-      epona_util/detail/monad/maybe_test.cpp)
+      util/main.cpp
+      util/containers/flat_map_test.cpp
+      util/containers/dynamic_array_test.cpp
+      util/detail/monad/either_test.cpp
+      util/detail/monad/maybe_test.cpp)
 
 add_test( NAME epona_util_test COMMAND epona_util_test )

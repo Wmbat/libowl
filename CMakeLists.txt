@@ -77,7 +77,7 @@ target_compile_options(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
    PUBLIC
-      epona_core
+      epona::core
       epona::util
 
    PRIVATE

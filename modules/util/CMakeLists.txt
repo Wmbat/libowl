@@ -115,5 +115,13 @@ endif()
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        source/epona_util/logger.cpp 
+        source/util/logger.cpp 
 )
+
+if (EPONA_UTIL_BUILD_TESTS)
+   add_custom_command( 
+      TARGET ${PROJECT_NAME}
+      POST_BUILD
+      COMMAND ctest --verbose
+   )
+endif ()
