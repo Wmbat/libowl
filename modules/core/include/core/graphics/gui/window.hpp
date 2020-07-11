@@ -1,7 +1,8 @@
 #pragma once
 
 #include <core/graphics/gui/widget.hpp>
-#include <core/graphics/vkn/core.hpp>
+
+#include <vkn/core.hpp>
 
 #include <GLFW/glfw3.h>
 

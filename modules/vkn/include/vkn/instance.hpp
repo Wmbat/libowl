@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <core/graphics/vkn/core.hpp>
+#include <vkn/core.hpp>
 
 #include <util/concepts.hpp>
 #include <util/containers/dynamic_array.hpp>
@@ -16,7 +16,7 @@
 
 #include <iostream>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    /**
     * @class instance <epona_core/graphics/vkn/instance.hpp>
@@ -108,12 +108,12 @@ namespace core::gfx::vkn
          } m_info;
       };
    };
-} // namespace core::gfx::vkn
+} // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<core::gfx::vkn::instance::error> : true_type
+   struct is_error_code_enum<vkn::instance::error> : true_type
    {
    };
 } // namespace std

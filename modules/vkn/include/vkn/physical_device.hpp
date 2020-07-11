@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <core/graphics/vkn/instance.hpp>
+#include <vkn/instance.hpp>
 
 #include <util/monad/either.hpp>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    namespace detail
    {
@@ -283,12 +283,12 @@ namespace core::gfx::vkn
             -> suitable;
       };
    };
-} // namespace core::gfx::vkn
+} // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<core::gfx::vkn::physical_device::error> : true_type
+   struct is_error_code_enum<vkn::physical_device::error> : true_type
    {
    };
 } // namespace std

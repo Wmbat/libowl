@@ -12,7 +12,7 @@
 
 auto main() -> int
 {
-   util::logger main_logger{"epona_core"};
+   util::logger main_logger{"epona"};
 
    core::initialize(&main_logger);
 

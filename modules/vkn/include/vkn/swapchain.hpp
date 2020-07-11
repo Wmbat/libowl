@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <core/graphics/vkn/core.hpp>
-#include <core/graphics/vkn/device.hpp>
+#include <vkn/core.hpp>
+#include <vkn/device.hpp>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    class swapchain
    {
@@ -112,12 +112,12 @@ namespace core::gfx::vkn
          } m_info;
       };
    };
-} // namespace core::gfx::vkn
+} // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<core::gfx::vkn::swapchain::error> : true_type
+   struct is_error_code_enum<vkn::swapchain::error> : true_type
    {
    };
 } // namespace std

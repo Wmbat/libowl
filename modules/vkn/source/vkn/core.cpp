@@ -1,8 +1,8 @@
-#include <core/graphics/vkn/core.hpp>
+#include <vkn/core.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
-namespace core::gfx::vkn
+namespace vkn
 {
    loader::loader(util::logger *const p_logger) : p_logger{p_logger}
    {
@@ -25,4 +25,4 @@ namespace core::gfx::vkn
 
       log_info(p_logger, "vk - all device functions have been loaded");
    }
-} // namespace core::gfx::vkn
+} // namespace vkn

@@ -4,19 +4,17 @@ cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
 
 # Set the project language toolchain, version and description
 
-project(util
+project(vkn
    VERSION 0.0.1
-   DESCRIPTION "The general utilities used by the engine"
+   DESCRIPTION "Vulkan related abstraction"
    LANGUAGES CXX
 )
 
 # User interface declarations
 
-option(EPONA_UTIL_STATIC "Build ${PROJECT_NAME} as a static library" ON)
-option(EPONA_UTIL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
-option(EPONA_UTIL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
-option(EPONA_UTIL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
-option(EPONA_UTIL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
+option(EPONA_VKN_STATIC "Build ${PROJECT_NAME} as a static library" ON)
+option(EPONA_VKN_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
+option(EPONA_VKN_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -33,46 +31,23 @@ endif ()
 message(STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_UTIL_STATIC}")
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${EPONA_UTIL_BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${EPONA_UTIL_BUILD_BENCH}")
-message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${EPONA_UTIL_NO_EXCEPTIONS}")
-message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${EPONA_UTIL_NO_LOGGING}")
 
 # Define imported targets
 
 include(CMakeLists.txt.in)
-
-if (EPONA_UTIL_BUILD_TESTS) 
-    enable_testing( )
-
-    add_subdirectory(tests)
-endif ()
 
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
 add_library(epona::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if (EPONA_UTIL_STATIC)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_STATIC) 
-endif ()
-
-if (EPONA_UTIL_NO_EXCEPTIONS)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_NO_EXCEPTIONS)
-endif ()
-
-if (EPONA_UTIL_NO_LOGGING) 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_NO_LOGGING)
+if (EPONA_VKN_STATIC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VKN_STATIC) 
 endif ()
 
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
         CXX_EXTENSIONS OFF
-)
-
-target_compile_definitions(${PROJECT_NAME}
-    PRIVATE
-        UTIL_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        UTIL_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        UTIL_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 target_compile_features(${PROJECT_NAME}
@@ -91,6 +66,8 @@ target_compile_options(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}
+    SYSTEM PUBLIC   
+        vulkan/vulkan.hpp
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -100,20 +77,18 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        spdlog::spdlog
+        epona::util
+        Vulkan-Headers
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0") 
-    target_precompile_headers( ${PROJECT_NAME} 
-        PRIVATE 
-            <spdlog/spdlog.h>
-    )
-endif()
-
 target_sources(${PROJECT_NAME}
     PRIVATE
-        source/util/logger.cpp 
+        source/vkn/core.cpp
+        source/vkn/device.cpp
+        source/vkn/instance.cpp
+        source/vkn/physical_device.cpp
+        source/vkn/swapchain.cpp
 )

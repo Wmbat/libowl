@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required( VERSION 3.14 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.14...3.17 FATAL_ERROR )
 
 CPMAddPackage(
     NAME gtest
@@ -28,25 +28,17 @@ CPMAddPackage(
     GITHUB_REPOSITORY google/googletest
     GIT_TAG release-1.10.0)
 
-add_executable(epona_util_test)
+add_executable(util_test)
 
-target_link_libraries(epona_util_test
-   PUBLIC
-      epona::util 
-      gtest
-   PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>)
-
-set_target_properties(epona_util_test
+set_target_properties(util_test
    PROPERTIES
       CXX_EXTENSIONS OFF)
 
-target_compile_features(epona_util_test
+target_compile_features(util_test
    PRIVATE
       cxx_std_20)
 
-target_compile_options(epona_util_test
+target_compile_options(util_test
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
@@ -54,11 +46,15 @@ target_compile_options(epona_util_test
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -fsanitize=address -fsanitize=undefined>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>)
 
-target_precompile_headers(epona_util_test
+target_link_libraries(util_test
+   PUBLIC
+      epona::util 
+      gtest
    PRIVATE
-      <gtest/gtest.h>)
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>)
 
-target_sources(epona_util_test
+target_sources(util_test
    PRIVATE
       util/main.cpp
       util/containers/flat_map_test.cpp

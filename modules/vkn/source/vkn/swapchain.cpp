@@ -1,10 +1,10 @@
-#include <core/graphics/vkn/swapchain.hpp>
+#include <vkn/swapchain.hpp>
 
 #include <algorithm>
 #include <array>
 #include <limits>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    namespace detail
    {
@@ -98,7 +98,7 @@ namespace core::gfx::vkn
       auto query_surface_support(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface)
          -> vkn::result<surface_support>
       {
-         if (surface)
+         if (!surface)
          {
             // clang-format off
             return util::monad::to_error(error{
@@ -299,7 +299,7 @@ namespace core::gfx::vkn
          // clang-format on
       }
 
-      const auto surface_support = *surface_support_res.value();
+      const auto surface_support = surface_support_res.value().value();
 
       util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
       if (desired_formats.empty())
@@ -345,6 +345,7 @@ namespace core::gfx::vkn
          .setImageColorSpace(surface_format.colorSpace)
          .setImageExtent(extent)
          .setImageUsage(m_info.image_usage_flags)
+         .setImageArrayLayers(1u)
          .setImageSharingMode(same ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent)
          .setQueueFamilyIndexCount(same ? 0 : 2)
          .setPQueueFamilyIndices(same ? nullptr : queue_family_indices.data())
@@ -481,4 +482,4 @@ namespace core::gfx::vkn
       // clang-format on
    }
 
-} // namespace core::gfx::vkn
+} // namespace vkn

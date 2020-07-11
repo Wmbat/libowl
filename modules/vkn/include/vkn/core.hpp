@@ -19,7 +19,7 @@
 
 #include <system_error>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    namespace detail
    {
@@ -72,4 +72,4 @@ namespace core::gfx::vkn
 
       ::vk::DynamicLoader dynamic_loader;
    };
-}; // namespace core::gfx::vkn
+}; // namespace vkn

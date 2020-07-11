@@ -1,8 +1,8 @@
-#include <core/graphics/vkn/device.hpp>
+#include <vkn/device.hpp>
 
 #include <functional>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    namespace detail
    {
@@ -110,7 +110,7 @@ namespace core::gfx::vkn
 
    auto device::get_queue_index(queue::type type) const -> vkn::result<uint32_t>
    {
-      using err_t = core::gfx::vkn::error;
+      using err_t = vkn::error;
 
       if (type == queue::type::present)
       {
@@ -192,7 +192,7 @@ namespace core::gfx::vkn
 
    auto device::get_dedicated_queue_index(queue::type type) const -> vkn::result<uint32_t>
    {
-      using err_t = core::gfx::vkn::error;
+      using err_t = vkn::error;
 
       if (type == queue::type::compute)
       {
@@ -240,7 +240,7 @@ namespace core::gfx::vkn
 
    auto device::get_queue(queue::type type) const -> vkn::result<vk::Queue>
    {
-      using err_t = core::gfx::vkn::error;
+      using err_t = vkn::error;
 
       return get_queue_index(type).join(
          [](const err_t& err) -> vkn::result<vk::Queue> {
@@ -253,7 +253,7 @@ namespace core::gfx::vkn
 
    auto device::get_dedicated_queue([[maybe_unused]] queue::type type) const -> result<vk::Queue>
    {
-      using err_t = core::gfx::vkn::error;
+      using err_t = vkn::error;
 
       return get_dedicated_queue_index(type).join(
          [](const err_t& err) -> vkn::result<vk::Queue> {
@@ -385,4 +385,4 @@ namespace core::gfx::vkn
       m_info.queue_descriptions = descriptions;
       return *this;
    }
-} // namespace core::gfx::vkn
+} // namespace vkn

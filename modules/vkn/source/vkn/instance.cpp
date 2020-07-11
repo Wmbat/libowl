@@ -1,9 +1,9 @@
-#include <core/graphics/vkn/instance.hpp>
+#include <vkn/instance.hpp>
 
 #include <functional>
 #include <utility>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    static VKAPI_ATTR auto VKAPI_CALL debug_callback(
       VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -485,4 +485,4 @@ namespace core::gfx::vkn
 
       return util::monad::to_value(extensions);
    }
-} // namespace core::gfx::vkn
+} // namespace vkn

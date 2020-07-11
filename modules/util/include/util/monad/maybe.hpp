@@ -37,8 +37,168 @@ namespace util
    class maybe
    // clang-format on
    {
+      template <class type_, class dummy_ = void>
+      struct storage
+      {
+         using value_type = type_;
+
+         constexpr storage() = default;
+         constexpr storage(const value_type& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{value};
+            }
+         }
+         constexpr storage(value_type&& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{std::move(value)};
+            }
+         }
+         constexpr storage(const storage& rhs) : is_engaged{rhs.is_engaged}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{rhs.value()};
+            }
+         }
+         constexpr storage(storage&& rhs) noexcept : is_engaged{rhs.is_engaged}
+         {
+            if (is_engaged)
+            {
+               new (data.data()) value_type{std::move(rhs.value())};
+            }
+         }
+         ~storage()
+         {
+            if (is_engaged)
+            {
+               value().~value_type();
+            }
+         }
+
+         constexpr auto operator=(const storage& rhs) -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (is_engaged)
+               {
+                  value().~value_type();
+               }
+
+               is_engaged = rhs.is_engaged;
+
+               if (is_engaged)
+               {
+                  new (data.data()) value_type{rhs.value()};
+               }
+            }
+
+            return *this;
+         }
+         constexpr auto operator=(storage&& rhs) noexcept -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (is_engaged)
+               {
+                  value().~value_type();
+               }
+
+               is_engaged = rhs.is_engaged;
+               rhs.is_engaged = false;
+
+               if (is_engaged)
+               {
+                  new (data.data()) value_type{std::move(rhs.value())};
+               }
+            }
+
+            return *this;
+         }
+
+         constexpr auto pointer() -> value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto pointer() const -> const value_type*
+         {
+            return reinterpret_cast<const value_type*>(data.data()); // NOLINT
+         }
+
+         constexpr auto value() & -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() const& -> const value_type&
+         {
+            return *reinterpret_cast<const value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() && -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+         constexpr auto value() const&& -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+
+         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
+         bool is_engaged{false};
+      };
+
       template <class type_>
-      struct storage;
+      struct storage<type_, std::enable_if_t<trivial<type_>>>
+      {
+         using value_type = any_;
+
+         constexpr storage() = default;
+         constexpr storage(const value_type& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (&data) value_type{value};
+            }
+         }
+         constexpr storage(value_type&& value) : is_engaged{true}
+         {
+            if (is_engaged)
+            {
+               new (&data) value_type{std::move(value)};
+            }
+         }
+
+         constexpr auto pointer() -> value_type*
+         {
+            return reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto pointer() const -> const value_type*
+         {
+            return reinterpret_cast<const value_type*>(data.data()); // NOLINT
+         }
+
+         constexpr auto value() & -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() const& -> const value_type&
+         {
+            return *reinterpret_cast<const value_type*>(data.data()); // NOLINT
+         }
+         constexpr auto value() && -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+         constexpr auto value() const&& -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
+         }
+
+         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
+         bool is_engaged{false};
+      };
 
    public:
       using value_type = any_;
@@ -176,170 +336,6 @@ namespace util
 
    private:
       storage<value_type> m_storage{};
-
-   private:
-      template <class type_>
-      struct storage
-      {
-         using value_type = type_;
-
-         constexpr storage() = default;
-         constexpr storage(const value_type& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{value};
-            }
-         }
-         constexpr storage(value_type&& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{std::move(value)};
-            }
-         }
-         constexpr storage(const storage& rhs) : is_engaged{rhs.is_engaged}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{rhs.value()};
-            }
-         }
-         constexpr storage(storage&& rhs) noexcept : is_engaged{rhs.is_engaged}
-         {
-            if (is_engaged)
-            {
-               new (data.data()) value_type{std::move(rhs.value())};
-            }
-         }
-         ~storage()
-         {
-            if (is_engaged)
-            {
-               value().~value_type();
-            }
-         }
-
-         constexpr auto operator=(const storage& rhs) -> storage&
-         {
-            if (this != &rhs)
-            {
-               if (is_engaged)
-               {
-                  value().~value_type();
-               }
-
-               is_engaged = rhs.is_engaged;
-
-               if (is_engaged)
-               {
-                  new (data.data()) value_type{rhs.value()};
-               }
-            }
-
-            return *this;
-         }
-         constexpr auto operator=(storage&& rhs) noexcept -> storage&
-         {
-            if (this != &rhs)
-            {
-               if (is_engaged)
-               {
-                  value().~value_type();
-               }
-
-               is_engaged = rhs.is_engaged;
-               rhs.is_engaged = false;
-
-               if (is_engaged)
-               {
-                  new (data.data()) value_type{std::move(rhs.value())};
-               }
-            }
-
-            return *this;
-         }
-
-         constexpr auto pointer() -> value_type*
-         {
-            return reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto pointer() const -> const value_type*
-         {
-            return reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-
-         constexpr auto value() & -> value_type&
-         {
-            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto value() const& -> const value_type&
-         {
-            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto value() && -> value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
-         }
-         constexpr auto value() const&& -> const value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
-         }
-
-         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
-         bool is_engaged{false};
-      };
-
-      template <trivial type_>
-      struct storage<type_>
-      {
-         using value_type = any_;
-
-         constexpr storage() = default;
-         constexpr storage(const value_type& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (&data) value_type{value};
-            }
-         }
-         constexpr storage(value_type&& value) : is_engaged{true}
-         {
-            if (is_engaged)
-            {
-               new (&data) value_type{std::move(value)};
-            }
-         }
-
-         constexpr auto pointer() -> value_type*
-         {
-            return reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto pointer() const -> const value_type*
-         {
-            return reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-
-         constexpr auto value() & -> value_type&
-         {
-            return *reinterpret_cast<value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto value() const& -> const value_type&
-         {
-            return *reinterpret_cast<const value_type*>(data.data()); // NOLINT
-         }
-         constexpr auto value() && -> value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
-         }
-         constexpr auto value() const&& -> const value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(data.data())); // NOLINT
-         }
-
-         alignas(any_) std::array<std::byte, sizeof(value_type)> data;
-         bool is_engaged{false};
-      };
    };
 
    template <class any_>

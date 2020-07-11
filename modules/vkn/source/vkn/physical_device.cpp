@@ -1,6 +1,6 @@
-#include <core/graphics/vkn/physical_device.hpp>
+#include <vkn/physical_device.hpp>
 
-namespace core::gfx::vkn
+namespace vkn
 {
    namespace detail
    {
@@ -351,4 +351,4 @@ namespace core::gfx::vkn
          }
       }
    }
-} // namespace core::gfx::vkn
+} // namespace vkn

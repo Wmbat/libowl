@@ -41,8 +41,219 @@ namespace util
    class result
    // clang-format on
    {
+      template <class first_, class second_, class dummy_1_ = void, class dummy_2_ = void>
+      struct storage
+      {
+         using error_type = first_;
+         using value_type = second_;
+
+         constexpr storage() = default;
+         constexpr storage(const monad::error<error_type>& error)
+         {
+            new (bytes.data()) error_type{error.val};
+         }
+         constexpr storage(monad::error<error_type>&& error)
+         {
+            new (bytes.data()) error_type{std::move(error.val)};
+         }
+         constexpr storage(const monad::value<value_type>& value) : has_value{true}
+         {
+            new (bytes.data()) value_type{value.val};
+         }
+         constexpr storage(monad::value<value_type>&& value) : has_value{true}
+         {
+            new (bytes.data()) value_type{std::move(value.val)};
+         }
+         constexpr storage(const storage& rhs) : has_value{rhs.has_value}
+         {
+            if (has_value)
+            {
+               new (bytes.data()) value_type{rhs.value()};
+            }
+            else
+            {
+               new (bytes.data()) error_type{rhs.error()};
+            }
+         }
+         constexpr storage(storage&& rhs) noexcept
+         {
+            if (has_value)
+            {
+               new (bytes.data()) value_type{std::move(rhs.value())};
+            }
+            else
+            {
+               new (bytes.data()) error_type{std::move(rhs.error())};
+            }
+         }
+         ~storage()
+         {
+            if (has_value)
+            {
+               value().~value_type();
+            }
+            else
+            {
+               error().~error_type();
+            }
+         }
+
+         constexpr auto operator=(const storage& rhs) -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (has_value)
+               {
+                  value().~value_type();
+               }
+               else
+               {
+                  error().~error_type();
+               }
+
+               has_value = rhs.has_value;
+
+               if (has_value)
+               {
+                  new (bytes.data()) value_type{rhs.value()};
+               }
+               else
+               {
+                  new (bytes.data()) error_type{rhs.error()};
+               }
+            }
+
+            return *this;
+         }
+         constexpr auto operator=(storage&& rhs) noexcept -> storage&
+         {
+            if (this != &rhs)
+            {
+               if (has_value)
+               {
+                  value().~value_type();
+               }
+               else
+               {
+                  error().~error_type();
+               }
+
+               has_value = rhs.has_value;
+
+               if (has_value)
+               {
+                  new (bytes.data()) value_type{std::move(rhs.value())};
+               }
+               else
+               {
+                  new (bytes.data()) error_type{std::move(rhs.error())};
+               }
+            }
+
+            return *this;
+         }
+
+         constexpr auto error() & noexcept -> error_type&
+         {
+            return *reinterpret_cast<error_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto error() const& noexcept -> const error_type&
+         {
+            return *reinterpret_cast<const error_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto error() && noexcept -> error_type&&
+         {
+            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
+         }
+         constexpr auto error() const&& noexcept -> const error_type&&
+         {
+            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
+         }
+
+         constexpr auto value() & noexcept -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto value() const& noexcept -> const value_type&
+         {
+            return *reinterpret_cast<const value_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto value() && noexcept -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
+         }
+         constexpr auto value() const&& noexcept -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
+         }
+
+         alignas(detail::max(alignof(error_type), alignof(value_type)))
+            std::array<std::byte, detail::max(sizeof(error_type), sizeof(value_type))> bytes{};
+         bool has_value{false};
+      };
+
       template <class first_, class second_>
-      struct storage;
+      struct storage<first_, second_, std::enable_if_t<trivial<first_>>,
+         std::enable_if_t<trivial<second_>>>
+      {
+         using error_type = first_;
+         using value_type = second_;
+
+         constexpr storage(const monad::error<error_type>& error)
+         {
+            new (bytes.data()) error_type{error.val};
+         }
+         constexpr storage(monad::error<error_type>&& error)
+         {
+            new (bytes.data()) error_type{std::move(error.val)};
+         }
+         constexpr storage(const monad::value<value_type>& value) : has_value{true}
+         {
+            new (bytes.data()) value_type{value.val};
+         }
+         constexpr storage(monad::value<value_type>&& value) : has_value{true}
+         {
+            new (bytes.data()) value_type{std::move(value.val)};
+         }
+
+         constexpr auto error() & noexcept -> error_type&
+         {
+            return *reinterpret_cast<error_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto error() const& noexcept -> const error_type&
+         {
+            return *reinterpret_cast<const error_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto error() && noexcept -> error_type&&
+         {
+            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
+         }
+         constexpr auto error() const&& noexcept -> const error_type&&
+         {
+            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
+         }
+
+         constexpr auto value() & noexcept -> value_type&
+         {
+            return *reinterpret_cast<value_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto value() const& noexcept -> const value_type&
+         {
+            return *reinterpret_cast<const value_type*>(bytes.data()); // NOLINT
+         }
+         constexpr auto value() && noexcept -> value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
+         }
+         constexpr auto value() const&& noexcept -> const value_type&&
+         {
+            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
+         }
+
+         alignas(detail::max(alignof(error_type), alignof(value_type)))
+            std::array<std::byte, detail::max(sizeof(error_type), sizeof(value_type))> bytes{};
+         bool has_value{false};
+      };
 
    public:
       using error_type = error_;
@@ -260,219 +471,5 @@ namespace util
                val_fun(std::move(m_storage.value()));
       }
       // clang-format on
-
-   private:
-      template <class first_, class second_>
-      struct storage
-      {
-         using error_type = first_;
-         using value_type = second_;
-
-         constexpr storage() = default;
-         constexpr storage(const monad::error<error_type>& error)
-         {
-            new (bytes.data()) error_type{error.val};
-         }
-         constexpr storage(monad::error<error_type>&& error)
-         {
-            new (bytes.data()) error_type{std::move(error.val)};
-         }
-         constexpr storage(const monad::value<value_type>& value) : has_value{true}
-         {
-            new (bytes.data()) value_type{value.val};
-         }
-         constexpr storage(monad::value<value_type>&& value) : has_value{true}
-         {
-            new (bytes.data()) value_type{std::move(value.val)};
-         }
-         constexpr storage(const storage& rhs) : has_value{rhs.has_value}
-         {
-            if (has_value)
-            {
-               new (bytes.data()) value_type{rhs.value()};
-            }
-            else
-            {
-               new (bytes.data()) error_type{rhs.error()};
-            }
-         }
-         constexpr storage(storage&& rhs) noexcept
-         {
-            if (has_value)
-            {
-               new (bytes.data()) value_type{std::move(rhs.value())};
-            }
-            else
-            {
-               new (bytes.data()) error_type{std::move(rhs.error())};
-            }
-         }
-         ~storage()
-         {
-            if (has_value)
-            {
-               value().~value_type();
-            }
-            else
-            {
-               error().~error_type();
-            }
-         }
-
-         constexpr auto operator=(const storage& rhs) -> storage&
-         {
-            if (this != &rhs)
-            {
-               if (has_value)
-               {
-                  value().~value_type();
-               }
-               else
-               {
-                  error().~error_type();
-               }
-
-               has_value = rhs.has_value;
-
-               if (has_value)
-               {
-                  new (bytes.data()) value_type{rhs.value()};
-               }
-               else
-               {
-                  new (bytes.data()) error_type{rhs.error()};
-               }
-            }
-
-            return *this;
-         }
-         constexpr auto operator=(storage&& rhs) noexcept -> storage&
-         {
-            if (this != &rhs)
-            {
-               if (has_value)
-               {
-                  value().~value_type();
-               }
-               else
-               {
-                  error().~error_type();
-               }
-
-               has_value = rhs.has_value;
-
-               if (has_value)
-               {
-                  new (bytes.data()) value_type{std::move(rhs.value())};
-               }
-               else
-               {
-                  new (bytes.data()) error_type{std::move(rhs.error())};
-               }
-            }
-
-            return *this;
-         }
-
-         constexpr auto error() & noexcept -> error_type&
-         {
-            return *reinterpret_cast<error_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto error() const& noexcept -> const error_type&
-         {
-            return *reinterpret_cast<const error_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto error() && noexcept -> error_type&&
-         {
-            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
-         }
-         constexpr auto error() const&& noexcept -> const error_type&&
-         {
-            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
-         }
-
-         constexpr auto value() & noexcept -> value_type&
-         {
-            return *reinterpret_cast<value_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto value() const& noexcept -> const value_type&
-         {
-            return *reinterpret_cast<const value_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto value() && noexcept -> value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
-         }
-         constexpr auto value() const&& noexcept -> const value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
-         }
-
-         alignas(detail::max(alignof(error_type), alignof(value_type)))
-            std::array<std::byte, detail::max(sizeof(error_type), sizeof(value_type))> bytes{};
-         bool has_value{false};
-      };
-
-      template <trivial first_, trivial second_>
-      struct storage<first_, second_>
-      {
-         using error_type = first_;
-         using value_type = second_;
-
-         constexpr storage(const monad::error<error_type>& error)
-         {
-            new (bytes.data()) error_type{error.val};
-         }
-         constexpr storage(monad::error<error_type>&& error)
-         {
-            new (bytes.data()) error_type{std::move(error.val)};
-         }
-         constexpr storage(const monad::value<value_type>& value) : has_value{true}
-         {
-            new (bytes.data()) value_type{value.val};
-         }
-         constexpr storage(monad::value<value_type>&& value) : has_value{true}
-         {
-            new (bytes.data()) value_type{std::move(value.val)};
-         }
-
-         constexpr auto error() & noexcept -> error_type&
-         {
-            return *reinterpret_cast<error_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto error() const& noexcept -> const error_type&
-         {
-            return *reinterpret_cast<const error_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto error() && noexcept -> error_type&&
-         {
-            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
-         }
-         constexpr auto error() const&& noexcept -> const error_type&&
-         {
-            return std::move(*reinterpret_cast<error_type*>(bytes.data())); // NOLINT
-         }
-
-         constexpr auto value() & noexcept -> value_type&
-         {
-            return *reinterpret_cast<value_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto value() const& noexcept -> const value_type&
-         {
-            return *reinterpret_cast<const value_type*>(bytes.data()); // NOLINT
-         }
-         constexpr auto value() && noexcept -> value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
-         }
-         constexpr auto value() const&& noexcept -> const value_type&&
-         {
-            return std::move(*reinterpret_cast<value_type*>(bytes.data())); // NOLINT
-         }
-
-         alignas(detail::max(alignof(error_type), alignof(value_type)))
-            std::array<std::byte, detail::max(sizeof(error_type), sizeof(value_type))> bytes{};
-         bool has_value{false};
-      };
    };
 } // namespace util

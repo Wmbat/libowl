@@ -68,46 +68,34 @@ namespace util
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit constexpr tiny_dynamic_array() :
-         m_pbegin{get_first_element()}, m_capacity{buffer_size_}
-      {}
+      explicit constexpr tiny_dynamic_array() = default;
       explicit constexpr tiny_dynamic_array(
-         size_type count) requires std::default_initializable<value_type> :
-         m_pbegin{get_first_element()},
-         m_capacity{buffer_size_}
+         size_type count) requires std::default_initializable<value_type>
       {
          assign(count, value_type{});
       }
       explicit tiny_dynamic_array(
-         size_type count, const_reference value) requires std::copyable<value_type> :
-         m_pbegin{get_first_element()},
-         m_capacity{buffer_size_}
+         size_type count, const_reference value) requires std::copyable<value_type>
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type> :
-         m_pbegin{get_first_element()},
-         m_capacity{buffer_size_}
+      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type>
       {
          assign(first, last);
       }
-      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type> :
-         m_pbegin{get_first_element()},
-         m_capacity{buffer_size_}
+      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type>
       {
          assign(init);
       }
-      tiny_dynamic_array(const tiny_dynamic_array& other) :
-         m_pbegin{get_first_element()}, m_capacity{buffer_size_}
+      tiny_dynamic_array(const tiny_dynamic_array& other)
       {
          if (!other.empty())
          {
             *this = other;
          }
       }
-      tiny_dynamic_array(tiny_dynamic_array&& other) noexcept :
-         m_pbegin{get_first_element()}, m_capacity{buffer_size_}
+      tiny_dynamic_array(tiny_dynamic_array&& other) noexcept
       {
          if (!other.empty())
          {
@@ -116,9 +104,10 @@ namespace util
       }
       constexpr ~tiny_dynamic_array()
       {
-         if (!is_static())
+         if (!is_static() && m_pbegin)
          {
             delete[] m_pbegin;
+            m_pbegin = nullptr;
          }
       }
 
@@ -141,10 +130,6 @@ namespace util
             }
 
             destroy_range(new_end, end());
-
-            m_size = other_sz;
-
-            return *this;
          }
          else
          {
@@ -160,12 +145,19 @@ namespace util
                std::copy(rhs.begin(), rhs.begin() + curr_sz, begin());
             }
 
-            std::uninitialized_copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
-
-            m_size = other_sz;
-
-            return *this;
+            if constexpr (trivial<value_type>)
+            {
+               std::uninitialized_copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
+            }
+            else
+            {
+               std::copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
+            }
          }
+
+         m_size = other_sz;
+
+         return *this;
       }
 
       constexpr auto operator=(tiny_dynamic_array&& rhs) noexcept -> tiny_dynamic_array&
@@ -188,13 +180,10 @@ namespace util
             }
 
             m_size = rhs.size();
-            rhs.m_size = 0;
-
             m_capacity = rhs.capacity();
-            rhs.m_capacity = 0;
-
             m_pbegin = rhs.m_pbegin;
-            rhs.m_pbegin = nullptr;
+
+            rhs.reset_to_static();
 
             return *this;
          }
@@ -266,7 +255,7 @@ namespace util
             grow(count);
          }
 
-         m_size += count;
+         m_size = count;
 
          std::uninitialized_fill(begin(), end(), value);
       }
@@ -276,13 +265,13 @@ namespace util
       {
          clear();
 
-         size_type const new_count = std::distance(first, last);
+         const size_type new_count = std::distance(first, last);
          if (new_count > capacity())
          {
             grow(new_count);
          }
 
-         m_size += new_count;
+         m_size = new_count;
 
          std::uninitialized_copy(first, last, begin());
       }
@@ -799,58 +788,57 @@ namespace util
       {
          if (min_size > std::numeric_limits<difference_type>::max())
          {
-            handle_bad_alloc_error("new size is too big");
+            handle_bad_alloc_error("tiny_dynamic_array capacity overflow during allocation");
+         }
+
+         if (capacity() == std::numeric_limits<difference_type>::max())
+         {
+            handle_bad_alloc_error("tiny_dynamic_array capacity unable to grow");
          }
 
          const auto new_capacity =
             std::clamp(2 * m_capacity + 1, min_size, std::numeric_limits<size_type>::max());
 
-         if (is_static())
+         try
          {
-            try
-            {
-               pointer new_alloc = new value_type[new_capacity]; // NOLINT
+            pointer new_elements = new value_type[new_capacity];
 
-               if constexpr (std::movable<value_type>)
+            if constexpr (std::movable<value_type>)
+            {
+               if constexpr (trivial<value_type>)
                {
-                  std::uninitialized_move(begin(), end(), iterator{new_alloc});
+                  std::uninitialized_move(begin(), end(), iterator{new_elements});
                }
                else
                {
-                  std::uninitialized_copy(begin(), end(), iterator{new_alloc});
+                  std::move(begin(), end(), iterator{new_elements});
                }
-
-               destroy_range(begin(), end());
-
-               m_pbegin = new_alloc;
             }
-            catch (const std::bad_alloc&)
+            else
             {
-               handle_bad_alloc_error("Failed to allocate new memory");
-            }
-         }
-         else
-         {
-            try
-            {
-               pointer new_alloc = new value_type[new_capacity]; // NOLINT
-
-               if constexpr (std::movable<value_type>)
+               if constexpr (trivial<value_type>)
                {
-                  std::uninitialized_move(begin(), end(), iterator{new_alloc});
+                  std::uninitialized_copy(begin(), end(), iterator{new_elements});
                }
                else
                {
-                  std::uninitialized_copy(begin(), end(), iterator{new_alloc});
+                  std::copy(begin(), end(), iterator{new_elements});
                }
+            }
 
+            destroy_range(begin(), end());
+
+            if (!is_static())
+            {
                delete[] m_pbegin;
-               m_pbegin = new_alloc;
             }
-            catch (const std::bad_alloc&)
-            {
-               handle_bad_alloc_error("Failed to allocate new memory");
-            }
+
+            m_pbegin = new_elements;
+            m_capacity = new_capacity;
+         }
+         catch (const std::bad_alloc&)
+         {
+            handle_bad_alloc_error("Failed to allocate new memory");
          }
 
          m_capacity = new_capacity;
@@ -868,10 +856,17 @@ namespace util
          }
       }
 
+      void reset_to_static()
+      {
+         m_pbegin = get_first_element();
+         m_size = 0;
+         m_capacity = buffer_size_;
+      }
+
    private:
-      pointer m_pbegin{nullptr};
+      pointer m_pbegin{get_first_element()};
       size_type m_size{0};
-      size_type m_capacity{0};
+      size_type m_capacity{buffer_size_};
       detail::static_array_storage<value_type, buffer_size_> m_storage;
    }; // namespace util
 

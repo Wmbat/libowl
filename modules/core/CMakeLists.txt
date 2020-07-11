@@ -91,8 +91,6 @@ target_compile_options(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}
-    SYSTEM PUBLIC   
-        vulkan/vulkan.hpp
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -103,10 +101,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         epona::util 
-        Vulkan-Headers
+        epona::vkn
         glfw
-        glslang
-        SPIRV
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
@@ -130,11 +126,6 @@ target_sources(${PROJECT_NAME}
 
         source/core/graphics/gui/widget.cpp
         source/core/graphics/gui/window.cpp
-        source/core/graphics/vkn/core.cpp
-        source/core/graphics/vkn/device.cpp
-        source/core/graphics/vkn/instance.cpp
-        source/core/graphics/vkn/physical_device.cpp
-        source/core/graphics/vkn/swapchain.cpp
 
         source/core/render_manager.cpp
 )

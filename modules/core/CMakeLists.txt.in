@@ -30,9 +30,3 @@ CPMAddPackage(
 #        "SPIRV_CROSS_ENABLE_TESTS OFF"
 #        "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS ON"
 #)
-
-CPMAddPackage(
-    NAME Vulkan-Headers
-    VERSION 1.2.135
-    GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
-) 

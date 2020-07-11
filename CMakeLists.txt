@@ -56,6 +56,7 @@ message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
 add_subdirectory(modules/core)
 add_subdirectory(modules/util)
+add_subdirectory(modules/vkn)
 
 add_executable(${PROJECT_NAME})
 
@@ -71,7 +72,7 @@ target_compile_options(${PROJECT_NAME}
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
-        -Wconversion -fsanitize=address>
+        -Wconversion -fsanitize=address, -fsanitize=undefined>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
@@ -79,9 +80,11 @@ target_link_libraries(${PROJECT_NAME}
    PUBLIC
       epona::core
       epona::util
+      epona::vkn
 
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
 target_sources(${PROJECT_NAME}
