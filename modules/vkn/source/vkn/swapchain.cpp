@@ -1,4 +1,4 @@
-#include <vkn/swapchain.hpp>
+#include "vkn/swapchain.hpp"
 
 #include <algorithm>
 #include <array>
@@ -222,7 +222,7 @@ namespace vkn
    swapchain::swapchain(swapchain&& rhs) noexcept { *this = std::move(rhs); }
    swapchain::swapchain(const create_info& info) noexcept :
       m_device(info.device), m_swapchain(info.swapchain), m_format(info.format),
-      m_extent(info.extent)
+      m_extent(info.extent), m_images{info.images}
    {}
    swapchain::~swapchain()
    {
@@ -252,11 +252,71 @@ namespace vkn
       return *this;
    }
 
+   auto swapchain::get_image_views() const
+      -> result<util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT>>
+   {
+      util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> views{};
+
+      auto res = util::monad::try_wrap<std::bad_alloc>([&] {
+         views.reserve(m_images.size());
+         return 0;
+      });
+
+      if (res.is_left())
+      {
+         // clang-format off
+         return util::monad::to_error(vkn::error{
+            .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
+            .result = {}
+         });
+         // clang-format on
+      }
+
+      for (const auto& image : m_images)
+      {
+         // clang-format off
+         const auto create_info = vk::ImageViewCreateInfo{}
+            .setImage(image)
+            .setViewType(vk::ImageViewType::e2D)
+            .setFormat(m_format)
+            .setComponents(vk::ComponentMapping{}
+               .setR(vk::ComponentSwizzle::eIdentity)
+               .setG(vk::ComponentSwizzle::eIdentity)
+               .setB(vk::ComponentSwizzle::eIdentity)
+               .setA(vk::ComponentSwizzle::eIdentity))
+            .setSubresourceRange(vk::ImageSubresourceRange{}
+               .setAspectMask(vk::ImageAspectFlagBits::eColor)
+               .setBaseMipLevel(0u)
+               .setLevelCount(1u)
+               .setBaseArrayLayer(0u)
+               .setLayerCount(1u));
+         // clang-format on
+
+         const auto view_res = util::monad::try_wrap<vk::SystemError>([&] {
+            return m_device.createImageView(create_info);
+         });
+
+         if (view_res.is_left())
+         {
+            // clang-format off
+            return util::monad::to_error(vkn::error{
+               .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
+               .result = static_cast<vk::Result>(view_res.left()->code().value())
+            });
+            // clang-format on
+         }
+
+         views.push_back(*view_res.right());
+      }
+
+      return util::monad::to_value(views);
+   }
+
    auto swapchain::value() const -> const vk::SwapchainKHR& { return m_swapchain; }
 
    using builder = swapchain::builder;
 
-   builder::builder(const device& device)
+   builder::builder(const device& device, util::logger* const plogger) : m_plogger{plogger}
    {
       m_info.device = device.value();
       m_info.physical_device = device.physical().value();
@@ -369,12 +429,34 @@ namespace vkn
          // clang-format on
       }
 
+      util::log_info(m_plogger, "vk - swapchain created.");
+      util::log_info(m_plogger, "vk - swapchain image count: {0}", std::make_tuple(image_count));
+
+      vk::SwapchainKHR swap = creation_res.right().value();
+
+      const auto image_res = util::monad::try_wrap<std::system_error>([&] {
+         return m_info.device.getSwapchainImagesKHR(swap);
+      }).right_map([](const auto& images) {
+         return util::tiny_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
+      });
+
+      if (image_res.is_left())
+      {
+         // clang-format off
+         return util::monad::to_error(err_t{
+            .type = detail::make_error_code(error::failed_to_get_swapchain_images), 
+            .result = static_cast<vk::Result>(image_res.left()->code().value())
+         });
+         // clang-format on
+      }
+
       // clang-format off
       const auto swap_create_info = swapchain::create_info{
          .device = m_info.device,
          .swapchain = creation_res.right().value(),
          .format = surface_format.format,
-         .extent = extent
+         .extent = extent,
+         .images = image_res.right().value()
       };
       // clang-format on
 

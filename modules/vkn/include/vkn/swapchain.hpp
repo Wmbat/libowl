@@ -14,6 +14,8 @@ namespace vkn
 {
    class swapchain
    {
+      static constexpr size_t EXPECTED_IMAGE_COUNT = 3u;
+
    public:
       enum class error
       {
@@ -30,6 +32,8 @@ namespace vkn
          vk::SwapchainKHR swapchain{nullptr};
          vk::Format format{};
          vk::Extent2D extent{};
+
+         util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images;
       };
 
    public:
@@ -42,6 +46,9 @@ namespace vkn
       auto operator=(const swapchain&) -> swapchain& = delete;
       auto operator=(swapchain&&) noexcept -> swapchain&;
 
+      [[nodiscard]] auto get_image_views() const
+         -> result<util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT>>;
+
       [[nodiscard]] auto value() const -> const vk::SwapchainKHR&;
 
    private:
@@ -50,11 +57,13 @@ namespace vkn
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
+      util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> m_images;
+
    public:
       class builder
       {
       public:
-         builder(const device& device);
+         builder(const device& device, util::logger* const plogger);
 
          [[nodiscard]] auto build() -> vkn::result<swapchain>;
 
@@ -87,6 +96,8 @@ namespace vkn
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
+
+         util::logger* const m_plogger;
 
          struct swap_info
          {

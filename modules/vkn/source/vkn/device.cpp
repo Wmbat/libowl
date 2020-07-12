@@ -342,7 +342,7 @@ namespace vkn
 
       for(const char* name : extensions)
       {
-         log_info(m_plogger, "Device extension: {0} - ENABLED", std::make_tuple(name));
+         log_info(m_plogger, "vk - device extension: {0} - ENABLED", std::make_tuple(name));
       }
 
       // clang-format off
