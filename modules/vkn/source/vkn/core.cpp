@@ -1,4 +1,8 @@
+#include "util/logger.hpp"
 #include <vkn/core.hpp>
+
+#include <SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ShaderLang.h>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
@@ -10,6 +14,14 @@ namespace vkn
          dynamic_loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
 
       log_info(p_logger, "vk - base functions have been loaded");
+
+      if (!loader::IS_GLSLANG_INIT)
+      {
+         glslang::InitializeProcess();
+         loader::IS_GLSLANG_INIT = true;
+
+         util::log_info(p_logger, "vk - GLSLANG initialized");
+      }
    }
 
    void loader::load_instance(const ::vk::Instance &instance) const

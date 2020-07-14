@@ -91,23 +91,13 @@ namespace vkn
                return "UNKNOWN";
          }
       };
-
-      struct instance_error_category : std::error_category
-      {
-         [[nodiscard]] auto name() const noexcept -> const char* override { return "vk_instance"; }
-         [[nodiscard]] auto message(int err) const -> std::string override
-         {
-            return to_string(static_cast<instance::error>(err));
-         }
-      };
-
-      static const instance_error_category inst_err_cat{};
-
-      auto make_error_code(instance::error err) -> std::error_code
-      {
-         return {static_cast<int>(err), inst_err_cat};
-      }
    } // namespace detail
+
+   auto instance::error_category::name() const noexcept -> const char* { return "vk_instance"; }
+   auto instance::error_category::message(int err) const -> std::string
+   {
+      return detail::to_string(static_cast<instance::error>(err));
+   }
 
    /* INSTANCE */
 
@@ -174,7 +164,7 @@ namespace vkn
       {
          // clang-format off
          return util::monad::to_error(err_t{
-            .type = detail::make_error_code(instance::error::vulkan_version_unavailable),
+            .type = instance::make_error_code(instance::error::vulkan_version_unavailable),
             .result = static_cast<vk::Result>(version_res.left()->code().value())
          });
          // clang-format on
@@ -221,7 +211,7 @@ namespace vkn
       {
          // clang-format off
          return util::monad::error<err_t>{.val = {
-            .type = detail::make_error_code(instance::error::vulkan_version_1_2_unavailable),
+            .type = instance::make_error_code(instance::error::vulkan_version_1_2_unavailable),
             .result = {}
          }};
          // clang-format on
@@ -280,7 +270,7 @@ namespace vkn
                {
                   // clang-format off
                   return util::monad::error<err_t>{.val = {
-                     .type = detail::make_error_code(instance::error::instance_layer_not_supported),
+                     .type = instance::make_error_code(instance::error::instance_layer_not_supported),
                      .result = {}
                   }};
                   // clang-format on
@@ -306,7 +296,7 @@ namespace vkn
       {
          // clang-format off
          return util::monad::to_error(err_t{
-            .type = detail::make_error_code(instance::error::failed_to_create_instance),
+            .type = instance::make_error_code(instance::error::failed_to_create_instance),
             .result = static_cast<vk::Result>(e.code().value())
          });
          // clang-format on
@@ -342,7 +332,7 @@ namespace vkn
          {
             // clang-format off
             return util::monad::to_error(err_t{
-               .type = detail::make_error_code(instance::error::failed_to_create_debug_utils),
+               .type = instance::make_error_code(instance::error::failed_to_create_debug_utils),
                .result = static_cast<vk::Result>(e.code().value())
             });
             // clang-format on
@@ -460,7 +450,7 @@ namespace vkn
       {
          // clang-format off
          return util::monad::error<err_t>{.val = {
-            .type = detail::make_error_code(instance::error::window_extensions_not_present),
+            .type = instance::make_error_code(instance::error::window_extensions_not_present),
             .result = {}
          }};
          // clang-format on
@@ -476,7 +466,7 @@ namespace vkn
          {
             // clang-format off
             return util::monad::error<err_t>{.val = {
-               .type = detail::make_error_code(instance::error::instance_extension_not_supported),
+               .type = instance::make_error_code(instance::error::instance_extension_not_supported),
                .result = {}
             }};
             // clang-format on

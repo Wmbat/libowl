@@ -10,13 +10,6 @@ CPMAddPackage(
 )
 
 #CPMAddPackage(
-#    NAME glslang
-#    VERSION 8.13.3743
-#    GITHUB_REPOSITORY KhronosGroup/glslang 
-#    GIT_TAG 8.13.3743
-#)
-
-#CPMAddPackage(
 #    NAME SPIRV-cross
 #    VERSION 2020-04-03
 #    GITHUB_REPOSITORY KhronosGroup/SPIRV-cross

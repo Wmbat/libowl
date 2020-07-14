@@ -33,21 +33,20 @@ namespace vkn
          vk::Format format{};
          vk::Extent2D extent{};
 
-         util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images;
+         util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images{};
+         util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> image_views{};
       };
 
    public:
       swapchain() = default;
-      swapchain(const create_info& info) noexcept;
+      swapchain(const create_info& info);
+      swapchain(create_info&& info) noexcept;
       swapchain(const swapchain&) = delete;
       swapchain(swapchain&& rhs) noexcept;
       ~swapchain();
 
       auto operator=(const swapchain&) -> swapchain& = delete;
       auto operator=(swapchain&&) noexcept -> swapchain&;
-
-      [[nodiscard]] auto get_image_views() const
-         -> result<util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT>>;
 
       [[nodiscard]] auto value() const -> const vk::SwapchainKHR&;
 
@@ -58,6 +57,7 @@ namespace vkn
       vk::Extent2D m_extent{};
 
       util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> m_images;
+      util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> m_image_views;
 
    public:
       class builder

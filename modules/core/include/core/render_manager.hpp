@@ -33,7 +33,5 @@ namespace core
       vkn::instance m_instance;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
-
-      util::tiny_dynamic_array<vk::ImageView, 3> m_image_views;
    };
 } // namespace core

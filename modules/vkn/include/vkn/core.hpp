@@ -70,6 +70,8 @@ namespace vkn
    private:
       util::logger* const p_logger;
 
-      ::vk::DynamicLoader dynamic_loader;
+      vk::DynamicLoader dynamic_loader;
+
+      inline static bool IS_GLSLANG_INIT = false;
    };
 }; // namespace vkn

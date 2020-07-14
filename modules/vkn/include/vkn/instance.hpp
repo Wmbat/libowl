@@ -26,6 +26,12 @@ namespace vkn
     */
    class instance
    {
+      struct error_category : std::error_category
+      {
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
    public:
       /**
        * @brief An enum used for error handling.
@@ -58,6 +64,11 @@ namespace vkn
 
       [[nodiscard]] auto extensions() const -> const util::dynamic_array<const char*>&;
 
+      inline static auto make_error_code(error err) -> std::error_code
+      {
+         return {static_cast<int>(err), m_category};
+      }
+
    private:
       vk::Instance m_instance;
       vk::DebugUtilsMessengerEXT m_debug_utils;
@@ -65,6 +76,8 @@ namespace vkn
       util::dynamic_array<const char*> m_extensions;
 
       uint32_t m_version = 0;
+
+      inline static const error_category m_category{};
 
    public:
       class builder

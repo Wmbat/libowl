@@ -65,10 +65,6 @@ namespace core
          .build()
          .error_map([plogger](auto&& err) { return handle_swapchain_error(err, plogger); })
          .join();
-
-      m_image_views = m_swapchain.get_image_views()
-         .error_map([plogger](auto&& err) { return handle_image_view_error(err, plogger); })
-         .join();
       // clang-format on
    }
 

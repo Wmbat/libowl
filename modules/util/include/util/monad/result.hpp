@@ -41,7 +41,7 @@ namespace util
    class result
    // clang-format on
    {
-      template <class first_, class second_, class dummy_1_ = void, class dummy_2_ = void>
+      template <class first_, class second_, class dummy_ = void>
       struct storage
       {
          using error_type = first_;
@@ -193,8 +193,7 @@ namespace util
       };
 
       template <class first_, class second_>
-      struct storage<first_, second_, std::enable_if_t<trivial<first_>>,
-         std::enable_if_t<trivial<second_>>>
+      struct storage<first_, second_, std::enable_if_t<trivial<first_> && trivial<second_>>>
       {
          using error_type = first_;
          using value_type = second_;
