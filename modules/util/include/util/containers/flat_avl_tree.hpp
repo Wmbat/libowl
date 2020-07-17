@@ -23,9 +23,9 @@ namespace util
 {
    template <std::equality_comparable key_, class val_, std::size_t buff_sz,
       class compare_ = std::less<key_>>
-   class tiny_flat_map
+   class small_avl_tree
    {
-      using container_type = tiny_dynamic_array<std::pair<key_, val_>, buff_sz>;
+      using container_type = small_dynamic_array<std::pair<key_, val_>, buff_sz>;
 
    public:
       using key_type = key_;
@@ -44,7 +44,7 @@ namespace util
       using const_reverse_iterator = typename container_type::const_reverse_iterator;
 
    public:
-      tiny_flat_map() = default;
+      small_avl_tree() = default;
 
       auto at(const key_type& key) -> mapped_type&
       {

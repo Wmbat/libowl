@@ -33,8 +33,8 @@ namespace vkn
          vk::Format format{};
          vk::Extent2D extent{};
 
-         util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images{};
-         util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> image_views{};
+         util::small_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images{};
+         util::small_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> image_views{};
       };
 
    public:
@@ -56,8 +56,8 @@ namespace vkn
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
-      util::tiny_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> m_images;
-      util::tiny_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> m_image_views;
+      util::small_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> m_images;
+      util::small_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> m_image_views;
 
    public:
       class builder
@@ -90,9 +90,9 @@ namespace vkn
 
       private:
          [[nodiscard]] auto add_desired_formats() const
-            -> util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>;
+            -> util::small_dynamic_array<vk::SurfaceFormatKHR, 2>;
          [[nodiscard]] auto add_desired_present_modes() const
-            -> util::tiny_dynamic_array<vk::PresentModeKHR, 2>;
+            -> util::small_dynamic_array<vk::PresentModeKHR, 2>;
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
@@ -106,8 +106,8 @@ namespace vkn
             vk::SurfaceKHR surface{nullptr};
             vk::SwapchainKHR old_swapchain{nullptr};
 
-            util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats{};
-            util::tiny_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes{};
+            util::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats{};
+            util::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes{};
 
             uint32_t desired_width{DEFAULT_SIZE};
             uint32_t desired_height{DEFAULT_SIZE};

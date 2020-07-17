@@ -56,4 +56,4 @@ namespace util
    auto logger::get_logger() -> spdlog::logger& { return log; }
 
    auto logger::get_logger() const -> const spdlog::logger& { return log; }
-} // namespace core
+} // namespace util

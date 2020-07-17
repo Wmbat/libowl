@@ -127,7 +127,7 @@ namespace vkn
       const auto physical_devices_res = util::monad::try_wrap<std::system_error>([&] {
          return m_system_info.instance.enumeratePhysicalDevices();
       }).right_map([](const auto& devices) {
-         return util::tiny_dynamic_array<vk::PhysicalDevice, 2>{devices.begin(), devices.end()};
+         return util::small_dynamic_array<vk::PhysicalDevice, 2>{devices.begin(), devices.end()};
       });
 
       if (physical_devices_res.is_left())
@@ -143,7 +143,7 @@ namespace vkn
 
       const auto physical_devices = physical_devices_res.right().value();
 
-      util::tiny_dynamic_array<physical_device_description, 2> physical_device_descriptions;
+      util::small_dynamic_array<physical_device_description, 2> physical_device_descriptions;
       for (const vk::PhysicalDevice& device : physical_devices)
       {
          physical_device_descriptions.push_back(populate_device_details(device));
@@ -181,8 +181,7 @@ namespace vkn
          // clang-format on
       }
 
-      log_info(m_plogger, "Selected physical device: {0}",
-         std::make_tuple(selected.properties.deviceName));
+      log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
       // clang-format off
       return util::monad::to_value(physical_device{{
@@ -266,7 +265,7 @@ namespace vkn
       const auto properties_res = util::monad::try_wrap<vk::SystemError>([&] {
          return device.getQueueFamilyProperties();
       }).right_map([](const auto& properties) {
-         return util::tiny_dynamic_array<vk::QueueFamilyProperties, 16>{
+         return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{
             properties.begin(), properties.end()};
       });
 

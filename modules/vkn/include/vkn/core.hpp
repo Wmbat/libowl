@@ -17,6 +17,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ShaderLang.h>
+
 #include <system_error>
 
 namespace vkn

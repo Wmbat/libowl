@@ -71,14 +71,18 @@ target_compile_options(${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Weverything -Werror -fno-omit-frame-pointer>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -fno-omit-frame-pointer
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
         -Wconversion -fsanitize=address -fsanitize=undefined>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
 target_include_directories(${PROJECT_NAME}
-    SYSTEM PUBLIC
-        vulkan/vulkan.hpp
+    SYSTEM 
+        INTERFACE
+            Vulkan-Headers
+        PUBLIC
+            glslang
+            SPIRV
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

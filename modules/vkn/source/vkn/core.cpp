@@ -1,8 +1,6 @@
-#include "util/logger.hpp"
-#include <vkn/core.hpp>
+#include "vkn/core.hpp"
 
-#include <SPIRV/GlslangToSpv.h>
-#include <glslang/Public/ShaderLang.h>
+#include <util/logger.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
@@ -13,14 +11,14 @@ namespace vkn
       VULKAN_HPP_DEFAULT_DISPATCHER.init(
          dynamic_loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
 
-      log_info(p_logger, "vk - base functions have been loaded");
+      log_info(p_logger, "[vkn] base functions have been loaded");
 
       if (!loader::IS_GLSLANG_INIT)
       {
          glslang::InitializeProcess();
          loader::IS_GLSLANG_INIT = true;
 
-         util::log_info(p_logger, "vk - GLSLANG initialized");
+         util::log_info(p_logger, "[vkn] glslang initialized");
       }
    }
 
@@ -28,13 +26,13 @@ namespace vkn
    {
       VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
-      log_info(p_logger, "vk - all instance functions have been loaded");
+      log_info(p_logger, "[vkn] all instance functions have been loaded");
    }
 
    void loader::load_device(const ::vk::Device &device) const
    {
       VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
-      log_info(p_logger, "vk - all device functions have been loaded");
+      log_info(p_logger, "[vkn] all device functions have been loaded");
    }
 } // namespace vkn

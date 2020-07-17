@@ -61,7 +61,7 @@ namespace vkn
 
       auto value() noexcept -> vk::Instance&;
       [[nodiscard]] auto value() const noexcept -> const vk::Instance&;
-
+      [[nodiscard]] auto version() const noexcept -> uint32_t;
       [[nodiscard]] auto extensions() const -> const util::dynamic_array<const char*>&;
 
       inline static auto make_error_code(error err) -> std::error_code

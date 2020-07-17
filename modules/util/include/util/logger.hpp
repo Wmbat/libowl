@@ -100,113 +100,61 @@ namespace util
       spdlog::logger log;
    };
 
-   inline void log_info(logger* const plogger, std::string_view message,
-      const src_location& loc = src_location::current())
+   inline void log_info(logger* const plogger, std::string_view message)
    {
       if (plogger)
       {
-         plogger->info(
-            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+         plogger->info(message);
       }
    }
-   inline void log_debug(logger* const plogger, std::string_view message,
-      const src_location& loc = src_location::current())
+   inline void log_debug(logger* const plogger, std::string_view message)
    {
       if (plogger)
       {
-         plogger->debug(
-            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+         plogger->debug(message);
       }
    }
-   inline void log_warn(logger* const plogger, std::string_view message,
-      const src_location& loc = src_location::current())
+   inline void log_warn(logger* const plogger, std::string_view message)
    {
       if (plogger)
       {
-         plogger->warn(
-            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+         plogger->warn(message);
       }
    }
-   inline void log_error(logger* const plogger, std::string_view message,
-      const src_location& loc = src_location::current())
+   inline void log_error(logger* const plogger, std::string_view message)
    {
       if (plogger)
       {
-         plogger->error(
-            "[{0}:{1}] " + std::string{message}, SHORT_FILE(loc.file_name()), loc.line());
+         plogger->error(message);
       }
    }
 
-   template <typename... args_>
-   void log_info(logger* const plogger, std::string_view message, std::tuple<args_...> args,
-      const src_location& loc = src_location::current())
+   void log_info(logger* const plogger, std::string_view message, const auto&... args)
    {
-      constexpr size_t n = sizeof...(args_);
-
-      const std::string buff =
-         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
-
       if (plogger)
       {
-         std::apply(
-            [&](auto&&... data) {
-               plogger->info(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
-            },
-            args);
+         plogger->info(message, args...);
       }
    }
-   template <typename... args_>
-   void log_debug(logger* const plogger, std::string_view message, std::tuple<args_...> args,
-      const src_location& loc = src_location::current())
+   void log_debug(logger* const plogger, std::string_view message, const auto&... args)
    {
-      constexpr size_t n = sizeof...(args_);
-
-      const std::string buff =
-         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
-
       if (plogger)
       {
-         std::apply(
-            [&](auto&&... data) {
-               plogger->debug(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
-            },
-            args);
+         plogger->debug(message, args...);
       }
    }
-   template <typename... args_>
-   void log_warn(logger* const plogger, std::string_view message, std::tuple<args_...> args,
-      const src_location& loc = src_location::current())
+   void log_warn(logger* const plogger, std::string_view message, const auto&... args)
    {
-      constexpr size_t n = sizeof...(args_);
-
-      const std::string buff =
-         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
-
       if (plogger)
       {
-         std::apply(
-            [&](auto&&... data) {
-               plogger->warn(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
-            },
-            args);
+         plogger->warn(message, args...);
       }
    }
-   template <typename... args_>
-   void log_error(logger* const plogger, std::string_view message, std::tuple<args_...> args,
-      const src_location& loc = src_location::current())
+   void log_error(logger* const plogger, std::string_view message, const auto&... args)
    {
-      constexpr size_t n = sizeof...(args_);
-
-      const std::string buff =
-         "[{" + std::to_string(n) + "}:{" + std::to_string(n + 1) + "}] " + std::string{message};
-
       if (plogger)
       {
-         std::apply(
-            [&](auto&&... data) {
-               plogger->error(buff, data..., SHORT_FILE(loc.file_name()), loc.line());
-            },
-            args);
+         plogger->error(message, args...);
       }
    }
 } // namespace util

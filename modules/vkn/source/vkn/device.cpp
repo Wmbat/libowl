@@ -79,10 +79,13 @@ namespace vkn
       }
    } // namespace detail
 
-   device::device(physical_device physical_device, vk::Device device,
-      util::dynamic_array<const char*> extensions) :
-      m_physical_device{std::move(physical_device)},
-      m_device{device}, m_extensions{std::move(extensions)}
+   device::device(physical_device physical_device, const create_info& info) :
+      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_extensions{info.extensions}
+   {}
+   device::device(physical_device physical_device, create_info&& info) :
+      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_extensions{std::move(info.extensions)}
    {}
    device::device(device&& rhs) noexcept { *this = std::move(rhs); }
    device::~device()
@@ -267,12 +270,13 @@ namespace vkn
    auto device::value() const -> const vk::Device& { return m_device; }
    auto device::physical() const -> const physical_device& { return m_physical_device; }
 
-   device::builder::builder(
-      const loader& vk_loader, physical_device&& phys_device, util::logger* plogger) :
+   device::builder::builder(const loader& vk_loader, physical_device&& phys_device,
+      uint32_t version, util::logger* plogger) :
       m_loader{vk_loader},
       m_plogger{plogger}
    {
       m_info.phys_device = std::move(phys_device);
+      m_info.api_version = version;
    }
 
    auto device::builder::build() -> result<device>
@@ -342,7 +346,7 @@ namespace vkn
 
       for(const char* name : extensions)
       {
-         log_info(m_plogger, "vk - device extension: {0} - ENABLED", std::make_tuple(name));
+         log_info(m_plogger, "[vkn] device extension: {0} - ENABLED", name);
       }
 
       // clang-format off
@@ -371,12 +375,21 @@ namespace vkn
          });
       }
 
-      log_info(m_plogger, "vk - device created");
+      log_info(m_plogger, "[vkn] device created");
 
       auto dev = device_res.right().value();
       m_loader.load_device(dev);
 
-      return util::monad::to_value(device{std::move(m_info.phys_device), dev, extensions});
+      // clang-format off
+      return util::monad::to_value(device{
+         std::move(m_info.phys_device), 
+         device::create_info{
+            .device = dev,
+            .version = m_info.api_version,
+            .extensions = std::move(extensions)
+         }
+      });
+      // clang-format on
    }
 
    auto device::builder::set_queue_setup(

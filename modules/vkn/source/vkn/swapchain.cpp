@@ -314,13 +314,13 @@ namespace vkn
 
       const auto surface_support = surface_support_res.value().value();
 
-      util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
+      util::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
       if (desired_formats.empty())
       {
          desired_formats = add_desired_formats();
       }
 
-      util::tiny_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
+      util::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
          m_info.desired_present_modes;
       if (desired_present_modes.empty())
       {
@@ -382,15 +382,15 @@ namespace vkn
          // clang-format on
       }
 
-      util::log_info(m_plogger, "vk - swapchain created.");
-      util::log_info(m_plogger, "vk - swapchain image count: {0}", std::make_tuple(image_count));
+      util::log_info(m_plogger, "[vkn] swapchain created.");
+      util::log_info(m_plogger, "[vkn] swapchain image count: {0}", image_count);
 
       vk::SwapchainKHR swap = creation_res.right().value();
 
       const auto image_res = util::monad::try_wrap<std::system_error>([&] {
          return m_info.device.getSwapchainImagesKHR(swap);
       }).right_map([](const auto& images) {
-         return util::tiny_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
+         return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
       });
 
       if (image_res.is_left())
@@ -405,7 +405,7 @@ namespace vkn
 
       const auto images = image_res.right().value();
 
-      util::tiny_dynamic_array<vk::ImageView, 3> views{};
+      util::small_dynamic_array<vk::ImageView, 3> views{};
 
       if (util::monad::try_wrap<std::bad_alloc>([&] {
              views.reserve(images.size());
@@ -551,20 +551,20 @@ namespace vkn
       return *this;
    }
 
-   auto builder::add_desired_formats() const -> util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>
+   auto builder::add_desired_formats() const -> util::small_dynamic_array<vk::SurfaceFormatKHR, 2>
    {
       // clang-format off
-      return util::tiny_dynamic_array<vk::SurfaceFormatKHR, 2>{{
+      return util::small_dynamic_array<vk::SurfaceFormatKHR, 2>{{
          vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
          vk::SurfaceFormatKHR{vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear}
       }};
       // clang-format on
    }
    auto builder::add_desired_present_modes() const
-      -> util::tiny_dynamic_array<vk::PresentModeKHR, 2>
+      -> util::small_dynamic_array<vk::PresentModeKHR, 2>
    {
       // clang-format off
-      return util::tiny_dynamic_array<vk::PresentModeKHR, 2>{{
+      return util::small_dynamic_array<vk::PresentModeKHR, 2>{{
          vk::PresentModeKHR::eMailbox,
          vk::PresentModeKHR::eFifo
       }};

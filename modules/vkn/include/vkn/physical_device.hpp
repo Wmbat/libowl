@@ -261,7 +261,7 @@ namespace vkn
          {
             vk::PhysicalDevice phys_device;
 
-            util::tiny_dynamic_array<vk::QueueFamilyProperties, 16> queue_families{};
+            util::small_dynamic_array<vk::QueueFamilyProperties, 16> queue_families{};
 
             vk::PhysicalDeviceFeatures features{};
             vk::PhysicalDeviceProperties properties{};

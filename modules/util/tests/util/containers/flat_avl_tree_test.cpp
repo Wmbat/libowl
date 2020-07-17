@@ -1,4 +1,4 @@
-#include <util/containers/flat_map.hpp>
+#include <util/containers/flat_avl_tree.hpp>
 
 #include <gtest/gtest.h>
 #include <string>
@@ -30,19 +30,19 @@ struct moveable
    int i = 0;
 };
 
-struct tiny_flat_avl_map_test : public testing::Test
+struct small_flat_avl_map_test : public testing::Test
 {
-   tiny_flat_avl_map_test() = default;
+   small_flat_avl_map_test() = default;
 };
 
-TEST_F(tiny_flat_avl_map_test, default_ctor)
+TEST_F(small_flat_avl_map_test, default_ctor)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 }
 
-TEST_F(tiny_flat_avl_map_test, clear)
+TEST_F(small_flat_avl_map_test, clear)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -78,9 +78,9 @@ TEST_F(tiny_flat_avl_map_test, clear)
    EXPECT_EQ(map.size(), 0);
 }
 
-TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
+TEST_F(small_flat_avl_map_test, insert_lvalue_reference)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -112,9 +112,9 @@ TEST_F(tiny_flat_avl_map_test, insert_lvalue_reference)
    EXPECT_EQ(map.size(), 2);
 }
 
-TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
+TEST_F(small_flat_avl_map_test, insert_rvalue_reference)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -146,9 +146,9 @@ TEST_F(tiny_flat_avl_map_test, insert_rvalue_reference)
    EXPECT_EQ(map.size(), 2);
 }
 
-TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
+TEST_F(small_flat_avl_map_test, insert_iterator_range)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    {
       EXPECT_EQ(map.size(), 0);
@@ -181,14 +181,14 @@ TEST_F(tiny_flat_avl_map_test, insert_iterator_range)
       EXPECT_EQ(map.size(), 2);
    }
 
-   util::tiny_flat_map<int, int, 16> map_2{};
+   util::small_avl_tree<int, int, 16> map_2{};
 
    map_2.insert(map.cbegin(), map.cend());
 }
 
-TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
+TEST_F(small_flat_avl_map_test, insert_initializer_list)
 {
-   util::tiny_flat_map<int, copyable, 2> map{};
+   util::small_avl_tree<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -200,7 +200,7 @@ TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
    });
 
    EXPECT_EQ(map.size(), 3);
-   EXPECT_EQ(map.capacity(), 5);
+   EXPECT_EQ(map.capacity(), 4);
 
    for (int i = 0; const auto& [key, val] : map)
    {
@@ -209,9 +209,9 @@ TEST_F(tiny_flat_avl_map_test, insert_initializer_list)
    }
 }
 
-TEST_F(tiny_flat_avl_map_test, emplace)
+TEST_F(small_flat_avl_map_test, emplace)
 {
-   util::tiny_flat_map<int, std::string, 8> map{};
+   util::small_avl_tree<int, std::string, 8> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 8);
@@ -245,9 +245,9 @@ TEST_F(tiny_flat_avl_map_test, emplace)
    EXPECT_EQ(map.capacity(), 8);
 }
 
-TEST_F(tiny_flat_avl_map_test, try_emplace)
+TEST_F(small_flat_avl_map_test, try_emplace)
 {
-   util::tiny_flat_map<int, std::string, 16> map{};
+   util::small_avl_tree<int, std::string, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -280,9 +280,9 @@ TEST_F(tiny_flat_avl_map_test, try_emplace)
    }
 }
 
-TEST_F(tiny_flat_avl_map_test, erase)
+TEST_F(small_flat_avl_map_test, erase)
 {
-   util::tiny_flat_map<int, copyable, 2> map{};
+   util::small_avl_tree<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -294,7 +294,7 @@ TEST_F(tiny_flat_avl_map_test, erase)
    });
 
    EXPECT_EQ(map.size(), 3);
-   EXPECT_EQ(map.capacity(), 5);
+   EXPECT_EQ(map.capacity(), 4);
 
    for (int i = 0; const auto& [key, val] : map)
    {
@@ -317,9 +317,9 @@ TEST_F(tiny_flat_avl_map_test, erase)
    }
 }
 
-TEST_F(tiny_flat_avl_map_test, erase_iterator_range)
+TEST_F(small_flat_avl_map_test, erase_iterator_range)
 {
-   util::tiny_flat_map<int, copyable, 2> map{};
+   util::small_avl_tree<int, copyable, 2> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 2);
@@ -329,22 +329,22 @@ TEST_F(tiny_flat_avl_map_test, erase_iterator_range)
       std::make_pair(5, copyable(5))});
 
    EXPECT_EQ(map.size(), 5);
-   EXPECT_EQ(map.capacity(), 5);
+   EXPECT_EQ(map.capacity(), 8);
 
    map.erase(map.cbegin(), map.cbegin() + 2);
 
    EXPECT_EQ(map.size(), 3);
-   EXPECT_EQ(map.capacity(), 5);
+   EXPECT_EQ(map.capacity(), 8);
 
    map.erase(map.cbegin(), map.cend());
 
    EXPECT_EQ(map.size(), 0);
-   EXPECT_EQ(map.capacity(), 5);
+   EXPECT_EQ(map.capacity(), 8);
 }
 
-TEST_F(tiny_flat_avl_map_test, count)
+TEST_F(small_flat_avl_map_test, count)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -379,9 +379,9 @@ TEST_F(tiny_flat_avl_map_test, count)
    EXPECT_EQ(map.count(0), 0);
 }
 
-TEST_F(tiny_flat_avl_map_test, find)
+TEST_F(small_flat_avl_map_test, find)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -426,9 +426,9 @@ TEST_F(tiny_flat_avl_map_test, find)
    EXPECT_EQ(it_2, map.end());
 }
 
-TEST_F(tiny_flat_avl_map_test, find_const)
+TEST_F(small_flat_avl_map_test, find_const)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);
@@ -469,9 +469,9 @@ TEST_F(tiny_flat_avl_map_test, find_const)
    EXPECT_EQ(it_2, map.end());
 }
 
-TEST_F(tiny_flat_avl_map_test, contains)
+TEST_F(small_flat_avl_map_test, contains)
 {
-   util::tiny_flat_map<int, int, 16> map{};
+   util::small_avl_tree<int, int, 16> map{};
 
    EXPECT_EQ(map.size(), 0);
    EXPECT_EQ(map.capacity(), 16);

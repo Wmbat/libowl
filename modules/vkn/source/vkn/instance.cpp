@@ -30,22 +30,22 @@ namespace vkn
       {
          if (!type.empty())
          {
-            log_error(p_logger, "{0} - {1}", std::make_tuple(type, p_callback_data->pMessage));
+            log_error(p_logger, "{0} - {1}", type, p_callback_data->pMessage);
          }
          else
          {
-            log_error(p_logger, "{0}", std::make_tuple(p_callback_data->pMessage));
+            log_error(p_logger, "{0}", p_callback_data->pMessage);
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
       {
          if (!type.empty())
          {
-            log_warn(p_logger, "{0} - {1}", std::make_tuple(type, p_callback_data->pMessage));
+            log_warn(p_logger, "{0} - {1}", type, p_callback_data->pMessage);
          }
          else
          {
-            log_warn(p_logger, "{0}", std::make_tuple(p_callback_data->pMessage));
+            log_warn(p_logger, "{0}", p_callback_data->pMessage);
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
@@ -139,7 +139,7 @@ namespace vkn
 
    auto instance::value() noexcept -> vk::Instance& { return m_instance; }
    auto instance::value() const noexcept -> const vk::Instance& { return m_instance; }
-
+   auto instance::version() const noexcept -> uint32_t { return m_version; }
    auto instance::extensions() const -> const util::dynamic_array<const char*>&
    {
       return m_extensions;
@@ -178,8 +178,8 @@ namespace vkn
       {
          if (system_layers_res.is_left())
          {
-            log_warn(m_plogger, "Instance layer enumeration error: {0}",
-               std::make_tuple(system_layers_res.left()->what()));
+            log_warn(m_plogger, "[vkn] instance layer enumeration error: {0}",
+               system_layers_res.left()->what());
          }
       }
 
@@ -189,8 +189,8 @@ namespace vkn
 
       if (system_layers_res.is_left())
       {
-         log_warn(m_plogger, "Instance layer enumeration error: {1}",
-            std::make_tuple(system_exts_res.left()->what()));
+         log_warn(m_plogger, "[vkn] instance layer enumeration error: {1}",
+            system_exts_res.left()->what());
       }
 
       const auto sys_layers = system_layers_res.right().value();
@@ -200,12 +200,8 @@ namespace vkn
       const bool validation_layers_available = has_validation_layer_support(sys_layers);
       const bool debug_utils_available = has_debug_utils_support(sys_exts);
 
-      log_info(m_plogger, "vk - version {0}.{1}.{2}",
-         std::make_tuple(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version),
-            VK_VERSION_PATCH(api_version)));
-
-      // LOG_INFO_P(m_plogger, "vk - version {1}.{2}.{3}", VK_VERSION_MAJOR(api_version),
-      //   VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
+      log_info(m_plogger, "[vkn] using vulkan version {0}.{1}.{2}", VK_VERSION_MAJOR(api_version),
+         VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
@@ -239,7 +235,7 @@ namespace vkn
 
       for (const char* name : extensions)
       {
-         log_info(m_plogger, "vk - instance extension: {0} - ENABLED", std::make_tuple(name));
+         log_info(m_plogger, "[vkn] instance extension: {0} - ENABLED", name);
       }
 
       // clang-format off
@@ -283,7 +279,7 @@ namespace vkn
 
          for (const char* name : layers)
          {
-            log_info(m_plogger, "vk - instance layers: {0} - ENABLED", std::make_tuple(name));
+            log_info(m_plogger, "[vkn] instance layers: {0} - ENABLED", name);
          }
       }
 
@@ -304,7 +300,7 @@ namespace vkn
 
       vk::DebugUtilsMessengerEXT vk_mess = nullptr;
 
-      log_info(m_plogger, "vk - instance created");
+      log_info(m_plogger, "[vkn] instance created");
 
       m_loader.load_instance(vk_inst);
 
@@ -338,7 +334,7 @@ namespace vkn
             // clang-format on
          }
 
-         log_info(m_plogger, "vk - debug utils created");
+         log_info(m_plogger, "[vkn] debug utils created");
       }
 
       return util::monad::to_value(instance{vk_inst, vk_mess, extensions, api_version});

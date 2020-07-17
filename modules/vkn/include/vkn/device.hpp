@@ -51,9 +51,17 @@ namespace vkn
          failed_to_create_device
       };
 
+      struct create_info
+      {
+         vk::Device device{};
+         uint32_t version{0u};
+
+         util::dynamic_array<const char*> extensions{};
+      };
+
       device() = default;
-      device(physical_device physical_device, vk::Device device,
-         util::dynamic_array<const char*> extensions);
+      device(physical_device physical_device, const create_info& info);
+      device(physical_device physical_device, create_info&& info);
       device(const device&) = delete;
       device(device&&) noexcept;
       ~device();
@@ -76,13 +84,15 @@ namespace vkn
 
       vk::Device m_device;
 
+      uint32_t m_version{0};
+
       util::dynamic_array<const char*> m_extensions;
 
    public:
       class builder
       {
       public:
-         builder(const loader& vk_loader, physical_device&& phys_device,
+         builder(const loader& vk_loader, physical_device&& phys_device, uint32_t version,
             util::logger* const plogger = nullptr);
 
          [[nodiscard]] auto build() -> vkn::result<device>;
@@ -99,6 +109,8 @@ namespace vkn
          struct info
          {
             physical_device phys_device;
+
+            uint32_t api_version{};
 
             util::dynamic_array<queue::description> queue_descriptions;
             util::dynamic_array<const char*> desired_extensions;

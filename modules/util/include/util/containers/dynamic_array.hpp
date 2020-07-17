@@ -9,6 +9,7 @@
 
 #include <util/compare.hpp>
 #include <util/concepts.hpp>
+#include <util/containers/detail/growth_policy.hpp>
 #include <util/containers/error_handling.hpp>
 #include <util/iterators/input_iterator.hpp>
 #include <util/iterators/random_access_iterator.hpp>
@@ -29,7 +30,7 @@ namespace util
    namespace detail
    {
       /**
-       * @struct static_array_storage details.hpp <ESL/containers/tiny_dynamic_array.hpp>
+       * @struct static_array_storage details.hpp <ESL/containers/small_dynamic_array.hpp>
        * @author wmbat wmbat@protonmail.com
        * @date Monday, April 29th, 2020
        * @copyright MIT License.
@@ -51,8 +52,9 @@ namespace util
       };
    } // namespace detail
 
-   template <class any_, std::size_t buffer_size_>
-   class tiny_dynamic_array
+   template <class any_, std::size_t buffer_size_,
+      class policy_ = detail::growth_policy::power_of_two>
+   class small_dynamic_array
    {
    public:
       using value_type = any_;
@@ -68,41 +70,41 @@ namespace util
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit constexpr tiny_dynamic_array() = default;
-      explicit constexpr tiny_dynamic_array(
+      explicit constexpr small_dynamic_array() = default;
+      explicit constexpr small_dynamic_array(
          size_type count) requires std::default_initializable<value_type>
       {
          assign(count, value_type{});
       }
-      explicit tiny_dynamic_array(
+      explicit small_dynamic_array(
          size_type count, const_reference value) requires std::copyable<value_type>
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      tiny_dynamic_array(it_ first, it_ last) requires std::copyable<value_type>
+      small_dynamic_array(it_ first, it_ last) requires std::copyable<value_type>
       {
          assign(first, last);
       }
-      tiny_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type>
+      small_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type>
       {
          assign(init);
       }
-      tiny_dynamic_array(const tiny_dynamic_array& other)
+      small_dynamic_array(const small_dynamic_array& other)
       {
          if (!other.empty())
          {
             *this = other;
          }
       }
-      tiny_dynamic_array(tiny_dynamic_array&& other) noexcept
+      small_dynamic_array(small_dynamic_array&& other) noexcept
       {
          if (!other.empty())
          {
             *this = std::move(other);
          }
       }
-      constexpr ~tiny_dynamic_array()
+      constexpr ~small_dynamic_array()
       {
          if (!is_static() && m_pbegin)
          {
@@ -111,7 +113,7 @@ namespace util
          }
       }
 
-      constexpr auto operator=(const tiny_dynamic_array& rhs) -> tiny_dynamic_array&
+      constexpr auto operator=(const small_dynamic_array& rhs) -> small_dynamic_array&
       {
          if (this == &rhs)
          {
@@ -160,7 +162,7 @@ namespace util
          return *this;
       }
 
-      constexpr auto operator=(tiny_dynamic_array&& rhs) noexcept -> tiny_dynamic_array&
+      constexpr auto operator=(small_dynamic_array&& rhs) noexcept -> small_dynamic_array&
       {
          if (this == &rhs)
          {
@@ -233,13 +235,13 @@ namespace util
          }
       }
 
-      constexpr auto operator==(const tiny_dynamic_array& rhs) const
+      constexpr auto operator==(const small_dynamic_array& rhs) const
          -> bool requires std::equality_comparable<value_type>
       {
          return std::equal(cbegin(), cend(), rhs.cbegin(), rhs.cend());
       }
 
-      constexpr auto operator<=>(const tiny_dynamic_array& rhs)
+      constexpr auto operator<=>(const small_dynamic_array& rhs)
       {
          return std::lexicographical_compare_three_way(
             cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
@@ -788,20 +790,25 @@ namespace util
       {
          if (min_size > std::numeric_limits<difference_type>::max())
          {
-            handle_bad_alloc_error("tiny_dynamic_array capacity overflow during allocation");
+            handle_bad_alloc_error("small_dynamic_array capacity overflow during allocation");
          }
 
          if (capacity() == std::numeric_limits<difference_type>::max())
          {
-            handle_bad_alloc_error("tiny_dynamic_array capacity unable to grow");
+            handle_bad_alloc_error("small_dynamic_array capacity unable to grow");
          }
 
          const auto new_capacity =
+            policy_::compute_new_capacity(std::max(m_capacity + 1, min_size));
+
+         /*
+         const auto new_capacity =
             std::clamp(2 * m_capacity + 1, min_size, std::numeric_limits<size_type>::max());
+         */
 
          try
          {
-            pointer new_elements = new value_type[new_capacity];
+            auto new_elements = new value_type[new_capacity]; // NOLINT
 
             if constexpr (std::movable<value_type>)
             {
@@ -870,6 +877,6 @@ namespace util
       detail::static_array_storage<value_type, buffer_size_> m_storage;
    }; // namespace util
 
-   template <class any_>
-   using dynamic_array = tiny_dynamic_array<any_, 0>;
+   template <class any_, class policy_ = detail::growth_policy::power_of_two>
+   using dynamic_array = small_dynamic_array<any_, 0, policy_>;
 } // namespace util

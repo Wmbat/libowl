@@ -23,8 +23,6 @@ namespace core
    auto handle_device_error(const vkn::error&, util::logger* const) -> vkn::device;
    auto handle_surface_error(const vkn::error&, util::logger* const) -> vk::SurfaceKHR;
    auto handle_swapchain_error(const vkn::error&, util::logger* const) -> vkn::swapchain;
-   auto handle_image_view_error(const vkn::error& err, util::logger* const plogger)
-      -> util::tiny_dynamic_array<vk::ImageView, 3>;
 
    render_manager::render_manager(gfx::window* const p_wnd, util::logger* const plogger) :
       m_pwindow{p_wnd}, m_plogger{plogger}, m_loader{m_plogger}
@@ -51,9 +49,9 @@ namespace core
             .error_map([plogger](auto&& err) { 
                return handle_physical_device_error(err, plogger); 
             })
-            .join(), m_plogger}
+            .join(), m_instance.version(), m_plogger}
          .build()
-         .error_map([plogger](auto&& PH1) { return handle_device_error(PH1, plogger); })
+         .error_map([plogger](auto&& err) { return handle_device_error(err, plogger); })
          .join();
 
       m_swapchain = vkn::swapchain::builder{m_device, plogger}
@@ -68,50 +66,41 @@ namespace core
       // clang-format on
    }
 
-   auto handle_instance_error(const vkn::error& err, util::logger* const m_plogger) -> vkn::instance
+   auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance
    {
-      log_error(m_plogger, "Failed to create instance: {0}", std::make_tuple(err.type.message()));
+      log_error(plogger, "[core] Failed to create instance: {0}", err.type.message());
       abort();
 
       return {};
    }
-   auto handle_physical_device_error(const vkn::error& err, util::logger* const m_plogger)
+   auto handle_physical_device_error(const vkn::error& err, util::logger* const plogger)
       -> vkn::physical_device
    {
-      log_error(
-         m_plogger, "Failed to create physical device: {0}", std::make_tuple(err.type.message()));
+      log_error(plogger, "[core] Failed to create physical device: {0}", err.type.message());
       abort();
 
       return {};
    }
-   auto handle_device_error(const vkn::error& err, util::logger* const m_plogger) -> vkn::device
+   auto handle_device_error(const vkn::error& err, util::logger* const plogger) -> vkn::device
    {
-      log_error(m_plogger, "Failed to create device: {0}", std::make_tuple(err.type.message()));
+      log_error(plogger, "[core] Failed to create device: {0}", err.type.message());
       abort();
 
       return {};
    }
 
-   auto handle_surface_error(const vkn::error& err, util::logger* const m_plogger) -> vk::SurfaceKHR
+   auto handle_surface_error(const vkn::error& err, util::logger* const plogger) -> vk::SurfaceKHR
    {
-      log_error(m_plogger, "Failed to create surface: {0}", std::make_tuple(err.type.message()));
+      log_error(plogger, "[core] Failed to create surface: {0}", err.type.message());
       abort();
 
       return {};
    }
    auto handle_swapchain_error(const vkn::error& err, util::logger* const plogger) -> vkn::swapchain
    {
-      log_error(plogger, "Failed to create swapchain: {0}", std::make_tuple(err.type.message()));
+      log_error(plogger, "[core] Failed to create swapchain: {0}", err.type.message());
       abort();
 
       return {};
-   }
-   auto handle_image_view_error(const vkn::error& err, util::logger* const plogger)
-      -> util::tiny_dynamic_array<vk::ImageView, 3>
-   {
-      log_error(
-         plogger, "Failed to get swapchain image views: {0}", std::make_tuple(err.type.message()));
-      abort();
-      return util::tiny_dynamic_array<vk::ImageView, 3>{};
    }
 } // namespace core
