@@ -27,6 +27,8 @@
 
 #include <gtest/gtest.h>
 
+#include <memory_resource>
+
 struct copyable
 {
    copyable() = default;
@@ -56,7 +58,9 @@ struct moveable
 
 struct small_dynamic_array_test : public testing::Test
 {
-   small_dynamic_array_test() = default;
+   small_dynamic_array_test() { std::pmr::set_default_resource(&resource); }
+
+   std::pmr::monotonic_buffer_resource resource{4096u};
 };
 
 TEST_F(small_dynamic_array_test, default_ctor)
@@ -76,6 +80,16 @@ TEST_F(small_dynamic_array_test, default_ctor)
    }
 }
 
+TEST_F(small_dynamic_array_test, default_ctor_pmr)
+{
+   util::pmr::dynamic_array<int> vec{};
+
+   EXPECT_EQ(vec.size(), 0);
+   EXPECT_EQ(vec.capacity(), 0);
+   EXPECT_EQ(vec.get_allocator().resource(), &resource);
+   EXPECT_EQ(vec.get_allocator().resource(), std::pmr::get_default_resource());
+}
+
 TEST_F(small_dynamic_array_test, ctor_count)
 {
    {
@@ -91,6 +105,33 @@ TEST_F(small_dynamic_array_test, ctor_count)
    }
    {
       util::small_dynamic_array<copyable, 5> vec{5};
+
+      EXPECT_EQ(vec.size(), 5);
+      EXPECT_EQ(vec.capacity(), 5);
+
+      for (auto& val : vec)
+      {
+         EXPECT_EQ(val.i, 0);
+      }
+   }
+}
+
+TEST_F(small_dynamic_array_test, ctor_count_pmr)
+{
+   {
+      util::pmr::dynamic_array<copyable> vec{10};
+
+      EXPECT_EQ(vec.size(), 10);
+      EXPECT_EQ(vec.capacity(), 16);
+      EXPECT_EQ(vec.get_allocator().resource(), &resource);
+
+      for (const auto& val : vec)
+      {
+         EXPECT_EQ(val.i, 0);
+      }
+   }
+   {
+      util::pmr::small_dynamic_array<copyable, 5> vec{5};
 
       EXPECT_EQ(vec.size(), 5);
       EXPECT_EQ(vec.capacity(), 5);

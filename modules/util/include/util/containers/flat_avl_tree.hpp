@@ -8,8 +8,8 @@
 #pragma once
 
 #include <util/concepts.hpp>
+#include <util/containers/detail/error_handling.hpp>
 #include <util/containers/dynamic_array.hpp>
-#include <util/containers/error_handling.hpp>
 
 #include <algorithm>
 #include <cstddef>

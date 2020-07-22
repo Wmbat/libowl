@@ -290,15 +290,7 @@ namespace vkn
       {
          for (uint32_t i = 0; i < m_info.phys_device.queue_families().size(); ++i)
          {
-            // clang-format off
-            descriptions.push_back(
-               {
-                  .index = i, 
-                  .count = 1, 
-                  .priorities = util::dynamic_array<float>{1.0f}
-               }
-            );
-            // clang-format on
+            descriptions.emplace_back(queue::description{i, 1u, util::dynamic_array<float>{1.0f}});
          }
       }
 

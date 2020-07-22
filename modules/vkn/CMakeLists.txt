@@ -96,5 +96,7 @@ target_sources(${PROJECT_NAME}
         source/vkn/device.cpp
         source/vkn/instance.cpp
         source/vkn/physical_device.cpp
+        source/vkn/shader.cpp
+        source/vkn/shader_manager.cpp
         source/vkn/swapchain.cpp
 )

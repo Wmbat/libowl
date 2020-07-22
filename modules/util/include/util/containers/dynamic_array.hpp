@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include <util/compare.hpp>
-#include <util/concepts.hpp>
-#include <util/containers/detail/growth_policy.hpp>
-#include <util/containers/error_handling.hpp>
-#include <util/iterators/input_iterator.hpp>
-#include <util/iterators/random_access_iterator.hpp>
-#include <util/monad/either.hpp>
+#include "util/compare.hpp"
+#include "util/concepts.hpp"
+#include "util/containers/detail/error_handling.hpp"
+#include "util/containers/detail/growth_policy.hpp"
+#include "util/iterators/input_iterator.hpp"
+#include "util/iterators/random_access_iterator.hpp"
+#include "util/monad/either.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,7 +22,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
-#include <ranges>
+#include <memory>
+#include <memory_resource>
 #include <type_traits>
 
 namespace util
@@ -52,41 +53,49 @@ namespace util
       };
    } // namespace detail
 
-   template <class any_, std::size_t buffer_size_,
-      class policy_ = detail::growth_policy::power_of_two>
+   template <class any_, std::size_t buffer_size_, allocator allocator_ = std::allocator<any_>>
    class small_dynamic_array
    {
+      using allocator_traits = std::allocator_traits<allocator_>;
+
    public:
       using value_type = any_;
-      using reference = value_type&;
-      using const_reference = const value_type&;
-      using pointer = value_type*;
-      using const_pointer = const value_type*;
       using size_type = std::size_t;
       using difference_type = std::ptrdiff_t;
+      using allocator_type = allocator_;
+      using reference = value_type&;
+      using const_reference = const value_type&;
+      using pointer = typename std::allocator_traits<allocator_type>::pointer;
+      using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
       using iterator = random_access_iterator<value_type>;
       using const_iterator = random_access_iterator<const value_type>;
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
    public:
-      explicit constexpr small_dynamic_array() = default;
-      explicit constexpr small_dynamic_array(
-         size_type count) requires std::default_initializable<value_type>
+      explicit constexpr small_dynamic_array() noexcept(noexcept(allocator_type())) = default;
+      explicit constexpr small_dynamic_array(const allocator_type& alloc) noexcept :
+         m_allocator(alloc)
+      {}
+      explicit constexpr small_dynamic_array(size_type count,
+         const allocator_type& alloc =
+            allocator_type{}) requires std::default_initializable<value_type>
       {
          assign(count, value_type{});
       }
-      explicit small_dynamic_array(
-         size_type count, const_reference value) requires std::copyable<value_type>
+      explicit small_dynamic_array(size_type count, const_reference value,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      small_dynamic_array(it_ first, it_ last) requires std::copyable<value_type>
+      small_dynamic_array(it_ first, it_ last,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
       {
          assign(first, last);
       }
-      small_dynamic_array(std::initializer_list<any_> init) requires std::copyable<value_type>
+      small_dynamic_array(std::initializer_list<any_> init,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
       {
          assign(init);
       }
@@ -97,7 +106,8 @@ namespace util
             *this = other;
          }
       }
-      small_dynamic_array(small_dynamic_array&& other) noexcept
+      small_dynamic_array(small_dynamic_array&& other) noexcept(
+         std::is_nothrow_move_constructible<allocator_type>::value)
       {
          if (!other.empty())
          {
@@ -108,143 +118,38 @@ namespace util
       {
          if (!is_static() && m_pbegin)
          {
-            delete[] m_pbegin;
-            m_pbegin = nullptr;
+            allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
          }
+
+         reset_to_static();
       }
 
       constexpr auto operator=(const small_dynamic_array& rhs) -> small_dynamic_array&
       {
-         if (this == &rhs)
+         if (this != &rhs)
          {
-            return *this;
+            copy_assign_alloc(rhs);
+            assign(rhs.begin(), rhs.end());
          }
-
-         size_type const other_sz = rhs.size();
-         size_type curr_sz = size();
-
-         if (curr_sz >= other_sz)
-         {
-            iterator new_end = begin();
-            if (other_sz)
-            {
-               new_end = std::copy(rhs.begin(), rhs.end(), new_end);
-            }
-
-            destroy_range(new_end, end());
-         }
-         else
-         {
-            if (other_sz > capacity())
-            {
-               destroy_range(begin(), end());
-               m_size = curr_sz = 0;
-
-               grow(other_sz);
-            }
-            else
-            {
-               std::copy(rhs.begin(), rhs.begin() + curr_sz, begin());
-            }
-
-            if constexpr (trivial<value_type>)
-            {
-               std::uninitialized_copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
-            }
-            else
-            {
-               std::copy(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
-            }
-         }
-
-         m_size = other_sz;
 
          return *this;
       }
 
-      constexpr auto operator=(small_dynamic_array&& rhs) noexcept -> small_dynamic_array&
+      constexpr auto operator=(small_dynamic_array&& rhs) noexcept(
+         allocator_type::propagate_on_container_move_assignment::value ||
+         allocator_type::is_always_equal::value) -> small_dynamic_array&
       {
-         if (this == &rhs)
-         {
-            return *this;
-         }
+         move_assign(rhs,
+            std::integral_constant<bool,
+               allocator_traits::propagate_on_container_move_assignment::value>());
 
-         // If not static, steal buffer.
-         if (!rhs.is_static())
-         {
-            if (is_static())
-            {
-               destroy_range(begin(), end());
-            }
-            else
-            {
-               delete[] m_pbegin;
-            }
-
-            m_size = rhs.size();
-            m_capacity = rhs.capacity();
-            m_pbegin = rhs.m_pbegin;
-
-            rhs.reset_to_static();
-
-            return *this;
-         }
-
-         size_type const other_sz = rhs.size();
-         size_type curr_sz = size();
-
-         // if we have enough space, move the data from static buffer
-         // and delete the leftover data we have.
-         if (curr_sz >= other_sz)
-         {
-            iterator new_end = begin();
-            if (other_sz)
-            {
-               new_end = std::move(rhs.begin(), rhs.end(), new_end);
-            }
-
-            destroy_range(new_end, end());
-
-            m_size = other_sz;
-
-            rhs.clear();
-
-            return *this;
-         }
-         else // resize and move data from static buffer.
-         {
-            if (other_sz > capacity())
-            {
-               destroy_range(begin(), end());
-               m_size = curr_sz = 0;
-
-               grow(other_sz);
-            }
-            else if (curr_sz)
-            {
-               std::move(rhs.begin(), rhs.begin() + curr_sz, begin());
-            }
-
-            std::uninitialized_move(rhs.begin() + curr_sz, rhs.end(), begin() + curr_sz);
-
-            m_size = other_sz;
-
-            rhs.clear();
-
-            return *this;
-         }
+         return *this;
       }
 
       constexpr auto operator==(const small_dynamic_array& rhs) const
          -> bool requires std::equality_comparable<value_type>
       {
          return std::equal(cbegin(), cend(), rhs.cbegin(), rhs.cend());
-      }
-
-      constexpr auto operator<=>(const small_dynamic_array& rhs)
-      {
-         return std::lexicographical_compare_three_way(
-            cbegin(), cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
       }
 
       constexpr void assign(size_type count, const_reference value) noexcept
@@ -285,6 +190,8 @@ namespace util
       {
          assign(initializer_list.begin(), initializer_list.end());
       }
+
+      constexpr auto get_allocator() const noexcept -> allocator_type { return m_allocator; }
 
       constexpr auto at(size_type pos) -> reference
       {
@@ -798,46 +705,26 @@ namespace util
             handle_bad_alloc_error("small_dynamic_array capacity unable to grow");
          }
 
-         const auto new_capacity =
-            policy_::compute_new_capacity(std::max(m_capacity + 1, min_size));
-
-         /*
-         const auto new_capacity =
-            std::clamp(2 * m_capacity + 1, min_size, std::numeric_limits<size_type>::max());
-         */
+         const auto new_capacity = compute_new_capacity(std::max(m_capacity + 1, min_size));
 
          try
          {
-            auto new_elements = new value_type[new_capacity]; // NOLINT
+            auto new_elements = allocator_traits::allocate(m_allocator, new_capacity);
 
             if constexpr (std::movable<value_type>)
             {
-               if constexpr (trivial<value_type>)
-               {
-                  std::uninitialized_move(begin(), end(), iterator{new_elements});
-               }
-               else
-               {
-                  std::move(begin(), end(), iterator{new_elements});
-               }
+               std::uninitialized_move(begin(), end(), iterator{new_elements});
             }
             else
             {
-               if constexpr (trivial<value_type>)
-               {
-                  std::uninitialized_copy(begin(), end(), iterator{new_elements});
-               }
-               else
-               {
-                  std::copy(begin(), end(), iterator{new_elements});
-               }
+               std::uninitialized_copy(begin(), end(), iterator{new_elements});
             }
 
             destroy_range(begin(), end());
 
             if (!is_static())
             {
-               delete[] m_pbegin;
+               allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
             }
 
             m_pbegin = new_elements;
@@ -851,16 +738,74 @@ namespace util
          m_capacity = new_capacity;
       }
 
-      static constexpr void destroy_range(iterator first, iterator last)
+      void copy_assign_alloc(const small_dynamic_array& other)
       {
-         if constexpr (!trivial<value_type>)
+         if constexpr (allocator_traits::propagate_on_container_copy_assignment::value)
          {
-            while (first != last)
+            if (m_allocator != other.m_allocator)
             {
-               first->~value_type();
-               ++first;
+               clear();
+
+               if (!is_static())
+               {
+                  allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
+               }
+
+               reset_to_static();
             }
+
+            m_allocator = get_allocator();
          }
+      }
+
+      void move_assign_alloc(const small_dynamic_array& other)
+      {
+         if constexpr (allocator_traits::propagate_on_container_move_assignment::value)
+         {
+            m_allocator = std::move(other.m_allocator);
+         }
+      }
+
+      void move_assign(small_dynamic_array& other, std::false_type)
+      {
+         if (m_allocator != other.m_allocator)
+         {
+            using mi = std::move_iterator<iterator>;
+            assign(mi{other.begin()}, mi{other.end()});
+
+            other.reset_to_static();
+         }
+         else
+         {
+            move_assign(other, std::true_type{});
+         }
+      }
+      void move_assign(small_dynamic_array& other, std::true_type)
+      {
+         move_assign_alloc(other);
+
+         if (!other.is_static())
+         {
+            if (!is_static())
+            {
+               clear();
+
+               allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
+
+               reset_to_static();
+            }
+
+            m_size = other.size();
+            m_capacity = other.capacity();
+            m_pbegin = other.m_pbegin;
+         }
+         else
+         {
+            using mi = std::move_iterator<iterator>;
+            assign(mi{other.begin()}, mi{other.end()});
+         }
+
+         other.reset_to_static();
       }
 
       void reset_to_static()
@@ -870,13 +815,82 @@ namespace util
          m_capacity = buffer_size_;
       }
 
+      static constexpr void destroy_range(iterator first, iterator last)
+      {
+         if constexpr (!trivial<value_type>)
+         {
+            std::for_each(first, last, [](auto& val) {
+               val.~value_type();
+            });
+         }
+      }
+
+      static constexpr auto compute_new_capacity(std::size_t min_capacity) -> std::size_t
+      {
+         constexpr auto max_capacity = std::size_t{1}
+            << (std::numeric_limits<std::size_t>::digits - 1);
+
+         if (min_capacity > max_capacity)
+         {
+            return max_capacity;
+         }
+
+         --min_capacity;
+
+         for (auto i = 1u; i < std::numeric_limits<std::size_t>::digits; i *= 2)
+         {
+            min_capacity |= min_capacity >> i;
+         }
+
+         return ++min_capacity;
+      }
+
    private:
       pointer m_pbegin{get_first_element()};
+      allocator_type m_allocator{};
       size_type m_size{0};
       size_type m_capacity{buffer_size_};
-      detail::static_array_storage<value_type, buffer_size_> m_storage;
+      detail::static_array_storage<value_type, buffer_size_> m_storage{};
    }; // namespace util
 
-   template <class any_, class policy_ = detail::growth_policy::power_of_two>
-   using dynamic_array = small_dynamic_array<any_, 0, policy_>;
+   template <class type_, size_t first_size_, size_t second_size_, allocator allocator_>
+   constexpr auto operator<=>(const small_dynamic_array<type_, first_size_, allocator_>& lhs,
+      const small_dynamic_array<type_, second_size_, allocator_>& rhs)
+   {
+      return std::lexicographical_compare_three_way(
+         lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
+   }
+
+   template <class type_, size_t size_, allocator allocator_>
+   constexpr auto erase(small_dynamic_array<type_, size_, allocator_>& c, const auto& value) ->
+      typename decltype(c)::size_type
+   {
+      auto it = std::remove(c.begin(), c.end(), value);
+      auto r = std::distance(it, c.end());
+      c.erase(it, c.end());
+      return r;
+   }
+
+   template <class type_, size_t size_, allocator allocator_>
+   constexpr auto erase_if(small_dynamic_array<type_, size_, allocator_>& c, auto pred) ->
+      typename decltype(c)::size_type
+   {
+      auto it = std::remove(c.begin(), c.end(), pred);
+      auto r = std::distance(it, c.end());
+      c.erase(it, c.end());
+      return r;
+   }
+
+   template <class any_, allocator allocator_ = std::allocator<any_>>
+   using dynamic_array = small_dynamic_array<any_, 0, allocator_>;
+
+   namespace pmr
+   {
+      template <class any_, size_t size_>
+      using small_dynamic_array =
+         small_dynamic_array<any_, size_, std::pmr::polymorphic_allocator<any_>>;
+
+      template <class any_>
+      using dynamic_array = small_dynamic_array<any_, 0>;
+   } // namespace pmr
 } // namespace util

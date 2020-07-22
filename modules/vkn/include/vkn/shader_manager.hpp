@@ -1,20 +1,23 @@
 /**
- * @file shader_compiler.hpp
+ * @file shader_manager.hpp
  * @author wmbat wmbat@protonmail.com
  * @date Saturday, 16th of July, 2020
  * @copyright MIT License
  */
 
-#include <vkn/device.hpp>
+#pragma once
 
-#include <util/containers/dynamic_array.hpp>
+#include <vkn/device.hpp>
+#include <vkn/shader.hpp>
+
+#include <util/containers/dense_hash_map.hpp>
 #include <util/logger.hpp>
 
 #include <filesystem>
 
 namespace vkn
 {
-   class shader_compiler
+   class shader_manager
    {
    public:
       struct create_info
@@ -25,14 +28,16 @@ namespace vkn
       };
 
    public:
-      shader_compiler(const create_info& info);
-      shader_compiler(create_info&& info);
+      shader_manager(const create_info& info);
+      shader_manager(create_info&& info);
 
-      auto add_shader(const std::filesystem::path& shader_path) -> size_t;
+      auto add_shader(const std::filesystem::path& shader_path) -> uint32_t;
 
    private:
       util::logger* plogger{nullptr};
 
       vk::Device m_device;
+
+      util::dense_hash_map<uint32_t, shader> shaders_;
    };
 } // namespace vkn
