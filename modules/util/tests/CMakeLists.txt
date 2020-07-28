@@ -57,9 +57,8 @@ target_link_libraries(util_test
 target_sources(util_test
    PRIVATE
       util/main.cpp
-      #   util/containers/flat_avl_tree_test.cpp
+      util/containers/flat_avl_tree_test.cpp
       util/containers/dynamic_array_test.cpp
-      util/detail/monad/either_test.cpp
-      util/detail/monad/maybe_test.cpp)
+)
 
 add_test( NAME epona_util_test COMMAND epona_util_test )

@@ -38,7 +38,7 @@ namespace vkn
       {
          uint32_t index = 0;
          uint32_t count = 0;
-         util::dynamic_array<float> priorities;
+         util::small_dynamic_array<float, 1> priorities;
       };
    } // namespace queue
 
@@ -76,8 +76,9 @@ namespace vkn
       [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
          -> vkn::result<vk::Queue>;
 
-      [[nodiscard]] auto value() const -> const vk::Device&;
-      [[nodiscard]] auto physical() const -> const physical_device&;
+      [[nodiscard]] auto value() const noexcept -> const vk::Device&;
+      [[nodiscard]] auto physical() const noexcept -> const physical_device&;
+      [[nodiscard]] auto get_vulkan_version() const noexcept -> uint32_t;
 
    private:
       vkn::physical_device m_physical_device;

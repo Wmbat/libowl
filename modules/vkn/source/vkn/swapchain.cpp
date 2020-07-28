@@ -1,5 +1,7 @@
 #include "vkn/swapchain.hpp"
 
+#include <monads/try.hpp>
+
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -101,49 +103,49 @@ namespace vkn
          if (!surface)
          {
             // clang-format off
-            return util::monad::to_error(error{
+            return monad::make_left(error{
                .type = make_error_code(surface_support::error::surface_handle_not_provided),
                .result = {}
             });
             // clang-format on
          }
 
-         const auto capabilities_res = util::monad::try_wrap<vk::SystemError>([=] {
+         const auto capabilities_res = monad::try_wrap<vk::SystemError>([=] {
             return physical_device.getSurfaceCapabilitiesKHR(surface);
          });
 
-         if (capabilities_res.is_left())
+         if (!capabilities_res)
          {
             // clang-format off
-            return util::monad::to_error(error{
+            return monad::make_left(error{
                .type = make_error_code(surface_support::error::failed_to_get_surface_capabilities),
                .result = static_cast<vk::Result>(capabilities_res.left()->code().value())
             });
             // clang-format on
          }
 
-         const auto format_res = util::monad::try_wrap<std::system_error>([=] {
+         const auto format_res = monad::try_wrap<std::system_error>([=] {
             return physical_device.getSurfaceFormatsKHR(surface);
          });
 
-         if (format_res.is_left())
+         if (!format_res)
          {
             // clang-format off
-            return util::monad::to_error(error{
+            return monad::make_left(error{
                .type = make_error_code(surface_support::error::failed_to_enumerate_formats),
                .result = static_cast<vk::Result>(format_res.left()->code().value())
             });
             // clang-format on
          }
 
-         const auto present_mode_res = util::monad::try_wrap<std::system_error>([=] {
+         const auto present_mode_res = monad::try_wrap<std::system_error>([=] {
             return physical_device.getSurfacePresentModesKHR(surface);
          });
 
-         if (present_mode_res.is_left())
+         if (!present_mode_res)
          {
             // clang-format off
-            return util::monad::to_error(error{
+            return monad::make_left(error{
                .type = make_error_code(surface_support::error::failed_to_enumerate_formats),
                .result = static_cast<vk::Result>(present_mode_res.left()->code().value())
             });
@@ -154,7 +156,7 @@ namespace vkn
          const auto present_mode = present_mode_res.right().value();
 
          // clang-format off
-         return util::monad::to_value(surface_support{
+         return monad::make_right(surface_support{
             .capabilities = capabilities_res.right().value(), 
             .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()}, 
             .present_modes = util::dynamic_array<vk::PresentModeKHR>{
@@ -277,12 +279,12 @@ namespace vkn
 
       if (const auto maybe = device.get_queue_index(queue::type::graphics))
       {
-         m_info.graphics_queue_index = maybe.value().value();
+         m_info.graphics_queue_index = maybe.right().value();
       }
 
       if (const auto maybe = device.get_queue_index(queue::type::present))
       {
-         m_info.present_queue_index = maybe.value().value();
+         m_info.present_queue_index = maybe.right().value();
       }
    }
 
@@ -293,7 +295,7 @@ namespace vkn
       if (!m_info.surface)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(swapchain::error::surface_handle_not_provided),
             .result = {}
          });
@@ -305,14 +307,14 @@ namespace vkn
       if (!surface_support_res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(swapchain::error::failed_to_query_surface_support_details),
-            .result = surface_support_res.error().value().result
+            .result = surface_support_res.left().value().result
          });
          // clang-format on
       }
 
-      const auto surface_support = surface_support_res.value().value();
+      const auto surface_support = surface_support_res.right().value();
 
       util::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
       if (desired_formats.empty())
@@ -368,14 +370,14 @@ namespace vkn
          .setClipped(m_info.clipped);
       // clang-format on  
   
-      const auto creation_res = util::monad::try_wrap<vk::SystemError>([&]{
+      const auto creation_res = monad::try_wrap<vk::SystemError>([&]{
          return m_info.device.createSwapchainKHR(create_info);
       });
 
-      if(creation_res.is_left())
+      if(!creation_res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(error::failed_to_create_swapchain), 
             .result = static_cast<vk::Result>(creation_res.left()->code().value())
          });
@@ -387,16 +389,16 @@ namespace vkn
 
       vk::SwapchainKHR swap = creation_res.right().value();
 
-      const auto image_res = util::monad::try_wrap<std::system_error>([&] {
+      const auto image_res = monad::try_wrap<std::system_error>([&] {
          return m_info.device.getSwapchainImagesKHR(swap);
       }).right_map([](const auto& images) {
          return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
       });
 
-      if (image_res.is_left())
+      if (!image_res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(error::failed_to_get_swapchain_images), 
             .result = static_cast<vk::Result>(image_res.left()->code().value())
          });
@@ -407,13 +409,13 @@ namespace vkn
 
       util::small_dynamic_array<vk::ImageView, 3> views{};
 
-      if (util::monad::try_wrap<std::bad_alloc>([&] {
+      if (!monad::try_wrap<std::bad_alloc>([&] {
              views.reserve(images.size());
              return 0;
-          }).is_left())
+          }))
       {
          // clang-format off
-         return util::monad::to_error(vkn::error{
+         return monad::make_left(vkn::error{
             .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
             .result = {}
          });
@@ -440,14 +442,14 @@ namespace vkn
                .setLayerCount(1u));
          // clang-format on
 
-         const auto view_res = util::monad::try_wrap<vk::SystemError>([&] {
+         const auto view_res = monad::try_wrap<vk::SystemError>([&] {
             return m_info.device.createImageView(create_info);
          });
 
-         if (view_res.is_left())
+         if (!view_res)
          {
             // clang-format off
-            return util::monad::to_error(vkn::error{
+            return monad::make_left(vkn::error{
                .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
                .result = static_cast<vk::Result>(view_res.left()->code().value())
             });
@@ -458,7 +460,7 @@ namespace vkn
       }
 
       // clang-format off
-      return util::monad::to_value(swapchain{swapchain::create_info{
+      return monad::make_right(swapchain{swapchain::create_info{
          .device = m_info.device,
          .swapchain = creation_res.right().value(),
          .format = surface_format.format,

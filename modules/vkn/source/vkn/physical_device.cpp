@@ -1,4 +1,6 @@
-#include <vkn/physical_device.hpp>
+#include "vkn/physical_device.hpp"
+
+#include <monads/try.hpp>
 
 namespace vkn
 {
@@ -124,16 +126,16 @@ namespace vkn
    {
       using err_t = vkn::error;
 
-      const auto physical_devices_res = util::monad::try_wrap<std::system_error>([&] {
+      auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
          return m_system_info.instance.enumeratePhysicalDevices();
       }).right_map([](const auto& devices) {
          return util::small_dynamic_array<vk::PhysicalDevice, 2>{devices.begin(), devices.end()};
       });
 
-      if (physical_devices_res.is_left())
+      if (!physical_devices_res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(
                physical_device::error::failed_to_enumerate_physical_devices), 
             .result = static_cast<vk::Result>(physical_devices_res.left()->code().value())
@@ -174,7 +176,7 @@ namespace vkn
       if (!selected.phys_device)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = detail::make_error_code(physical_device::error::no_suitable_device),
             .result = {}
          });
@@ -184,7 +186,7 @@ namespace vkn
       log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
       // clang-format off
-      return util::monad::to_value(physical_device{{
+      return monad::make_right(physical_device{{
          .name = static_cast<const char*>(selected.properties.deviceName),
          .features = selected.features,
          .properties = selected.properties,
@@ -262,14 +264,14 @@ namespace vkn
 
       device.getQueueFamilyProperties();
 
-      const auto properties_res = util::monad::try_wrap<vk::SystemError>([&] {
+      const auto properties_res = monad::try_wrap<vk::SystemError>([&] {
          return device.getQueueFamilyProperties();
       }).right_map([](const auto& properties) {
          return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{
             properties.begin(), properties.end()};
       });
 
-      if (!properties_res.is_left())
+      if (properties_res)
       {
          desc.queue_families = properties_res.right().value();
       }
@@ -315,13 +317,13 @@ namespace vkn
       }
 
       // clang-format off
-      const auto formats = util::monad::try_wrap<vk::SystemError>([&] {
+      const auto formats = monad::try_wrap<vk::SystemError>([&] {
          return desc.phys_device.getSurfaceFormatsKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
          return std::vector<vk::SurfaceFormatKHR>{};
       }).join();
 
-      const auto present_modes = util::monad::try_wrap<vk::SystemError>([&] {
+      const auto present_modes = monad::try_wrap<vk::SystemError>([&] {
          return desc.phys_device.getSurfacePresentModesKHR(m_system_info.surface);
       }).left_map([](const vk::SystemError&) {
          return std::vector<vk::PresentModeKHR>{};

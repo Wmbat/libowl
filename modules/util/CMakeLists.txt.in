@@ -3,3 +3,11 @@ CPMAddPackage(
     VERSION 1.6.1
     GITHUB_REPOSITORY gabime/spdlog
 ) 
+
+CPMAddPackage(
+    NAME monads
+    GITHUB_REPOSITORY Wmbat/monads
+    GIT_TAG master
+    OPTIONS
+      "BUILD_TESTS OFF"
+)

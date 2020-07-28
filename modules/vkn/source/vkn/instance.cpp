@@ -1,4 +1,6 @@
-#include <vkn/instance.hpp>
+#include "vkn/instance.hpp"
+
+#include <monads/try.hpp>
 
 #include <functional>
 #include <utility>
@@ -156,38 +158,38 @@ namespace vkn
    {
       using err_t = vkn::error;
 
-      const auto version_res = util::monad::try_wrap<vk::SystemError>([] {
+      const auto version_res = monad::try_wrap<vk::SystemError>([] {
          return vk::enumerateInstanceVersion(); // may throw
       });
 
-      if (version_res.is_left())
+      if (!version_res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = instance::make_error_code(instance::error::vulkan_version_unavailable),
             .result = static_cast<vk::Result>(version_res.left()->code().value())
          });
          // clang-format on
       }
 
-      const auto system_layers_res = util::monad::try_wrap<vk::SystemError>([&] {
+      const auto system_layers_res = monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceLayerProperties();
       });
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
-         if (system_layers_res.is_left())
+         if (!system_layers_res)
          {
             log_warn(m_plogger, "[vkn] instance layer enumeration error: {0}",
                system_layers_res.left()->what());
          }
       }
 
-      const auto system_exts_res = util::monad::try_wrap<vk::SystemError>([&] {
+      const auto system_exts_res = monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceExtensionProperties();
       });
 
-      if (system_layers_res.is_left())
+      if (!system_layers_res)
       {
          log_warn(m_plogger, "[vkn] instance layer enumeration error: {1}",
             system_exts_res.left()->what());
@@ -196,7 +198,7 @@ namespace vkn
       const auto sys_layers = system_layers_res.right().value();
       const auto sys_exts = system_exts_res.right().value();
 
-      const uint32_t api_version = version_res.right_or(0u);
+      const uint32_t api_version = version_res.right().value();
       const bool validation_layers_available = has_validation_layer_support(sys_layers);
       const bool debug_utils_available = has_debug_utils_support(sys_exts);
 
@@ -206,10 +208,10 @@ namespace vkn
       if (VK_VERSION_MINOR(api_version) < 2)
       {
          // clang-format off
-         return util::monad::error<err_t>{.val = {
+         return monad::make_left(err_t{
             .type = instance::make_error_code(instance::error::vulkan_version_1_2_unavailable),
             .result = {}
-         }};
+         });
          // clang-format on
       }
 
@@ -228,10 +230,10 @@ namespace vkn
             debug_utils_available);
       if (!extension_names_res)
       {
-         return util::monad::to_error(extension_names_res.error().value());
+         return monad::make_left(extension_names_res.left().value());
       }
 
-      const util::dynamic_array<const char*> extensions = std::move(*extension_names_res.value());
+      const util::dynamic_array<const char*> extensions = std::move(*extension_names_res.right());
 
       for (const char* name : extensions)
       {
@@ -265,10 +267,10 @@ namespace vkn
                if (!is_present)
                {
                   // clang-format off
-                  return util::monad::error<err_t>{.val = {
+                  return monad::make_left(err_t{
                      .type = instance::make_error_code(instance::error::instance_layer_not_supported),
                      .result = {}
-                  }};
+                  });
                   // clang-format on
                }
             }
@@ -283,17 +285,16 @@ namespace vkn
          }
       }
 
-      vk::Instance vk_inst{nullptr};
-      try
-      {
-         vk_inst = vk::createInstance(instance_create_info);
-      }
-      catch (const vk::SystemError& e)
+      const auto res = monad::try_wrap<vk::SystemError>([&] {
+         return vk::createInstance(instance_create_info);
+      });
+
+      if (!res)
       {
          // clang-format off
-         return util::monad::to_error(err_t{
+         return monad::make_left(err_t{
             .type = instance::make_error_code(instance::error::failed_to_create_instance),
-            .result = static_cast<vk::Result>(e.code().value())
+            .result = static_cast<vk::Result>(res.left()->code().value())
          });
          // clang-format on
       }
@@ -302,6 +303,7 @@ namespace vkn
 
       log_info(m_plogger, "[vkn] instance created");
 
+      auto vk_inst = res.right().value();
       m_loader.load_instance(vk_inst);
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
@@ -327,7 +329,7 @@ namespace vkn
          catch (const vk::SystemError& e)
          {
             // clang-format off
-            return util::monad::to_error(err_t{
+            return monad::make_left(err_t{
                .type = instance::make_error_code(instance::error::failed_to_create_debug_utils),
                .result = static_cast<vk::Result>(e.code().value())
             });
@@ -337,7 +339,7 @@ namespace vkn
          log_info(m_plogger, "[vkn] debug utils created");
       }
 
-      return util::monad::to_value(instance{vk_inst, vk_mess, extensions, api_version});
+      return monad::make_right(instance{vk_inst, vk_mess, extensions, api_version});
    } // namespace core::gfx::vkn
 
    auto builder::set_application_name(std::string_view app_name) -> builder&
@@ -445,10 +447,10 @@ namespace vkn
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
          // clang-format off
-         return util::monad::error<err_t>{.val = {
+         return monad::make_left(err_t{
             .type = instance::make_error_code(instance::error::window_extensions_not_present),
             .result = {}
-         }};
+         });
          // clang-format on
       }
 
@@ -461,14 +463,14 @@ namespace vkn
          if (!is_present)
          {
             // clang-format off
-            return util::monad::error<err_t>{.val = {
+            return monad::make_left(err_t{
                .type = instance::make_error_code(instance::error::instance_extension_not_supported),
                .result = {}
-            }};
+            });
             // clang-format on
          }
       }
 
-      return util::monad::to_value(extensions);
+      return monad::make_right(extensions);
    }
 } // namespace vkn

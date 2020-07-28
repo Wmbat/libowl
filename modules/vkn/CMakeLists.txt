@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
 
 project(vkn
    VERSION 0.0.1
-   DESCRIPTION "Vulkan related abstraction"
+   DESCRIPTION "A small wrapper library to simplify the construction of Vulkan handles"
    LANGUAGES CXX
 )
 
@@ -97,6 +97,5 @@ target_sources(${PROJECT_NAME}
         source/vkn/instance.cpp
         source/vkn/physical_device.cpp
         source/vkn/shader.cpp
-        source/vkn/shader_manager.cpp
         source/vkn/swapchain.cpp
 )

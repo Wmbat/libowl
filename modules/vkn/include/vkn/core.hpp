@@ -12,12 +12,13 @@
 #endif
 
 #include <util/logger.hpp>
-#include <util/monad/either.hpp>
-#include <util/monad/result.hpp>
+
+#include <monads/either.hpp>
 
 #include <vulkan/vulkan.hpp>
 
 #include <SPIRV/GlslangToSpv.h>
+#include <StandAlone/DirStackFileIncluder.h>
 #include <glslang/Public/ShaderLang.h>
 
 #include <system_error>
@@ -51,7 +52,7 @@ namespace vkn
     * @brief An alias for an either monad using an error as the left type.
     */
    template <class any_>
-   using result = util::result<error, any_>;
+   using result = monad::either<error, any_>;
 
    /**
     * @class error <epona_core/graphics/vkn/core.hpp>

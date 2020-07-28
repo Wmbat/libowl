@@ -69,19 +69,19 @@ namespace util::detail
    };
 
    // clang-format off
-      template <class key_, class any_>
-      inline constexpr bool are_pairs_standard_layout_v =
-         std::is_standard_layout_v<std::pair<const key_, any_>> &&
-         std::is_standard_layout_v<std::pair<key_, any_>>;
+   template <class key_, class any_>
+   inline constexpr bool are_pairs_standard_layout_v =
+      std::is_standard_layout_v<std::pair<const key_, any_>> &&
+      std::is_standard_layout_v<std::pair<key_, any_>>;
    // clang-format on
 
    // clang-format off
-      template <class key_, class any_>
-      using key_value_pair_t = std::conditional_t<
-         are_pairs_standard_layout_v<key_, any_>,
-         union_key_value_pair<key_, any_>, 
-         safe_key_value_pair<key_, any_>
-      >;
+   template <class key_, class any_>
+   using key_value_pair_t = std::conditional_t<
+      are_pairs_standard_layout_v<key_, any_>,
+      union_key_value_pair<key_, any_>, 
+      safe_key_value_pair<key_, any_>
+   >;
    // clang-format on
 
    template <class key_, class any_, class pair_ = std::pair<key_, any_>>

@@ -9,11 +9,10 @@
 
 #include "vkn/device.hpp"
 #include "vkn/physical_device.hpp"
+#include "vkn/shader.hpp"
 
 #include "util/containers/dynamic_array.hpp"
 #include "util/logger.hpp"
-#include "util/monad/either.hpp"
-#include "util/monad/maybe.hpp"
 
 namespace core
 {
@@ -34,24 +33,24 @@ namespace core
          .set_engine_name(m_engine_name)
          .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
          .build()
-         .error_map([plogger](auto&& err) { return handle_instance_error(err, plogger); })
+         .left_map([plogger](auto&& err) { return handle_instance_error(err, plogger); })
          .join();
 
       m_device = vkn::device::builder{m_loader,
          vkn::physical_device::selector{m_instance, m_plogger}
             .set_surface(p_wnd->get_surface(m_instance.value())
-               .error_map([plogger](auto&& err) { return handle_surface_error(err, plogger); })
+               .left_map([plogger](auto&& err) { return handle_surface_error(err, plogger); })
                .join())
             .set_prefered_gpu_type(vkn::physical_device::type::discrete)
             .allow_any_gpu_type()
             .require_present()
             .select()
-            .error_map([plogger](auto&& err) { 
+            .left_map([plogger](auto&& err) { 
                return handle_physical_device_error(err, plogger); 
             })
             .join(), m_instance.version(), m_plogger}
          .build()
-         .error_map([plogger](auto&& err) { return handle_device_error(err, plogger); })
+         .left_map([plogger](auto&& err) { return handle_device_error(err, plogger); })
          .join();
 
       m_swapchain = vkn::swapchain::builder{m_device, plogger}
@@ -61,7 +60,29 @@ namespace core
          .set_clipped(true)
          .set_composite_alpha_flags(vk::CompositeAlphaFlagBitsKHR::eOpaque)
          .build()
-         .error_map([plogger](auto&& err) { return handle_swapchain_error(err, plogger); })
+         .left_map([plogger](auto&& err) { return handle_swapchain_error(err, plogger); })
+         .join();
+
+      m_vert_shader = vkn::shader::builder{m_device, plogger}
+         .set_filepath("resources/shaders/test_shader.vert")
+         .build()
+         .left_map([plogger](auto&& err) {
+            log_error(plogger, "[core] Failed to create shader: {0}", err.type.message());
+            abort();
+
+            return vkn::shader{};
+         })
+         .join();
+
+      m_frag_shader = vkn::shader::builder{m_device, plogger}
+         .set_filepath("resources/shaders/test_shader.frag")
+         .build()
+         .left_map([plogger](auto&& err) {
+            log_error(plogger, "[core] Failed to create shader: {0}", err.type.message());
+            abort();
+
+            return vkn::shader{};
+         })
          .join();
       // clang-format on
    }

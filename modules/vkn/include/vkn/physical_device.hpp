@@ -9,14 +9,14 @@
 
 #include <vkn/instance.hpp>
 
-#include <util/monad/either.hpp>
+#include <monads/maybe.hpp>
 
 namespace vkn
 {
    namespace detail
    {
       auto get_graphics_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -28,11 +28,11 @@ namespace vkn
             ++i;
          }
 
-         return util::to_maybe();
+         return monad::none;
       }
 
       auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; i < families.size(); ++i)
          {
@@ -42,7 +42,7 @@ namespace vkn
                if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
                   vk::Result::eSuccess)
                {
-                  return util::to_maybe();
+                  return monad::none;
                }
             }
 
@@ -52,11 +52,11 @@ namespace vkn
             }
          }
 
-         return util::to_maybe();
+         return monad::none;
       }
 
       auto get_dedicated_compute_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -70,11 +70,11 @@ namespace vkn
             ++i;
          }
 
-         return util::to_maybe();
+         return monad::none;
       }
 
       auto get_dedicated_transfer_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -88,13 +88,13 @@ namespace vkn
             ++i;
          }
 
-         return util::to_maybe();
+         return monad::none;
       }
 
       auto get_separated_compute_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
-         util::maybe<uint32_t> compute{};
+         monad::maybe<uint32_t> compute{};
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
@@ -118,9 +118,9 @@ namespace vkn
       }
 
       auto get_separated_transfer_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> util::maybe<uint32_t>
+         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
       {
-         util::maybe<uint32_t> transfer = util::to_maybe();
+         monad::maybe<uint32_t> transfer{};
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&

@@ -12,6 +12,7 @@
 #include <vkn/core.hpp>
 #include <vkn/device.hpp>
 #include <vkn/instance.hpp>
+#include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
 
 #include <util/logger.hpp>
@@ -33,5 +34,8 @@ namespace core
       vkn::instance m_instance;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
+
+      vkn::shader m_vert_shader;
+      vkn::shader m_frag_shader;
    };
 } // namespace core

@@ -12,6 +12,7 @@
 #include <util/logger.hpp>
 
 #include <filesystem>
+#include <string_view>
 
 namespace vkn
 {
@@ -26,15 +27,14 @@ namespace vkn
    public:
       enum class error
       {
+         no_filepath,
          invalid_filepath,
          filepath_not_a_file,
-         failed_to_open_file
-      };
-
-      struct create_info
-      {
-         vk::Device device;
-         vk::ShaderModule shader_module;
+         failed_to_open_file,
+         failed_to_preprocess_shader,
+         failed_to_parse_shader,
+         failed_to_link_shader,
+         failed_to_create_shader_module
       };
 
       enum class type
@@ -42,15 +42,33 @@ namespace vkn
          vertex,
          fragment,
          compute,
-         geometry
+         geometry,
+         tes_eval,
+         tes_control,
+         count
+      };
+
+      struct create_info
+      {
+         vk::Device device{};
+         vk::ShaderModule shader_module{};
+         shader::type type{};
       };
 
    public:
+      shader() = default;
       shader(const create_info& info);
       shader(create_info&& info);
+      shader(const shader&) = delete;
+      shader(shader&& other) noexcept;
+      ~shader();
+
+      auto operator=(const shader&) -> shader& = delete;
+      auto operator=(shader&& rhs) noexcept -> shader&;
 
       auto value() noexcept -> vk::ShaderModule&;
       [[nodiscard]] auto value() const noexcept -> const vk::ShaderModule&;
+      [[nodiscard]] auto stage() const noexcept -> type;
 
       inline static auto make_error_code(error err) -> std::error_code
       {
@@ -61,7 +79,7 @@ namespace vkn
       vk::Device m_device;
       vk::ShaderModule m_shader_module;
 
-      type m_type;
+      type m_type{type::count};
 
       inline static const error_category m_category{};
 
@@ -69,11 +87,12 @@ namespace vkn
       class builder
       {
       public:
-         builder(vk::Device device, util::logger* const plogger);
+         builder(const device& device, util::logger* const plogger);
 
          auto build() -> result<shader>;
 
-         auto set_filepath(const std::filesystem::path& path);
+         auto set_filepath(const std::filesystem::path& path) -> builder&;
+         auto enable_caching(bool is_caching_enabled = true) noexcept -> builder&;
 
       private:
          util::logger* const m_plogger{nullptr};
@@ -81,8 +100,12 @@ namespace vkn
          struct info
          {
             vk::Device device;
+            uint32_t version;
 
             std::filesystem::path path;
+            bool is_caching_enabled = false;
+
+            shader::type type;
          } m_info;
       };
    };

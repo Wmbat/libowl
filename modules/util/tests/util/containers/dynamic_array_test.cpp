@@ -22,19 +22,21 @@
  * SOFTWARE.
  */
 
+#include <limits>
 #include <util/containers/dynamic_array.hpp>
 #include <util/iterators/random_access_iterator.hpp>
 
 #include <gtest/gtest.h>
 
 #include <memory_resource>
+#include <ranges>
 
 struct copyable
 {
    copyable() = default;
    explicit copyable(int i) : i(i) {}
 
-   bool operator==(copyable const& other) const = default;
+   auto operator==(copyable const& other) const -> bool = default;
 
    int i = 0;
 };
@@ -44,26 +46,33 @@ struct moveable
    moveable() = default;
    explicit moveable(int i) : i(i) {}
    moveable(moveable const& other) = delete;
-   moveable(moveable&& other) { i = std::move(other.i); }
-
-   moveable& operator=(moveable const& other) = delete;
-   moveable& operator=(moveable&& other)
+   moveable(moveable&& other) noexcept
    {
-      i = std::move(other.i);
+      i = other.i;
+      other.i = 0;
+   }
+   ~moveable() = default;
+
+   auto operator=(moveable const& other) -> moveable& = delete;
+   auto operator=(moveable&& other) noexcept -> moveable&
+   {
+      i = other.i;
+      other.i = 0;
+
       return *this;
    }
 
    int i = 0;
 };
 
-struct small_dynamic_array_test : public testing::Test
-{
-   small_dynamic_array_test() { std::pmr::set_default_resource(&resource); }
+inline static std::pmr::monotonic_buffer_resource resource{4096u};
 
-   std::pmr::monotonic_buffer_resource resource{4096u};
+struct small_dynamic_array : public testing::Test
+{
+   small_dynamic_array() { std::pmr::set_default_resource(&resource); }
 };
 
-TEST_F(small_dynamic_array_test, default_ctor)
+TEST_F(small_dynamic_array, default_ctor)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -80,7 +89,7 @@ TEST_F(small_dynamic_array_test, default_ctor)
    }
 }
 
-TEST_F(small_dynamic_array_test, default_ctor_pmr)
+TEST_F(small_dynamic_array, default_ctor_pmr)
 {
    util::pmr::dynamic_array<int> vec{};
 
@@ -90,7 +99,7 @@ TEST_F(small_dynamic_array_test, default_ctor_pmr)
    EXPECT_EQ(vec.get_allocator().resource(), std::pmr::get_default_resource());
 }
 
-TEST_F(small_dynamic_array_test, ctor_count)
+TEST_F(small_dynamic_array, ctor_count)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10};
@@ -116,7 +125,7 @@ TEST_F(small_dynamic_array_test, ctor_count)
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_count_pmr)
+TEST_F(small_dynamic_array, ctor_count_pmr)
 {
    {
       util::pmr::dynamic_array<copyable> vec{10};
@@ -143,7 +152,7 @@ TEST_F(small_dynamic_array_test, ctor_count_pmr)
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_count_values)
+TEST_F(small_dynamic_array, ctor_count_values)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -169,32 +178,95 @@ TEST_F(small_dynamic_array_test, ctor_count_values)
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_range)
+TEST_F(small_dynamic_array, ctor_count_values_pmr)
 {
+   constexpr int value = 5;
+   auto equal_to_value = [value](const auto& val) {
+      EXPECT_EQ(val.i, value);
+   };
+
    {
-      util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
+      util::pmr::dynamic_array<copyable> vec{10, copyable{value}};
 
       EXPECT_EQ(vec.size(), 10);
       EXPECT_EQ(vec.capacity(), 16);
+      EXPECT_EQ(vec.get_allocator().resource(), &resource);
+      EXPECT_EQ(vec.get_allocator().resource(), std::pmr::get_default_resource());
 
-      for (auto& val : vec)
-      {
-         EXPECT_EQ(val.i, 5);
-      }
+      std::ranges::for_each(vec, equal_to_value);
+   }
 
-      util::small_dynamic_array<copyable, 5> vec2{vec.begin(), vec.end()};
+   {
+      util::pmr::small_dynamic_array<copyable, 5> vec{5, copyable{value}};
 
-      EXPECT_EQ(vec2.size(), 10);
-      EXPECT_EQ(vec2.capacity(), 16);
+      EXPECT_EQ(vec.size(), 5);
+      EXPECT_EQ(vec.capacity(), 5);
+      EXPECT_EQ(vec.get_allocator().resource(), &resource);
+      EXPECT_EQ(vec.get_allocator().resource(), std::pmr::get_default_resource());
 
-      for (auto& val : vec2)
-      {
-         EXPECT_EQ(val.i, 5);
-      }
+      std::ranges::for_each(vec, equal_to_value);
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_initializer_list)
+TEST_F(small_dynamic_array, ctor_range)
+{
+   util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
+
+   EXPECT_EQ(vec.size(), 10);
+   EXPECT_EQ(vec.capacity(), 16);
+
+   for (auto& val : vec)
+   {
+      EXPECT_EQ(val.i, 5);
+   }
+
+   util::small_dynamic_array<copyable, 5> vec2{vec.begin(), vec.end()};
+
+   EXPECT_EQ(vec2.size(), 10);
+   EXPECT_EQ(vec2.capacity(), 16);
+
+   for (auto& val : vec2)
+   {
+      EXPECT_EQ(val.i, 5);
+   }
+}
+
+TEST_F(small_dynamic_array, ctor_range_pmr)
+{
+   constexpr int value = 5;
+   auto equal_to_value = [value](const auto& val) {
+      EXPECT_EQ(val.i, value);
+   };
+
+   util::pmr::dynamic_array<copyable> vec{10, copyable{value}};
+
+   EXPECT_EQ(vec.size(), 10);
+   EXPECT_EQ(vec.capacity(), 16);
+   EXPECT_EQ(vec.get_allocator().resource(), &resource);
+   EXPECT_EQ(vec.get_allocator().resource(), std::pmr::get_default_resource());
+
+   std::ranges::for_each(vec, equal_to_value);
+
+   util::pmr::small_dynamic_array<copyable, 5> vec2{vec.begin(), vec.begin() + 4};
+
+   EXPECT_EQ(vec2.size(), 4);
+   EXPECT_EQ(vec2.capacity(), 5);
+   EXPECT_EQ(vec2.get_allocator().resource(), &resource);
+   EXPECT_EQ(vec2.get_allocator().resource(), std::pmr::get_default_resource());
+
+   std::ranges::for_each(vec2, equal_to_value);
+
+   util::pmr::small_dynamic_array<copyable, 5> vec3{vec.begin(), vec.end()};
+
+   EXPECT_EQ(vec3.size(), 10);
+   EXPECT_EQ(vec3.capacity(), 16);
+   EXPECT_EQ(vec3.get_allocator().resource(), &resource);
+   EXPECT_EQ(vec3.get_allocator().resource(), std::pmr::get_default_resource());
+
+   std::ranges::for_each(vec3, equal_to_value);
+}
+
+TEST_F(small_dynamic_array, ctor_initializer_list)
 {
    {
       util::small_dynamic_array<copyable, 10> vec{{copyable{1}, copyable{1}, copyable{1}}};
@@ -209,7 +281,22 @@ TEST_F(small_dynamic_array_test, ctor_initializer_list)
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_copy)
+TEST_F(small_dynamic_array, ctor_initializer_list_pmr)
+{
+   constexpr int value = std::numeric_limits<int>::max();
+   auto equal_to_value = [value](const auto& val) {
+      EXPECT_EQ(val.i, value);
+   };
+
+   util::pmr::dynamic_array<copyable> vec{{copyable{value}, copyable{value}, copyable{value}}};
+
+   EXPECT_EQ(vec.size(), 3);
+   EXPECT_EQ(vec.capacity(), 4);
+
+   std::ranges::for_each(vec, equal_to_value);
+}
+
+TEST_F(small_dynamic_array, ctor_copy)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -234,7 +321,7 @@ TEST_F(small_dynamic_array_test, ctor_copy)
    }
 }
 
-TEST_F(small_dynamic_array_test, ctor_move)
+TEST_F(small_dynamic_array, ctor_move)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -286,7 +373,7 @@ TEST_F(small_dynamic_array_test, ctor_move)
    }
 }
 
-TEST_F(small_dynamic_array_test, copy_assignment_operator)
+TEST_F(small_dynamic_array, copy_assignment_operator)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -311,7 +398,7 @@ TEST_F(small_dynamic_array_test, copy_assignment_operator)
    }
 }
 
-TEST_F(small_dynamic_array_test, move_assignment_operator)
+TEST_F(small_dynamic_array, move_assignment_operator)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -339,7 +426,7 @@ TEST_F(small_dynamic_array_test, move_assignment_operator)
    }
 }
 
-TEST_F(small_dynamic_array_test, equality_operator)
+TEST_F(small_dynamic_array, equality_operator)
 {
    {
       util::small_dynamic_array<copyable, 0> vec{10, copyable{5}};
@@ -398,7 +485,7 @@ TEST_F(small_dynamic_array_test, equality_operator)
    }
 }
 
-TEST_F(small_dynamic_array_test, assign_n_values)
+TEST_F(small_dynamic_array, assign_n_values)
 {
    {
       util::small_dynamic_array<copyable, 2> vec{};
@@ -448,7 +535,7 @@ TEST_F(small_dynamic_array_test, assign_n_values)
    }
 }
 
-TEST_F(small_dynamic_array_test, assign_range)
+TEST_F(small_dynamic_array, assign_range)
 {
    {
       util::small_dynamic_array<copyable, 2> vec{};
@@ -494,7 +581,7 @@ TEST_F(small_dynamic_array_test, assign_range)
    }
 }
 
-TEST_F(small_dynamic_array_test, assign_initializer_list)
+TEST_F(small_dynamic_array, assign_initializer_list)
 {
    {
       util::small_dynamic_array<copyable, 2> vec{};
@@ -521,7 +608,7 @@ TEST_F(small_dynamic_array_test, assign_initializer_list)
    }
 }
 
-TEST_F(small_dynamic_array_test, clear)
+TEST_F(small_dynamic_array, clear)
 {
    {
       util::small_dynamic_array<copyable, 2> vec{};
@@ -569,7 +656,7 @@ TEST_F(small_dynamic_array_test, clear)
    }
 }
 
-TEST_F(small_dynamic_array_test, insert_lvalue_ref)
+TEST_F(small_dynamic_array, insert_lvalue_ref)
 {
    {
       int one = 1;
@@ -658,7 +745,7 @@ TEST_F(small_dynamic_array_test, insert_lvalue_ref)
    }
 }
 
-TEST_F(small_dynamic_array_test, insert_rvalue_ref)
+TEST_F(small_dynamic_array, insert_rvalue_ref)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -780,7 +867,7 @@ TEST_F(small_dynamic_array_test, insert_rvalue_ref)
    }
 }
 
-TEST_F(small_dynamic_array_test, insert_n_values)
+TEST_F(small_dynamic_array, insert_n_values)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -818,7 +905,7 @@ TEST_F(small_dynamic_array_test, insert_n_values)
    }
 }
 
-TEST_F(small_dynamic_array_test, insert_range)
+TEST_F(small_dynamic_array, insert_range)
 {
    util::small_dynamic_array<int, 0> vec{};
 
@@ -887,7 +974,7 @@ TEST_F(small_dynamic_array_test, insert_range)
    }
 }
 
-TEST_F(small_dynamic_array_test, insert_initializer_list)
+TEST_F(small_dynamic_array, insert_initializer_list)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -943,7 +1030,7 @@ TEST_F(small_dynamic_array_test, insert_initializer_list)
    }
 }
 
-TEST_F(small_dynamic_array_test, emplace)
+TEST_F(small_dynamic_array, emplace)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1023,7 +1110,7 @@ TEST_F(small_dynamic_array_test, emplace)
    }
 }
 
-TEST_F(small_dynamic_array_test, erase)
+TEST_F(small_dynamic_array, erase)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1138,7 +1225,7 @@ TEST_F(small_dynamic_array_test, erase)
    }
 }
 
-TEST_F(small_dynamic_array_test, erase_range)
+TEST_F(small_dynamic_array, erase_range)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1228,7 +1315,7 @@ TEST_F(small_dynamic_array_test, erase_range)
    }
 }
 
-TEST_F(small_dynamic_array_test, push_back_lvalue_ref)
+TEST_F(small_dynamic_array, push_back_lvalue_ref)
 {
    {
       int one = 1;
@@ -1352,7 +1439,7 @@ TEST_F(small_dynamic_array_test, push_back_lvalue_ref)
    }
 }
 
-TEST_F(small_dynamic_array_test, push_back_rvalue_ref)
+TEST_F(small_dynamic_array, push_back_rvalue_ref)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1496,7 +1583,7 @@ TEST_F(small_dynamic_array_test, push_back_rvalue_ref)
    }
 }
 
-TEST_F(small_dynamic_array_test, emplace_back)
+TEST_F(small_dynamic_array, emplace_back)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1640,7 +1727,7 @@ TEST_F(small_dynamic_array_test, emplace_back)
    }
 }
 
-TEST_F(small_dynamic_array_test, pop_back)
+TEST_F(small_dynamic_array, pop_back)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1730,7 +1817,7 @@ TEST_F(small_dynamic_array_test, pop_back)
    }
 }
 
-TEST_F(small_dynamic_array_test, resize)
+TEST_F(small_dynamic_array, resize)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
@@ -1829,7 +1916,7 @@ TEST_F(small_dynamic_array_test, resize)
    }
 }
 
-TEST_F(small_dynamic_array_test, resize_value)
+TEST_F(small_dynamic_array, resize_value)
 {
    {
       util::small_dynamic_array<int, 0> vec{};
