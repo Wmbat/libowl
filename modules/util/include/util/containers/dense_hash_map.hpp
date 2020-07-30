@@ -7,11 +7,9 @@
  * Follows closely this implementation of a dense hash map: https://github.com/Jiwan/dense_hash_map
  */
 
-#include <util/containers/detail/disabling_structs.hpp>
-#include <util/containers/detail/growth_policy.hpp>
-#include <util/containers/detail/node.hpp>
-#include <util/containers/dynamic_array.hpp>
-#include <util/type_traits.hpp>
+#include "util/containers/detail/disabling_structs.hpp"
+#include "util/containers/dynamic_array.hpp"
+#include "util/type_traits.hpp"
 
 #include <functional>
 #include <ranges>
@@ -20,6 +18,123 @@ namespace util
 {
    namespace detail
    {
+      template <class key_, class any_>
+      union union_key_value_pair
+      {
+         using pair_t = std::pair<key_, any_>;
+         using const_key_pair_t = std::pair<const key_, any_>;
+
+         constexpr union_key_value_pair(auto&&... args) :
+            pair_(std::forward<decltype(args)>(args)...)
+         {}
+
+         union_key_value_pair(std::allocator_arg_t, const allocator auto& alloc, auto&&... args)
+         {
+            auto alloc_copy = alloc;
+            std::allocator_traits<decltype(alloc)>::construct(
+               alloc_copy, &pair_, std::forward<decltype(args)>(args)...);
+         }
+
+         constexpr union_key_value_pair(const union_key_value_pair& other) noexcept(
+            std::is_nothrow_copy_constructible_v<pair_t>) :
+            pair_(other.pair_)
+         {}
+
+         constexpr union_key_value_pair(union_key_value_pair&& other) noexcept(
+            std::is_nothrow_move_constructible_v<pair_t>) :
+            pair_(std::move(other.pair_))
+         {}
+
+         // NOLINTNEXTLINE
+         constexpr auto operator=(const union_key_value_pair& other) noexcept(
+            std::is_nothrow_copy_assignable_v<pair_t>) -> union_key_value_pair&
+         {
+            if (this != &other)
+            {
+               pair_ = other.pair_;
+            }
+            return *this;
+         }
+
+         constexpr auto
+         operator=(union_key_value_pair&& other) noexcept(std::is_nothrow_move_assignable_v<pair_t>)
+            -> union_key_value_pair&
+         {
+            pair_ = std::move(other).pair_;
+            return *this;
+         }
+
+         ~union_key_value_pair() { pair_.~pair_t(); }
+
+         constexpr auto pair() -> pair_t& { return pair_; }
+         constexpr auto pair() const -> const pair_t& { return pair_; }
+         constexpr auto const_key_pair() -> const_key_pair_t& { return const_key_pair_; }
+         constexpr auto const_key_pair() const -> const const_key_pair_t&
+         {
+            return const_key_pair_;
+         }
+
+      private:
+         pair_t pair_;
+         const_key_pair_t const_key_pair_;
+      };
+
+      template <class key_, class any_>
+      struct safe_key_value_pair
+      {
+         using const_key_pair_t = std::pair<const key_, any_>;
+
+         constexpr safe_key_value_pair(auto&&... args) :
+            const_key_pair_(std::forward<decltype(args)>(args)...)
+         {}
+         constexpr safe_key_value_pair(std::allocator_arg_t, const allocator auto& alloc,
+                                       auto&&... args)
+         {
+            auto alloc_copy = alloc;
+            std::allocator_traits<decltype(alloc)>::construct(
+               alloc_copy, &const_key_pair_, std::forward<decltype(args)>(args)...);
+         }
+
+         // Accessors to the two members.
+         constexpr auto pair() -> const_key_pair_t& { return const_key_pair_; }
+         constexpr auto pair() const -> const const_key_pair_t& { return const_key_pair_; }
+         constexpr auto const_key_pair() -> const_key_pair_t& { return const_key_pair_; }
+         constexpr auto const_key_pair() const -> const const_key_pair_t&
+         {
+            return const_key_pair_;
+         }
+
+      private:
+         const_key_pair_t const_key_pair_;
+      };
+
+      template <class key_, class any_>
+      inline constexpr bool are_pairs_standard_layout_v =
+         std::is_standard_layout_v<std::pair<const key_, any_>>&&
+            std::is_standard_layout_v<std::pair<key_, any_>>;
+
+      template <class key_, class any_>
+      using key_value_pair_t =
+         std::conditional_t<are_pairs_standard_layout_v<key_, any_>,
+                            union_key_value_pair<key_, any_>, safe_key_value_pair<key_, any_>>;
+
+      template <class key_, class any_, class pair_ = std::pair<key_, any_>>
+      struct node :
+         disable_copy_constructor<pair_>,
+         disable_copy_assignment<pair_>,
+         disable_move_constructor<pair_>,
+         disable_move_assignment<pair_>
+      {
+         using index_t = size_t;
+
+         constexpr node(index_t next, auto&&... args) :
+            next{next}, pair{std::forward<decltype(args)>(args)...}
+         {}
+
+         index_t next = std::numeric_limits<index_t>::max();
+         key_value_pair_t<key_, any_> pair;
+      };
+
       template <class hash_>
       using detect_transparent_key_equal = typename hash_::transparent_key_equal;
 
@@ -44,9 +159,11 @@ namespace util
       {
          using type = typename Hash::transparent_key_equal;
 
-         static_assert(is_transparent_v<type>,
+         static_assert(
+            is_transparent_v<type>,
             "The associated transparent key equal is missing a is_transparent tag type.");
-         static_assert(std::is_same_v<Pred, std::equal_to<Key>> || std::is_same_v<Pred, type>,
+         static_assert(
+            std::is_same_v<Pred, std::equal_to<Key>> || std::is_same_v<Pred, type>,
             "The associated transparent key equal must be the transparent_key_equal tag or "
             "std::equal_to<Key>");
       };
@@ -129,7 +246,7 @@ namespace util
       };
 
       template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
-         bool isConst2>
+                bool isConst2>
       constexpr auto operator==(
          const bucket_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
          const bucket_iterator<Key, T, Container, isConst2, projectToConstKey>& rhs) noexcept
@@ -139,7 +256,7 @@ namespace util
       }
 
       template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
-         bool isConst2>
+                bool isConst2>
       constexpr auto operator!=(
          const bucket_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
          const bucket_iterator<Key, T, Container, isConst2, projectToConstKey>& rhs) noexcept
@@ -147,11 +264,11 @@ namespace util
       {
          return lhs.current_node_index() != rhs.current_node_index();
       }
-
    } // namespace detail
 
    template <class key_, class any_, size_t buffer_size_, class hash_ = std::hash<key_>,
-      class pred_ = std::equal_to<key_>>
+             class pred_ = std::equal_to<key_>,
+             allocator allocator_ = std::allocator<std::pair<const key_, any_>>>
    class small_dense_hash_map
    {
       using node_type = detail::node<key_, any_>;
@@ -160,6 +277,30 @@ namespace util
       using nodes_size_type = typename nodes_container_type::size_type;
       using buckets_container_type =
          small_dynamic_array<nodes_size_type, detail::max_bucket_container_size(buffer_size_)>;
+      using deduced_key_equal = typename detail::key_equal<hash_, pred_, key_>::type;
+
+      static inline constexpr bool is_nothrow_move_constructible =
+         std::allocator_traits<allocator_>::is_always_equal::value &&
+         std::is_nothrow_move_constructible_v<hash_> &&
+         std::is_nothrow_move_constructible_v<deduced_key_equal> &&
+         std::is_nothrow_move_constructible_v<nodes_container_type> &&
+         std::is_nothrow_move_constructible_v<buckets_container_type>;
+      static inline constexpr bool is_nothrow_move_assignable =
+         std::allocator_traits<allocator_>::is_always_equal::value &&
+         std::is_nothrow_move_assignable_v<hash_> &&
+         std::is_nothrow_move_assignable_v<deduced_key_equal> &&
+         std::is_nothrow_move_assignable_v<nodes_container_type> &&
+         std::is_nothrow_move_assignable_v<buckets_container_type>;
+      static inline constexpr bool is_nothrow_swappable =
+         std::is_nothrow_swappable_v<buckets_container_type> &&
+         std::is_nothrow_swappable_v<nodes_container_type> &&
+         std::allocator_traits<allocator_>::is_always_equal::value &&
+         std::is_nothrow_swappable_v<hash_> && std::is_nothrow_swappable_v<deduced_key_equal>;
+      static inline constexpr bool is_nothrow_default_constructible =
+         std::is_nothrow_default_constructible_v<buckets_container_type> &&
+         std::is_nothrow_default_constructible_v<nodes_container_type> &&
+         std::is_nothrow_default_constructible_v<hash_> &&
+         std::is_nothrow_default_constructible_v<deduced_key_equal>;
 
    public:
       using key_type = key_;
@@ -169,16 +310,133 @@ namespace util
       using difference_type = typename nodes_container_type::difference_type;
       using hasher = hash_;
       using key_equal = typename detail::key_equal<hasher, pred_, key_type>::type;
+      using allocator_type = allocator_;
       using reference = value_type&;
       using const_reference = const value_type&;
-      using pointer = value_type*;
-      using const_pointer = const value_type*;
+      using pointer = typename std::allocator_traits<allocator_type>::pointer;
+      using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
       using iterator = random_access_iterator<value_type>;
       using const_iterator = random_access_iterator<const value_type>;
       using local_iterator =
          detail::bucket_iterator<key_type, mapped_type, nodes_container_type, false, true>;
       using const_local_iterator =
          detail::bucket_iterator<key_type, mapped_type, nodes_container_type, true, true>;
+
+   public:
+      constexpr small_dense_hash_map() noexcept(is_nothrow_default_constructible) :
+         small_dense_hash_map(buffer_size_)
+      {}
+
+      constexpr explicit small_dense_hash_map(size_type bucket_count, const hasher& hash = hasher(),
+                                              const key_equal& equal = key_equal(),
+                                              const allocator_type& alloc = allocator_type()) :
+         hash_(hash),
+         m_key_equal(equal), m_buckets(alloc), m_nodes(alloc)
+      {
+         rehash(bucket_count);
+      }
+
+      constexpr small_dense_hash_map(size_type bucket_count, const allocator_type& alloc) :
+         small_dense_hash_map(bucket_count, hasher(), key_equal(), alloc)
+      {}
+
+      constexpr small_dense_hash_map(size_type bucket_count, const hasher& hash,
+                                     const allocator_type& alloc) :
+         small_dense_hash_map(bucket_count, hash, key_equal(), alloc)
+      {}
+
+      constexpr explicit small_dense_hash_map(const allocator_type& alloc) :
+         small_dense_hash_map(buffer_size_, hasher(), key_equal(), alloc)
+      {}
+
+      template <class InputIt>
+      constexpr small_dense_hash_map(InputIt first, InputIt last,
+                                     size_type bucket_count = buffer_size_,
+                                     const hasher& hash = hasher(),
+                                     const key_equal& equal = key_equal(),
+                                     const allocator_type& alloc = allocator_type()) :
+         small_dense_hash_map(bucket_count, hash, equal, alloc)
+      {
+         insert(first, last);
+      }
+
+      template <class InputIt>
+      constexpr small_dense_hash_map(InputIt first, InputIt last, size_type bucket_count,
+                                     const allocator_type& alloc) :
+         small_dense_hash_map(first, last, bucket_count, hasher(), key_equal(), alloc)
+      {}
+
+      template <class InputIt>
+      constexpr small_dense_hash_map(InputIt first, InputIt last, size_type bucket_count,
+                                     const hasher& hash, const allocator_type& alloc) :
+         small_dense_hash_map(first, last, bucket_count, hash, key_equal(), alloc)
+      {}
+
+      constexpr small_dense_hash_map(const small_dense_hash_map& other) :
+         small_dense_hash_map(
+            other,
+            std::allocator_traits<allocator_type>::select_on_container_copy_construction(
+               other.get_allocator()))
+      {}
+
+      constexpr small_dense_hash_map(const small_dense_hash_map& other,
+                                     const allocator_type& alloc) :
+         m_hash(other.hash_),
+         m_key_equal(other.key_equal_), m_buckets(other.buckets_, alloc),
+         m_nodes(other.nodes_, alloc)
+      {}
+
+      constexpr small_dense_hash_map(small_dense_hash_map&& other) noexcept(
+         is_nothrow_move_constructible) = default;
+
+      constexpr small_dense_hash_map(small_dense_hash_map&& other, const allocator_type& alloc) :
+         hash_(std::move(other.hash_)), m_key_equal(std::move(other.key_equal_)),
+         m_buckets(std::move(other.buckets_), alloc), m_nodes(std::move(other.nodes_), alloc)
+      {}
+
+      constexpr small_dense_hash_map(std::initializer_list<value_type> init,
+                                     size_type bucket_count = buffer_size_,
+                                     const hasher& hash = hasher(),
+                                     const key_equal& equal = key_equal(),
+                                     const allocator_type& alloc = allocator_type()) :
+         small_dense_hash_map(init.begin(), init.end(), bucket_count, hash, equal, alloc)
+      {}
+
+      constexpr small_dense_hash_map(std::initializer_list<value_type> init, size_type bucket_count,
+                                     const allocator_type& alloc) :
+         small_dense_hash_map(init, bucket_count, hasher(), key_equal(), alloc)
+      {}
+
+      constexpr small_dense_hash_map(std::initializer_list<value_type> init, size_type bucket_count,
+                                     const hasher& hash, const allocator_type& alloc) :
+         small_dense_hash_map(init, bucket_count, hash, key_equal(), alloc)
+      {}
+
+      // 2 missing constructors from https://cplusplus.github.io/LWG/issue2713
+      template <std::input_iterator it_>
+      small_dense_hash_map(it_ first, it_ last, const allocator_type& alloc) :
+         small_dense_hash_map(first, last, buffer_size_, hasher(), key_equal(), alloc)
+      {}
+
+      small_dense_hash_map(std::initializer_list<value_type> init, const allocator_type& alloc) :
+         small_dense_hash_map(init, buffer_size_, hasher(), key_equal(), alloc)
+      {}
+
+      ~small_dense_hash_map() = default;
+
+      constexpr auto operator=(const small_dense_hash_map& other)
+         -> small_dense_hash_map& = default;
+      constexpr auto operator=(small_dense_hash_map&& other) noexcept(is_nothrow_move_assignable)
+         -> small_dense_hash_map& = default;
+
+      constexpr auto operator=(std::initializer_list<value_type> ilist) -> small_dense_hash_map&
+      {
+         clear();
+         insert(ilist.begin(), ilist.end());
+         return *this;
+      }
+
+      constexpr auto get_allocator() const -> allocator_type { return m_buckets.get_allocator(); }
 
       constexpr auto begin() noexcept -> iterator { return projected_range().begin(); }
       constexpr auto begin() const noexcept -> const_iterator { return projected_range().begin(); }
@@ -197,6 +455,343 @@ namespace util
          m_buckets.clear();
 
          rehash(0u);
+      }
+
+      constexpr auto insert(const value_type& value) -> std::pair<iterator, bool>
+      {
+         return emplace(value);
+      }
+
+      constexpr auto insert(value_type&& value) -> std::pair<iterator, bool>
+      {
+         return emplace(std::move(value));
+      }
+
+      constexpr auto insert(auto&& value)
+         -> std::pair<iterator, bool> requires std::constructible_from<value_type, decltype(value)>
+      {
+         return emplace(std::forward<decltype(value)>(value));
+      }
+
+      constexpr auto insert(const_iterator /*hint*/, const value_type& value) -> iterator
+      {
+         return insert(value).first;
+      }
+
+      constexpr auto insert(const_iterator /*hint*/, value_type&& value) -> iterator
+      {
+         return insert(std::move(value)).first;
+      }
+
+      constexpr auto insert(const_iterator /*hint*/, auto&& value) -> iterator
+         requires std::constructible_from<value_type, decltype(value)>
+      {
+         return insert(std::move(value)).first;
+      }
+
+      template <class InputIt>
+      constexpr void insert(InputIt first, InputIt last)
+      {
+         for (; first != last; ++first)
+         {
+            insert(*first);
+         }
+      }
+
+      constexpr void insert(std::initializer_list<value_type> ilist)
+      {
+         insert(ilist.begin(), ilist.end());
+      }
+
+      constexpr auto insert_or_assign(const key_type& k, auto&& obj) -> std::pair<iterator, bool>
+      {
+         auto result = try_emplace(k, std::forward<decltype(obj)>(obj));
+
+         if (!result.second)
+         {
+            result.first->second = std::forward<decltype(obj)>(obj);
+         }
+
+         return result;
+      }
+
+      constexpr auto insert_or_assign(key_type&& k, auto&& obj) -> std::pair<iterator, bool>
+      {
+         auto result = try_emplace(std::move(k), std::forward<decltype(obj)>(obj));
+
+         if (!result.second)
+         {
+            result.first->second = std::forward<decltype(obj)>(obj);
+         }
+
+         return result;
+      }
+
+      constexpr auto insert_or_assign(const_iterator /*hint*/, const key_type& k, auto&& obj)
+         -> iterator
+      {
+         return insert_or_assign(k, std::forward<decltype(obj)>(obj)).first;
+      }
+
+      constexpr auto insert_or_assign(const_iterator /*hint*/, key_type&& k, auto&& obj) -> iterator
+      {
+         return insert_or_assign(std::move(k), std::forward<decltype(obj)>(obj)).first;
+      }
+
+      auto emplace(auto&&... args) -> std::pair<iterator, bool>
+      {
+         return dispatch_emplace(std::forward<decltype(args)>(args)...);
+      }
+
+      auto emplace_hint(const_iterator /*hint*/, auto&&... args) -> iterator
+      {
+         return emplace(std::forward<decltype(args)>(args)...).first;
+      }
+
+      constexpr auto try_emplace(const key_type& key, auto&&... args) -> std::pair<iterator, bool>
+      {
+         return do_emplace(key, std::piecewise_construct, std::forward_as_tuple(key),
+                           std::forward_as_tuple(std::forward<decltype(args)>(args)...));
+      }
+
+      constexpr auto try_emplace(key_type&& key, auto&&... args) -> std::pair<iterator, bool>
+      {
+         return do_emplace(key, std::piecewise_construct, std::forward_as_tuple(std::move(key)),
+                           std::forward_as_tuple(std::forward<decltype(args)>(args)...));
+      }
+
+      constexpr auto try_emplace(const_iterator /*hint*/, const key_type& key, auto&&... args)
+         -> iterator
+      {
+         return try_emplace(key, std::forward<decltype(args)>(args)...).iterator;
+      }
+
+      constexpr auto try_emplace(const_iterator /*hint*/, key_type&& key, auto&&... args)
+         -> iterator
+      {
+         return try_emplace(std::move(key), std::forward<decltype(args)>(args)...).iterator;
+      }
+
+      constexpr auto erase(const_iterator pos) -> iterator
+      {
+         const auto position = std::distance(cbegin(), pos);
+         const auto it = std::next(begin(), position);
+         const auto previous_next = find_previous_next_using_position(pos->first, position);
+         return do_erase(previous_next, it.sub_iterator()).first;
+      }
+
+      constexpr auto erase(const_iterator first, const_iterator last) -> iterator
+      {
+         bool stop = first == last;
+         while (!stop)
+         {
+            --last;
+            stop = first == last; // if first == last, erase would invalidate both!
+            last = erase(last);
+         }
+
+         const auto position = std::distance(cbegin(), last);
+         return std::next(begin(), position);
+      }
+
+      constexpr auto erase(const key_type& key) -> size_type
+      {
+         // We have to find out the node we look for and the pointer to it.
+         const auto bindex = bucket_index(key);
+
+         std::size_t* previous_next = &m_buckets[bindex];
+
+         for (;;)
+         {
+            if (*previous_next == std::numeric_limits<node_index_type>::max())
+            {
+               return 0;
+            }
+
+            auto& node = m_nodes[*previous_next];
+
+            if (key_equal_(node.pair.pair().first, key))
+            {
+               break;
+            }
+
+            previous_next = &node.next;
+         }
+
+         do_erase(previous_next, std::next(m_nodes.begin(), *previous_next));
+
+         return 1;
+      }
+
+      /*
+      constexpr void swap(small_dense_hash_map& other) noexcept(is_nothrow_swappable)
+      {
+         using std::swap;
+         swap(m_buckets, other.m_buckets);
+         swap(m_nodes, other.m_nodes);
+         swap(m_max_load_factor, other.m_max_load_factor);
+         swap(m_hash, other.m_hash);
+         swap(m_key_equal, other.m_key_equal);
+      }
+      */
+
+      constexpr auto at(const key_type& key) -> mapped_type&
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            handle_out_of_range_error("The specified key does not exists in this map.");
+         }
+
+         return it->second;
+      }
+
+      constexpr auto at(const key_type& key) const -> const mapped_type&
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            handle_out_of_range_error("The specified key does not exists in this map.");
+         }
+
+         return it->second;
+      }
+
+      constexpr auto operator[](const key_type& key) -> mapped_type&
+      {
+         return this->try_emplace(key).first->second;
+      }
+
+      constexpr auto operator[](key_type&& key) -> mapped_type&
+      {
+         return this->try_emplace(std::move(key)).first->second;
+      }
+
+      constexpr auto count(const key_type& key) const -> size_type
+      {
+         return find(key) == end() ? 0u : 1u;
+      }
+
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto count(const in_key_& key) const -> size_type
+      {
+         return find(key) == end() ? 0u : 1u;
+      }
+
+      constexpr auto find(const key_type& key) -> iterator
+      {
+         return bucket_iterator_to_iterator(find_in_bucket(key, bucket_index(key)), m_nodes);
+      }
+
+      constexpr auto find(const key_type& key) const -> const_iterator
+      {
+         return bucket_iterator_to_iterator(find_in_bucket(key, bucket_index(key)), m_nodes);
+      }
+
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto find(const in_key_& key) -> iterator
+      {
+         return bucket_iterator_to_iterator(find_in_bucket(key, bucket_index(key)), m_nodes);
+      }
+
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto find(const in_key_& key) const -> const_iterator
+      {
+         return bucket_iterator_to_iterator(find_in_bucket(key, bucket_index(key)), m_nodes);
+      }
+
+      constexpr auto contains(const key_type& key) const -> bool { return find(key) != end(); }
+
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto contains(const in_key_& key) const -> bool
+      {
+         return find(key) != end();
+      }
+
+      constexpr auto equal_range(const key_type& key) -> std::pair<iterator, iterator>
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            return {it, it};
+         }
+
+         return {it, std::next(it)};
+      }
+      constexpr auto equal_range(const key_type& key) const
+         -> std::pair<const_iterator, const_iterator>
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            return {it, it};
+         }
+
+         return {it, std::next(it)};
+      }
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto equal_range(const in_key_& key) -> std::pair<iterator, iterator>
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            return {it, it};
+         }
+
+         return {it, std::next(it)};
+      }
+      template <
+         class in_key_,
+         class Useless = std::enable_if_t<detail::is_transparent_key_equal_v<hash_>, in_key_>>
+      constexpr auto equal_range(const in_key_& key) const
+         -> std::pair<const_iterator, const_iterator>
+      {
+         const auto it = find(key);
+
+         if (it == end())
+         {
+            return {it, it};
+         }
+
+         return {it, std::next(it)};
+      }
+
+      constexpr auto begin(size_type n) -> local_iterator
+      {
+         return local_iterator{m_buckets[n], m_nodes};
+      }
+      constexpr auto begin(size_type n) const -> const_local_iterator
+      {
+         return const_local_iterator{m_buckets[n], m_nodes};
+      }
+      constexpr auto cbegin(size_type n) const -> const_local_iterator
+      {
+         return const_local_iterator{m_buckets[n], m_nodes};
+      }
+
+      constexpr auto end(size_type /*n*/) -> local_iterator { return local_iterator{m_nodes}; }
+      constexpr auto end(size_type /*n*/) const -> const_local_iterator
+      {
+         return const_local_iterator{m_nodes};
+      }
+      constexpr auto cend(size_type /*n*/) const -> const_local_iterator
+      {
+         return const_local_iterator{m_nodes};
       }
 
       constexpr auto bucket_count() const -> size_type { return m_buckets.size(); }
@@ -253,6 +848,12 @@ namespace util
          }
       }
 
+      constexpr void reserve(std::size_t count)
+      {
+         rehash(std::ceil(count / max_load_factor()));
+         m_nodes.reserve(count);
+      }
+
       constexpr auto hash_function() const -> hasher { return m_hash; }
       constexpr auto key_eq() const -> key_equal { return m_key_equal; }
 
@@ -260,13 +861,173 @@ namespace util
       constexpr auto projected_range()
       {
          return m_nodes | std::views::transform([](auto& node) {
-            return node.pair.pair();
-         });
+                   return node.pair.pair();
+                });
       }
 
       constexpr auto bucket_index(const auto& key) const -> size_type
       {
          return compute_index(hash_(key), m_buckets.size());
+      }
+
+      constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) -> local_iterator
+      {
+         auto b = begin(bucket_index);
+         auto e = end(0u);
+         auto it = std::find_if(b, e, [&key, this](auto& p) {
+            return key_equal_(p.first, key);
+         });
+         return it;
+      }
+
+      constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) const
+         -> const_local_iterator
+      {
+         auto b = begin(bucket_index);
+         auto e = end(0u);
+         auto it = std::find_if(b, e, [&key, this](auto& p) {
+            return key_equal_(p.first, key);
+         });
+         return it;
+      }
+
+      constexpr auto do_erase(std::size_t* previous_next,
+                              typename nodes_container_type::iterator sub_it)
+         -> std::pair<iterator, bool>
+      {
+         // Skip the node by pointing the previous "next" to the one sub_it currently point to.
+         *previous_next = sub_it->next;
+
+         auto last = std::prev(m_nodes.end());
+
+         // No need to do anything if the node was at the end of the vector.
+         if (sub_it == last)
+         {
+            m_nodes.pop_back();
+            return {end(), true};
+         }
+
+         // Swap last node and the one we want to delete.
+         using std::swap;
+         swap(*sub_it, *last);
+
+         // Now sub_it points to the one we swapped with. We have to readjust sub_it.
+         previous_next =
+            find_previous_next_using_position(sub_it->pair.pair().first, m_nodes.size() - 1);
+         *previous_next = std::distance(m_nodes.begin(), sub_it);
+
+         // Delete the last node forever and ever.
+         m_nodes.pop_back();
+
+         return {iterator{sub_it}, true};
+      }
+
+      constexpr auto find_previous_next_using_position(const key_type& key, std::size_t position)
+         -> std::size_t*
+      {
+         const std::size_t bindex = bucket_index(key);
+
+         auto previous_next = &m_buckets[bindex];
+         while (*previous_next != position)
+         {
+            previous_next = &m_nodes[*previous_next].next;
+         }
+
+         return previous_next;
+      }
+
+      constexpr void reinsert_entry(node_type& entry, node_index_type index)
+      {
+         const auto bindex = bucket_index(entry.pair.const_key_pair().first);
+         auto old_index = std::exchange(m_buckets[bindex], index);
+         entry.next = old_index;
+      }
+
+      constexpr void check_for_rehash()
+      {
+         if (size() + 1 > bucket_count() * max_load_factor())
+         {
+            rehash(bucket_count() * 2);
+         }
+      }
+
+      constexpr auto dispatch_emplace() -> std::pair<iterator, bool>
+      {
+         return do_emplace(key_type{});
+      }
+
+      constexpr auto dispatch_emplace(auto&& key, auto&& t) -> std::pair<iterator, bool>
+      {
+         if constexpr (std::is_same_v<std::decay_t<decltype(key)>, key_type>)
+         {
+            return do_emplace(key, std::forward<decltype(key)>(key), std::forward<decltype(t)>(t));
+         }
+         else
+         {
+            key_type new_key{std::forward<decltype(key)>(key)};
+            // TODO: double check that I am allowed to optimized by sending new_key here and not key
+            // https://eel.is/c++draft/unord.req#lib:emplace,unordered_associative_containers
+            return do_emplace(new_key, std::move(new_key), std::forward<decltype(t)>(t));
+         }
+      }
+
+      constexpr auto dispatch_emplace(auto&& p) -> std::pair<iterator, bool>
+      {
+         if constexpr (std::is_same_v<std::decay_t<decltype(p.first)>, key_type>)
+         {
+            return do_emplace(p.first, std::forward<decltype(p)>(p));
+         }
+         else
+         {
+            key_type new_key{std::forward<decltype(p)>(p).first};
+            return do_emplace(new_key, std::move(new_key), std::forward<decltype(p)>(p).second);
+         }
+      }
+
+      template <class... args_one_, class... args_two_>
+      constexpr auto dispatch_emplace(std::piecewise_construct_t,
+                                      std::tuple<args_one_...> first_args,
+                                      std::tuple<args_two_...> second_args)
+         -> std::pair<iterator, bool>
+      {
+         std::pair<key_type, mapped_type> p{std::piecewise_construct, std::move(first_args),
+                                            std::move(second_args)};
+         return dispatch_emplace(std::move(p));
+      }
+
+      constexpr auto do_emplace(const key_type& key, auto&&... args) -> std::pair<iterator, bool>
+      {
+         check_for_rehash();
+
+         const auto bindex = bucket_index(key);
+         auto local_it = find_in_bucket(key, bindex);
+
+         if (local_it != end(0u))
+         {
+            return std::pair{bucket_iterator_to_iterator(local_it, m_nodes), false};
+         }
+
+         m_nodes.emplace_back(m_buckets[bindex], std::forward<decltype(args)>(args)...);
+         m_buckets[bindex] = m_nodes.size() - 1;
+
+         return std::pair{std::prev(end()), true};
+      }
+
+      template <class container_, bool is_const_, bool project_to_const_key_>
+      constexpr auto bucket_iterator_to_iterator(
+         const detail::bucket_iterator<key_type, mapped_type, container_, is_const_,
+                                       project_to_const_key_>& bucket_it,
+         auto& nodes)
+      {
+         if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
+         {
+            return decltype(projected_range().begin()){nodes.end()};
+         }
+         else
+         {
+            return decltype(projected_range().begin()){
+               std::next(nodes.begin(), bucket_it.current_node_index())};
+         }
       }
 
    private:
@@ -276,10 +1037,51 @@ namespace util
       nodes_container_type m_nodes;
       buckets_container_type m_buckets;
 
-      float m_max_load_factor = 0.875f;
+      float m_max_load_factor = 0.875f; // NOLINT
    };
 
+   template <class key_, class any_, size_t buff_sz_lhs_, size_t buff_sz_rhs_, class hash_,
+             class key_eq_, allocator allocator_>
+   constexpr auto
+   operator==(const small_dense_hash_map<key_, any_, buff_sz_lhs_, hash_, key_eq_, allocator_>& lhs,
+              const small_dense_hash_map<key_, any_, buff_sz_rhs_, hash_, key_eq_, allocator_>& rhs)
+      -> bool
+   {
+      if (lhs.size() != rhs.size())
+      {
+         return false;
+      }
+
+      for (const auto& item : lhs)
+      {
+         const auto it = rhs.find(item.first);
+
+         if (it == rhs.end() || it->second != item.second)
+         {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
    template <class key_, class any_, class hash_ = std::hash<key_>,
-      class pred_ = std::equal_to<key_>>
-   using dense_hash_map = small_dense_hash_map<key_, any_, 0, hash_, pred_>;
+             class pred_ = std::equal_to<key_>,
+             allocator allocator_ = std::allocator<std::pair<const key_, any_>>>
+   using dense_hash_map = small_dense_hash_map<key_, any_, 0, hash_, pred_, allocator_>;
+
+   namespace pmr
+   {
+      template <class key_, class any_, std::size_t buff_sz_, class hash_ = std::hash<key_>,
+                class pred_ = std::equal_to<key_>>
+      using small_dense_hash_map =
+         ::util::small_dense_hash_map<key_, any_, buff_sz_, hash_, pred_,
+                                      std::pmr::polymorphic_allocator<std::pair<key_, any_>>>;
+
+      template <class key_, class any_, class hash_ = std::hash<key_>,
+                class pred_ = std::equal_to<key_>>
+      using dense_hash_map =
+         ::util::small_dense_hash_map<key_, any_, 0, hash_, pred_,
+                                      std::pmr::polymorphic_allocator<std::pair<key_, any_>>>;
+   } // namespace pmr
 } // namespace util

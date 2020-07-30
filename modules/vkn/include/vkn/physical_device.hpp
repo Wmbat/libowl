@@ -15,8 +15,9 @@ namespace vkn
 {
    namespace detail
    {
-      auto get_graphics_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
+      auto
+      get_graphics_queue_index(const util::range_over<vk::QueueFamilyProperties> auto& families)
+         -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; const auto& fam : families)
          {
@@ -32,7 +33,8 @@ namespace vkn
       }
 
       auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
+                                   const util::range_over<vk::QueueFamilyProperties> auto& families)
+         -> monad::maybe<uint32_t>
       {
          for (uint32_t i = 0; i < families.size(); ++i)
          {
@@ -40,7 +42,7 @@ namespace vkn
             if (surface)
             {
                if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
-                  vk::Result::eSuccess)
+                   vk::Result::eSuccess)
                {
                   return monad::none;
                }
@@ -61,8 +63,8 @@ namespace vkn
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
             {
                return i;
             }
@@ -79,8 +81,8 @@ namespace vkn
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
             {
                return i;
             }
@@ -98,17 +100,15 @@ namespace vkn
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
             {
                if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) ==
-                  0)
+                   0)
                {
                   return i;
                }
-               else
-               {
-                  compute = i;
-               }
+
+               compute = i;
             }
 
             ++i;
@@ -124,16 +124,14 @@ namespace vkn
          for (uint32_t i = 0; const auto& fam : families)
          {
             if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-               (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
             {
                if (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0)
                {
                   return i;
                }
-               else
-               {
-                  transfer = i;
-               }
+
+               transfer = i;
             }
 
             ++i;
@@ -181,7 +179,6 @@ namespace vkn
          util::dynamic_array<vk::QueueFamilyProperties> queue_families{};
       };
 
-   public:
       physical_device() = default;
       physical_device(const create_info& info);
       physical_device(const physical_device&) = delete;
@@ -275,7 +272,6 @@ namespace vkn
             no
          };
 
-      private:
          [[nodiscard]] auto populate_device_details(vk::PhysicalDevice) const
             -> physical_device_description;
 

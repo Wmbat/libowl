@@ -128,4 +128,5 @@ target_sources(${PROJECT_NAME}
         source/core/graphics/gui/window.cpp
 
         source/core/render_manager.cpp
+        source/core/shader_codex.cpp
 )

@@ -1,6 +1,6 @@
 Language: Cpp
 AccessModifierOffset: -3
-AlignAfterOpenBracket: DontAlign
+AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignConsecutiveMacros: false
@@ -67,6 +67,6 @@ SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: Auto
+Standard: Latest
 TabWidth: 3
 UseTab: Never

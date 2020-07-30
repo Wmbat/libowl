@@ -65,8 +65,7 @@ namespace vkn
    class loader
    {
    public:
-   public:
-      loader(util::logger* const p_logger = nullptr);
+      loader(util::logger* p_logger = nullptr);
 
       void load_instance(const ::vk::Instance& instance) const;
       void load_device(const ::vk::Device& device) const;

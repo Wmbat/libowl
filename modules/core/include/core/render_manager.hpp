@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <util/containers/dense_hash_map.hpp>
+
 #include <core/graphics/gui/window.hpp>
 
 #include <vkn/core.hpp>

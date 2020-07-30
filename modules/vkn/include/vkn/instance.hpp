@@ -51,7 +51,7 @@ namespace vkn
 
       instance() = default;
       instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-         util::dynamic_array<const char*> extension, uint32_t version);
+               util::dynamic_array<const char*> extension, uint32_t version);
       instance(const instance&) = delete;
       instance(instance&&) noexcept;
       ~instance();
@@ -70,12 +70,12 @@ namespace vkn
       }
 
    private:
-      vk::Instance m_instance;
-      vk::DebugUtilsMessengerEXT m_debug_utils;
+      vk::Instance m_instance{nullptr};
+      vk::DebugUtilsMessengerEXT m_debug_utils{nullptr};
 
-      util::dynamic_array<const char*> m_extensions;
+      util::dynamic_array<const char*> m_extensions{};
 
-      uint32_t m_version = 0;
+      uint32_t m_version{0u};
 
       inline static const error_category m_category{};
 
@@ -83,7 +83,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const loader& vk_loader, util::logger* const p_logger = nullptr);
+         builder(const loader& vk_loader, util::logger* p_logger = nullptr);
 
          [[nodiscard]] auto build() -> vkn::result<instance>;
 
@@ -100,11 +100,11 @@ namespace vkn
          auto has_debug_utils_support(
             const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool;
 
-         [[nodiscard]] auto get_all_ext(
-            const util::dynamic_array<vk::ExtensionProperties>& properties,
-            bool are_debug_utils_available) const -> vkn::result<util::dynamic_array<const char*>>;
+         [[nodiscard]] auto
+         get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
+                     bool are_debug_utils_available) const
+            -> vkn::result<util::dynamic_array<const char*>>;
 
-      private:
          const loader& m_loader;
 
          util::logger* const m_plogger;

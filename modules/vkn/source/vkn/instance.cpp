@@ -104,7 +104,7 @@ namespace vkn
    /* INSTANCE */
 
    instance::instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-      util::dynamic_array<const char*> extension, uint32_t version) :
+                      util::dynamic_array<const char*> extension, uint32_t version) :
       m_instance{instance},
       m_debug_utils{debug_utils}, m_extensions(std::move(extension)), m_version(version)
    {}
@@ -133,7 +133,8 @@ namespace vkn
          rhs.m_debug_utils = nullptr;
 
          m_extensions = std::move(rhs.m_extensions);
-         m_version = rhs.m_version;
+
+         std::swap(m_version, rhs.m_version);
       }
 
       return *this;
@@ -181,7 +182,7 @@ namespace vkn
          if (!system_layers_res)
          {
             log_warn(m_plogger, "[vkn] instance layer enumeration error: {0}",
-               system_layers_res.left()->what());
+                     system_layers_res.left()->what());
          }
       }
 
@@ -192,7 +193,7 @@ namespace vkn
       if (!system_layers_res)
       {
          log_warn(m_plogger, "[vkn] instance layer enumeration error: {1}",
-            system_exts_res.left()->what());
+                  system_exts_res.left()->what());
       }
 
       const auto sys_layers = system_layers_res.right().value();
@@ -203,7 +204,7 @@ namespace vkn
       const bool debug_utils_available = has_debug_utils_support(sys_exts);
 
       log_info(m_plogger, "[vkn] using vulkan version {0}.{1}.{2}", VK_VERSION_MAJOR(api_version),
-         VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
+               VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
@@ -227,7 +228,7 @@ namespace vkn
 
       auto extension_names_res =
          get_all_ext(util::dynamic_array<vk::ExtensionProperties>{sys_exts.begin(), sys_exts.end()},
-            debug_utils_available);
+                     debug_utils_available);
       if (!extension_names_res)
       {
          return monad::make_left(extension_names_res.left().value());
@@ -260,9 +261,10 @@ namespace vkn
 
             for (const char* name : layers)
             {
-               const bool is_present = std::ranges::find_if(sys_layers, [name](const auto& ext) {
-                  return strcmp(name, static_cast<const char*>(ext.layerName)) == 0;
-               }) != sys_layers.cend();
+               const bool is_present =
+                  std::ranges::find_if(sys_layers, [name](const auto& ext) {
+                     return strcmp(name, static_cast<const char*>(ext.layerName)) == 0;
+                  }) != sys_layers.cend();
 
                if (!is_present)
                {
@@ -383,22 +385,23 @@ namespace vkn
       const util::range_over<vk::LayerProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkLayerProperties& layer) {
-         return strcmp(static_cast<const char*>(layer.layerName), "VK_LAYER_KHRONOS_validation") ==
-            0;
-      }) != properties.end();
+                return strcmp(static_cast<const char*>(layer.layerName),
+                              "VK_LAYER_KHRONOS_validation") == 0;
+             }) != properties.end();
    }
 
    auto instance::builder::has_debug_utils_support(
       const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkExtensionProperties& ext) {
-         return strcmp(static_cast<const char*>(ext.extensionName),
-                   VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
-      }) != properties.end();
+                return strcmp(static_cast<const char*>(ext.extensionName),
+                              VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0;
+             }) != properties.end();
    }
 
    auto builder::get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
-      bool are_debug_utils_available) const -> vkn::result<util::dynamic_array<const char*>>
+                             bool are_debug_utils_available) const
+      -> vkn::result<util::dynamic_array<const char*>>
    {
       using err_t = vkn::error;
 
@@ -456,9 +459,10 @@ namespace vkn
 
       for (const char* name : extensions)
       {
-         const bool is_present = std::ranges::find_if(properties, [name](const auto& ext) {
-            return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
-         }) != properties.cend();
+         const bool is_present =
+            std::ranges::find_if(properties, [name](const auto& ext) {
+               return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
+            }) != properties.cend();
 
          if (!is_present)
          {

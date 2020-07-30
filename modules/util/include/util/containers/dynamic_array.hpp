@@ -10,7 +10,6 @@
 #include "util/compare.hpp"
 #include "util/concepts.hpp"
 #include "util/containers/detail/error_handling.hpp"
-#include "util/containers/detail/growth_policy.hpp"
 #include "util/iterators/input_iterator.hpp"
 #include "util/iterators/random_access_iterator.hpp"
 
@@ -27,35 +26,14 @@
 
 namespace util
 {
-   namespace detail
-   {
-      /**
-       * @struct static_array_storage details.hpp <ESL/containers/small_dynamic_array.hpp>
-       * @author wmbat wmbat@protonmail.com
-       * @date Monday, April 29th, 2020
-       * @copyright MIT License.
-       * @brief A small buffer class that represents an array.
-       *
-       * @tparam any_, The type of objects that can be contained in the static storage of the
-       * container.
-       * @tparam buff_sz, The size of the storage.
-       */
-      template <class any_, std::size_t buff_sz>
-      struct static_array_storage
-      {
-         std::array<std::aligned_storage_t<sizeof(any_), alignof(any_)>, buff_sz> buffer;
-      };
-
-      template <class any_>
-      struct alignas(alignof(any_)) static_array_storage<any_, 0>
-      {
-      };
-   } // namespace detail
-
    template <class any_, std::size_t buffer_size_, allocator allocator_ = std::allocator<any_>>
    class small_dynamic_array
    {
       using allocator_traits = std::allocator_traits<allocator_>;
+
+      static inline constexpr bool is_nothrow_swappable =
+         std::allocator_traits<allocator_>::propagate_on_container_swap::value ||
+         std::allocator_traits<allocator_>::is_always_equal::value;
 
    public:
       using value_type = any_;
@@ -71,47 +49,81 @@ namespace util
       using reverse_iterator = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-   public:
       explicit constexpr small_dynamic_array() noexcept(noexcept(allocator_type())) = default;
       explicit constexpr small_dynamic_array(const allocator_type& alloc) noexcept :
-         m_allocator(alloc)
+         m_allocator{alloc}
       {}
-      explicit constexpr small_dynamic_array(size_type count,
+      explicit constexpr small_dynamic_array(
+         size_type count,
          const allocator_type& alloc =
-            allocator_type{}) requires std::default_initializable<value_type>
+            allocator_type{}) requires std::default_initializable<value_type> : m_allocator{alloc}
       {
          assign(count, value_type{});
       }
-      explicit small_dynamic_array(size_type count, const_reference value,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
+      explicit constexpr small_dynamic_array(
+         size_type count, const_reference value,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+         m_allocator{alloc}
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      small_dynamic_array(it_ first, it_ last,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
+      constexpr small_dynamic_array(
+         it_ first, it_ last,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+         m_allocator{alloc}
       {
          assign(first, last);
       }
-      small_dynamic_array(std::initializer_list<any_> init,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type>
+      constexpr small_dynamic_array(
+         std::initializer_list<any_> init,
+         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+         m_allocator{alloc}
       {
          assign(init);
       }
-      small_dynamic_array(const small_dynamic_array& other)
+      constexpr small_dynamic_array(const small_dynamic_array& other)
       {
          if (!other.empty())
          {
             *this = other;
          }
       }
-      small_dynamic_array(small_dynamic_array&& other) noexcept(
-         std::is_nothrow_move_constructible<allocator_type>::value)
+      constexpr small_dynamic_array(const small_dynamic_array& other, const allocator_& alloc)
+      {
+         clear();
+         if (!is_static())
+         {
+            allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
+         }
+         reset_to_static();
+
+         m_allocator = alloc;
+
+         assign(other.begin(), other.end());
+      }
+      constexpr small_dynamic_array(small_dynamic_array&& other) noexcept
       {
          if (!other.empty())
          {
             *this = std::move(other);
          }
+      }
+      constexpr small_dynamic_array(small_dynamic_array&& other, const allocator_type& alloc)
+      {
+         clear();
+         if (!is_static())
+         {
+            allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
+         }
+         reset_to_static();
+
+         m_allocator = alloc;
+
+         using mi = std::move_iterator<iterator>;
+         assign(mi{other.begin()}, mi{other.end()});
+
+         other.reset_to_static();
       }
       constexpr ~small_dynamic_array()
       {
@@ -139,8 +151,8 @@ namespace util
          allocator_type::is_always_equal::value) -> small_dynamic_array&
       {
          move_assign(rhs,
-            std::integral_constant<bool,
-               allocator_traits::propagate_on_container_move_assignment::value>());
+                     std::integral_constant<
+                        bool, allocator_traits::propagate_on_container_move_assignment::value>());
 
          return *this;
       }
@@ -639,8 +651,8 @@ namespace util
          }
       }
 
-      constexpr void resize(
-         size_type count, const_reference value) requires std::copyable<value_type>
+      constexpr void resize(size_type count,
+                            const_reference value) requires std::copyable<value_type>
       {
          if (size() > count)
          {
@@ -668,7 +680,7 @@ namespace util
 
       constexpr auto get_first_element() const -> pointer
       {
-         return const_cast<pointer>(reinterpret_cast<const_pointer>(&m_storage)); // NOLINT
+         return const_cast<pointer>(reinterpret_cast<const_pointer>(&m_static_storage)); // NOLINT
       }
 
       constexpr void grow(size_type min_size = 0)
@@ -744,7 +756,7 @@ namespace util
          }
       }
 
-      constexpr void move_assign(small_dynamic_array& other, std::false_type)
+      constexpr void move_assign(small_dynamic_array& other, [[maybe_unused]] std::false_type u)
       {
          if (m_allocator != other.m_allocator)
          {
@@ -758,7 +770,7 @@ namespace util
             move_assign(other, std::true_type{});
          }
       }
-      constexpr void move_assign(small_dynamic_array& other, std::true_type)
+      constexpr void move_assign(small_dynamic_array& other, [[maybe_unused]] std::true_type u)
       {
          move_assign_alloc(other);
 
@@ -805,7 +817,7 @@ namespace util
 
          --min_capacity;
 
-         for (auto i = 1u; i < std::numeric_limits<std::size_t>::digits; i *= 2)
+         for (auto i = 1U; i < std::numeric_limits<std::size_t>::digits; i *= 2)
          {
             min_capacity |= min_capacity >> i;
          }
@@ -816,9 +828,8 @@ namespace util
       constexpr auto offset(size_type i) noexcept -> pointer { return m_pbegin + i; }
       constexpr auto offset(size_type i) const noexcept -> const_pointer { return m_pbegin + i; }
 
-   private:
       pointer m_pbegin{get_first_element()};
-      detail::static_array_storage<value_type, buffer_size_> m_storage{};
+      alignas(alignof(any_)) std::array<std::byte, sizeof(any_) * buffer_size_> m_static_storage;
       size_type m_size{0};
       size_type m_capacity{buffer_size_};
       allocator_type m_allocator{};
@@ -826,38 +837,19 @@ namespace util
 
    template <class type_, std::size_t first_size_, std::size_t second_size_, allocator allocator_>
    constexpr auto operator<=>(const small_dynamic_array<type_, first_size_, allocator_>& lhs,
-      const small_dynamic_array<type_, second_size_, allocator_>& rhs)
+                              const small_dynamic_array<type_, second_size_, allocator_>& rhs)
    {
-      return std::lexicographical_compare_three_way(
-         lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(), synth_three_way);
+      return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(),
+                                                    rhs.cend(), synth_three_way);
    }
 
    template <std::equality_comparable type_, std::size_t first_size_, std::size_t second_size_,
-      allocator allocator_>
+             allocator allocator_>
    constexpr auto operator==(const small_dynamic_array<type_, first_size_, allocator_>& lhs,
-      const small_dynamic_array<type_, second_size_, allocator_>& rhs) -> bool
+                             const small_dynamic_array<type_, second_size_, allocator_>& rhs)
+      -> bool
    {
       return std::equal(lhs.begin(), lhs.end(), rhs.cbegin(), rhs.cend());
-   }
-
-   template <class type_, size_t size_, allocator allocator_>
-   constexpr auto erase(small_dynamic_array<type_, size_, allocator_>& c, const auto& value) ->
-      typename decltype(c)::size_type
-   {
-      auto it = std::remove(c.begin(), c.end(), value);
-      auto r = std::distance(it, c.end());
-      c.erase(it, c.end());
-      return r;
-   }
-
-   template <class type_, size_t size_, allocator allocator_>
-   constexpr auto erase_if(small_dynamic_array<type_, size_, allocator_>& c, auto pred) ->
-      typename decltype(c)::size_type
-   {
-      auto it = std::remove(c.begin(), c.end(), pred);
-      auto r = std::distance(it, c.end());
-      c.erase(it, c.end());
-      return r;
    }
 
    template <class any_, allocator allocator_ = std::allocator<any_>>
@@ -873,3 +865,26 @@ namespace util
       using dynamic_array = small_dynamic_array<any_, 0>;
    } // namespace pmr
 } // namespace util
+
+namespace std // NOLINT
+{
+   template <class type_, size_t size_, util::allocator allocator_>
+   constexpr auto erase(util::small_dynamic_array<type_, size_, allocator_>& c, const auto& value)
+      -> typename decltype(c)::size_type
+   {
+      auto it = std::remove(c.begin(), c.end(), value);
+      auto r = std::distance(it, c.end());
+      c.erase(it, c.end());
+      return r;
+   }
+
+   template <class type_, size_t size_, util::allocator allocator_>
+   constexpr auto erase_if(util::small_dynamic_array<type_, size_, allocator_>& c, auto pred) ->
+      typename decltype(c)::size_type
+   {
+      auto it = std::remove(c.begin(), c.end(), pred);
+      auto r = std::distance(it, c.end());
+      c.erase(it, c.end());
+      return r;
+   }
+} // namespace std
