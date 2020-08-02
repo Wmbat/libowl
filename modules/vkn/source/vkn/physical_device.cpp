@@ -1,4 +1,5 @@
 #include "vkn/physical_device.hpp"
+#include "mpark/patterns/match.hpp"
 
 #include <monads/try.hpp>
 
@@ -126,9 +127,9 @@ namespace vkn
    {
       using err_t = vkn::error;
 
-      auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
-         return m_system_info.instance.enumeratePhysicalDevices();
-      }).right_map([](const auto& devices) {
+      const auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
+                                           return m_system_info.instance.enumeratePhysicalDevices();
+                                        }).right_map([](const auto& devices) {
          return util::small_dynamic_array<vk::PhysicalDevice, 2>{devices.begin(), devices.end()};
       });
 
@@ -151,27 +152,16 @@ namespace vkn
          physical_device_descriptions.push_back(populate_device_details(device));
       }
 
-      physical_device_description selected{};
-      if (m_selection_info.select_first_gpu)
-      {
-         selected = physical_device_descriptions[0];
-      }
-      else
-      {
-         for (const auto& desc : physical_device_descriptions)
-         {
-            const auto suitable = is_device_suitable(desc);
-            if (suitable == suitable::yes)
-            {
-               selected = desc;
-               break;
-            }
-            else if (suitable == suitable::partial)
-            {
-               selected = desc;
-            }
-         }
-      }
+      // physical_device_description selected{};
+
+      using namespace mpark::patterns;
+
+      // clang-format off
+      const auto selected = match(m_selection_info.select_first_gpu)(
+         pattern(true) = [&]{ return physical_device_descriptions[0]; },
+         pattern(false) = [&]{ return go_through_available_gpus(physical_device_descriptions); }
+      );
+      // clang-format on
 
       if (!selected.phys_device)
       {
@@ -265,10 +255,10 @@ namespace vkn
       device.getQueueFamilyProperties();
 
       const auto properties_res = monad::try_wrap<vk::SystemError>([&] {
-         return device.getQueueFamilyProperties();
-      }).right_map([](const auto& properties) {
-         return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{
-            properties.begin(), properties.end()};
+                                     return device.getQueueFamilyProperties();
+                                  }).right_map([](const auto& properties) {
+         return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{properties.begin(),
+                                                                         properties.end()};
       });
 
       if (properties_res)
@@ -286,32 +276,32 @@ namespace vkn
    auto selector::is_device_suitable(const physical_device_description& desc) const -> suitable
    {
       if (m_selection_info.require_dedicated_compute &&
-         !detail::get_dedicated_compute_queue_index(desc.queue_families))
+          !detail::get_dedicated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (m_selection_info.require_dedicated_transfer &&
-         !detail::get_dedicated_transfer_queue_index(desc.queue_families))
+          !detail::get_dedicated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (m_selection_info.require_separated_compute &&
-         !detail::get_separated_compute_queue_index(desc.queue_families))
+          !detail::get_separated_compute_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (m_selection_info.require_separated_transfer &&
-         !detail::get_separated_transfer_queue_index(desc.queue_families))
+          !detail::get_separated_transfer_queue_index(desc.queue_families))
       {
          return suitable::no;
       }
 
       if (m_selection_info.require_present &&
-         !detail::get_present_queue_index(
-            desc.phys_device, m_system_info.surface, desc.queue_families))
+          !detail::get_present_queue_index(desc.phys_device, m_system_info.surface,
+                                           desc.queue_families))
       {
          return suitable::no;
       }
@@ -336,7 +326,7 @@ namespace vkn
       }
 
       if (desc.properties.deviceType ==
-         static_cast<vk::PhysicalDeviceType>(m_selection_info.prefered_type))
+          static_cast<vk::PhysicalDeviceType>(m_selection_info.prefered_type))
       {
          return suitable::yes;
       }

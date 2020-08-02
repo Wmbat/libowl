@@ -24,14 +24,8 @@
 #include <experimental/source_location>
 #include <string_view>
 
-#if !defined(__FILENAME__)
-#   define SHORT_FILE(name) (strrchr(name, '/') ? strrchr(name, '/') + 1 : name)
-#endif
-
 namespace util
 {
-   using src_location = std::experimental::source_location;
-
    class logger
    {
    public:

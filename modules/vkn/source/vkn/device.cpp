@@ -1,3 +1,4 @@
+#include "mpark/patterns/match.hpp"
 #include <vkn/device.hpp>
 
 #include <monads/try.hpp>
@@ -79,6 +80,21 @@ namespace vkn
       {
          return {static_cast<int>(err), device_error_cat};
       }
+
+      auto make_error(device::error flag, const std::error_code& ec) -> vkn::error
+      {
+         using namespace mpark::patterns;
+         // clang-format off
+         return match(ec.value())(
+            pattern(0) = [flag] {
+               return vkn::error{make_error_code(flag), {}};
+            },
+            pattern(_) = [flag, &ec] {
+               return vkn::error{make_error_code(flag), static_cast<vk::Result>(ec.value())};
+            }
+         );
+         // clang-format on
+      }
    } // namespace detail
 
    device::device(physical_device physical_device, const create_info& info) :
@@ -120,8 +136,9 @@ namespace vkn
 
       if (type == queue::type::present)
       {
-         const auto index = detail::get_present_queue_index(m_physical_device.value(),
-            m_physical_device.surface(), m_physical_device.queue_families());
+         const auto index =
+            detail::get_present_queue_index(m_physical_device.value(), m_physical_device.surface(),
+                                            m_physical_device.queue_families());
          if (!index)
          {
             // clang-format off
@@ -277,7 +294,7 @@ namespace vkn
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
 
    device::builder::builder(const loader& vk_loader, physical_device&& phys_device,
-      uint32_t version, util::logger* plogger) :
+                            uint32_t version, util::logger* plogger) :
       m_loader{vk_loader},
       m_plogger{plogger}
    {
@@ -287,8 +304,6 @@ namespace vkn
 
    auto device::builder::build() -> result<device>
    {
-      using err_t = vkn::error;
-
       util::dynamic_array<queue::description> descriptions;
       descriptions.insert(descriptions.cend(), m_info.queue_descriptions);
 
@@ -336,10 +351,7 @@ namespace vkn
 
          if (!is_present)
          {
-            return monad::make_left(err_t{
-               .type = detail::make_error_code(device::error::device_extension_not_supported),
-               .result={}
-            });
+            monad::make_left(detail::make_error(device::error::device_extension_not_supported, {}));
          }
       }
 
@@ -359,40 +371,25 @@ namespace vkn
          .setEnabledExtensionCount(static_cast<uint32_t>(extensions.size()))
          .setPpEnabledExtensionNames(extensions.data())
          .setPEnabledFeatures(&m_info.phys_device.features());
-      // clang-format on
 
-      auto device_res = monad::try_wrap<vk::SystemError>([&] {
+      return monad::try_wrap<vk::SystemError>([&] {
          return gpu.createDevice(device_create_info);
-      });
+      }).left_map([](auto err){
+         return detail::make_error(device::error::failed_to_create_device, err.code());
+      }).right_map([&](vk::Device dev) {
+         log_info(m_plogger, "[vkn] device created");
 
-      // clang-format off
-      if (!device_res)
-      {
-         return monad::make_left(err_t{
-            .type = detail::make_error_code(device::error::failed_to_create_device), 
-            .result = static_cast<vk::Result>(device_res.left()->code().value())
-         });
-      }
+         m_loader.load_device(dev);
 
-      log_info(m_plogger, "[vkn] device created");
-
-      auto dev = device_res.right().value();
-      m_loader.load_device(dev);
-
-      // clang-format off
-      return monad::make_right(device{
-         std::move(m_info.phys_device), 
-         device::create_info{
-            .device = dev,
-            .version = m_info.api_version,
-            .extensions = std::move(extensions)
-         }
+         return device{std::move(m_info.phys_device),
+                       device::create_info{dev, m_info.api_version, std::move(extensions)}};
       });
       // clang-format on
    } // namespace vkn
 
-   auto device::builder::set_queue_setup(
-      const util::dynamic_array<queue::description>& descriptions) -> device::builder&
+   auto
+   device::builder::set_queue_setup(const util::dynamic_array<queue::description>& descriptions)
+      -> device::builder&
    {
       m_info.queue_descriptions = descriptions;
       return *this;

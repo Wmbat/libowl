@@ -277,6 +277,27 @@ namespace vkn
 
          [[nodiscard]] auto is_device_suitable(const physical_device_description& desc) const
             -> suitable;
+
+         auto go_through_available_gpus(
+            const util::range_over<physical_device_description> auto& range) const
+            -> physical_device_description
+         {
+            physical_device_description selected;
+            for (const auto& desc : range)
+            {
+               const auto suitable = is_device_suitable(desc);
+               if (suitable == suitable::yes)
+               {
+                  selected = desc;
+                  break;
+               }
+               else if (suitable == suitable::partial)
+               {
+                  selected = desc;
+               }
+            }
+            return selected;
+         }
       };
    };
 } // namespace vkn

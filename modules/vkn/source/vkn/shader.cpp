@@ -393,7 +393,7 @@ namespace vkn
       }
 
       tshader.setEnvInput(glslang::EShSourceGlsl, shader_stage, glslang::EShClientVulkan,
-         client_input_semantics_version);
+                          client_input_semantics_version);
       tshader.setEnvClient(glslang::EShClientVulkan, detail::get_vulkan_version(m_info.version));
       tshader.setEnvTarget(glslang::EshTargetSpv, detail::get_spirv_version(m_info.version));
 
@@ -405,7 +405,7 @@ namespace vkn
 
       std::string preprocessed_glsl;
       if (!tshader.preprocess(&resources, default_version, ENoProfile, false, false, messages,
-             &preprocessed_glsl, includer))
+                              &preprocessed_glsl, includer))
       {
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
 

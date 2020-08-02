@@ -95,6 +95,9 @@ namespace vkn
          auto enable_extension(std::string_view extension_name) -> builder&;
 
       private:
+         auto build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
+            -> vkn::result<vk::DebugUtilsMessengerEXT>;
+
          auto has_validation_layer_support(
             const util::range_over<vk::LayerProperties> auto& properties) const -> bool;
          auto has_debug_utils_support(

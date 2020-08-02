@@ -324,29 +324,29 @@ namespace util
 
    public:
       constexpr small_dense_hash_map() noexcept(is_nothrow_default_constructible) :
-         small_dense_hash_map(buffer_size_)
+         small_dense_hash_map{buffer_size_}
       {}
 
       constexpr explicit small_dense_hash_map(size_type bucket_count, const hasher& hash = hasher(),
                                               const key_equal& equal = key_equal(),
                                               const allocator_type& alloc = allocator_type()) :
-         hash_(hash),
-         m_key_equal(equal), m_buckets(alloc), m_nodes(alloc)
+         m_hash{hash},
+         m_key_equal{equal}, m_nodes{alloc}, m_buckets{alloc}
       {
          rehash(bucket_count);
       }
 
       constexpr small_dense_hash_map(size_type bucket_count, const allocator_type& alloc) :
-         small_dense_hash_map(bucket_count, hasher(), key_equal(), alloc)
+         small_dense_hash_map{bucket_count, hasher(), key_equal(), alloc}
       {}
 
       constexpr small_dense_hash_map(size_type bucket_count, const hasher& hash,
                                      const allocator_type& alloc) :
-         small_dense_hash_map(bucket_count, hash, key_equal(), alloc)
+         small_dense_hash_map{bucket_count, hash, key_equal(), alloc}
       {}
 
       constexpr explicit small_dense_hash_map(const allocator_type& alloc) :
-         small_dense_hash_map(buffer_size_, hasher(), key_equal(), alloc)
+         small_dense_hash_map{buffer_size_, hasher(), key_equal(), alloc}
       {}
 
       template <class InputIt>
@@ -355,7 +355,7 @@ namespace util
                                      const hasher& hash = hasher(),
                                      const key_equal& equal = key_equal(),
                                      const allocator_type& alloc = allocator_type()) :
-         small_dense_hash_map(bucket_count, hash, equal, alloc)
+         small_dense_hash_map{bucket_count, hash, equal, alloc}
       {
          insert(first, last);
       }
@@ -363,35 +363,35 @@ namespace util
       template <class InputIt>
       constexpr small_dense_hash_map(InputIt first, InputIt last, size_type bucket_count,
                                      const allocator_type& alloc) :
-         small_dense_hash_map(first, last, bucket_count, hasher(), key_equal(), alloc)
+         small_dense_hash_map{first, last, bucket_count, hasher(), key_equal(), alloc}
       {}
 
       template <class InputIt>
       constexpr small_dense_hash_map(InputIt first, InputIt last, size_type bucket_count,
                                      const hasher& hash, const allocator_type& alloc) :
-         small_dense_hash_map(first, last, bucket_count, hash, key_equal(), alloc)
+         small_dense_hash_map{first, last, bucket_count, hash, key_equal(), alloc}
       {}
 
       constexpr small_dense_hash_map(const small_dense_hash_map& other) :
-         small_dense_hash_map(
+         small_dense_hash_map{
             other,
             std::allocator_traits<allocator_type>::select_on_container_copy_construction(
-               other.get_allocator()))
+               other.get_allocator())}
       {}
 
       constexpr small_dense_hash_map(const small_dense_hash_map& other,
                                      const allocator_type& alloc) :
-         m_hash(other.hash_),
-         m_key_equal(other.key_equal_), m_buckets(other.buckets_, alloc),
-         m_nodes(other.nodes_, alloc)
+         m_hash{other.m_hash},
+         m_key_equal{other.m_key_equal}, m_nodes{other.m_nodes, alloc}, m_buckets{other.m_buckets,
+                                                                                  alloc}
       {}
 
       constexpr small_dense_hash_map(small_dense_hash_map&& other) noexcept(
          is_nothrow_move_constructible) = default;
 
       constexpr small_dense_hash_map(small_dense_hash_map&& other, const allocator_type& alloc) :
-         hash_(std::move(other.hash_)), m_key_equal(std::move(other.key_equal_)),
-         m_buckets(std::move(other.buckets_), alloc), m_nodes(std::move(other.nodes_), alloc)
+         m_hash{std::move(other.m_hash)}, m_key_equal{std::move(other.m_key_equal)},
+         m_nodes{std::move(other.m_nodes), alloc}, m_buckets{std::move(other.m_buckets), alloc}
       {}
 
       constexpr small_dense_hash_map(std::initializer_list<value_type> init,
@@ -399,30 +399,31 @@ namespace util
                                      const hasher& hash = hasher(),
                                      const key_equal& equal = key_equal(),
                                      const allocator_type& alloc = allocator_type()) :
-         small_dense_hash_map(init.begin(), init.end(), bucket_count, hash, equal, alloc)
+         small_dense_hash_map{init.begin(), init.end(), bucket_count, hash, equal, alloc}
       {}
 
       constexpr small_dense_hash_map(std::initializer_list<value_type> init, size_type bucket_count,
                                      const allocator_type& alloc) :
-         small_dense_hash_map(init, bucket_count, hasher(), key_equal(), alloc)
+         small_dense_hash_map{init, bucket_count, hasher(), key_equal(), alloc}
       {}
 
       constexpr small_dense_hash_map(std::initializer_list<value_type> init, size_type bucket_count,
                                      const hasher& hash, const allocator_type& alloc) :
-         small_dense_hash_map(init, bucket_count, hash, key_equal(), alloc)
+         small_dense_hash_map{init, bucket_count, hash, key_equal(), alloc}
       {}
 
       // 2 missing constructors from https://cplusplus.github.io/LWG/issue2713
       template <std::input_iterator it_>
-      small_dense_hash_map(it_ first, it_ last, const allocator_type& alloc) :
-         small_dense_hash_map(first, last, buffer_size_, hasher(), key_equal(), alloc)
+      constexpr small_dense_hash_map(it_ first, it_ last, const allocator_type& alloc) :
+         small_dense_hash_map{first, last, buffer_size_, hasher(), key_equal(), alloc}
       {}
 
-      small_dense_hash_map(std::initializer_list<value_type> init, const allocator_type& alloc) :
-         small_dense_hash_map(init, buffer_size_, hasher(), key_equal(), alloc)
+      constexpr small_dense_hash_map(std::initializer_list<value_type> init,
+                                     const allocator_type& alloc) :
+         small_dense_hash_map{init, buffer_size_, hasher(), key_equal(), alloc}
       {}
 
-      ~small_dense_hash_map() = default;
+      constexpr ~small_dense_hash_map() = default;
 
       constexpr auto operator=(const small_dense_hash_map& other)
          -> small_dense_hash_map& = default;
@@ -538,12 +539,12 @@ namespace util
          return insert_or_assign(std::move(k), std::forward<decltype(obj)>(obj)).first;
       }
 
-      auto emplace(auto&&... args) -> std::pair<iterator, bool>
+      constexpr auto emplace(auto&&... args) -> std::pair<iterator, bool>
       {
          return dispatch_emplace(std::forward<decltype(args)>(args)...);
       }
 
-      auto emplace_hint(const_iterator /*hint*/, auto&&... args) -> iterator
+      constexpr auto emplace_hint(const_iterator /*hint*/, auto&&... args) -> iterator
       {
          return emplace(std::forward<decltype(args)>(args)...).first;
       }
@@ -610,7 +611,7 @@ namespace util
 
             auto& node = m_nodes[*previous_next];
 
-            if (key_equal_(node.pair.pair().first, key))
+            if (m_key_equal(node.pair.pair().first, key))
             {
                break;
             }
@@ -823,9 +824,10 @@ namespace util
       constexpr void rehash(size_type count)
       {
          count = std::max(detail::min_bucket_container_size, count);
-         count = std::max(count, static_cast<size_type>(size() / max_load_factor()));
+         count =
+            std::max(count, static_cast<size_type>(static_cast<float>(size()) / max_load_factor()));
 
-         count = compute_closest_capacity(count);
+         count = compute_new_capacity(count);
 
          assert(count > 0 && "The computed rehash size must be greater than 0.");
 
@@ -858,6 +860,26 @@ namespace util
       constexpr auto key_eq() const -> key_equal { return m_key_equal; }
 
    private:
+      static constexpr auto compute_new_capacity(std::size_t min_capacity) -> std::size_t
+      {
+         constexpr auto max_capacity = std::size_t{1}
+            << (std::numeric_limits<std::size_t>::digits - 1);
+
+         if (min_capacity > max_capacity)
+         {
+            return max_capacity;
+         }
+
+         --min_capacity;
+
+         for (auto i = 1U; i < std::numeric_limits<std::size_t>::digits; i *= 2)
+         {
+            min_capacity |= min_capacity >> i;
+         }
+
+         return ++min_capacity;
+      }
+
       constexpr auto projected_range()
       {
          return m_nodes | std::views::transform([](auto& node) {
@@ -867,7 +889,7 @@ namespace util
 
       constexpr auto bucket_index(const auto& key) const -> size_type
       {
-         return compute_index(hash_(key), m_buckets.size());
+         return m_hash(key) & (m_buckets.size() - 1);
       }
 
       constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) -> local_iterator
@@ -875,7 +897,7 @@ namespace util
          auto b = begin(bucket_index);
          auto e = end(0u);
          auto it = std::find_if(b, e, [&key, this](auto& p) {
-            return key_equal_(p.first, key);
+            return m_key_equal(p.first, key);
          });
          return it;
       }
@@ -886,7 +908,7 @@ namespace util
          auto b = begin(bucket_index);
          auto e = end(0u);
          auto it = std::find_if(b, e, [&key, this](auto& p) {
-            return key_equal_(p.first, key);
+            return m_key_equal(p.first, key);
          });
          return it;
       }
@@ -1017,16 +1039,16 @@ namespace util
       constexpr auto bucket_iterator_to_iterator(
          const detail::bucket_iterator<key_type, mapped_type, container_, is_const_,
                                        project_to_const_key_>& bucket_it,
-         auto& nodes)
+         const auto& nodes)
       {
+         using it = decltype(projected_range().begin());
          if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
          {
-            return decltype(projected_range().begin()){nodes.end()};
+            return it{nodes.end()};
          }
          else
          {
-            return decltype(projected_range().begin()){
-               std::next(nodes.begin(), bucket_it.current_node_index())};
+            return it{std::next(nodes.begin(), bucket_it.current_node_index())};
          }
       }
 

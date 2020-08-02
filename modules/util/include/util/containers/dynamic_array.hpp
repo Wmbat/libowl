@@ -173,7 +173,7 @@ namespace util
       }
 
       template <std::input_iterator it_>
-      void assign(it_ first, it_ last) requires std::copyable<value_type>
+      void assign(it_ first, it_ last)
       {
          clear();
 
@@ -770,7 +770,9 @@ namespace util
             move_assign(other, std::true_type{});
          }
       }
-      constexpr void move_assign(small_dynamic_array& other, [[maybe_unused]] std::true_type u)
+      constexpr void
+      move_assign(small_dynamic_array& other,
+                  [[maybe_unused]] std::true_type u) requires std::movable<value_type>
       {
          move_assign_alloc(other);
 

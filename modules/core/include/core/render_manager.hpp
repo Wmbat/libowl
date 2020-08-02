@@ -27,7 +27,7 @@ namespace core
       render_manager(gfx::window* const p_wnd, util::logger* const p_logger = nullptr);
 
    private:
-      gfx::window* const m_pwindow;
+      [[maybe_unused]] gfx::window* const m_pwindow;
       util::logger* const m_plogger;
 
       std::string m_engine_name = "Epona";

@@ -2,7 +2,11 @@
 
 #include <util/logger.hpp>
 
+#include <monads/either.hpp>
+
 #include <GLFW/glfw3.h>
+
+#include <system_error>
 
 #if defined(_WIN32) || defined(WIN32)
 #   if defined(EPONA_CORE_STATIC)
@@ -28,4 +32,7 @@ namespace core
 
       log_info(plogger, "glfw initialized");
    }
+
+   template <class any_>
+   using result = monad::either<std::error_code, any_>;
 }; // namespace core
