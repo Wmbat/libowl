@@ -12,6 +12,7 @@
 #include "util/type_traits.hpp"
 
 #include <functional>
+#include <iterator>
 #include <ranges>
 
 namespace util
@@ -175,6 +176,8 @@ namespace util
          return size >= min_bucket_container_size ? size : min_bucket_container_size;
       }
 
+      //****************************************************//
+
       template <class Key, class T, class Container, bool isConst, bool projectToConstKey>
       class bucket_iterator
       {
@@ -264,6 +267,211 @@ namespace util
       {
          return lhs.current_node_index() != rhs.current_node_index();
       }
+
+      //****************************************************//
+
+      template <class key_, class any_, class container_, bool is_const_,
+                bool project_to_const_key_>
+      class small_dense_hash_map_iterator
+      {
+         friend small_dense_hash_map_iterator<key_, any_, container_, true, project_to_const_key_>;
+
+      public:
+         using container_type = container_;
+         using sub_iterator_type =
+            typename std::conditional_t<is_const_, typename container_type::const_iterator,
+                                        typename container_type::iterator>;
+         using sub_iterator_type_traits = std::iterator_traits<sub_iterator_type>;
+         using projected_type =
+            std::pair<typename std::conditional_t<project_to_const_key_, const key_, key_>, any_>;
+         using iterator_category = typename sub_iterator_type_traits::iterator_category;
+         using value_type = std::conditional_t<is_const_, const projected_type, projected_type>;
+         using difference_type = typename sub_iterator_type_traits::difference_type;
+         using reference = value_type&;
+         using pointer = value_type*;
+
+      public:
+         constexpr small_dense_hash_map_iterator() noexcept = default;
+         explicit constexpr small_dense_hash_map_iterator(sub_iterator_type it) noexcept :
+            m_sub_iterator{it}
+         {}
+
+         // clang-format off
+         template <bool dep_is_const_ = is_const_>
+            requires (dep_is_const_ == true)
+         constexpr small_dense_hash_map_iterator(
+            // clang-format on
+            const small_dense_hash_map_iterator<key_, any_, container_, false,
+                                                project_to_const_key_>& other) noexcept :
+            m_sub_iterator{other.m_sub_iterator}
+         {}
+
+         constexpr auto operator*() const noexcept -> reference
+         {
+            if constexpr (project_to_const_key_)
+            {
+               return m_sub_iterator->pair.const_key_pair();
+            }
+            else
+            {
+               return m_sub_iterator->pair.pair();
+            }
+         }
+
+         constexpr auto operator->() const noexcept -> pointer
+         {
+            if constexpr (project_to_const_key_)
+            {
+               return &(m_sub_iterator->pair.const_key_pair());
+            }
+            else
+            {
+               return &(m_sub_iterator->pair.pair());
+            }
+         }
+
+         constexpr auto operator++() noexcept -> small_dense_hash_map_iterator&
+         {
+            ++m_sub_iterator;
+            return *this;
+         }
+
+         constexpr auto operator++(int) noexcept -> small_dense_hash_map_iterator
+         {
+            return {m_sub_iterator++};
+         }
+
+         constexpr auto operator--() noexcept -> small_dense_hash_map_iterator&
+         {
+            --m_sub_iterator;
+            return *this;
+         }
+         constexpr auto operator--(int) noexcept -> small_dense_hash_map_iterator
+         {
+            return {m_sub_iterator--};
+         }
+
+         constexpr auto operator[](difference_type index) const noexcept -> reference
+         {
+            if constexpr (project_to_const_key_)
+            {
+               return m_sub_iterator[index]->pair.const_key_pair();
+            }
+            else
+            {
+               return m_sub_iterator[index]->pair.pair();
+            }
+         }
+
+         constexpr auto operator+=(difference_type n) noexcept -> small_dense_hash_map_iterator&
+         {
+            m_sub_iterator += n;
+            return *this;
+         }
+         constexpr auto operator+(difference_type n) const noexcept -> small_dense_hash_map_iterator
+         {
+            return {m_sub_iterator + n};
+         }
+         constexpr auto operator-=(difference_type n) noexcept -> small_dense_hash_map_iterator&
+         {
+            m_sub_iterator -= n;
+            return *this;
+         }
+         constexpr auto operator-(difference_type n) const noexcept -> small_dense_hash_map_iterator
+         {
+            return {m_sub_iterator - n};
+         }
+
+         constexpr auto sub_iterator() const -> const sub_iterator_type& { return m_sub_iterator; }
+
+      private:
+         sub_iterator_type m_sub_iterator{sub_iterator_type{}};
+      };
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator==(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() == rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator!=(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() != rhs.sub_iterator();
+      }
+
+      template <class key_, class any_, class container_, bool is_const_, bool is_const_2_,
+                bool project_to_const_key_>
+      constexpr auto
+      operator<(const small_dense_hash_map_iterator<key_, any_, container_, is_const_,
+                                                    project_to_const_key_>& lhs,
+                const small_dense_hash_map_iterator<key_, any_, container_, is_const_2_,
+                                                    project_to_const_key_>& rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() < rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator>(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() > rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator<=(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() <= rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator>=(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept -> bool
+      {
+         return lhs.sub_iterator() >= rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey,
+                bool isConst2>
+      constexpr auto operator-(
+         const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>& lhs,
+         const small_dense_hash_map_iterator<Key, T, Container, isConst2, projectToConstKey>&
+            rhs) noexcept ->
+         typename small_dense_hash_map_iterator<Key, T, Container, isConst,
+                                                projectToConstKey>::difference_type
+      {
+         return lhs.sub_iterator() - rhs.sub_iterator();
+      }
+
+      template <class Key, class T, class Container, bool isConst, bool projectToConstKey>
+      constexpr auto
+      operator+(typename small_dense_hash_map_iterator<Key, T, Container, isConst,
+                                                       projectToConstKey>::difference_type n,
+                const small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>&
+                   it) noexcept
+         -> small_dense_hash_map_iterator<Key, T, Container, isConst, projectToConstKey>
+      {
+         return {n + it.sub_iterator()};
+      }
+
    } // namespace detail
 
    template <class key_, class any_, size_t buffer_size_, class hash_ = std::hash<key_>,
@@ -315,8 +523,11 @@ namespace util
       using const_reference = const value_type&;
       using pointer = typename std::allocator_traits<allocator_type>::pointer;
       using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
-      using iterator = random_access_iterator<value_type>;
-      using const_iterator = random_access_iterator<const value_type>;
+      using iterator = detail::small_dense_hash_map_iterator<key_type, mapped_type,
+                                                             nodes_container_type, false, true>;
+      using const_iterator =
+         detail::small_dense_hash_map_iterator<key_type, mapped_type, nodes_container_type, true,
+                                               true>;
       using local_iterator =
          detail::bucket_iterator<key_type, mapped_type, nodes_container_type, false, true>;
       using const_local_iterator =
@@ -439,13 +650,25 @@ namespace util
 
       constexpr auto get_allocator() const -> allocator_type { return m_buckets.get_allocator(); }
 
-      constexpr auto begin() noexcept -> iterator { return projected_range().begin(); }
-      constexpr auto begin() const noexcept -> const_iterator { return projected_range().begin(); }
-      constexpr auto cbegin() const noexcept -> const_iterator { return projected_range().begin(); }
+      constexpr auto begin() noexcept -> iterator { return iterator{m_nodes.begin()}; }
+      constexpr auto begin() const noexcept -> const_iterator
+      {
+         return const_iterator{m_nodes.begin()};
+      }
+      constexpr auto cbegin() const noexcept -> const_iterator
+      {
+         return const_iterator{m_nodes.cbegin()};
+      }
 
-      constexpr auto end() noexcept -> iterator { return projected_range().end(); }
-      constexpr auto end() const noexcept -> const_iterator { return projected_range().end(); }
-      constexpr auto cend() const noexcept -> const_iterator { return projected_range().end(); }
+      constexpr auto end() noexcept -> iterator { return iterator{m_nodes.end()}; }
+      constexpr auto end() const noexcept -> const_iterator
+      {
+         return const_iterator{m_nodes.end()};
+      }
+      constexpr auto cend() const noexcept -> const_iterator
+      {
+         return const_iterator{m_nodes.cend()};
+      }
 
       [[nodiscard]] constexpr auto empty() const noexcept -> bool { return m_nodes.empty(); }
       constexpr auto size() const noexcept -> size_type { return m_nodes.size(); }
@@ -880,13 +1103,6 @@ namespace util
          return ++min_capacity;
       }
 
-      constexpr auto projected_range()
-      {
-         return m_nodes | std::views::transform([](auto& node) {
-                   return node.pair.pair();
-                });
-      }
-
       constexpr auto bucket_index(const auto& key) const -> size_type
       {
          return m_hash(key) & (m_buckets.size() - 1);
@@ -894,23 +1110,19 @@ namespace util
 
       constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) -> local_iterator
       {
-         auto b = begin(bucket_index);
-         auto e = end(0u);
-         auto it = std::find_if(b, e, [&key, this](auto& p) {
+         auto beg = begin(bucket_index);
+         return std::find_if(beg, end(0u), [&key, this](auto& p) {
             return m_key_equal(p.first, key);
          });
-         return it;
       }
 
       constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) const
          -> const_local_iterator
       {
-         auto b = begin(bucket_index);
-         auto e = end(0u);
-         auto it = std::find_if(b, e, [&key, this](auto& p) {
+         auto beg = begin(bucket_index);
+         return std::find_if(beg, end(0u), [&key, this](auto& p) {
             return m_key_equal(p.first, key);
          });
-         return it;
       }
 
       constexpr auto do_erase(std::size_t* previous_next,
@@ -1039,16 +1251,31 @@ namespace util
       constexpr auto bucket_iterator_to_iterator(
          const detail::bucket_iterator<key_type, mapped_type, container_, is_const_,
                                        project_to_const_key_>& bucket_it,
-         const auto& nodes)
+         auto& nodes) -> iterator
       {
-         using it = decltype(projected_range().begin());
          if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
          {
-            return it{nodes.end()};
+            return iterator{nodes.end()};
          }
          else
          {
-            return it{std::next(nodes.begin(), bucket_it.current_node_index())};
+            return iterator{std::next(nodes.begin(), bucket_it.current_node_index())};
+         }
+      }
+
+      template <class container_, bool is_const_, bool project_to_const_key_>
+      constexpr auto bucket_iterator_to_iterator(
+         const detail::bucket_iterator<key_type, mapped_type, container_, is_const_,
+                                       project_to_const_key_>& bucket_it,
+         auto& nodes) const -> const_iterator
+      {
+         if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
+         {
+            return const_iterator{nodes.end()};
+         }
+         else
+         {
+            return const_iterator{std::next(nodes.begin(), bucket_it.current_node_index())};
          }
       }
 

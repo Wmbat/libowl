@@ -9,19 +9,15 @@ namespace fs = std::filesystem;
 
 namespace core
 {
-   /*
    auto shader_codex::get_shader(const std::string& name) noexcept -> vkn::shader&
    {
-      return vkn::shader{};
-      // return m_shaders.at(name);
+      return m_shaders.at(name);
    }
    [[nodiscard]] auto shader_codex::get_shader(const std::string& name) const noexcept
       -> const vkn::shader&
    {
-      return {};
-      // return m_shaders.at(name);
+      return m_shaders.at(name);
    }
-   */
 
    using builder = shader_codex::builder;
 
