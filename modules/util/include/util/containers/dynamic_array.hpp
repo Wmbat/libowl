@@ -127,6 +127,8 @@ namespace util
       }
       constexpr ~small_dynamic_array()
       {
+         clear();
+
          if (!is_static() && m_pbegin)
          {
             allocator_traits::deallocate(m_allocator, m_pbegin, capacity());
@@ -310,7 +312,7 @@ namespace util
 
       constexpr void clear() noexcept
       {
-         std::destroy(begin(), end());
+         destroy(begin(), end());
          m_size = 0;
       }
 
@@ -339,7 +341,7 @@ namespace util
             new_pos = begin() + (pos - cbegin());
          }
 
-         allocator_traits::construct(m_allocator, offset(size()), std::move(back()));
+         construct(offset(size()), std::move(back()));
 
          std::move_backward(new_pos, end() - 1, end());
 
@@ -381,7 +383,7 @@ namespace util
             new_pos = begin() + (pos - cbegin());
          }
 
-         allocator_traits::construct(m_allocator, offset(size()), std::move(back()));
+         construct(offset(size()), std::move(back()));
 
          std::move_backward(new_pos, end() - 1, end());
 
@@ -586,7 +588,7 @@ namespace util
          auto it_l = begin() + (last - cbegin());
          auto it = std::move(it_l, end(), it_f);
 
-         std::destroy(it, end());
+         destroy(it, end());
 
          m_size -= distance;
 
@@ -603,17 +605,15 @@ namespace util
          emplace_back(std::move(value));
       };
 
-      template <class... args_>
-      constexpr auto emplace_back(args_&&... args) -> reference
-         requires std::constructible_from<value_type, args_...>
+      constexpr auto emplace_back(auto&&... args) -> reference
+         requires std::constructible_from<value_type, decltype(args)...>
       {
          if (size() >= capacity())
          {
             grow();
          }
 
-         allocator_traits::construct(m_allocator, m_pbegin + size(), std::forward<args_>(args)...);
-
+         construct(m_pbegin + size(), std::forward<decltype(args)>(args)...);
          ++m_size;
 
          return back();
@@ -623,7 +623,7 @@ namespace util
       {
          if (size() != 0)
          {
-            allocator_traits::destroy(m_allocator, m_pbegin + size());
+            destroy(offset(size()));
             --m_size;
          }
       };
@@ -632,7 +632,7 @@ namespace util
       {
          if (size() > count)
          {
-            std::destroy(begin() + count, end());
+            destroy(begin() + count, end());
             m_size = count;
          }
          else if (size() < count)
@@ -644,7 +644,7 @@ namespace util
 
             for (size_type i = size(); i < count; ++i)
             {
-               allocator_traits::construct(m_allocator, m_pbegin + i, value_type{});
+               construct(offset(i), value_type{});
             }
 
             m_size = count;
@@ -656,7 +656,7 @@ namespace util
       {
          if (size() > count)
          {
-            std::destroy(begin() + count, end());
+            destroy(begin() + count, end());
             m_size = count;
          }
          else if (size() < count)
@@ -710,7 +710,7 @@ namespace util
                std::uninitialized_copy(begin(), end(), iterator{new_elements});
             }
 
-            std::destroy(begin(), end());
+            destroy(begin(), end());
 
             if (!is_static())
             {
@@ -724,8 +724,6 @@ namespace util
          {
             handle_bad_alloc_error("Failed to allocate new memory");
          }
-
-         m_capacity = new_capacity;
       }
 
       constexpr void copy_assign_alloc(const small_dynamic_array& other)
@@ -805,6 +803,43 @@ namespace util
          m_pbegin = get_first_element();
          m_size = 0;
          m_capacity = buffer_size_;
+      }
+
+      constexpr void construct(pointer plocation, auto&&... args)
+      {
+         if (is_static())
+         {
+            std::construct_at(plocation, std::forward<decltype(args)>(args)...);
+         }
+         else
+         {
+            allocator_traits::construct(m_allocator, plocation,
+                                        std::forward<decltype(args)>(args)...);
+         }
+      }
+      constexpr void destroy(pointer plocation)
+      {
+         if (is_static())
+         {
+            std::destroy_at(plocation);
+         }
+         else
+         {
+            allocator_traits::destroy(m_allocator, plocation);
+         }
+      }
+      constexpr void destroy(iterator beg, iterator end)
+      {
+         if (is_static())
+         {
+            std::destroy(beg, end);
+         }
+         else
+         {
+            std::for_each(beg, end, [&](auto& value) {
+               allocator_traits::destroy(m_allocator, std::addressof(value));
+            });
+         }
       }
 
       static constexpr auto compute_new_capacity(std::size_t min_capacity) -> std::size_t

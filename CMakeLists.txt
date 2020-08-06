@@ -65,26 +65,28 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 target_compile_options(${PROJECT_NAME}
-   PRIVATE
-      $<$<PLATFORM_ID:UNIX>:-pthread>
+    PRIVATE
+        $<$<PLATFORM_ID:UNIX>:-pthread>
 
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -Wall -Wextra -Werror>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer 
+        -fsanitize=address>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
         -Wconversion -fsanitize=address, -fsanitize=undefined>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
 target_link_libraries(${PROJECT_NAME}
-   PUBLIC
-      epona::core
-      epona::util
-      epona::vkn
+    PUBLIC
+        epona::core
+        epona::util
+        epona::vkn
 
-   PRIVATE
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
+    PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
 target_sources(${PROJECT_NAME}

@@ -38,7 +38,7 @@ namespace core
 
       m_device = vkn::device::builder{m_loader,
          vkn::physical_device::selector{m_instance, m_plogger}
-            .set_surface(p_wnd->get_surface(m_instance.value())
+            .set_surface(m_pwindow->get_surface(m_instance.value())
                .left_map([plogger](auto&& err) { return handle_surface_error(err, plogger); })
                .join())
             .set_prefered_gpu_type(vkn::physical_device::type::discrete)
@@ -62,6 +62,11 @@ namespace core
          .build()
          .left_map([plogger](auto&& err) { return handle_swapchain_error(err, plogger); })
          .join();
+
+      auto codex = shader_codex::builder{m_device, plogger}
+         .set_shader_directory("resources/shaders")
+         .allow_caching()
+         .build();
 
       m_vert_shader = vkn::shader::builder{m_device, plogger}
          .set_filepath("resources/shaders/test_shader.vert")

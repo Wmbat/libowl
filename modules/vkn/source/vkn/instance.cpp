@@ -361,6 +361,10 @@ namespace vkn
          });
          // clang-format on
       }
+      else
+      {
+         return monad::make_right(vk::DebugUtilsMessengerEXT{nullptr});
+      }
    }
 
    auto builder::has_validation_layer_support(

@@ -7,6 +7,8 @@
  * Follows closely this implementation of a dense hash map: https://github.com/Jiwan/dense_hash_map
  */
 
+#pragma once
+
 #include "util/containers/detail/disabling_structs.hpp"
 #include "util/containers/dynamic_array.hpp"
 #include "util/type_traits.hpp"

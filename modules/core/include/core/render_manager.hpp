@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <util/containers/dense_hash_map.hpp>
+#include "core/graphics/gui/window.hpp"
+#include "core/shader_codex.hpp"
 
-#include <core/graphics/gui/window.hpp>
+#include <util/containers/dense_hash_map.hpp>
 
 #include <vkn/core.hpp>
 #include <vkn/device.hpp>
@@ -27,10 +28,12 @@ namespace core
       render_manager(gfx::window* const p_wnd, util::logger* const p_logger = nullptr);
 
    private:
-      [[maybe_unused]] gfx::window* const m_pwindow;
+      gfx::window* const m_pwindow;
       util::logger* const m_plogger;
 
       std::string m_engine_name = "Epona";
+
+      shader_codex m_shader_codex;
 
       vkn::loader m_loader;
       vkn::instance m_instance;
