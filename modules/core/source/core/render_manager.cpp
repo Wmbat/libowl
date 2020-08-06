@@ -68,6 +68,7 @@ namespace core
          .allow_caching()
          .build();
 
+         /*
       m_vert_shader = vkn::shader::builder{m_device, plogger}
          .set_filepath("resources/shaders/test_shader.vert")
          .build()
@@ -90,6 +91,7 @@ namespace core
          })
          .join();
       // clang-format on
+      */
    }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance

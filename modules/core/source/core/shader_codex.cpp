@@ -1,8 +1,8 @@
 #include "core/shader_codex.hpp"
 
 #include <monads/try.hpp>
-
 #include <util/logger.hpp>
+#include <vkn/shader.hpp>
 
 #include <mpark/patterns/match.hpp>
 
@@ -32,6 +32,7 @@ namespace core
             pattern(error::failed_to_parse_shader) = [] { return "failed_to_parse_shader"; },
             pattern(error::failed_to_link_shader) = [] { return "failed_to_link_shader"; },
             pattern(error::failed_to_cache_shader) = [] { return "failed_to_cache_shader"; },
+            pattern(error::failed_to_create_shader) = [] { return "failed_to_create_shader"; },
             pattern(_) = [] { return "unknown_error"; }
          );
          // clang-format on
@@ -145,7 +146,6 @@ namespace core
          }
       };
       // clang-format on
-
    } // namespace detail
 
    auto shader_codex::error_category::name() const noexcept -> const char*
@@ -155,6 +155,14 @@ namespace core
    auto shader_codex::error_category::message(int err) const -> std::string
    {
       return detail::to_string(static_cast<shader_codex::error_type>(err));
+   }
+
+   auto shader_codex::add_precompiled_shader(vkn::shader&& shader) -> std::string
+   {
+      std::string shader_name{shader.name()};
+      m_shaders.insert_or_assign(shader_name, std::move(shader));
+
+      return shader_name;
    }
 
    auto shader_codex::get_shader(const std::string& name) noexcept -> vkn::shader&
@@ -169,10 +177,9 @@ namespace core
 
    using builder = shader_codex::builder;
 
-   builder::builder(const vkn::device& device, util::logger* plogger) noexcept : m_plogger{plogger}
-   {
-      m_info.version = device.get_vulkan_version();
-   }
+   builder::builder(const vkn::device& device, util::logger* plogger) noexcept :
+      m_plogger{plogger}, m_pdevice{&device}
+   {}
 
    auto builder::build() -> core::result<shader_codex>
    {
@@ -219,7 +226,15 @@ namespace core
       {
          for ([[maybe_unused]] const auto& path : m_info.shader_paths)
          {
-            create_shader(path);
+            const auto shader_result = create_shader(path).right_map([&](auto&& shader) {
+               codex.add_precompiled_shader(std::move(shader));
+               return 0u;
+            });
+
+            if (!shader_result.is_right())
+            {
+               return monad::make_left(*shader_result.left());
+            }
          }
       }
       else
@@ -298,6 +313,20 @@ namespace core
                util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
 
                auto cache_result = cache_shader(hashed_path, shader_data);
+               if (cache_result.has_value())
+               {
+                  return monad::make_left(cache_result.value());
+               }
+
+               const auto extension = path.extension().string();
+               return vkn::shader::builder{*m_pdevice, m_plogger}
+                  .set_spirv_binary(*compilation_result.right())
+                  .set_name(path.filename().string() + path.extension().string())
+                  .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+                  .build()
+                  .left_map([]([[maybe_unused]] auto&& err) {
+                     return make_error_code(error_type::failed_to_create_shader);
+                  });
             }
             else
             {
@@ -310,6 +339,16 @@ namespace core
                {
                   return monad::make_left(*loading_result.left());
                }
+
+               const auto extension = path.extension().string();
+               return vkn::shader::builder{*m_pdevice, m_plogger}
+                  .set_spirv_binary(*loading_result.right())
+                  .set_name(path.filename().string() + path.extension().string())
+                  .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+                  .build()
+                  .left_map([]([[maybe_unused]] auto&& err) {
+                     return make_error_code(error_type::failed_to_create_shader);
+                  });
             }
          }
          else
@@ -328,14 +367,42 @@ namespace core
 
             util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
 
-            auto cache_result = cache_shader(hashed_path, shader_data);
+            const auto cache_result = cache_shader(hashed_path, shader_data);
+            if (cache_result.has_value())
+            {
+               return monad::make_left(cache_result.value());
+            }
+
+            const auto extension = path.extension().string();
+            return vkn::shader::builder{*m_pdevice, m_plogger}
+               .set_spirv_binary(*compilation_result.right())
+               .set_name(path.filename().string() + path.extension().string())
+               .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+               .build()
+               .left_map([]([[maybe_unused]] auto&& err) {
+                  return make_error_code(error_type::failed_to_create_shader);
+               });
          }
       }
       else
       {
          util::log_info(m_plogger, "[core] compiling shader: \"{0}\"", path.string());
 
-         compile_shader(path);
+         const auto compilation_result = compile_shader(path);
+         if (!compilation_result.is_right())
+         {
+            return monad::make_left(*compilation_result.left());
+         }
+
+         const auto extension = path.extension().string();
+         return vkn::shader::builder{*m_pdevice, m_plogger}
+            .set_spirv_binary(*compilation_result.right())
+            .set_name(path.filename().string() + path.extension().string())
+            .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+            .build()
+            .left_map([]([[maybe_unused]] auto&& err) {
+               return make_error_code(error_type::failed_to_create_shader);
+            });
       }
 
       return monad::make_left(std::error_code{});
@@ -367,8 +434,10 @@ namespace core
       glslang::TShader tshader{shader_stage};
       tshader.setEnvInput(glslang::EShSourceGlsl, shader_stage, glslang::EShClientVulkan,
                           client_input_semantics_version);
-      tshader.setEnvClient(glslang::EShClientVulkan, get_vulkan_version(m_info.version));
-      tshader.setEnvTarget(glslang::EshTargetSpv, get_spirv_version(m_info.version));
+      tshader.setEnvClient(glslang::EShClientVulkan,
+                           get_vulkan_version(m_pdevice->get_vulkan_version()));
+      tshader.setEnvTarget(glslang::EshTargetSpv,
+                           get_spirv_version(m_pdevice->get_vulkan_version()));
 
       {
          const char* shader_data_cstr = shader_data.c_str();
@@ -500,5 +569,22 @@ namespace core
          pattern(_, _) = [] { return glslang::EShTargetClientVersionCount; }
       );
       // clang-format on
+   }
+
+   auto builder::get_shader_type(std::string_view ext_name) const -> vkn::shader::type
+   {
+      using namespace mpark::patterns;
+
+      // clang-format off
+      return match(ext_name)(
+         pattern("vert") = [] { return vkn::shader::type::vertex; },
+         pattern("tesc") = [] { return vkn::shader::type::tess_control; },
+         pattern("tese") = [] { return vkn::shader::type::tess_eval; },
+         pattern("geom") = [] { return vkn::shader::type::geometry; },
+         pattern("frag") = [] { return vkn::shader::type::fragment; },
+         pattern("comp") = [] { return vkn::shader::type::compute; },
+         pattern(_) = [] { return vkn::shader::type::count; }
+      );
+      // clang-format on  
    }
 } // namespace core

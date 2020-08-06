@@ -39,8 +39,5 @@ namespace core
       vkn::instance m_instance;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
-
-      vkn::shader m_vert_shader;
-      vkn::shader m_frag_shader;
    };
 } // namespace core

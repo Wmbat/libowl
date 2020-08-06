@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/core.hpp"
-#include "mpark/patterns/match.hpp"
 
 #include <util/containers/dense_hash_map.hpp>
 
@@ -27,7 +26,8 @@ namespace core
          failed_to_preprocess_shader,
          failed_to_parse_shader,
          failed_to_link_shader,
-         failed_to_cache_shader
+         failed_to_cache_shader,
+         failed_to_create_shader
       };
 
    public:
@@ -39,8 +39,7 @@ namespace core
       auto operator=(const shader_codex&) -> shader_codex& = delete;
       auto operator=(shader_codex &&) -> shader_codex& = default;
 
-      auto add_shader(vkn::shader shader) -> std::string;
-      auto add_precompiled_shader(vkn::shader shader) -> std::string;
+      auto add_precompiled_shader(vkn::shader&& shader) -> std::string;
 
       auto get_shader(const std::string& name) noexcept -> vkn::shader&;
       [[nodiscard]] auto get_shader(const std::string& name) const noexcept -> const vkn::shader&;
@@ -88,15 +87,14 @@ namespace core
             -> glslang::EShTargetLanguageVersion;
          [[nodiscard]] auto get_vulkan_version(uint32_t version) const
             -> glslang::EshTargetClientVersion;
+         [[nodiscard]] auto get_shader_type(std::string_view ext_name) const -> vkn::shader::type;
 
       private:
          util::logger* m_plogger;
+         const vkn::device* m_pdevice;
 
          struct info
          {
-            vk::Device device;
-            uint32_t version{0};
-
             std::filesystem::path cache_directory_path{"cache/shaders"};
             std::filesystem::path shader_directory_path{};
             util::dynamic_array<std::filesystem::path> shader_paths{};
