@@ -1,0 +1,15 @@
+CPMAddPackage(
+    NAME vulkan_headers
+    VERSION 1.2.147
+    GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
+) 
+
+CPMAddPackage(
+    NAME glslang
+    VERSION 8.13.3743
+    GITHUB_REPOSITORY KhronosGroup/glslang 
+    GIT_TAG 8.13.3743
+    OPTIONS
+        "ENABLE_CTEST OFF"
+        "ENABLE_RTTI ON"
+)
