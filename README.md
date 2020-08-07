@@ -14,13 +14,16 @@
 
 ## Requirements
 
-Due to a lack of support for C++20 features. The only usable compiler is GCC10.
+You need to use gcc-10.0 and above or clang-10.0 and above.
 
 ## Dependencies
 
 * [Vulkan Headers - 1.2.135](https://github.com/KhronosGroup/Vulkan-Headers)
 * [GLFW - 3.3.2](https://github.com/glfw/glfw)
 * [spdlog - 1.6.1](https://github.com/gabime/spdlog)
+* [glslang - 8.13.3743](https://github.com/KhronosGroup/glslang)
+* [monads - master](https://github.com/Wmbat/monads)
+* [patterns - master](https://github.com/mpark/patterns)
 
 ## Installation
 
