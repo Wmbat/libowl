@@ -1,3 +1,10 @@
+/**
+ * @file core.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Saturday, 20th of April, 2020
+ * @copyright MIT License.
+ */
+
 #include "vkn/core.hpp"
 
 #include <util/logger.hpp>

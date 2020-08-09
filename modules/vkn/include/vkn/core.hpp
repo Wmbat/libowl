@@ -35,12 +35,7 @@ namespace vkn
    } // namespace detail
 
    /**
-    * @class error <epona_core/graphics/vkn/core.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Saturday, 20th of June, 2020
-    * @copyright MIT License
-    *
-    * @brief The default error type for all code within the vkn namespace.
+    * The default error type within the vkn namespace.
     */
    struct error
    {
@@ -49,26 +44,27 @@ namespace vkn
    };
 
    /**
-    * @brief An alias for an either monad using an error as the left type.
+    * An alias for an either monad using an error as the left type.
     */
    template <class any_>
    using result = monad::either<error, any_>;
 
    /**
-    * @class error <epona_core/graphics/vkn/core.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Saturday, 20th of June, 2020
-    * @copyright MIT License
-    *
-    * @brief Class used for the dynamic loading of the Vulkan API functions.
+    * Class used for the dynamic loading of the Vulkan API functions.
     */
    class loader
    {
    public:
       loader(util::logger* p_logger = nullptr);
 
-      void load_instance(const ::vk::Instance& instance) const;
-      void load_device(const ::vk::Device& device) const;
+      /**
+       * Load all vulkan functions based on the Vulkan instance.
+       */
+      void load_instance(const vk::Instance& instance) const;
+      /**
+       * Load all vulkan functions based on the Vulkan device.
+       */
+      void load_device(const vk::Device& device) const;
 
    private:
       util::logger* const p_logger;

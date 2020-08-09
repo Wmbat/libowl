@@ -41,7 +41,7 @@ namespace core
             .set_surface(m_pwindow->get_surface(m_instance.value())
                .left_map([plogger](auto&& err) { return handle_surface_error(err, plogger); })
                .join())
-            .set_prefered_gpu_type(vkn::physical_device::type::discrete)
+            .set_preferred_gpu_type(vkn::physical_device::type::discrete)
             .allow_any_gpu_type()
             .require_present()
             .select()

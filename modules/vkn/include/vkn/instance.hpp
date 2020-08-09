@@ -19,24 +19,28 @@
 namespace vkn
 {
    /**
-    * @class instance <epona_core/graphics/vkn/instance.hpp>
-    * @author wmbat wmbat@protonmail.com
-    * @date Saturday, 20th of June, 2020
-    * @copyright MIT License
+    * Holds all data related to the vulkan instance
     */
    class instance
    {
+      /**
+       * A struct used for error handling and displaying error messages
+       */
       struct error_category : std::error_category
       {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
          [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
          [[nodiscard]] auto message(int err) const -> std::string override;
       };
 
    public:
       /**
-       * @brief An enum used for error handling.
-       *
-       * Enum class used for error handling during instance creation
+       * Contains all possible error values comming from the instance class.
        */
       enum class error
       {
@@ -59,11 +63,26 @@ namespace vkn
       auto operator=(const instance&) -> instance& = delete;
       auto operator=(instance&&) noexcept -> instance&;
 
+      /**
+       * Get a reference to the underlying vulkan instance
+       */
       auto value() noexcept -> vk::Instance&;
+      /**
+       * Get a const reference to the underlying vulkan instance
+       */
       [[nodiscard]] auto value() const noexcept -> const vk::Instance&;
+      /**
+       * Get the version of the vulkan used by the instance.
+       */
       [[nodiscard]] auto version() const noexcept -> uint32_t;
+      /**
+       * Get all extensions that have been enabled in the instance
+       */
       [[nodiscard]] auto extensions() const -> const util::dynamic_array<const char*>&;
 
+      /**
+       * Turns the error enum values into an std::error_code
+       */
       inline static auto make_error_code(error err) -> std::error_code
       {
          return {static_cast<int>(err), m_category};
@@ -80,18 +99,43 @@ namespace vkn
       inline static const error_category m_category{};
 
    public:
+      /**
+       * A class to help in the construction of an instance object.
+       */
       class builder
       {
       public:
          builder(const loader& vk_loader, util::logger* p_logger = nullptr);
 
+         /**
+          * Attempt to build a command_pool object. If something goes wrong, an error
+          * will be returned instead
+          */
          [[nodiscard]] auto build() -> vkn::result<instance>;
 
+         /**
+          * Set the name of the application
+          */
          auto set_application_name(std::string_view app_name) -> builder&;
+         /**
+          * Set the name of the engine
+          */
          auto set_engine_name(std::string_view engine_name) -> builder&;
+         /**
+          * Set the version of the application
+          */
          auto set_application_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&;
+         /**
+          * Set the version of the engine
+          */
          auto set_engine_version(uint32_t major, uint32_t minor, uint32_t patch) -> builder&;
+         /**
+          * Set a layers to enable at instance creation
+          */
          auto enable_layer(std::string_view layer_name) -> builder&;
+         /**
+          * Set an extension to enabled at instance creation
+          */
          auto enable_extension(std::string_view extension_name) -> builder&;
 
       private:
