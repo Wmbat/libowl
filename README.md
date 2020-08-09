@@ -3,7 +3,7 @@
 ![Linux](https://github.com/Wmbat/melodie/workflows/Linux/badge.svg)
 [![Documentation](https://codedocs.xyz/Wmbat/melodie.svg)](https://codedocs.xyz/Wmbat/melodie/)
 
-[Epona](https://github.com/Wmbat/Epona) is a small game engine project made using
+[mélodie](https://github.com/Wmbat/melodie) is a small game engine project made using
 [Vulkan](https://www.khronos.org/vulkan/) and C++20
 
 ## Table of Content
@@ -27,7 +27,7 @@ You need to use gcc-10.0 and above or clang-10.0 and above.
 
 ## Installation
 
-To install Epona, you can clone the project locally using 
+To install mélodie, you can clone the project locally using 
 ```sh
 git clone https://github.com/Wmbat/melodie
 ```
