@@ -12,11 +12,11 @@ project(util
 
 # User interface declarations
 
-option(EPONA_UTIL_STATIC "Build ${PROJECT_NAME} as a static library" ON)
-option(EPONA_UTIL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
-option(EPONA_UTIL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
-option(EPONA_UTIL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
-option(EPONA_UTIL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
+option(MELODIE_UTIL_STATIC "Build ${PROJECT_NAME} as a static library" ON)
+option(MELODIE_UTIL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
+option(MELODIE_UTIL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
+option(MELODIE_UTIL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
+option(MELODIE_UTIL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -30,17 +30,17 @@ else ()
     message(STATUS "[${PROJECT_NAME}] Build type: Debug")
 endif ()
 
-message(STATUS "[${PROJECT_NAME}] Building as a static library: ${EPONA_UTIL_STATIC}")
-message(STATUS "[${PROJECT_NAME}] Building unit tests: ${EPONA_UTIL_BUILD_TESTS}")
-message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${EPONA_UTIL_BUILD_BENCH}")
-message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${EPONA_UTIL_NO_EXCEPTIONS}")
-message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${EPONA_UTIL_NO_LOGGING}")
+message(STATUS "[${PROJECT_NAME}] Building as a static library: ${MELODIE_UTIL_STATIC}")
+message(STATUS "[${PROJECT_NAME}] Building unit tests: ${MELODIE_UTIL_BUILD_TESTS}")
+message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${MELODIE_UTIL_BUILD_BENCH}")
+message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${MELODIE_UTIL_NO_EXCEPTIONS}")
+message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${MELODIE_UTIL_NO_LOGGING}")
 
 # Define imported targets
 
 include(CMakeLists.txt.in)
 
-if (EPONA_UTIL_BUILD_TESTS) 
+if (MELODIE_UTIL_BUILD_TESTS) 
     enable_testing( )
 
     add_subdirectory(tests)
@@ -49,17 +49,17 @@ endif ()
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(epona::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(melodie::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if (EPONA_UTIL_STATIC)
+if (MELODIE_UTIL_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_STATIC) 
 endif ()
 
-if (EPONA_UTIL_NO_EXCEPTIONS)
+if (MELODIE_UTIL_NO_EXCEPTIONS)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_NO_EXCEPTIONS)
 endif ()
 
-if (EPONA_UTIL_NO_LOGGING) 
+if (MELODIE_UTIL_NO_LOGGING) 
     target_compile_definitions(${PROJECT_NAME} PRIVATE UTIL_NO_LOGGING)
 endif ()
 

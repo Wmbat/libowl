@@ -15,7 +15,7 @@ namespace util
 {
 #ifndef UTIL_NO_LOGGING
 
-   inline static logger util_error_logger{"epone_util_logger"};
+   inline static logger util_error_logger{"mélodie_util_logger"};
 #endif
 
    static inline void handle_bad_alloc_error([[maybe_unused]] std::string_view error_msg)

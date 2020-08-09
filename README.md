@@ -1,7 +1,7 @@
-# Epona
+# mélodie
 
-![Linux](https://github.com/Wmbat/Epona/workflows/Linux/badge.svg)
-[![Documentation](https://codedocs.xyz/Wmbat/Epona.svg)](https://codedocs.xyz/Wmbat/Epona/)
+![Linux](https://github.com/Wmbat/melodie/workflows/Linux/badge.svg)
+[![Documentation](https://codedocs.xyz/Wmbat/melodie.svg)](https://codedocs.xyz/Wmbat/melodie/)
 
 [Epona](https://github.com/Wmbat/Epona) is a small game engine project made using
 [Vulkan](https://www.khronos.org/vulkan/) and C++20
@@ -29,7 +29,7 @@ You need to use gcc-10.0 and above or clang-10.0 and above.
 
 To install Epona, you can clone the project locally using 
 ```sh
-git clone https://github.com/Wmbat/Epona
+git clone https://github.com/Wmbat/melodie
 ```
 
 To compile the project, you can run the local `build.py` script. For finding out the acceptable 
@@ -45,6 +45,6 @@ the project.
 
 ## License
 
-> You can find the project's license [here](https://github.com/Wmbat/Epona/blob/master/LICENSE)
+> You can find the project's license [here](https://github.com/Wmbat/melodie/blob/master/LICENSE)
 
 This project is licensed under the terms of the **MIT** license.

@@ -53,7 +53,7 @@ def build(args):
         os.system('make -j13')
 
 def main():
-    parser = argparse.ArgumentParser(description='Build epona in debug mode')
+    parser = argparse.ArgumentParser(description='Build melodie in debug mode')
 
     parser.add_argument('-G', action='store', default='ninja', 
             dest='generator',
