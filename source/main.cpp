@@ -12,7 +12,7 @@
 
 auto main() -> int
 {
-   util::logger main_logger{"epona"};
+   util::logger main_logger{"mélodie"};
 
    core::initialize(&main_logger);
 

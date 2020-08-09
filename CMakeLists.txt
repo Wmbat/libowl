@@ -16,7 +16,7 @@ include(${CPM_DOWNLOAD_LOCATION})
 
 # Set the project language toolchain, version and description
 
-project(epona
+project(melodie
     VERSION 0.0.1
     DESCRIPTION "A Vulkan based rendering engine"
     LANGUAGES CXX
@@ -42,14 +42,14 @@ else ()
 endif ()
 
 if (BUILD_TESTS)
-   set(EPONA_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
-   set(EPONA_UTIL_BUILD_TESTS ON CACHE BOOL "" FORCE)
+   set(MELODIE_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
+   set(MELODIE_UTIL_BUILD_TESTS ON CACHE BOOL "" FORCE)
 endif ()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-set(EPONA_CORE_STATIC ON CACHE BOOL "" FORCE)
+set(MELODIE_CORE_STATIC ON CACHE BOOL "" FORCE)
 
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
@@ -79,9 +79,9 @@ target_compile_options(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        epona::core
-        epona::util
-        epona::vkn
+        melodie::core
+        melodie::util
+        melodie::vkn
 
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
