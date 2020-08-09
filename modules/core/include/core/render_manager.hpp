@@ -33,11 +33,11 @@ namespace core
 
       std::string m_engine_name = "Epona";
 
-      shader_codex m_shader_codex;
-
       vkn::loader m_loader;
       vkn::instance m_instance;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
+
+      shader_codex m_shader_codex;
    };
 } // namespace core
