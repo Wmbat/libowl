@@ -94,6 +94,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_sources(${PROJECT_NAME}
     PRIVATE
+        source/vkn/command_pool.cpp
         source/vkn/core.cpp
         source/vkn/device.cpp
         source/vkn/instance.cpp

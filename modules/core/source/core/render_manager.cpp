@@ -63,35 +63,18 @@ namespace core
          .left_map([plogger](auto&& err) { return handle_swapchain_error(err, plogger); })
          .join();
 
-      auto codex = shader_codex::builder{m_device, plogger}
-         .set_shader_directory("resources/shaders")
+      m_shader_codex = shader_codex::builder{m_device, plogger}
+         .add_shader_filepath("resources/shaders/test_shader.vert")
+         .add_shader_filepath("resources/shaders/test_shader.frag")
          .allow_caching()
-         .build();
-
-         /*
-      m_vert_shader = vkn::shader::builder{m_device, plogger}
-         .set_filepath("resources/shaders/test_shader.vert")
          .build()
          .left_map([plogger](auto&& err) {
-            log_error(plogger, "[core] Failed to create shader: {0}", err.type.message());
+            log_error(plogger, "[core] Failed to create shader codex: \"{0}\"", err.message());
             abort();
 
-            return vkn::shader{};
+            return shader_codex{};
          })
          .join();
-
-      m_frag_shader = vkn::shader::builder{m_device, plogger}
-         .set_filepath("resources/shaders/test_shader.frag")
-         .build()
-         .left_map([plogger](auto&& err) {
-            log_error(plogger, "[core] Failed to create shader: {0}", err.type.message());
-            abort();
-
-            return vkn::shader{};
-         })
-         .join();
-      // clang-format on
-      */
    }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance

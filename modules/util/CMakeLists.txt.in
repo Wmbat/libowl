@@ -17,3 +17,9 @@ CPMAddPackage(
     GITHUB_REPOSITORY mpark/patterns
     GIT_TAG master
 )
+
+CPMAddPackage(
+    NAME patterns
+    GITHUB_REPOSITORY mpark/patterns
+    GIT_TAG master
+)

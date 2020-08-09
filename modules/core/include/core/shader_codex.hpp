@@ -39,6 +39,7 @@ namespace core
       auto operator=(const shader_codex&) -> shader_codex& = delete;
       auto operator=(shader_codex &&) -> shader_codex& = default;
 
+      auto add_shader(const std::filesystem::path& path) -> std::string;
       auto add_precompiled_shader(vkn::shader&& shader) -> std::string;
 
       auto get_shader(const std::string& name) noexcept -> vkn::shader&;
