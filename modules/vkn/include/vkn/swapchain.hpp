@@ -12,12 +12,36 @@
 
 namespace vkn
 {
+   /**
+    * Holds all data related the vulkan swapchain, including images and
+    * image views
+    */
    class swapchain
    {
-      static constexpr size_t EXPECTED_IMAGE_COUNT = 3u;
+      /**
+       * A struct used for error handling and displaying error messages
+       */
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      static constexpr size_t expected_image_count = 3u;
+
+      inline static const error_category m_category{};
 
    public:
-      enum class error
+      /**
+       * Contains all possible error values comming from the swapchain class.
+       */
+      enum class error_type
       {
          surface_handle_not_provided,
          failed_to_query_surface_support_details,
@@ -26,6 +50,9 @@ namespace vkn
          failed_to_create_swapchain_image_views,
       };
 
+      /**
+       * The information necessary for the creation of a swapchain
+       */
       struct create_info
       {
          vk::Device device{nullptr};
@@ -33,8 +60,8 @@ namespace vkn
          vk::Format format{};
          vk::Extent2D extent{};
 
-         util::small_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> images{};
-         util::small_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> image_views{};
+         util::small_dynamic_array<vk::Image, expected_image_count> images{};
+         util::small_dynamic_array<vk::ImageView, expected_image_count> image_views{};
       };
 
    public:
@@ -48,7 +75,18 @@ namespace vkn
       auto operator=(const swapchain&) -> swapchain& = delete;
       auto operator=(swapchain&&) noexcept -> swapchain&;
 
+      /**
+       * Get the underlying vulkan swapchain handle
+       */
       [[nodiscard]] auto value() const -> const vk::SwapchainKHR&;
+
+      /**
+       * Transfer an #error_type enum value into a standard error_code.
+       */
+      inline static auto make_error_code(error_type err) -> std::error_code
+      {
+         return {static_cast<int>(err), m_category};
+      }
 
    private:
       vk::Device m_device{nullptr};
@@ -56,8 +94,8 @@ namespace vkn
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
-      util::small_dynamic_array<vk::Image, EXPECTED_IMAGE_COUNT> m_images;
-      util::small_dynamic_array<vk::ImageView, EXPECTED_IMAGE_COUNT> m_image_views;
+      util::small_dynamic_array<vk::Image, expected_image_count> m_images;
+      util::small_dynamic_array<vk::ImageView, expected_image_count> m_image_views;
 
    public:
       class builder
@@ -128,7 +166,7 @@ namespace vkn
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::swapchain::error> : true_type
+   struct is_error_code_enum<vkn::swapchain::error_type> : true_type
    {
    };
 } // namespace std

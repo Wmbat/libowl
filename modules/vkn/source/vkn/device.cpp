@@ -97,11 +97,11 @@ namespace vkn
       }
    } // namespace detail
 
-   device::device(physical_device physical_device, const create_info& info) :
+   device::device(physical_device&& physical_device, const create_info& info) :
       m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
       m_extensions{info.extensions}
    {}
-   device::device(physical_device physical_device, create_info&& info) :
+   device::device(physical_device&& physical_device, create_info&& info) :
       m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
       m_extensions{std::move(info.extensions)}
    {}

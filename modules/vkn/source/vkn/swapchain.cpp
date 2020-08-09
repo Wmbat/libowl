@@ -60,43 +60,6 @@ namespace vkn
          return {static_cast<int>(err), surface_support_err_cat};
       }
 
-      auto to_string(swapchain::error err) -> std::string
-      {
-         using error = swapchain::error;
-
-         switch (err)
-         {
-            case error::surface_handle_not_provided:
-               return "surface_handle_not_provided";
-            case error::failed_to_query_surface_support_details:
-               return "failed_to_query_surface_support_details";
-            case error::failed_to_get_swapchain_images:
-               return "failed_to_get_swapchain_images";
-            case error::failed_to_create_swapchain_image_views:
-               return "failed_to_create_swapchain_image_views";
-            case error::failed_to_create_swapchain:
-               return "failed_to_create_swapchain";
-            default:
-               return "UNKNOWN";
-         }
-      };
-
-      struct swapchain_error_category : std::error_category
-      {
-         [[nodiscard]] auto name() const noexcept -> const char* override { return "vk_instance"; }
-         [[nodiscard]] auto message(int err) const -> std::string override
-         {
-            return to_string(static_cast<swapchain::error>(err));
-         }
-      };
-
-      static const swapchain_error_category swap_err_cat{};
-
-      auto make_error_code(swapchain::error err) -> std::error_code
-      {
-         return {static_cast<int>(err), swap_err_cat};
-      }
-
       auto query_surface_support(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface)
          -> vkn::result<surface_support>
       {
@@ -166,7 +129,8 @@ namespace vkn
       }
 
       auto find_surface_format(const util::range_over<vk::SurfaceFormatKHR> auto& available_formats,
-         const util::range_over<vk::SurfaceFormatKHR> auto& desired_formats) -> vk::SurfaceFormatKHR
+                               const util::range_over<vk::SurfaceFormatKHR> auto& desired_formats)
+         -> vk::SurfaceFormatKHR
       {
          for (const vk::SurfaceFormatKHR& desired : desired_formats)
          {
@@ -182,9 +146,9 @@ namespace vkn
          return available_formats[0];
       }
 
-      auto find_present_mode(
-         const util::range_over<vk::PresentModeKHR> auto& available_present_modes,
-         const util::range_over<vk::PresentModeKHR> auto& desired_present_modes)
+      auto
+      find_present_mode(const util::range_over<vk::PresentModeKHR> auto& available_present_modes,
+                        const util::range_over<vk::PresentModeKHR> auto& desired_present_modes)
          -> vk::PresentModeKHR
       {
          for (const vk::PresentModeKHR& desired : desired_present_modes)
@@ -202,7 +166,7 @@ namespace vkn
       }
 
       auto find_extent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t desired_width,
-         uint32_t desired_height) -> vk::Extent2D
+                       uint32_t desired_height) -> vk::Extent2D
       {
          if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
          {
@@ -219,7 +183,40 @@ namespace vkn
             // clang-format on
          }
       }
+
+      auto to_string(swapchain::error_type err) -> std::string
+      {
+         using error = swapchain::error_type;
+
+         switch (err)
+         {
+            case error::surface_handle_not_provided:
+               return "surface_handle_not_provided";
+            case error::failed_to_query_surface_support_details:
+               return "failed_to_query_surface_support_details";
+            case error::failed_to_get_swapchain_images:
+               return "failed_to_get_swapchain_images";
+            case error::failed_to_create_swapchain_image_views:
+               return "failed_to_create_swapchain_image_views";
+            case error::failed_to_create_swapchain:
+               return "failed_to_create_swapchain";
+            default:
+               return "UNKNOWN";
+         }
+      };
+
+      auto make_error(swapchain::error_type flag, std::error_code ec) -> vkn::error
+      {
+         return vkn::error{swapchain::make_error_code(flag), static_cast<vk::Result>(ec.value())};
+      }
+
    } // namespace detail
+
+   auto swapchain::error_category::name() const noexcept -> const char* { return "vkn_swapchain"; }
+   auto swapchain::error_category::message(int err) const -> std::string
+   {
+      return detail::to_string(static_cast<swapchain::error_type>(err));
+   }
 
    swapchain::swapchain(swapchain&& rhs) noexcept { *this = std::move(rhs); }
    swapchain::swapchain(const create_info& info) :
@@ -290,28 +287,19 @@ namespace vkn
 
    auto builder::build() -> vkn::result<swapchain>
    {
-      using err_t = vkn::error;
+      using err_t = swapchain::error_type;
 
       if (!m_info.surface)
       {
-         // clang-format off
-         return monad::make_left(err_t{
-            .type = detail::make_error_code(swapchain::error::surface_handle_not_provided),
-            .result = {}
-         });
-         // clang-format on
+         return monad::make_left(detail::make_error(err_t::surface_handle_not_provided, {}));
       }
 
       const auto surface_support_res =
          detail::query_surface_support(m_info.physical_device, m_info.surface);
       if (!surface_support_res)
       {
-         // clang-format off
-         return monad::make_left(err_t{
-            .type = detail::make_error_code(swapchain::error::failed_to_query_surface_support_details),
-            .result = surface_support_res.left().value().result
-         });
-         // clang-format on
+         return monad::make_left(detail::make_error(err_t::failed_to_query_surface_support_details,
+                                                    surface_support_res.left().value().result));
       }
 
       const auto surface_support = surface_support_res.right().value();
@@ -335,12 +323,12 @@ namespace vkn
       const vk::PresentModeKHR present_mode =
          detail::find_present_mode(surface_support.present_modes, desired_present_modes);
 
-      const vk::Extent2D extent = detail::find_extent(
-         surface_support.capabilities, m_info.desired_width, m_info.desired_height);
+      const vk::Extent2D extent = detail::find_extent(surface_support.capabilities,
+                                                      m_info.desired_width, m_info.desired_height);
 
       uint32_t image_count = surface_support.capabilities.minImageCount + 1;
       if (surface_support.capabilities.maxImageCount > 0 &&
-         image_count > surface_support.capabilities.maxImageCount)
+          image_count > surface_support.capabilities.maxImageCount)
       {
          image_count = surface_support.capabilities.maxImageCount;
       }
@@ -376,12 +364,8 @@ namespace vkn
 
       if(!creation_res)
       {
-         // clang-format off
-         return monad::make_left(err_t{
-            .type = detail::make_error_code(error::failed_to_create_swapchain), 
-            .result = static_cast<vk::Result>(creation_res.left()->code().value())
-         });
-         // clang-format on
+         return monad::make_left(detail::make_error(err_t::failed_to_create_swapchain,
+                  creation_res.left()->code()));
       }
 
       util::log_info(m_plogger, "[vkn] swapchain created.");
@@ -390,19 +374,15 @@ namespace vkn
       vk::SwapchainKHR swap = creation_res.right().value();
 
       const auto image_res = monad::try_wrap<std::system_error>([&] {
-         return m_info.device.getSwapchainImagesKHR(swap);
-      }).right_map([](const auto& images) {
+                                return m_info.device.getSwapchainImagesKHR(swap);
+                             }).right_map([](const auto& images) {
          return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
       });
 
       if (!image_res)
       {
-         // clang-format off
-         return monad::make_left(err_t{
-            .type = detail::make_error_code(error::failed_to_get_swapchain_images), 
-            .result = static_cast<vk::Result>(image_res.left()->code().value())
-         });
-         // clang-format on
+         return monad::make_left(
+            detail::make_error(swapchain::error_type::failed_to_get_swapchain_images, image_res.left()->code()));
       }
 
       const auto images = image_res.right().value();
@@ -414,12 +394,8 @@ namespace vkn
              return 0;
           }))
       {
-         // clang-format off
-         return monad::make_left(vkn::error{
-            .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
-            .result = {}
-         });
-         // clang-format on
+         return monad::make_left(
+            detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views, {}));
       }
 
       for (const auto& image : images)
@@ -448,12 +424,9 @@ namespace vkn
 
          if (!view_res)
          {
-            // clang-format off
-            return monad::make_left(vkn::error{
-               .type = detail::make_error_code(swapchain::error::failed_to_create_swapchain_image_views),
-               .result = static_cast<vk::Result>(view_res.left()->code().value())
-            });
-            // clang-format on
+            return monad::make_left(
+               detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views,
+                                  view_res.left()->code()));
          }
 
          views.push_back(*view_res.right());

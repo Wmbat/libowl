@@ -192,7 +192,7 @@ namespace vkn
       // clang-format on
    } // namespace core::gfx::vkn
 
-   auto selector::set_prefered_gpu_type(physical_device::type type) noexcept -> selector&
+   auto selector::set_preferred_gpu_type(physical_device::type type) noexcept -> selector&
    {
       m_selection_info.prefered_type = type;
       return *this;

@@ -1,7 +1,6 @@
 # mélodie
 
 ![Linux](https://github.com/Wmbat/melodie/workflows/Linux/badge.svg)
-[![Documentation](https://codedocs.xyz/Wmbat/melodie.svg)](https://codedocs.xyz/Wmbat/melodie/)
 
 [mélodie](https://github.com/Wmbat/melodie) is a small game engine project made using
 [Vulkan](https://www.khronos.org/vulkan/) and C++20

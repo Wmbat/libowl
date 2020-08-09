@@ -16,6 +16,9 @@ namespace vkn
 {
    namespace queue
    {
+      /**
+       * The different types of supported queue types.
+       */
       enum class type
       {
          present,
@@ -24,6 +27,9 @@ namespace vkn
          transfer
       };
 
+      /**
+       * The possible errors related to the creation of queues
+       */
       enum class error
       {
          present_unavailable,
@@ -34,6 +40,9 @@ namespace vkn
          invalid_queue_family_index
       };
 
+      /**
+       * The information that describes a queue family.
+       */
       struct description
       {
          uint32_t index = 0;
@@ -42,15 +51,25 @@ namespace vkn
       };
    } // namespace queue
 
+   /**
+    * Holds all functionality around the lifetime and use of a vulkan device, it hold the physical
+    * and logical representation of the graphics card.
+    */
    class device
    {
    public:
+      /**
+       * The possible error types related to the creation of the device.
+       */
       enum class error
       {
          device_extension_not_supported,
          failed_to_create_device
       };
 
+      /**
+       * The information needed to construct a device instance
+       */
       struct create_info
       {
          vk::Device device{};
@@ -60,8 +79,8 @@ namespace vkn
       };
 
       device() = default;
-      device(physical_device physical_device, const create_info& info);
-      device(physical_device physical_device, create_info&& info);
+      device(physical_device&& physical_device, const create_info& info);
+      device(physical_device&& physical_device, create_info&& info);
       device(const device&) = delete;
       device(device&&) noexcept;
       ~device();
@@ -69,15 +88,44 @@ namespace vkn
       auto operator=(const device&) -> device& = delete;
       auto operator=(device&&) noexcept -> device&;
 
+      /**
+       * Get an index of a queue family that support operation related to the specified queue type.
+       * If the device doesn't have any queue with the specified queue type, an error will be
+       * returned.
+       */
       [[nodiscard]] auto get_queue_index(queue::type type) const -> vkn::result<uint32_t>;
+      /**
+       * Get the index of a queue family with support for the specified queue type operations only.
+       * If the device doesn't have any queue with the specified queue type, an error will be
+       * returned.
+       */
       [[nodiscard]] auto get_dedicated_queue_index(queue::type type) const -> vkn::result<uint32_t>;
 
+      /**
+       * Get a queue handle that support operation related to the specified queue type.
+       * If the device doesn't have any queue with the specified queue type, an error will be
+       * returned.
+       */
       [[nodiscard]] auto get_queue(queue::type) const -> vkn::result<vk::Queue>;
+      /**
+       * Get a queue handle with support for the specified queue type operations only.
+       * If the device doesn't have any queue with the specified queue type, an error will be
+       * returned.
+       */
       [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
          -> vkn::result<vk::Queue>;
 
+      /**
+       * Get a const reference to the underlying vulkan device handle.
+       */
       [[nodiscard]] auto value() const noexcept -> const vk::Device&;
+      /**
+       * Get a const reference to the physical representation of the device.
+       */
       [[nodiscard]] auto physical() const noexcept -> const physical_device&;
+      /**
+       * Get the version of the current vulkan session.
+       */
       [[nodiscard]] auto get_vulkan_version() const noexcept -> uint32_t;
 
    private:
@@ -90,16 +138,29 @@ namespace vkn
       util::dynamic_array<const char*> m_extensions;
 
    public:
+      /**
+       * A class used to facilitate the building of a device instance.
+       */
       class builder
       {
       public:
          builder(const loader& vk_loader, physical_device&& phys_device, uint32_t version,
-            util::logger* const plogger = nullptr);
+                 util::logger* const plogger = nullptr);
 
+         /**
+          * Finalize the construction of a device object. If the construction results in a failure,
+          * an error will be returned
+          */
          [[nodiscard]] auto build() -> vkn::result<device>;
 
+         /**
+          * Set the descriptions of all queue families.
+          */
          auto set_queue_setup(const util::dynamic_array<queue::description>& descriptions)
             -> builder&;
+         /**
+          * Add a device extension that should be enabled with the device construction
+          */
          auto add_desired_extension(const std::string& extension_name) -> builder&;
 
       private:
