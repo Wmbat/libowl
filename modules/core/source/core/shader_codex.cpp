@@ -302,25 +302,67 @@ namespace core
                util::log_info(m_plogger, R"([core] out-dated shader found in cache)");
                util::log_info(m_plogger, R"([core] recompiling shader: "{0}")", path.string());
 
-               const auto compilation_result = compile_shader(path);
-               if (!compilation_result.is_right())
+               if (auto res = compile_shader(path))
                {
-                  return monad::make_left(*compilation_result.left());
+                  util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
+
+                  if (const auto cache_res = cache_shader(hashed_path, *res.right()))
+                  {
+                     return monad::make_left(cache_res.value());
+                  }
+
+                  const auto extension = path.extension().string();
+                  return vkn::shader::builder{*m_pdevice, m_plogger}
+                     .set_spirv_binary(*res.right())
+                     .set_name(path.filename().string() + path.extension().string())
+                     .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+                     .build()
+                     .left_map([]([[maybe_unused]] auto&& err) {
+                        return make_error_code(error_type::failed_to_create_shader);
+                     });
                }
+               else
+               {
+                  return monad::make_left(*res.left());
+               }
+            }
+            else
+            {
+               util::log_info(m_plogger, R"([core] up-to-date shader found in cache)");
+               util::log_info(m_plogger, R"([core] loading shader "{0}" from cache)", path.string(),
+                              hashed_path.string());
 
-               const auto shader_data = compilation_result.right().value();
+               return load_shader(hashed_path).right_flat_map([&](auto&& spirv) {
+                  const std::string extension = path.extension();
+                  return vkn::shader::builder{*m_pdevice, m_plogger}
+                     .set_spirv_binary(std::move(spirv))
+                     .set_name(path.filename().string() + path.extension().string())
+                     .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+                     .build()
+                     .left_map([]([[maybe_unused]] auto&& err) {
+                        return make_error_code(error_type::failed_to_create_shader);
+                     });
+               });
+            }
+         }
+         else
+         {
+            util::log_info(m_plogger, R"([core] shader "{0}" not found in cache)", path.string(),
+                           hashed_path.string());
+            util::log_info(m_plogger, R"([core] compiling shader: "{0}")", path.string());
 
+            if (auto res = compile_shader(path))
+            {
                util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
 
-               auto cache_result = cache_shader(hashed_path, shader_data);
-               if (cache_result.has_value())
+               if (const auto cache_res = cache_shader(hashed_path, *res.right()))
                {
-                  return monad::make_left(cache_result.value());
+                  return monad::make_left(cache_res.value());
                }
 
                const auto extension = path.extension().string();
                return vkn::shader::builder{*m_pdevice, m_plogger}
-                  .set_spirv_binary(*compilation_result.right())
+                  .set_spirv_binary(*res.right())
                   .set_name(path.filename().string() + path.extension().string())
                   .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                   .build()
@@ -330,79 +372,25 @@ namespace core
             }
             else
             {
-               util::log_info(m_plogger, R"([core] up-to-date shader found in cache)");
-               util::log_info(m_plogger, R"([core] loading shader "{0}" from cache)", path.string(),
-                              hashed_path.string());
-
-               const auto loading_result = load_shader(hashed_path);
-               if (!loading_result.is_right())
-               {
-                  return monad::make_left(*loading_result.left());
-               }
-
-               const auto extension = path.extension().string();
-               return vkn::shader::builder{*m_pdevice, m_plogger}
-                  .set_spirv_binary(*loading_result.right())
-                  .set_name(path.filename().string() + path.extension().string())
-                  .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
-                  .build()
-                  .left_map([]([[maybe_unused]] auto&& err) {
-                     return make_error_code(error_type::failed_to_create_shader);
-                  });
+               return monad::make_left(*res.left());
             }
-         }
-         else
-         {
-            util::log_info(m_plogger, R"([core] shader "{0}" not found in cache)", path.string(),
-                           hashed_path.string());
-            util::log_info(m_plogger, R"([core] compiling shader: "{0}")", path.string());
-
-            const auto compilation_result = compile_shader(path);
-            if (!compilation_result.is_right())
-            {
-               return monad::make_left(*compilation_result.left());
-            }
-
-            const auto shader_data = compilation_result.right().value();
-
-            util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
-
-            const auto cache_result = cache_shader(hashed_path, shader_data);
-            if (cache_result.has_value())
-            {
-               return monad::make_left(cache_result.value());
-            }
-
-            const auto extension = path.extension().string();
-            return vkn::shader::builder{*m_pdevice, m_plogger}
-               .set_spirv_binary(*compilation_result.right())
-               .set_name(path.filename().string() + path.extension().string())
-               .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
-               .build()
-               .left_map([]([[maybe_unused]] auto&& err) {
-                  return make_error_code(error_type::failed_to_create_shader);
-               });
          }
       }
       else
       {
          util::log_info(m_plogger, "[core] compiling shader: \"{0}\"", path.string());
 
-         const auto compilation_result = compile_shader(path);
-         if (!compilation_result.is_right())
-         {
-            return monad::make_left(*compilation_result.left());
-         }
-
-         const auto extension = path.extension().string();
-         return vkn::shader::builder{*m_pdevice, m_plogger}
-            .set_spirv_binary(*compilation_result.right())
-            .set_name(path.filename().string() + path.extension().string())
-            .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
-            .build()
-            .left_map([]([[maybe_unused]] auto&& err) {
-               return make_error_code(error_type::failed_to_create_shader);
-            });
+         return compile_shader(path).right_flat_map([&](auto&& spirv) {
+            const auto extension = path.extension().string();
+            return vkn::shader::builder{*m_pdevice, m_plogger}
+               .set_spirv_binary(std::move(spirv))
+               .set_name(path.filename().string() + path.extension().string())
+               .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
+               .build()
+               .left_map([]([[maybe_unused]] auto&& err) {
+                  return make_error_code(error_type::failed_to_create_shader);
+               });
+         });
       }
 
       return monad::make_left(std::error_code{});
