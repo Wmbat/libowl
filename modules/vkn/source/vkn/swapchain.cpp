@@ -264,7 +264,14 @@ namespace vkn
       return *this;
    }
 
-   auto swapchain::value() const -> const vk::SwapchainKHR& { return m_swapchain; }
+   auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain; }
+   auto swapchain::format() const noexcept -> vk::Format { return m_format; }
+   auto swapchain::extent() const noexcept -> const vk::Extent2D& { return m_extent; }
+   auto swapchain::image_views() const noexcept
+      -> const util::small_dynamic_array<vk::ImageView, expected_image_count>&
+   {
+      return m_image_views;
+   }
 
    using builder = swapchain::builder;
 

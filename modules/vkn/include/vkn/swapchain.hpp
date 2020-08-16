@@ -78,7 +78,11 @@ namespace vkn
       /**
        * Get the underlying vulkan swapchain handle
        */
-      [[nodiscard]] auto value() const -> const vk::SwapchainKHR&;
+      [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
+      [[nodiscard]] auto format() const noexcept -> vk::Format;
+      [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
+      [[nodiscard]] auto image_views() const noexcept
+         -> const util::small_dynamic_array<vk::ImageView, expected_image_count>&;
 
       /**
        * Transfer an #error_type enum value into a standard error_code.

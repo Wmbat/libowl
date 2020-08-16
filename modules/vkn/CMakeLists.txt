@@ -67,6 +67,11 @@ target_link_libraries(${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
 
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC
+        VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+)
+
 target_compile_options(${PROJECT_NAME}
    PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer 
@@ -97,8 +102,10 @@ target_sources(${PROJECT_NAME}
         source/vkn/command_pool.cpp
         source/vkn/core.cpp
         source/vkn/device.cpp
+        source/vkn/framebuffer.cpp
         source/vkn/instance.cpp
         source/vkn/physical_device.cpp
+        source/vkn/render_pass.cpp
         source/vkn/shader.cpp
         source/vkn/swapchain.cpp
 )

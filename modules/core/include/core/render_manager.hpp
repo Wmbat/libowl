@@ -14,7 +14,9 @@
 
 #include <vkn/core.hpp>
 #include <vkn/device.hpp>
+#include <vkn/framebuffer.hpp>
 #include <vkn/instance.hpp>
+#include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
 
@@ -37,6 +39,9 @@ namespace core
       vkn::instance m_instance;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
+      vkn::render_pass m_render_pass;
+
+      util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
 
       shader_codex m_shader_codex;
    };
