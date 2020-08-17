@@ -118,6 +118,21 @@ namespace core
                return shader_codex{};
             })
             .join();
+
+      m_command_pool =
+         vkn::command_pool::builder{m_device, plogger}
+            .set_queue_family_index(m_device.get_queue_index(vkn::queue::type::graphics))
+            .set_primary_buffer_count(m_framebuffers.size())
+            .build()
+            .left_map([plogger](auto&& err) {
+               log_error(plogger, "[core] Failed to create command pool: \"{0}\"",
+                         err.type.message());
+
+               abort();
+
+               return vkn::command_pool{};
+            })
+            .join();
    }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance

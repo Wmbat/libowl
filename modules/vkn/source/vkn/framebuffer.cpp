@@ -91,6 +91,8 @@ namespace vkn
             return framebuffer::make_error(error::failed_to_create_framebuffer, err.code());
          })
          .right_map([&](vk::Framebuffer&& handle) {
+            util::log_info(m_plogger, "[vkn] framebuffer created");
+
             return framebuffer{{.device = m_device,
                                 .framebuffer = handle,
                                 .dimensions = {m_info.width, m_info.height}}};

@@ -116,6 +116,8 @@ namespace vkn
             return make_error(error::failed_to_create_render_pass, err.code());
          })
          .right_map([&](auto&& handle) {
+            util::log_info(m_plogger, "[vkn] render pass created");
+
             return render_pass{{.device = m_device, .render_pass = handle}};
          });
    }
