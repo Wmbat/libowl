@@ -612,7 +612,7 @@ namespace util
                                      const hasher& hash = hasher(),
                                      const key_equal& equal = key_equal(),
                                      const allocator_type& alloc = allocator_type()) :
-         small_dense_hash_map{init.begin(), init.end(), bucket_count, hash, equal, alloc}
+         small_dense_hash_map{std::begin(init), std::end(init), bucket_count, hash, equal, alloc}
       {}
 
       constexpr small_dense_hash_map(std::initializer_list<value_type> init, size_type bucket_count,
@@ -646,34 +646,34 @@ namespace util
       constexpr auto operator=(std::initializer_list<value_type> ilist) -> small_dense_hash_map&
       {
          clear();
-         insert(ilist.begin(), ilist.end());
+         insert(std::begin(ilist), std::end(ilist));
          return *this;
       }
 
       constexpr auto get_allocator() const -> allocator_type { return m_buckets.get_allocator(); }
 
-      constexpr auto begin() noexcept -> iterator { return iterator{m_nodes.begin()}; }
+      constexpr auto begin() noexcept -> iterator { return iterator{std::begin(m_nodes)}; }
       constexpr auto begin() const noexcept -> const_iterator
       {
-         return const_iterator{m_nodes.begin()};
+         return const_iterator{std::begin(m_nodes)};
       }
       constexpr auto cbegin() const noexcept -> const_iterator
       {
-         return const_iterator{m_nodes.cbegin()};
+         return const_iterator{std::begin(m_nodes)};
       }
 
-      constexpr auto end() noexcept -> iterator { return iterator{m_nodes.end()}; }
+      constexpr auto end() noexcept -> iterator { return iterator{std::end(m_nodes)}; }
       constexpr auto end() const noexcept -> const_iterator
       {
-         return const_iterator{m_nodes.end()};
+         return const_iterator{std::end(m_nodes)};
       }
       constexpr auto cend() const noexcept -> const_iterator
       {
-         return const_iterator{m_nodes.cend()};
+         return const_iterator{std::end(m_nodes)};
       }
 
       [[nodiscard]] constexpr auto empty() const noexcept -> bool { return m_nodes.empty(); }
-      constexpr auto size() const noexcept -> size_type { return m_nodes.size(); }
+      constexpr auto size() const noexcept -> size_type { return std::size(m_nodes); }
       constexpr auto max_size() const noexcept -> size_type { return m_nodes.max_size(); }
       constexpr void clear() noexcept
       {
@@ -726,7 +726,7 @@ namespace util
 
       constexpr void insert(std::initializer_list<value_type> ilist)
       {
-         insert(ilist.begin(), ilist.end());
+         insert(std::begin(ilist), std::begin(ilist));
       }
 
       constexpr auto insert_or_assign(const key_type& k, auto&& obj) -> std::pair<iterator, bool>
@@ -844,7 +844,7 @@ namespace util
             previous_next = &node.next;
          }
 
-         do_erase(previous_next, std::next(m_nodes.begin(), *previous_next));
+         do_erase(previous_next, std::next(std::begin(m_nodes), *previous_next));
 
          return 1;
       }
@@ -1020,7 +1020,7 @@ namespace util
          return const_local_iterator{m_nodes};
       }
 
-      constexpr auto bucket_count() const -> size_type { return m_buckets.size(); }
+      constexpr auto bucket_count() const -> size_type { return std::size(m_buckets); }
 
       constexpr auto max_bucket_count() const -> size_type { return m_buckets.max_size(); }
 
@@ -1056,14 +1056,15 @@ namespace util
 
          assert(count > 0 && "The computed rehash size must be greater than 0.");
 
-         if (count == m_buckets.size())
+         if (count == std::size(m_buckets))
          {
             return;
          }
 
          m_buckets.resize(count);
 
-         std::fill(m_buckets.begin(), m_buckets.end(), std::numeric_limits<nodes_size_type>::max());
+         std::fill(std::begin(m_buckets), std::end(m_buckets),
+                   std::numeric_limits<nodes_size_type>::max());
 
          node_index_type index{0u};
 
@@ -1107,7 +1108,7 @@ namespace util
 
       constexpr auto bucket_index(const auto& key) const -> size_type
       {
-         return m_hash(key) & (m_buckets.size() - 1);
+         return m_hash(key) & (std::size(m_buckets) - 1);
       }
 
       constexpr auto find_in_bucket(const auto& key, std::size_t bucket_index) -> local_iterator
@@ -1134,7 +1135,7 @@ namespace util
          // Skip the node by pointing the previous "next" to the one sub_it currently point to.
          *previous_next = sub_it->next;
 
-         auto last = std::prev(m_nodes.end());
+         auto last = std::prev(std::end(m_nodes));
 
          // No need to do anything if the node was at the end of the vector.
          if (sub_it == last)
@@ -1149,8 +1150,8 @@ namespace util
 
          // Now sub_it points to the one we swapped with. We have to readjust sub_it.
          previous_next =
-            find_previous_next_using_position(sub_it->pair.pair().first, m_nodes.size() - 1);
-         *previous_next = std::distance(m_nodes.begin(), sub_it);
+            find_previous_next_using_position(sub_it->pair.pair().first, std::size(m_nodes) - 1);
+         *previous_next = std::distance(std::begin(m_nodes), sub_it);
 
          // Delete the last node forever and ever.
          m_nodes.pop_back();
@@ -1244,7 +1245,7 @@ namespace util
          }
 
          m_nodes.emplace_back(m_buckets[bindex], std::forward<decltype(args)>(args)...);
-         m_buckets[bindex] = m_nodes.size() - 1;
+         m_buckets[bindex] = std::size(m_nodes) - 1;
 
          return std::pair{std::prev(end()), true};
       }
@@ -1257,11 +1258,11 @@ namespace util
       {
          if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
          {
-            return iterator{nodes.end()};
+            return iterator{std::end(nodes)};
          }
          else
          {
-            return iterator{std::next(nodes.begin(), bucket_it.current_node_index())};
+            return iterator{std::next(std::begin(nodes), bucket_it.current_node_index())};
          }
       }
 
@@ -1273,11 +1274,11 @@ namespace util
       {
          if (bucket_it.current_node_index() == std::numeric_limits<node_index_type>::max())
          {
-            return const_iterator{nodes.end()};
+            return const_iterator{std::end(nodes)};
          }
          else
          {
-            return const_iterator{std::next(nodes.begin(), bucket_it.current_node_index())};
+            return const_iterator{std::next(std::begin(nodes), bucket_it.current_node_index())};
          }
       }
 
@@ -1298,7 +1299,7 @@ namespace util
               const small_dense_hash_map<key_, any_, buff_sz_rhs_, hash_, key_eq_, allocator_>& rhs)
       -> bool
    {
-      if (lhs.size() != rhs.size())
+      if (std::size(lhs) != std::size(rhs))
       {
          return false;
       }
@@ -1307,7 +1308,7 @@ namespace util
       {
          const auto it = rhs.find(item.first);
 
-         if (it == rhs.end() || it->second != item.second)
+         if (it == std::end(rhs) || it->second != item.second)
          {
             return false;
          }

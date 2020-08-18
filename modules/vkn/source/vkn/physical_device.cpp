@@ -130,7 +130,8 @@ namespace vkn
       const auto physical_devices_res = monad::try_wrap<std::system_error>([&] {
                                            return m_system_info.instance.enumeratePhysicalDevices();
                                         }).right_map([](const auto& devices) {
-         return util::small_dynamic_array<vk::PhysicalDevice, 2>{devices.begin(), devices.end()};
+         return util::small_dynamic_array<vk::PhysicalDevice, 2>{std::begin(devices),
+                                                                 std::begin(devices)};
       });
 
       if (!physical_devices_res)
@@ -175,22 +176,17 @@ namespace vkn
 
       log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
-      // clang-format off
-      return monad::make_right(physical_device{{
-         .name = static_cast<const char*>(selected.properties.deviceName),
-         .features = selected.features,
-         .properties = selected.properties,
-         .mem_properties = selected.mem_properties,
-         .instance = m_system_info.instance,
-         .device = selected.phys_device,
-         .surface = m_system_info.surface,
-         .queue_families = util::dynamic_array<vk::QueueFamilyProperties>{
-            selected.queue_families.begin(), 
-            selected.queue_families.end()
-         }
-      }});
-      // clang-format on
-   } // namespace core::gfx::vkn
+      return monad::make_right(physical_device{
+         {.name = static_cast<const char*>(selected.properties.deviceName),
+          .features = selected.features,
+          .properties = selected.properties,
+          .mem_properties = selected.mem_properties,
+          .instance = m_system_info.instance,
+          .device = selected.phys_device,
+          .surface = m_system_info.surface,
+          .queue_families = util::dynamic_array<vk::QueueFamilyProperties>{
+             std::begin(selected.queue_families), std::end(selected.queue_families)}}});
+   }
 
    auto selector::set_preferred_gpu_type(physical_device::type type) noexcept -> selector&
    {
@@ -257,8 +253,8 @@ namespace vkn
       const auto properties_res = monad::try_wrap<vk::SystemError>([&] {
                                      return device.getQueueFamilyProperties();
                                   }).right_map([](const auto& properties) {
-         return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{properties.begin(),
-                                                                         properties.end()};
+         return util::small_dynamic_array<vk::QueueFamilyProperties, 16>{std::begin(properties),
+                                                                         std::end(properties)};
       });
 
       if (properties_res)

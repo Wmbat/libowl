@@ -12,6 +12,7 @@
 
 #include <util/containers/dense_hash_map.hpp>
 
+#include <vkn/command_pool.hpp>
 #include <vkn/core.hpp>
 #include <vkn/device.hpp>
 #include <vkn/framebuffer.hpp>
@@ -40,6 +41,7 @@ namespace core
       vkn::device m_device;
       vkn::swapchain m_swapchain;
       vkn::render_pass m_render_pass;
+      vkn::command_pool m_command_pool;
 
       util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
 

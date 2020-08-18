@@ -58,6 +58,7 @@ namespace vkn
          failed_to_allocate_secondary_command_buffers
       };
 
+      command_pool() = default;
       command_pool(const create_info& info);
       command_pool(create_info&& info);
       command_pool(const command_pool&) = delete;
@@ -66,6 +67,13 @@ namespace vkn
 
       auto operator=(const command_pool&) -> command_pool& = delete;
       auto operator=(command_pool&& rhs) noexcept -> command_pool&;
+
+      [[nodiscard]] auto value() const noexcept -> vk::CommandPool;
+      [[nodiscard]] auto device() const noexcept -> vk::Device;
+      [[nodiscard]] auto primary_cmd_buffers() const
+         -> const util::dynamic_array<vk::CommandBuffer>&;
+      [[nodiscard]] auto secondary_cmd_buffers() const
+         -> const util::dynamic_array<vk::CommandBuffer>&;
 
       /**
        * Transfer an #error_type enum value into a standard error_code.
