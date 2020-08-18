@@ -195,7 +195,7 @@ namespace vkn
             return util::dynamic_array<vk::LayerProperties>{};
          },
          [](const auto& data) {
-            return util::dynamic_array<vk::LayerProperties>{data.begin(), data.end()};
+            return util::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
          }
       );
   
@@ -207,7 +207,7 @@ namespace vkn
             return util::dynamic_array<vk::ExtensionProperties>{};
          }, 
          [](const auto& data){
-            return util::dynamic_array<vk::ExtensionProperties>{data.begin(), data.end()};
+            return util::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
          }
       );
       // clang-format on
@@ -241,7 +241,7 @@ namespace vkn
          .setPApplicationInfo(&app_info)
          .setEnabledLayerCount(0)
          .setPpEnabledLayerNames(nullptr)
-         .setEnabledExtensionCount(static_cast<uint32_t>(extensions.size()))
+         .setEnabledExtensionCount(static_cast<uint32_t>(std::size(extensions)))
          .setPpEnabledExtensionNames(extensions.data());
       // clang-format on
 
@@ -266,7 +266,7 @@ namespace vkn
                }
             }
 
-            instance_create_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
+            instance_create_info.enabledLayerCount = static_cast<uint32_t>(std::size(layers));
             instance_create_info.ppEnabledLayerNames = layers.data();
          }
 

@@ -85,7 +85,7 @@ namespace core
                          })
                          .join();
 
-      m_framebuffers.reserve(m_swapchain.image_views().size());
+      m_framebuffers.reserve(std::size(m_swapchain.image_views()));
       for (const auto& img_view : m_swapchain.image_views())
       {
          m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, plogger}
@@ -122,7 +122,7 @@ namespace core
       m_command_pool =
          vkn::command_pool::builder{m_device, plogger}
             .set_queue_family_index(m_device.get_queue_index(vkn::queue::type::graphics))
-            .set_primary_buffer_count(m_framebuffers.size())
+            .set_primary_buffer_count(std::size(m_framebuffers))
             .build()
             .left_map([plogger](auto&& err) {
                log_error(plogger, "[core] Failed to create command pool: \"{0}\"",
