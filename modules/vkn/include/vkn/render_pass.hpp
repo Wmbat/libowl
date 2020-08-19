@@ -6,7 +6,7 @@
 
 namespace vkn
 {
-   class render_pass final
+   class render_pass final : handle_traits<vk::RenderPass>
    {
    public:
       enum struct error
@@ -46,6 +46,7 @@ namespace vkn
       {
          vk::Device device{nullptr};
          vk::RenderPass render_pass{nullptr};
+         vk::Format format{};
       };
 
       render_pass() noexcept = default;
@@ -58,7 +59,7 @@ namespace vkn
       auto operator=(const render_pass&) -> render_pass& = delete;
       auto operator=(render_pass&& rhs) noexcept -> render_pass&;
 
-      [[nodiscard]] auto value() const noexcept -> vk::RenderPass;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
       /**
@@ -72,6 +73,7 @@ namespace vkn
    private:
       vk::Device m_device{nullptr};
       vk::RenderPass m_render_pass{nullptr};
+      vk::Format m_swapchain_format{};
 
    public:
       class builder
@@ -89,8 +91,17 @@ namespace vkn
       private:
          vk::Device m_device;
          vk::Format m_swapchain_format;
+         vk::Extent2D m_swapchain_extent;
 
          util::logger* const m_plogger;
       };
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::render_pass::error> : true_type
+   {
+   };
+} // namespace std

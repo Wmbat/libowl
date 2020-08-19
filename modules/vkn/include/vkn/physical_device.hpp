@@ -164,7 +164,7 @@ namespace vkn
    /**
     * The physical representation of a graphics card
     */
-   class physical_device
+   class physical_device final : handle_traits<vk::PhysicalDevice>
    {
    public:
       /**
@@ -239,7 +239,7 @@ namespace vkn
       /**
        * Get a const reference to the underlying vulkan physical device handle
        */
-      [[nodiscard]] auto value() const noexcept -> const vk::PhysicalDevice&;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       /**
        * Get a const reference to features of the graphics card
        */

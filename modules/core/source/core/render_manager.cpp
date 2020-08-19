@@ -133,6 +133,37 @@ namespace core
                return vkn::command_pool{};
             })
             .join();
+
+      m_graphics_pipeline =
+         vkn::graphics_pipeline::builder{m_device, m_render_pass, plogger}
+            .add_shader(m_shader_codex.get_shader("test_shader.vert"))
+            .add_shader(m_shader_codex.get_shader("test_shader.frag"))
+            .add_viewport({.x = 0.0f,
+                           .y = 0.0f,
+                           .width = static_cast<float>(m_swapchain.extent().width),
+                           .height = static_cast<float>(m_swapchain.extent().height),
+                           .minDepth = 0.0f,
+                           .maxDepth = 1.0f},
+                          {.offset = {0, 0}, .extent = m_swapchain.extent()})
+            .set_topology(vk::PrimitiveTopology::eTriangleList)
+            .enable_primitive_restart(false)
+            .build()
+            .left_map([&](vkn::error&& err) {
+               log_error(plogger, "[core] Failed to create graphics pipeline: \"{0}\"",
+                         err.type.message());
+
+               abort();
+
+               return vkn::graphics_pipeline{};
+            })
+            .join();
+
+      for (const auto& buffer : m_command_pool.primary_cmd_buffers())
+      {
+         buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
+
+         buffer.end();
+      }
    }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance

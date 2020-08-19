@@ -16,7 +16,7 @@ namespace vkn
     * A class that wraps around the functionality of a vulkan command pool
     * and maintains command buffers associated with the pool.
     */
-   class command_pool
+   class command_pool final : handle_traits<vk::CommandPool>
    {
       /**
        * A struct used for error handling and displaying error messages
@@ -68,7 +68,7 @@ namespace vkn
       auto operator=(const command_pool&) -> command_pool& = delete;
       auto operator=(command_pool&& rhs) noexcept -> command_pool&;
 
-      [[nodiscard]] auto value() const noexcept -> vk::CommandPool;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto primary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
@@ -147,3 +147,11 @@ namespace vkn
       };
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::command_pool::error_type> : true_type
+   {
+   };
+} // namespace std

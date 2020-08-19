@@ -13,7 +13,7 @@
 
 namespace vkn
 {
-   class framebuffer
+   class framebuffer final : handle_traits<vk::Framebuffer>
    {
    public:
       /**
@@ -73,7 +73,7 @@ namespace vkn
       /**
        * Get the underlying vulkan framebuffer handle
        */
-      [[nodiscard]] auto value() const noexcept -> vk::Framebuffer;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       /**
        * Get the device used for the creation of the framebuffer handle
        */
@@ -147,3 +147,11 @@ namespace vkn
       };
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::framebuffer::error> : true_type
+   {
+   };
+} // namespace std

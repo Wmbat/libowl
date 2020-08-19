@@ -145,8 +145,7 @@ namespace vkn
       return *this;
    }
 
-   auto instance::value() noexcept -> vk::Instance& { return m_instance; }
-   auto instance::value() const noexcept -> const vk::Instance& { return m_instance; }
+   auto instance::value() const noexcept -> value_type { return m_instance; }
    auto instance::version() const noexcept -> uint32_t { return m_version; }
    auto instance::extensions() const -> const util::dynamic_array<const char*>&
    {
@@ -336,30 +335,26 @@ namespace vkn
    {
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
-         // clang-format off
-         const auto debug_create_info = vk::DebugUtilsMessengerCreateInfoEXT{}
-            .setPNext(nullptr)
-            .setFlags({})
-            .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-               vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-               vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-            .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-               vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-               vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
-            .setPfnUserCallback(debug_callback)
-            .setPUserData(static_cast<void*>(m_plogger));
-
          return monad::try_wrap<vk::SystemError>([&] {
-            return inst.createDebugUtilsMessengerEXT(debug_create_info);
-         })
-         .left_map([](const auto& err) -> vkn::error {
-            return detail::make_error(instance::error::failed_to_create_debug_utils, err.code());
-         })
-         .right_map([plogger](auto handle){ 
-            log_info(plogger, "[vkn] debug utils created");
-            return handle;
-         });
-         // clang-format on
+                   return inst.createDebugUtilsMessengerEXT(
+                      {.pNext = nullptr,
+                       .flags = {},
+                       .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+                          vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+                          vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                       .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                          vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+                          vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+                       .pfnUserCallback = debug_callback,
+                       .pUserData = static_cast<void*>(m_plogger)});
+                })
+            .left_map([](const auto& err) -> vkn::error {
+               return detail::make_error(instance::error::failed_to_create_debug_utils, err.code());
+            })
+            .right_map([plogger](auto handle) {
+               log_info(plogger, "[vkn] debug utils created");
+               return handle;
+            });
       }
       else
       {
