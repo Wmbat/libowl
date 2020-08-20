@@ -19,11 +19,12 @@ auto main() -> int
    core::gfx::window main_window{"Engine", 1080, 720};
    core::render_manager render_manager{&main_window, &main_logger};
 
-   /*
    while (main_window.is_open())
    {
+      main_window.poll_events();
+
+      render_manager.render_frame();
    }
-   */
 
    return 0;
 }

@@ -289,7 +289,7 @@ namespace vkn
          });
    }
 
-   auto device::value() const noexcept -> const vk::Device& { return m_device; }
+   auto device::value() const noexcept -> value_type { return m_device; }
    auto device::physical() const noexcept -> const physical_device& { return m_physical_device; }
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
 

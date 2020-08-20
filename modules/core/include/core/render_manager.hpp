@@ -17,6 +17,7 @@
 #include <vkn/device.hpp>
 #include <vkn/framebuffer.hpp>
 #include <vkn/instance.hpp>
+#include <vkn/pipeline.hpp>
 #include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
@@ -28,11 +29,13 @@ namespace core
    class render_manager
    {
    public:
-      render_manager(gfx::window* const p_wnd, util::logger* const p_logger = nullptr);
+      render_manager(gfx::window* const p_wnd, util::logger* p_logger = nullptr);
+
+      void render_frame();
 
    private:
-      gfx::window* const m_pwindow;
-      util::logger* const m_plogger;
+      gfx::window* const mp_window;
+      util::logger* const mp_logger;
 
       std::string m_engine_name = "Epona";
 
@@ -42,6 +45,7 @@ namespace core
       vkn::swapchain m_swapchain;
       vkn::render_pass m_render_pass;
       vkn::command_pool m_command_pool;
+      vkn::graphics_pipeline m_graphics_pipeline;
 
       util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
 

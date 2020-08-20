@@ -21,7 +21,7 @@ namespace vkn
    /**
     * Holds all data related to the vulkan instance
     */
-   class instance
+   class instance final : handle_traits<vk::Instance>
    {
       /**
        * A struct used for error handling and displaying error messages
@@ -64,17 +64,13 @@ namespace vkn
       auto operator=(instance&&) noexcept -> instance&;
 
       /**
-       * Get a reference to the underlying vulkan instance
-       */
-      auto value() noexcept -> vk::Instance&;
-      /**
        * Get a const reference to the underlying vulkan instance
        */
-      [[nodiscard]] auto value() const noexcept -> const vk::Instance&;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       /**
        * Get the version of the vulkan used by the instance.
        */
-      [[nodiscard]] auto version() const noexcept -> uint32_t;
+      [[nodiscard]] auto version() const noexcept -> std::uint32_t;
       /**
        * Get all extensions that have been enabled in the instance
        */

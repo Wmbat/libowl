@@ -43,10 +43,12 @@ namespace vkn
    }
 
    shader::shader(const create_info& info) :
-      m_device{info.device}, m_shader_module{info.shader_module}, m_type{info.type}
+      m_device{info.device}, m_shader_module{info.shader_module}, m_type{info.type}, m_name{
+                                                                                        info.name}
    {}
    shader::shader(create_info&& info) :
-      m_device{info.device}, m_shader_module{info.shader_module}, m_type{info.type}
+      m_device{info.device},
+      m_shader_module{info.shader_module}, m_type{info.type}, m_name{std::move(info.name)}
    {}
    shader::shader(shader&& other) noexcept { *this = std::move(other); }
    shader::~shader()
@@ -64,11 +66,9 @@ namespace vkn
    {
       if (this != &rhs)
       {
-         m_device = rhs.m_device;
-         rhs.m_device = nullptr;
-
-         m_shader_module = rhs.m_shader_module;
-         rhs.m_shader_module = nullptr;
+         std::swap(m_device, rhs.m_device);
+         std::swap(m_shader_module, rhs.m_shader_module);
+         std::swap(m_name, rhs.m_name);
 
          m_type = rhs.m_type;
          rhs.m_type = shader::type::count;
@@ -77,8 +77,7 @@ namespace vkn
       return *this;
    }
 
-   auto shader::value() noexcept -> vk::ShaderModule& { return m_shader_module; }
-   auto shader::value() const noexcept -> const vk::ShaderModule& { return m_shader_module; }
+   auto shader::value() const noexcept -> value_type { return m_shader_module; }
    auto shader::name() const noexcept -> std::string_view { return m_name; }
    auto shader::stage() const noexcept -> type { return m_type; }
 
@@ -106,8 +105,10 @@ namespace vkn
          .right_map([&](auto&& handle) {
             util::log_info(m_plogger, "[vkn] shader module created");
 
-            return shader{shader::create_info{
-               .device = m_info.device, .shader_module = handle, .type = m_info.m_type}};
+            return shader{shader::create_info{.device = m_info.device,
+                                              .shader_module = handle,
+                                              .name = m_info.name,
+                                              .type = m_info.m_type}};
          });
    }
 

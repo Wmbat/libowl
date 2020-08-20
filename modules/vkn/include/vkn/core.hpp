@@ -37,7 +37,7 @@ namespace vkn
    /**
     * The default error type within the vkn namespace.
     */
-   struct error
+   struct error final
    {
       std::error_code type;
       vk::Result result{};
@@ -52,7 +52,7 @@ namespace vkn
    /**
     * Class used for the dynamic loading of the Vulkan API functions.
     */
-   class loader
+   class loader final
    {
    public:
       loader(util::logger* p_logger = nullptr);
@@ -72,5 +72,11 @@ namespace vkn
       vk::DynamicLoader dynamic_loader;
 
       inline static bool IS_GLSLANG_INIT = false;
+   };
+
+   template <typename handle_>
+   struct handle_traits
+   {
+      using value_type = handle_;
    };
 }; // namespace vkn

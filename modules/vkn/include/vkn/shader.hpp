@@ -19,7 +19,7 @@ namespace vkn
    /**
     * Holds all data related to the vulkan shader
     */
-   class shader
+   class shader final : handle_traits<vk::ShaderModule>
    {
       /**
        * A struct used for error handling and displaying error messages
@@ -75,6 +75,9 @@ namespace vkn
       {
          vk::Device device{};
          vk::ShaderModule shader_module{};
+
+         std::string name{};
+
          shader::type type{};
       };
 
@@ -90,13 +93,9 @@ namespace vkn
       auto operator=(shader&& rhs) noexcept -> shader&;
 
       /**
-       * Get a reference to the underlying vulkan shader module
-       */
-      auto value() noexcept -> vk::ShaderModule&;
-      /**
        * Get a const reference to the underlying vulkan shader module
        */
-      [[nodiscard]] auto value() const noexcept -> const vk::ShaderModule&;
+      [[nodiscard]] auto value() const noexcept -> value_type;
       /**
        * Get the name of the shader
        */
@@ -165,3 +164,11 @@ namespace vkn
       };
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::shader::error> : true_type
+   {
+   };
+} // namespace std

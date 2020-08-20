@@ -11,6 +11,8 @@
 #include <functional>
 #include <iterator>
 
+#include <iostream>
+
 namespace fs = std::filesystem;
 
 namespace core
@@ -314,7 +316,7 @@ namespace core
                   const auto extension = path.extension().string();
                   return vkn::shader::builder{*m_pdevice, m_plogger}
                      .set_spirv_binary(*res.right())
-                     .set_name(path.filename().string() + path.extension().string())
+                     .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
                      .left_map([]([[maybe_unused]] auto&& err) {
@@ -336,7 +338,7 @@ namespace core
                   const std::string extension = path.extension();
                   return vkn::shader::builder{*m_pdevice, m_plogger}
                      .set_spirv_binary(std::move(spirv))
-                     .set_name(path.filename().string() + path.extension().string())
+                     .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
                      .left_map([]([[maybe_unused]] auto&& err) {
@@ -363,7 +365,7 @@ namespace core
                const auto extension = path.extension().string();
                return vkn::shader::builder{*m_pdevice, m_plogger}
                   .set_spirv_binary(*res.right())
-                  .set_name(path.filename().string() + path.extension().string())
+                  .set_name(path.filename().string())
                   .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                   .build()
                   .left_map([]([[maybe_unused]] auto&& err) {
@@ -384,7 +386,7 @@ namespace core
             const auto extension = path.extension().string();
             return vkn::shader::builder{*m_pdevice, m_plogger}
                .set_spirv_binary(std::move(spirv))
-               .set_name(path.filename().string() + path.extension().string())
+               .set_name(path.filename().string())
                .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                .build()
                .left_map([]([[maybe_unused]] auto&& err) {

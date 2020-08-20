@@ -105,6 +105,7 @@ target_sources(${PROJECT_NAME}
         source/vkn/framebuffer.cpp
         source/vkn/instance.cpp
         source/vkn/physical_device.cpp
+        source/vkn/pipeline.cpp
         source/vkn/render_pass.cpp
         source/vkn/shader.cpp
         source/vkn/swapchain.cpp

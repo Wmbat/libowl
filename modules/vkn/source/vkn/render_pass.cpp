@@ -32,10 +32,10 @@ namespace vkn
    }
 
    render_pass::render_pass(const create_info& info) noexcept :
-      m_device{info.device}, m_render_pass{info.render_pass}
+      m_device{info.device}, m_render_pass{info.render_pass}, m_swapchain_format{info.format}
    {}
    render_pass::render_pass(create_info&& info) noexcept :
-      m_device{info.device}, m_render_pass{info.render_pass}
+      m_device{info.device}, m_render_pass{info.render_pass}, m_swapchain_format{info.format}
    {}
    render_pass::render_pass(render_pass&& other) noexcept { *this = std::move(other); }
    render_pass::~render_pass()
@@ -52,6 +52,7 @@ namespace vkn
    {
       std::swap(m_device, rhs.m_device);
       std::swap(m_render_pass, rhs.m_render_pass);
+      std::swap(m_swapchain_format, rhs.m_swapchain_format);
 
       return *this;
    }
@@ -64,7 +65,8 @@ namespace vkn
    builder::builder(const vkn::device& device, const vkn::swapchain& swapchain,
                     util::logger* plogger) noexcept :
       m_device{device.value()},
-      m_swapchain_format{swapchain.format()}, m_plogger{plogger}
+      m_swapchain_format{swapchain.format()}, m_swapchain_extent{swapchain.extent()}, m_plogger{
+                                                                                         plogger}
    {}
 
    auto builder::build() -> vkn::result<render_pass>
@@ -118,7 +120,8 @@ namespace vkn
          .right_map([&](auto&& handle) {
             util::log_info(m_plogger, "[vkn] render pass created");
 
-            return render_pass{{.device = m_device, .render_pass = handle}};
+            return render_pass{
+               {.device = m_device, .render_pass = handle, .format = m_swapchain_format}};
          });
    }
 } // namespace vkn

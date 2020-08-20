@@ -102,7 +102,7 @@ namespace vkn
       return detail::get_separated_transfer_queue_index(m_queue_families).has_value();
    }
 
-   auto physical_device::value() const noexcept -> const vk::PhysicalDevice& { return m_device; }
+   auto physical_device::value() const noexcept -> value_type { return m_device; }
    auto physical_device::features() const noexcept -> const vk::PhysicalDeviceFeatures&
    {
       return m_features;
@@ -131,7 +131,7 @@ namespace vkn
                                            return m_system_info.instance.enumeratePhysicalDevices();
                                         }).right_map([](const auto& devices) {
          return util::small_dynamic_array<vk::PhysicalDevice, 2>{std::begin(devices),
-                                                                 std::begin(devices)};
+                                                                 std::end(devices)};
       });
 
       if (!physical_devices_res)
@@ -157,12 +157,15 @@ namespace vkn
 
       using namespace mpark::patterns;
 
-      // clang-format off
-      const auto selected = match(m_selection_info.select_first_gpu)(
-         pattern(true) = [&]{ return physical_device_descriptions[0]; },
-         pattern(false) = [&]{ return go_through_available_gpus(physical_device_descriptions); }
-      );
-      // clang-format on
+      physical_device_description selected{};
+      if (m_selection_info.select_first_gpu)
+      {
+         selected = physical_device_descriptions[0];
+      }
+      else
+      {
+         selected = go_through_available_gpus(physical_device_descriptions);
+      }
 
       if (!selected.phys_device)
       {

@@ -5,14 +5,14 @@
  * @copyright MIT License.
  */
 
-#include "core/render_manager.hpp"
+#include <core/render_manager.hpp>
 
-#include "vkn/device.hpp"
-#include "vkn/physical_device.hpp"
-#include "vkn/shader.hpp"
+#include <vkn/device.hpp>
+#include <vkn/physical_device.hpp>
+#include <vkn/shader.hpp>
 
-#include "util/containers/dynamic_array.hpp"
-#include "util/logger.hpp"
+#include <util/containers/dynamic_array.hpp>
+#include <util/logger.hpp>
 
 namespace core
 {
@@ -24,10 +24,10 @@ namespace core
    auto handle_swapchain_error(const vkn::error&, util::logger* const) -> vkn::swapchain;
 
    render_manager::render_manager(gfx::window* const p_wnd, util::logger* const plogger) :
-      m_pwindow{p_wnd}, m_plogger{plogger}, m_loader{m_plogger}
+      mp_window{p_wnd}, mp_logger{plogger}, m_loader{mp_logger}
    {
       m_instance =
-         vkn::instance::builder{m_loader, m_plogger}
+         vkn::instance::builder{m_loader, mp_logger}
             .set_application_name("")
             .set_application_version(0, 0, 0)
             .set_engine_name(m_engine_name)
@@ -40,8 +40,8 @@ namespace core
 
       m_device =
          vkn::device::builder{m_loader,
-                              vkn::physical_device::selector{m_instance, m_plogger}
-                                 .set_surface(m_pwindow->get_surface(m_instance.value())
+                              vkn::physical_device::selector{m_instance, mp_logger}
+                                 .set_surface(mp_window->get_surface(m_instance.value())
                                                  .left_map([plogger](auto&& err) {
                                                     return handle_surface_error(err, plogger);
                                                  })
@@ -54,7 +54,7 @@ namespace core
                                     return handle_physical_device_error(err, plogger);
                                  })
                                  .join(),
-                              m_instance.version(), m_plogger}
+                              m_instance.version(), mp_logger}
             .build()
             .left_map([plogger](auto&& err) {
                return handle_device_error(err, plogger);
@@ -133,7 +133,55 @@ namespace core
                return vkn::command_pool{};
             })
             .join();
+
+      m_graphics_pipeline =
+         vkn::graphics_pipeline::builder{m_device, m_render_pass, plogger}
+            .add_shader(m_shader_codex.get_shader("test_shader.vert"))
+            .add_shader(m_shader_codex.get_shader("test_shader.frag"))
+            .add_viewport({.x = 0.0f,
+                           .y = 0.0f,
+                           .width = static_cast<float>(m_swapchain.extent().width),
+                           .height = static_cast<float>(m_swapchain.extent().height),
+                           .minDepth = 0.0f,
+                           .maxDepth = 1.0f},
+                          {.offset = {0, 0}, .extent = m_swapchain.extent()})
+            .set_topology(vk::PrimitiveTopology::eTriangleList)
+            .enable_primitive_restart(false)
+            .build()
+            .left_map([&](vkn::error&& err) {
+               log_error(plogger, "[core] Failed to create graphics pipeline: \"{0}\"",
+                         err.type.message());
+
+               abort();
+
+               return vkn::graphics_pipeline{};
+            })
+            .join();
+
+      util::log_info(mp_logger, "[core] recording main rendering command buffers");
+      for (std::size_t i = 0; const auto& buffer : m_command_pool.primary_cmd_buffers())
+      {
+         buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
+
+         const auto clear_colour = vk::ClearValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}};
+         buffer.beginRenderPass({.pNext = nullptr,
+                                 .renderPass = m_render_pass.value(),
+                                 .framebuffer = m_framebuffers[i++].value(),
+                                 .renderArea = {{0, 0}, m_swapchain.extent()},
+                                 .clearValueCount = 1,
+                                 .pClearValues = &clear_colour},
+                                vk::SubpassContents::eInline);
+
+         buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
+
+         buffer.draw(3u, 1u, 0u, 0u);
+
+         buffer.endRenderPass();
+         buffer.end();
+      }
    }
+
+   void render_manager::render_frame() {}
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance
    {
