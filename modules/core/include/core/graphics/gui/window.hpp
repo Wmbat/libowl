@@ -21,6 +21,8 @@ namespace core::gfx
       window();
       window(std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in);
 
+      void poll_events();
+
       auto is_open() -> bool;
 
       [[nodiscard]] auto get_surface(vk::Instance instance) const -> vkn::result<vk::SurfaceKHR>;

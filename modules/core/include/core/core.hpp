@@ -30,7 +30,7 @@ namespace core
          // error
       }
 
-      log_info(plogger, "glfw initialized");
+      log_info(plogger, "[core] glfw initialized");
    }
 
    template <class any_>

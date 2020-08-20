@@ -57,6 +57,9 @@ namespace vkn
       return *this;
    }
 
+   auto framebuffer::value() const noexcept -> value_type { return m_framebuffer; }
+   auto framebuffer::device() const noexcept -> vk::Device { return m_device; }
+
    using builder = framebuffer::builder;
 
    builder::builder(const vkn::device& device, const vkn::render_pass& render_pass,

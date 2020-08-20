@@ -89,6 +89,13 @@ namespace vkn
       return *this;
    }
 
+   auto graphics_pipeline::value() const noexcept -> value_type { return m_value; }
+   auto graphics_pipeline::device() const noexcept -> vk::Device { return m_device; }
+   auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
+   {
+      return m_pipeline_layout;
+   }
+
    graphics_pipeline::builder::builder(const vkn::device& device,
                                        const vkn::render_pass& render_pass, util::logger* plogger) :
       m_plogger{plogger}

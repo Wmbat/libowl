@@ -29,11 +29,13 @@ namespace core
    class render_manager
    {
    public:
-      render_manager(gfx::window* const p_wnd, util::logger* const p_logger = nullptr);
+      render_manager(gfx::window* const p_wnd, util::logger* p_logger = nullptr);
+
+      void render_frame();
 
    private:
-      gfx::window* const m_pwindow;
-      util::logger* const m_plogger;
+      gfx::window* const mp_window;
+      util::logger* const mp_logger;
 
       std::string m_engine_name = "Epona";
 

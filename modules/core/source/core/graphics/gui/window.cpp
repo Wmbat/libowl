@@ -34,8 +34,8 @@ namespace core::gfx
       glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
       p_wnd = wnd_ptr(glfwCreateWindow(static_cast<int>(width), static_cast<int>(height),
-                         title.c_str(), nullptr, nullptr),
-         glfwDestroyWindow);
+                                       title.c_str(), nullptr, nullptr),
+                      glfwDestroyWindow);
    }
 
    window::window(std::string_view title_in, std::uint32_t width_in, std::uint32_t height_in) :
@@ -45,9 +45,11 @@ namespace core::gfx
       glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
       p_wnd = wnd_ptr(glfwCreateWindow(static_cast<int>(width), static_cast<int>(height),
-                         title.c_str(), nullptr, nullptr),
-         glfwDestroyWindow);
+                                       title.c_str(), nullptr, nullptr),
+                      glfwDestroyWindow);
    }
+
+   void window::poll_events() { glfwPollEvents(); }
 
    auto window::is_open() -> bool { return !glfwWindowShouldClose(p_wnd.get()); }
 
