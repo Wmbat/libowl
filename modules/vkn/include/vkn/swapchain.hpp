@@ -16,7 +16,7 @@ namespace vkn
     * Holds all data related the vulkan swapchain, including images and
     * image views
     */
-   class swapchain final : handle_traits<vk::SwapchainKHR>
+   class swapchain final
    {
       /**
        * A struct used for error handling and displaying error messages
@@ -66,7 +66,6 @@ namespace vkn
 
    public:
       swapchain() = default;
-      swapchain(const create_info& info);
       swapchain(create_info&& info) noexcept;
       swapchain(const swapchain&) = delete;
       swapchain(swapchain&& rhs) noexcept;
@@ -75,10 +74,7 @@ namespace vkn
       auto operator=(const swapchain&) -> swapchain& = delete;
       auto operator=(swapchain&&) noexcept -> swapchain&;
 
-      /**
-       * Get the underlying vulkan swapchain handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
       [[nodiscard]] auto format() const noexcept -> vk::Format;
       [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
       [[nodiscard]] auto image_views() const noexcept
@@ -93,8 +89,8 @@ namespace vkn
       }
 
    private:
-      vk::Device m_device{nullptr};
       vk::SwapchainKHR m_swapchain{nullptr};
+      vk::Device m_device{nullptr};
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 

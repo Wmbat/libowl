@@ -1,4 +1,4 @@
-#include "vkn/swapchain.hpp"
+#include <vkn/swapchain.hpp>
 
 #include <monads/try.hpp>
 
@@ -219,15 +219,13 @@ namespace vkn
    }
 
    swapchain::swapchain(swapchain&& rhs) noexcept { *this = std::move(rhs); }
-   swapchain::swapchain(const create_info& info) :
-      m_device(info.device), m_swapchain(info.swapchain), m_format(info.format),
-      m_extent(info.extent), m_images{info.images}, m_image_views{info.image_views}
-   {}
    swapchain::swapchain(create_info&& info) noexcept :
-      m_device(info.device), m_swapchain(info.swapchain), m_format(info.format),
+      m_device(info.device), m_format(info.format),
       m_extent(info.extent), m_images{std::move(info.images)}, m_image_views{
                                                                   std::move(info.image_views)}
-   {}
+   {
+      m_swapchain = info.swapchain;
+   }
    swapchain::~swapchain()
    {
       if (m_device && m_swapchain)
@@ -245,8 +243,7 @@ namespace vkn
    {
       if (this != &rhs)
       {
-         m_swapchain = rhs.m_swapchain;
-         rhs.m_swapchain = nullptr;
+         std::swap(m_swapchain, rhs.m_swapchain);
 
          m_device = rhs.m_device;
          rhs.m_device = nullptr;

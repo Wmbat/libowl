@@ -73,10 +73,4 @@ namespace vkn
 
       inline static bool IS_GLSLANG_INIT = false;
    };
-
-   template <typename handle_>
-   struct handle_traits
-   {
-      using value_type = handle_;
-   };
 }; // namespace vkn

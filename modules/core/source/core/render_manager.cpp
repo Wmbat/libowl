@@ -158,6 +158,28 @@ namespace core
             })
             .join();
 
+      m_image_available_semaphore =
+         vkn::semaphore::builder{m_device, mp_logger}
+            .build()
+            .left_map([&](vkn::error&& err) {
+               log_error(plogger, "[core] Failed to create semaphore: \"{0}\"", err.type.message());
+               abort();
+
+               return vkn::semaphore{};
+            })
+            .join();
+
+      m_image_available_semaphore =
+         vkn::semaphore::builder{m_device, mp_logger}
+            .build()
+            .left_map([&](vkn::error&& err) {
+               log_error(plogger, "[core] Failed to create semaphore: \"{0}\"", err.type.message());
+               abort();
+
+               return vkn::semaphore{};
+            })
+            .join();
+
       util::log_info(mp_logger, "[core] recording main rendering command buffers");
       for (std::size_t i = 0; const auto& buffer : m_command_pool.primary_cmd_buffers())
       {
@@ -181,7 +203,7 @@ namespace core
       }
    }
 
-   void render_manager::render_frame() {}
+   void render_manager::render_frame() { [[maybe_unused]] std::uint32_t image_index{0}; }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance
    {

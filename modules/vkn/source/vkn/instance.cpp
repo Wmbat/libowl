@@ -1,4 +1,5 @@
 #include "vkn/instance.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <monads/try.hpp>
 
@@ -108,44 +109,12 @@ namespace vkn
 
    /* INSTANCE */
 
-   instance::instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-                      util::dynamic_array<const char*> extension, uint32_t version) :
-      m_instance{instance},
-      m_debug_utils{debug_utils}, m_extensions(std::move(extension)), m_version(version)
+   instance::instance(create_info&& info) :
+      m_instance{std::move(info.instance)}, m_debug_utils{std::move(info.debug_utils)},
+      m_extensions(std::move(info.extensions)), m_version(info.version)
    {}
-   instance::instance(instance&& rhs) noexcept { *this = std::move(rhs); }
-   instance::~instance()
-   {
-      if (m_instance)
-      {
-         if (m_debug_utils)
-         {
-            m_instance.destroyDebugUtilsMessengerEXT(m_debug_utils);
-         }
 
-         m_instance.destroy();
-      }
-   }
-
-   auto instance::operator=(instance&& rhs) noexcept -> instance&
-   {
-      if (this != &rhs)
-      {
-         m_instance = rhs.m_instance;
-         rhs.m_instance = nullptr;
-
-         m_debug_utils = rhs.m_debug_utils;
-         rhs.m_debug_utils = nullptr;
-
-         m_extensions = std::move(rhs.m_extensions);
-
-         std::swap(m_version, rhs.m_version);
-      }
-
-      return *this;
-   }
-
-   auto instance::value() const noexcept -> value_type { return m_instance; }
+   auto instance::value() const noexcept -> vk::Instance { return m_instance.get(); }
    auto instance::version() const noexcept -> uint32_t { return m_version; }
    auto instance::extensions() const -> const util::dynamic_array<const char*>&
    {
@@ -277,17 +246,17 @@ namespace vkn
 
       // clang-format off
       return monad::try_wrap<vk::SystemError>([&] {
-         return vk::createInstance(instance_create_info);
+         return vk::createInstanceUnique(instance_create_info);
       })
       .left_map([](auto err) { // Error creating instance
          return detail::make_error(instance::error::failed_to_create_instance, err.code());
       })
-      .right_flat_map([&](auto inst) { // Instance created
+      .right_flat_map([&](vk::UniqueInstance&& inst) { // Instance created
          log_info(m_plogger, "[vkn] instance created");
-         m_loader.load_instance(inst);
+         m_loader.load_instance(inst.get());
 
-         return build_debug_utils(inst, m_plogger).right_map([&](auto debug) {
-            return instance{inst, debug, extensions, api_version};
+         return build_debug_utils(inst.get(), m_plogger).right_map([&](auto debug) {
+            return instance{{std::move(inst), std::move(debug), extensions, api_version}};
          });
       });
       // clang-format off
@@ -331,12 +300,12 @@ namespace vkn
    }
 
    auto builder::build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
-      -> vkn::result<vk::DebugUtilsMessengerEXT>
+      -> vkn::result<vk::UniqueDebugUtilsMessengerEXT>
    {
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
          return monad::try_wrap<vk::SystemError>([&] {
-                   return inst.createDebugUtilsMessengerEXT(
+                   return inst.createDebugUtilsMessengerEXTUnique(
                       {.pNext = nullptr,
                        .flags = {},
                        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -351,14 +320,14 @@ namespace vkn
             .left_map([](const auto& err) -> vkn::error {
                return detail::make_error(instance::error::failed_to_create_debug_utils, err.code());
             })
-            .right_map([plogger](auto handle) {
+            .right_map([plogger](vk::UniqueDebugUtilsMessengerEXT handle) {
                log_info(plogger, "[vkn] debug utils created");
                return handle;
             });
       }
       else
       {
-         return monad::make_right(vk::DebugUtilsMessengerEXT{nullptr});
+         return monad::make_right(vk::UniqueDebugUtilsMessengerEXT{nullptr});
       }
    }
 

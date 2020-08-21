@@ -21,7 +21,7 @@ namespace vkn
    /**
     * Holds all data related to the vulkan instance
     */
-   class instance final : handle_traits<vk::Instance>
+   class instance final
    {
       /**
        * A struct used for error handling and displaying error messages
@@ -53,20 +53,19 @@ namespace vkn
          failed_to_create_debug_utils
       };
 
+      struct create_info
+      {
+         vk::UniqueInstance instance;
+         vk::UniqueDebugUtilsMessengerEXT debug_utils;
+         util::dynamic_array<const char*> extensions;
+         uint32_t version;
+      };
+
+   public:
       instance() = default;
-      instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-               util::dynamic_array<const char*> extension, uint32_t version);
-      instance(const instance&) = delete;
-      instance(instance&&) noexcept;
-      ~instance();
+      instance(create_info&& info);
 
-      auto operator=(const instance&) -> instance& = delete;
-      auto operator=(instance&&) noexcept -> instance&;
-
-      /**
-       * Get a const reference to the underlying vulkan instance
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::Instance;
       /**
        * Get the version of the vulkan used by the instance.
        */
@@ -85,8 +84,8 @@ namespace vkn
       }
 
    private:
-      vk::Instance m_instance{nullptr};
-      vk::DebugUtilsMessengerEXT m_debug_utils{nullptr};
+      vk::UniqueInstance m_instance{nullptr};
+      vk::UniqueDebugUtilsMessengerEXT m_debug_utils{nullptr};
 
       util::dynamic_array<const char*> m_extensions{};
 
@@ -136,7 +135,7 @@ namespace vkn
 
       private:
          auto build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
-            -> vkn::result<vk::DebugUtilsMessengerEXT>;
+            -> vkn::result<vk::UniqueDebugUtilsMessengerEXT>;
 
          auto has_validation_layer_support(
             const util::range_over<vk::LayerProperties> auto& properties) const -> bool;

@@ -6,7 +6,7 @@
 
 namespace vkn
 {
-   class render_pass final : handle_traits<vk::RenderPass>
+   class render_pass final
    {
    public:
       enum struct error
@@ -34,11 +34,11 @@ namespace vkn
       inline static const error_category m_category{};
 
       /**
-       * Turns the error enum values into an std::error_code
+       * Turn an error flag and a standard error code into a vkn::error
        */
-      inline static auto make_error_code(error err) -> std::error_code
+      inline static auto make_error(error err, std::error_code ec) -> vkn::error
       {
-         return {static_cast<int>(err), m_category};
+         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
       }
 
    public:
@@ -50,7 +50,6 @@ namespace vkn
       };
 
       render_pass() noexcept = default;
-      render_pass(const create_info& info) noexcept;
       render_pass(create_info&& info) noexcept;
       render_pass(const render_pass&) = delete;
       render_pass(render_pass&& other) noexcept;
@@ -59,20 +58,12 @@ namespace vkn
       auto operator=(const render_pass&) -> render_pass& = delete;
       auto operator=(render_pass&& rhs) noexcept -> render_pass&;
 
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::RenderPass;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
-      inline static auto make_error(error err, std::error_code ec) -> vkn::error
-      {
-         return {make_error_code(err), static_cast<vk::Result>(ec.value())};
-      }
-
    private:
-      vk::Device m_device{nullptr};
       vk::RenderPass m_render_pass{nullptr};
+      vk::Device m_device{nullptr};
       vk::Format m_swapchain_format{};
 
    public:

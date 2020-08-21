@@ -13,8 +13,25 @@
 
 namespace vkn
 {
-   class framebuffer final : handle_traits<vk::Framebuffer>
+   class framebuffer final
    {
+      /**
+       * A struct used for error handling and displaying error messages
+       */
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
    public:
       /**
        * Set of possible errors that may happen at construction of a framebuffer
@@ -33,32 +50,6 @@ namespace vkn
          vk::Extent2D dimensions{};
       };
 
-   private:
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
-      /**
-       * Turns the error enum values into an std::error_code
-       */
-      inline static auto make_error_code(error err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
-
    public:
       framebuffer() noexcept = default;
       framebuffer(const create_info& info) noexcept;
@@ -70,26 +61,24 @@ namespace vkn
       auto operator=(const framebuffer&) noexcept = delete;
       auto operator=(framebuffer&& rhs) noexcept -> framebuffer&;
 
-      /**
-       * Get the underlying vulkan framebuffer handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::Framebuffer;
       /**
        * Get the device used for the creation of the framebuffer handle
        */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
+   private:
       /**
        * Turn an error flag and a standard error code into a vkn::error
        */
       inline static auto make_error(error err, std::error_code ec) -> vkn::error
       {
-         return {make_error_code(err), static_cast<vk::Result>(ec.value())};
+         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
       }
 
    private:
-      vk::Device m_device{nullptr};
       vk::Framebuffer m_framebuffer{nullptr};
+      vk::Device m_device{nullptr};
 
       vk::Extent2D m_dimensions{};
 

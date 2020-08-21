@@ -21,6 +21,7 @@
 #include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
+#include <vkn/sync/semaphore.hpp>
 
 #include <util/logger.hpp>
 
@@ -48,6 +49,9 @@ namespace core
       vkn::graphics_pipeline m_graphics_pipeline;
 
       util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
+
+      vkn::semaphore m_image_available_semaphore;
+      vkn::semaphore m_render_finished_semaphore;
 
       shader_codex m_shader_codex;
    };

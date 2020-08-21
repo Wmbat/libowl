@@ -31,12 +31,11 @@ namespace vkn
       return detail::to_string(static_cast<render_pass::error>(err));
    }
 
-   render_pass::render_pass(const create_info& info) noexcept :
-      m_device{info.device}, m_render_pass{info.render_pass}, m_swapchain_format{info.format}
-   {}
    render_pass::render_pass(create_info&& info) noexcept :
-      m_device{info.device}, m_render_pass{info.render_pass}, m_swapchain_format{info.format}
-   {}
+      m_device{info.device}, m_swapchain_format{info.format}
+   {
+      m_render_pass = info.render_pass;
+   }
    render_pass::render_pass(render_pass&& other) noexcept { *this = std::move(other); }
    render_pass::~render_pass()
    {

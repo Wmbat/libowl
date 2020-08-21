@@ -42,13 +42,9 @@ namespace vkn
       return detail::to_string(static_cast<shader::error>(err));
    }
 
-   shader::shader(const create_info& info) :
-      m_device{info.device}, m_shader_module{info.shader_module}, m_type{info.type}, m_name{
-                                                                                        info.name}
-   {}
    shader::shader(create_info&& info) :
-      m_device{info.device},
-      m_shader_module{info.shader_module}, m_type{info.type}, m_name{std::move(info.name)}
+      m_shader_module{info.shader_module}, m_device{info.device}, m_type{info.type},
+      m_name{std::move(info.name)}
    {}
    shader::shader(shader&& other) noexcept { *this = std::move(other); }
    shader::~shader()
@@ -77,7 +73,7 @@ namespace vkn
       return *this;
    }
 
-   auto shader::value() const noexcept -> value_type { return m_shader_module; }
+   auto shader::value() const noexcept -> vk::ShaderModule { return m_shader_module; }
    auto shader::name() const noexcept -> std::string_view { return m_name; }
    auto shader::stage() const noexcept -> type { return m_type; }
 

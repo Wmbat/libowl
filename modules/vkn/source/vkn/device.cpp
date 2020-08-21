@@ -98,11 +98,11 @@ namespace vkn
    } // namespace detail
 
    device::device(physical_device&& physical_device, const create_info& info) :
-      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
       m_extensions{info.extensions}
    {}
    device::device(physical_device&& physical_device, create_info&& info) :
-      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
       m_extensions{std::move(info.extensions)}
    {}
    device::device(device&& rhs) noexcept { *this = std::move(rhs); }
@@ -120,8 +120,7 @@ namespace vkn
       {
          m_physical_device = std::move(rhs.m_physical_device);
 
-         m_device = rhs.m_device;
-         rhs.m_device = nullptr;
+         std::swap(m_device, rhs.m_device);
 
          m_version = rhs.m_version;
          m_extensions = std::move(rhs.m_extensions);
@@ -289,7 +288,7 @@ namespace vkn
          });
    }
 
-   auto device::value() const noexcept -> value_type { return m_device; }
+   auto device::value() const noexcept -> vk::Device { return m_device; }
    auto device::physical() const noexcept -> const physical_device& { return m_physical_device; }
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
 

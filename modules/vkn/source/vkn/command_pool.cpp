@@ -1,8 +1,6 @@
-#include "vkn/command_pool.hpp"
+#include <vkn/command_pool.hpp>
 
 #include <monads/try.hpp>
-
-#include <mpark/patterns/match.hpp>
 
 namespace vkn
 {
@@ -11,21 +9,18 @@ namespace vkn
       auto to_string(command_pool::error_type err) -> std::string
       {
          using error = command_pool::error_type;
-         using namespace mpark::patterns;
 
-         // clang-format off
-         return match(err)(
-            pattern(error::failed_to_create_command_pool) = []{ 
-               return "failed_to_create_command_pool"; 
-            },
-            pattern(error::failed_to_allocate_primary_command_buffers) = []{
+         switch (err)
+         {
+            case error::failed_to_create_command_pool:
+               return "failed_to_create_command_pool";
+            case error::failed_to_allocate_primary_command_buffers:
                return "failed_to_allocate_primary_command_buffers";
-            },
-            pattern(error::failed_to_allocate_secondary_command_buffers) = []{
+            case error::failed_to_allocate_secondary_command_buffers:
                return "failed_to_allocate_secondary_command_buffers";
-            }
-         );
-         // clang-format on
+            default:
+               return "UNKNOWN";
+         }
       };
 
       auto make_error(command_pool::error_type flag, std::error_code ec) -> vkn::error
@@ -44,11 +39,8 @@ namespace vkn
       return detail::to_string(static_cast<command_pool::error_type>(err));
    }
 
-   command_pool::command_pool(const create_info& info) :
-      m_device{info.device}, m_command_pool{info.command_pool}, m_queue_index{info.queue_index}
-   {}
    command_pool::command_pool(create_info&& info) :
-      m_device{info.device}, m_command_pool{info.command_pool}, m_queue_index{info.queue_index}
+      m_command_pool{info.command_pool}, m_device{info.device}, m_queue_index{info.queue_index}
    {}
    command_pool::command_pool(command_pool&& rhs) noexcept { *this = std::move(rhs); }
    command_pool::~command_pool()
@@ -73,7 +65,6 @@ namespace vkn
       return *this;
    }
 
-   auto command_pool::value() const noexcept -> vk::CommandPool { return m_command_pool; }
    auto command_pool::device() const noexcept -> vk::Device { return m_device; }
    auto command_pool::primary_cmd_buffers() const -> const util::dynamic_array<vk::CommandBuffer>&
    {

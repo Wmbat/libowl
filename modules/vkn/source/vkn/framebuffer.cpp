@@ -32,11 +32,15 @@ namespace vkn
    }
 
    framebuffer::framebuffer(const create_info& info) noexcept :
-      m_device{info.device}, m_framebuffer{info.framebuffer}, m_dimensions{info.dimensions}
-   {}
+      m_device{info.device}, m_dimensions{info.dimensions}
+   {
+      m_framebuffer = info.framebuffer;
+   }
    framebuffer::framebuffer(create_info&& info) noexcept :
-      m_device{info.device}, m_framebuffer{info.framebuffer}, m_dimensions{info.dimensions}
-   {}
+      m_device{info.device}, m_dimensions{info.dimensions}
+   {
+      m_framebuffer = info.framebuffer;
+   }
    framebuffer::framebuffer(framebuffer&& rhs) noexcept { *this = std::move(rhs); }
    framebuffer::~framebuffer()
    {
@@ -57,7 +61,7 @@ namespace vkn
       return *this;
    }
 
-   auto framebuffer::value() const noexcept -> value_type { return m_framebuffer; }
+   auto framebuffer::value() const noexcept -> vk::Framebuffer { return m_framebuffer; }
    auto framebuffer::device() const noexcept -> vk::Device { return m_device; }
 
    using builder = framebuffer::builder;

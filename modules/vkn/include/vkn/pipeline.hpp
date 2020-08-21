@@ -7,7 +7,7 @@
 
 namespace vkn
 {
-   class graphics_pipeline final : handle_traits<vk::Pipeline>
+   class graphics_pipeline final
    {
       static constexpr std::size_t expected_shader_count{2u};
 
@@ -52,13 +52,12 @@ namespace vkn
       auto operator=(const graphics_pipeline&) -> graphics_pipeline& = delete;
       auto operator=(graphics_pipeline&& rhs) noexcept -> graphics_pipeline&;
 
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::Pipeline;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
 
    private:
-      value_type m_value{nullptr};
-
+      vk::Pipeline m_pipeline{nullptr};
       vk::PipelineLayout m_pipeline_layout{nullptr};
       vk::Device m_device{nullptr};
 

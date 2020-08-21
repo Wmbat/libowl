@@ -58,8 +58,10 @@ namespace vkn
    }
 
    graphics_pipeline::graphics_pipeline(create_info&& info) noexcept :
-      m_value{info.pipeline}, m_pipeline_layout{info.pipeline_layout}, m_device{info.device}
-   {}
+      m_pipeline_layout{info.pipeline_layout}, m_device{info.device}
+   {
+      m_pipeline = info.pipeline;
+   }
    graphics_pipeline::graphics_pipeline(graphics_pipeline&& other) noexcept
    {
       *this = std::move(other);
@@ -68,9 +70,9 @@ namespace vkn
    {
       if (m_device)
       {
-         if (m_value)
+         if (m_pipeline)
          {
-            m_device.destroyPipeline(m_value);
+            m_device.destroyPipeline(m_pipeline);
          }
 
          if (m_pipeline_layout)
@@ -82,14 +84,14 @@ namespace vkn
 
    auto graphics_pipeline::operator=(graphics_pipeline&& rhs) noexcept -> graphics_pipeline&
    {
-      std::swap(m_value, rhs.m_value);
+      std::swap(m_pipeline, rhs.m_pipeline);
       std::swap(m_pipeline_layout, rhs.m_pipeline_layout);
       std::swap(m_device, rhs.m_device);
 
       return *this;
    }
 
-   auto graphics_pipeline::value() const noexcept -> value_type { return m_value; }
+   auto graphics_pipeline::value() const noexcept -> vk::Pipeline { return m_pipeline; }
    auto graphics_pipeline::device() const noexcept -> vk::Device { return m_device; }
    auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
    {

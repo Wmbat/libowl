@@ -47,8 +47,8 @@ namespace vkn
 
    physical_device::physical_device(const create_info& info) :
       m_name{info.name}, m_features{info.features}, m_properties{info.properties},
-      m_mem_properties{info.mem_properties}, m_instance{info.instance}, m_device{info.device},
-      m_surface{info.surface}, m_queue_families{info.queue_families}
+      m_mem_properties{info.mem_properties}, m_physical_device{info.device},
+      m_instance{info.instance}, m_surface{info.surface}, m_queue_families{info.queue_families}
    {}
    physical_device::physical_device(physical_device&& rhs) noexcept { *this = std::move(rhs); }
    physical_device::~physical_device()
@@ -72,8 +72,7 @@ namespace vkn
          m_instance = rhs.m_instance;
          rhs.m_instance = nullptr;
 
-         m_device = rhs.m_device;
-         rhs.m_device = nullptr;
+         std::swap(m_physical_device, rhs.m_physical_device);
 
          m_surface = rhs.m_surface;
          rhs.m_surface = nullptr;
@@ -102,7 +101,7 @@ namespace vkn
       return detail::get_separated_transfer_queue_index(m_queue_families).has_value();
    }
 
-   auto physical_device::value() const noexcept -> value_type { return m_device; }
+   auto physical_device::value() const noexcept -> vk::PhysicalDevice { return m_physical_device; }
    auto physical_device::features() const noexcept -> const vk::PhysicalDeviceFeatures&
    {
       return m_features;
