@@ -110,7 +110,7 @@ namespace vkn
          builder(const vkn::device& device, util::logger* plogger);
 
          /**
-          * Attempt to build a command_pool object.
+          * Attempt to build a command_pool object. May return an error
           */
          auto build() noexcept -> vkn::result<command_pool>;
 

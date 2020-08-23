@@ -1,10 +1,3 @@
-/**
- * @file render_manager.hpp
- * @author wmbat wmbat@protonmail.com.
- * @date Tuesday, May 5th, 2020.
- * @copyright MIT License.
- */
-
 #include <core/render_manager.hpp>
 
 #include <vkn/device.hpp>
@@ -13,6 +6,8 @@
 
 #include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
+
+#include <monads/maybe.hpp>
 
 #include <limits>
 
@@ -91,7 +86,7 @@ namespace core
       for (const auto& img_view : m_swapchain.image_views())
       {
          m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, plogger}
-                                        .add_attachment(img_view)
+                                        .add_attachment(img_view.get())
                                         .set_buffer_width(m_swapchain.extent().width)
                                         .set_buffer_height(m_swapchain.extent().height)
                                         .set_layer_count(1u)
@@ -243,7 +238,7 @@ namespace core
                               std::numeric_limits<std::uint64_t>::max());
 
       auto [image_res, image_index] = m_device->acquireNextImageKHR(
-         m_swapchain.value(), std::numeric_limits<std::uint64_t>::max(),
+         vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
          vkn::value(m_image_available_semaphores.at(m_current_frame)), nullptr);
 
       if (m_images_in_flight[image_index])
@@ -263,55 +258,36 @@ namespace core
 
       m_device->resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
 
-      const auto gfx_queue = m_device.get_queue(vkn::queue::type::graphics);
-      if (gfx_queue)
-      {
-         const std::array submit_infos{
-            vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
-                           .pWaitSemaphores = std::data(wait_semaphores),
-                           .pWaitDstStageMask = std::data(wait_stages),
-                           .commandBufferCount = std::size(command_buffers),
-                           .pCommandBuffers = std::data(command_buffers),
-                           .signalSemaphoreCount = std::size(signal_semaphores),
-                           .pSignalSemaphores = std::data(signal_semaphores)}};
+      const std::array submit_infos{
+         vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
+                        .pWaitSemaphores = std::data(wait_semaphores),
+                        .pWaitDstStageMask = std::data(wait_stages),
+                        .commandBufferCount = std::size(command_buffers),
+                        .pCommandBuffers = std::data(command_buffers),
+                        .signalSemaphoreCount = std::size(signal_semaphores),
+                        .pSignalSemaphores = std::data(signal_semaphores)}};
 
-         try
-         {
-            // NOLINTNEXTLINE
-            gfx_queue.right()->submit(submit_infos,
-                                      vkn::value(m_in_flight_fences.at(m_current_frame)));
-         }
-         catch (const vk::SystemError& err)
-         {
-            util::log_error(mp_logger, "[core] failed to submit graphics queue");
-            abort();
-         }
-      }
-      else
+      try
       {
-         util::log_error(mp_logger, "[core] failed to find a graphics queue");
+         const auto gfx_queue = *m_device.get_queue(vkn::queue::type::graphics).right();
+         gfx_queue.submit(submit_infos, vkn::value(m_in_flight_fences.at(m_current_frame)));
+      }
+      catch (const vk::SystemError& err)
+      {
+         util::log_error(mp_logger, "[core] failed to submit graphics queue");
          abort();
       }
 
-      const std::array swapchains{m_swapchain.value()};
+      const std::array swapchains{vkn::value(m_swapchain)};
 
-      const auto present_queue = m_device.get_queue(vkn::queue::type::present);
-      if (present_queue)
+      const auto present_queue = *m_device.get_queue(vkn::queue::type::present).right();
+      if (present_queue.presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
+                                    .pWaitSemaphores = std::data(signal_semaphores),
+                                    .swapchainCount = std::size(swapchains),
+                                    .pSwapchains = std::data(swapchains),
+                                    .pImageIndices = &image_index}) != vk::Result::eSuccess)
       {
-         if (present_queue.right()->presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
-                                                .pWaitSemaphores = std::data(signal_semaphores),
-                                                .swapchainCount = std::size(swapchains),
-                                                .pSwapchains = std::data(swapchains),
-                                                .pImageIndices = &image_index}) !=
-             vk::Result::eSuccess)
-         {
-            util::log_error(mp_logger, "[core] failed to present present queue");
-            abort();
-         }
-      }
-      else
-      {
-         util::log_error(mp_logger, "[core] failed to find a present queue");
+         util::log_error(mp_logger, "[core] failed to present present queue");
          abort();
       }
 

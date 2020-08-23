@@ -46,7 +46,7 @@ namespace vkn
    /**
     * An alias for an either monad using an error as the left type.
     */
-   template <class any_>
+   template <typename any_>
    using result = monad::either<error, any_>;
 
    /**
@@ -78,6 +78,8 @@ namespace vkn
    template <typename any_>
    concept handle = requires(any_ a)
    {
+      typename any_::value_type;
+
       { a.value() } -> std::same_as<typename any_::value_type>;
    };
    // clang-format on

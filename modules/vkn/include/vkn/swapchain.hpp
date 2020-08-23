@@ -7,33 +7,20 @@ namespace vkn
 {
    /**
     * Holds all data related the vulkan swapchain, including images and
-    * image views
+    * image views. May only be built using the inner builder class.
     */
    class swapchain final
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
       static constexpr size_t expected_image_count = 3u;
-
-      inline static const error_category m_category{};
 
       template <typename any_>
       using image_dynamic_array = util::small_dynamic_array<any_, expected_image_count>;
 
    public:
+      using value_type = vk::SwapchainKHR;
+      using pointer = vk::SwapchainKHR*;
+      using const_pointer = const vk::SwapchainKHR*;
+
       /**
        * Contains all possible error values comming from the swapchain class.
        */
@@ -46,36 +33,38 @@ namespace vkn
          failed_to_create_swapchain_image_views,
       };
 
-      /**
-       * The information necessary for the creation of a swapchain
-       */
-      struct create_info
-      {
-         vk::UniqueSwapchainKHR swapchain{nullptr};
-         vk::Format format{};
-         vk::Extent2D extent{};
-
-         util::small_dynamic_array<vk::Image, expected_image_count> images{};
-         util::small_dynamic_array<vk::ImageView, expected_image_count> image_views{};
-      };
-
-   public:
       swapchain() = default;
-      swapchain(create_info&& info) noexcept;
 
-      [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() noexcept -> pointer;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer;
+
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type;
+
+      operator bool() const noexcept;
+
+      /**
+       * Get the underlying handle
+       */
+      [[nodiscard]] auto value() const noexcept -> value_type;
+      /**
+       * Get the swapchain's image format
+       */
       [[nodiscard]] auto format() const noexcept -> vk::Format;
+      /**
+       * Get the dimensions of the swapchain images
+       */
       [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
       [[nodiscard]] auto image_views() const noexcept
-         -> const util::small_dynamic_array<vk::ImageView, expected_image_count>&;
-
-      /**
-       * Transfer an #error_type enum value into a standard error_code.
-       */
-      inline static auto make_error_code(error_type err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
+         -> const util::small_dynamic_array<vk::UniqueImageView, expected_image_count>&;
 
    private:
       vk::UniqueSwapchainKHR m_swapchain{nullptr};
@@ -83,14 +72,20 @@ namespace vkn
       vk::Extent2D m_extent{};
 
       util::small_dynamic_array<vk::Image, expected_image_count> m_images;
-      util::small_dynamic_array<vk::ImageView, expected_image_count> m_image_views;
+      util::small_dynamic_array<vk::UniqueImageView, expected_image_count> m_image_views;
 
    public:
+      /**
+       * A class to help in the construction of a swapchain object.
+       */
       class builder
       {
       public:
          builder(const device& device, util::logger* const plogger);
 
+         /**
+          * Attempt to build a swapchain object. May return an error
+          */
          [[nodiscard]] auto build() -> vkn::result<swapchain>;
 
          auto set_old_swapchain(const swapchain& swap) noexcept -> builder&;
@@ -124,7 +119,7 @@ namespace vkn
             -> vkn::result<image_dynamic_array<vk::Image>>;
          [[nodiscard]] auto create_image_views(const image_dynamic_array<vk::Image>& images,
                                                vk::SurfaceFormatKHR format) const
-            -> vkn::result<image_dynamic_array<vk::ImageView>>;
+            -> vkn::result<image_dynamic_array<vk::UniqueImageView>>;
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
@@ -153,6 +148,45 @@ namespace vkn
 
             vk::Bool32 clipped = VK_TRUE;
          } m_info;
+      };
+
+   private:
+      /**
+       * The information necessary for the creation of a swapchain
+       */
+      struct create_info
+      {
+         vk::UniqueSwapchainKHR swapchain{nullptr};
+         vk::Format format{};
+         vk::Extent2D extent{};
+
+         util::small_dynamic_array<vk::Image, expected_image_count> images{};
+         util::small_dynamic_array<vk::UniqueImageView, expected_image_count> image_views{};
+      };
+
+      swapchain(create_info&& info) noexcept;
+
+      /**
+       * A struct used for error handling and displaying error messages
+       */
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
+      static auto make_error(swapchain::error_type flag, std::error_code ec) -> vkn::error
+      {
+         return vkn::error{{static_cast<int>(flag), m_category},
+                           static_cast<vk::Result>(ec.value())};
       };
    };
 } // namespace vkn
