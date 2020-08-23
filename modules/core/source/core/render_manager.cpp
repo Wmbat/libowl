@@ -239,27 +239,29 @@ namespace core
 
    void render_manager::render_frame()
    {
-      m_device->waitForFences({m_in_flight_fences.at(m_current_frame).value()}, true,
+      m_device->waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
                               std::numeric_limits<std::uint64_t>::max());
 
       auto [image_res, image_index] = m_device->acquireNextImageKHR(
          m_swapchain.value(), std::numeric_limits<std::uint64_t>::max(),
-         m_image_available_semaphores.at(m_current_frame).value(), nullptr);
+         vkn::value(m_image_available_semaphores.at(m_current_frame)), nullptr);
 
-      if (m_images_in_flight[image_index].value())
+      if (m_images_in_flight[image_index])
       {
-         m_device->waitForFences({m_in_flight_fences.at(m_current_frame).value()}, true,
+         m_device->waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
                                  std::numeric_limits<std::uint64_t>::max());
       }
-      m_images_in_flight[image_index] = m_in_flight_fences.at(m_current_frame).value();
+      m_images_in_flight[image_index] = vkn::value(m_in_flight_fences.at(m_current_frame));
 
-      const std::array wait_semaphores{m_image_available_semaphores.at(m_current_frame).value()};
-      const std::array signal_semaphores{m_render_finished_semaphores.at(m_current_frame).value()};
+      const std::array wait_semaphores{
+         vkn::value(m_image_available_semaphores.at(m_current_frame))};
+      const std::array signal_semaphores{
+         vkn::value(m_render_finished_semaphores.at(m_current_frame))};
       const std::array command_buffers{m_command_pool.primary_cmd_buffers()[image_index]};
       const std::array<vk::PipelineStageFlags, 1> wait_stages{
          vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-      m_device->resetFences({m_in_flight_fences.at(m_current_frame).value()});
+      m_device->resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
 
       const auto gfx_queue = m_device.get_queue(vkn::queue::type::graphics);
       if (gfx_queue)
@@ -276,7 +278,8 @@ namespace core
          try
          {
             // NOLINTNEXTLINE
-            gfx_queue.right()->submit(submit_infos, m_in_flight_fences[m_current_frame].value());
+            gfx_queue.right()->submit(submit_infos,
+                                      vkn::value(m_in_flight_fences.at(m_current_frame)));
          }
          catch (const vk::SystemError& err)
          {

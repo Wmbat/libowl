@@ -6,65 +6,65 @@
 namespace vkn
 {
    /**
-    * Wrapper class around the vulkan semphore handle
+    * Wrapper class around the vulkan semaphore handle. May only
+    * be built uing the inner builder class.
     */
    class semaphore final
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
    public:
+      using value_type = vk::Semaphore;
+      using pointer = vk::Semaphore*;
+      using const_pointer = const vk::Semaphore*;
+
       enum struct error
       {
          failed_to_create_semaphore
       };
 
-      struct create_info
-      {
-         vk::Device device;
-         vk::UniqueSemaphore semaphore;
-      };
-
    public:
       semaphore() = default;
-      semaphore(create_info&& info) noexcept;
 
-      [[nodiscard]] auto value() const noexcept -> vk::Semaphore;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() noexcept -> pointer;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer;
+
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type;
+
+      operator bool() const noexcept;
+
+      /**
+       * Get the underlying handle
+       */
+      [[nodiscard]] auto value() const noexcept -> value_type;
+      /**
+       * Get the device used to create the underlying handle
+       */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
       vk::UniqueSemaphore m_semaphore{nullptr};
-      vk::Device m_device{nullptr};
-
-   private:
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
-      inline static auto make_error(error err, std::error_code ec) -> vkn::error
-      {
-         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
-      }
 
    public:
+      /**
+       * Helper class to simplify the building of a semaphore object
+       */
       class builder
       {
       public:
          builder(const vkn::device& device, util::logger* p_logger) noexcept;
 
+         /**
+          * Attempt to create the semaphore object. Returns an error
+          * otherwise
+          */
          [[nodiscard]] auto build() const noexcept -> vkn::result<semaphore>;
 
       private:
@@ -75,6 +75,27 @@ namespace vkn
             vk::Device device;
          } m_info;
       };
+
+   private:
+      struct create_info
+      {
+         vk::UniqueSemaphore semaphore;
+      };
+
+      semaphore(create_info&& info) noexcept;
+
+      struct error_category : std::error_category
+      {
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
+      inline static auto make_error(error err, std::error_code ec) -> vkn::error
+      {
+         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
+      }
    };
 } // namespace vkn
 

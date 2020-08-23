@@ -24,11 +24,17 @@ namespace vkn
       return detail::to_string(static_cast<fence::error>(err));
    }
 
-   fence::fence(create_info&& info) noexcept : m_fence{std::move(info.fence)}, m_device{info.device}
-   {}
+   fence::fence(create_info&& info) noexcept : m_fence{std::move(info.fence)} {}
+
+   auto fence::operator->() noexcept -> pointer { return &m_fence.get(); }
+   auto fence::operator->() const noexcept -> const_pointer { return &m_fence.get(); }
+
+   auto fence::operator*() const noexcept -> value_type { return value(); }
+
+   fence::operator bool() const noexcept { return m_fence.get(); }
 
    auto fence::value() const noexcept -> vk::Fence { return m_fence.get(); }
-   auto fence::device() const noexcept -> vk::Device { return m_device; }
+   auto fence::device() const noexcept -> vk::Device { return m_fence.getOwner(); }
 
    using builder = fence::builder;
 
@@ -49,7 +55,7 @@ namespace vkn
             return make_error(error::failed_to_create_fence, err.code());
          })
          .right_map([&](vk::UniqueFence&& handle) {
-            return fence{{.device = m_info.device, .fence = std::move(handle)}};
+            return fence{{.fence = std::move(handle)}};
          });
    }
 

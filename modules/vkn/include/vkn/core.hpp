@@ -73,4 +73,14 @@ namespace vkn
 
       inline static bool IS_GLSLANG_INIT = false;
    };
+
+   // clang-format off
+   template <typename any_>
+   concept handle = requires(any_ a)
+   {
+      { a.value() } -> std::same_as<typename any_::value_type>;
+   };
+   // clang-format on
+
+   constexpr auto value(const handle auto& h) { return h.value(); }
 }; // namespace vkn

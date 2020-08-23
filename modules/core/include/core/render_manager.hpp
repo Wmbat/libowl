@@ -22,7 +22,6 @@
 #include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
 #include <vkn/sync/fence.hpp>
-#include <vkn/sync/fence_observer.hpp>
 #include <vkn/sync/semaphore.hpp>
 
 #include <util/logger.hpp>
@@ -58,7 +57,7 @@ namespace core
       std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
       std::array<vkn::semaphore, max_frames_in_flight> m_render_finished_semaphores;
       std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
-      util::dynamic_array<vkn::fence_observer> m_images_in_flight;
+      util::dynamic_array<vkn::fence_observer> m_images_in_flight{};
 
       shader_codex m_shader_codex;
 
