@@ -24,12 +24,17 @@ namespace vkn
       return detail::to_string(static_cast<semaphore::error>(err));
    }
 
-   semaphore::semaphore(create_info&& info) noexcept :
-      m_semaphore{std::move(info.semaphore)}, m_device{info.device}
-   {}
+   semaphore::semaphore(create_info&& info) noexcept : m_semaphore{std::move(info.semaphore)} {}
 
-   auto semaphore::value() const noexcept -> vk::Semaphore { return m_semaphore.get(); }
-   auto semaphore::device() const noexcept -> vk::Device { return m_device; }
+   auto semaphore::operator->() noexcept -> pointer { return &m_semaphore.get(); }
+   auto semaphore::operator->() const noexcept -> const_pointer { return &m_semaphore.get(); }
+
+   auto semaphore::operator*() const noexcept -> value_type { return value(); }
+
+   semaphore::operator bool() const noexcept { return m_semaphore.get(); }
+
+   auto semaphore::value() const noexcept -> value_type { return m_semaphore.get(); }
+   auto semaphore::device() const noexcept -> vk::Device { return m_semaphore.getOwner(); }
 
    using builder = semaphore::builder;
 
@@ -50,7 +55,7 @@ namespace vkn
          .right_map([&](vk::UniqueSemaphore&& handle) {
             util::log_info(mp_logger, "[vkn] semaphore semaphore");
 
-            return semaphore{{.device = m_info.device, .semaphore = std::move(handle)}};
+            return semaphore{{.semaphore = std::move(handle)}};
          });
    }
 } // namespace vkn

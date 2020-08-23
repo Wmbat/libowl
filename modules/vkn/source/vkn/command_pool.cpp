@@ -44,6 +44,13 @@ namespace vkn
       m_primary_buffers{info.primary_buffers}, m_secondary_buffers{info.secondary_buffers}
    {}
 
+   auto command_pool::operator->() noexcept -> pointer { return &m_command_pool.get(); }
+   auto command_pool::operator->() const noexcept -> const_pointer { return &m_command_pool.get(); }
+
+   auto command_pool::operator*() const noexcept -> value_type { return value(); }
+
+   command_pool::operator bool() const noexcept { return m_command_pool.get(); }
+
    auto command_pool::value() const noexcept -> vk::CommandPool { return m_command_pool.get(); }
    auto command_pool::device() const noexcept -> vk::Device { return m_command_pool.getOwner(); }
    auto command_pool::primary_cmd_buffers() const -> const util::dynamic_array<vk::CommandBuffer>&

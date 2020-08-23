@@ -82,5 +82,8 @@ namespace vkn
    };
    // clang-format on
 
+   /**
+    * A utility function to extract the undelying value under a vkn handle
+    */
    constexpr auto value(const handle auto& h) { return h.value(); }
 }; // namespace vkn

@@ -1,26 +1,29 @@
-/**
- * @file command_pool.hpp
- * @author wmbat wmbat@protonmail.com
- * @date 9th of August, 2020
- * @copyright MIT License.
- */
-
 #pragma once
 
-#include "vkn/core.hpp"
-#include "vkn/device.hpp"
+#include <vkn/core.hpp>
+#include <vkn/device.hpp>
 
 namespace vkn
 {
    /**
     * A class that wraps around the functionality of a vulkan command pool
-    * and maintains command buffers associated with the pool.
+    * and maintains command buffers associated with the pool. May only be
+    * built using the inner builder class.
     */
    class command_pool final
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
+      struct create_info
+      {
+         vk::UniqueCommandPool command_pool{nullptr};
+
+         uint32_t queue_index{0};
+
+         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
+         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
+      };
+
+      command_pool(create_info&& info);
+
       struct error_category : std::error_category
       {
          /**
@@ -36,18 +39,9 @@ namespace vkn
       inline static const error_category m_category{};
 
    public:
-      /**
-       * All necessary data needed to construct a command_pool object.
-       */
-      struct create_info
-      {
-         vk::UniqueCommandPool command_pool{nullptr};
-
-         uint32_t queue_index{0};
-
-         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
-         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
-      };
+      using value_type = vk::CommandPool;
+      using pointer = vk::CommandPool*;
+      using const_pointer = const vk::CommandPool*;
 
       /**
        * Contains all possible error values comming from the command_pool class.
@@ -60,9 +54,30 @@ namespace vkn
       };
 
       command_pool() = default;
-      command_pool(create_info&& info);
 
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() noexcept -> pointer;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer;
+
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type;
+
+      operator bool() const noexcept;
+
+      /**
+       * Get the underlying handle
+       */
       [[nodiscard]] auto value() const noexcept -> vk::CommandPool;
+      /**
+       * Get the device used to create the underlying handle
+       */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto primary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
