@@ -218,50 +218,13 @@ namespace vkn
       return detail::to_string(static_cast<swapchain::error_type>(err));
    }
 
-   swapchain::swapchain(swapchain&& rhs) noexcept { *this = std::move(rhs); }
    swapchain::swapchain(create_info&& info) noexcept :
-      m_device(info.device), m_format(info.format),
+      m_swapchain{std::move(info.swapchain)}, m_format(info.format),
       m_extent(info.extent), m_images{std::move(info.images)}, m_image_views{
                                                                   std::move(info.image_views)}
-   {
-      m_swapchain = info.swapchain;
-   }
-   swapchain::~swapchain()
-   {
-      if (m_device && m_swapchain)
-      {
-         for (const auto& view : m_image_views)
-         {
-            m_device.destroyImageView(view);
-         }
+   {}
 
-         m_device.destroySwapchainKHR(m_swapchain);
-      }
-   }
-
-   auto swapchain::operator=(swapchain&& rhs) noexcept -> swapchain&
-   {
-      if (this != &rhs)
-      {
-         std::swap(m_swapchain, rhs.m_swapchain);
-
-         m_device = rhs.m_device;
-         rhs.m_device = nullptr;
-
-         m_format = rhs.m_format;
-         rhs.m_format = vk::Format{};
-
-         m_extent = rhs.m_extent;
-         rhs.m_extent = vk::Extent2D{};
-
-         m_images = std::move(rhs.m_images);
-         m_image_views = std::move(rhs.m_image_views);
-      }
-
-      return *this;
-   }
-
-   auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain; }
+   auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain.get(); }
    auto swapchain::format() const noexcept -> vk::Format { return m_format; }
    auto swapchain::extent() const noexcept -> const vk::Extent2D& { return m_extent; }
    auto swapchain::image_views() const noexcept
@@ -342,111 +305,45 @@ namespace vkn
 
       const bool same = m_info.graphics_queue_index == m_info.present_queue_index;
 
-      // clang-format off
-      const auto create_info = vk::SwapchainCreateInfoKHR{}
-         .setFlags({})
-         .setPNext(nullptr)
-         .setSurface(m_info.surface)
-         .setMinImageCount(image_count)
-         .setImageFormat(surface_format.format)
-         .setImageColorSpace(surface_format.colorSpace)
-         .setImageExtent(extent)
-         .setImageUsage(m_info.image_usage_flags)
-         .setImageArrayLayers(1u)
-         .setImageSharingMode(same ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent)
-         .setQueueFamilyIndexCount(same ? 0 : 2)
-         .setPQueueFamilyIndices(same ? nullptr : queue_family_indices.data())
-         .setPreTransform(surface_support.capabilities.currentTransform)
-         .setCompositeAlpha(m_info.composite_alpha_flags)
-         .setPresentMode(present_mode)
-         .setClipped(m_info.clipped);
-      // clang-format on  
-  
-      const auto creation_res = monad::try_wrap<vk::SystemError>([&]{
-         return m_info.device.createSwapchainKHR(create_info);
-      });
+      const auto create_info =
+         vk::SwapchainCreateInfoKHR{}
+            .setFlags({})
+            .setPNext(nullptr)
+            .setSurface(m_info.surface)
+            .setMinImageCount(image_count)
+            .setImageFormat(surface_format.format)
+            .setImageColorSpace(surface_format.colorSpace)
+            .setImageExtent(extent)
+            .setImageUsage(m_info.image_usage_flags)
+            .setImageArrayLayers(1u)
+            .setImageSharingMode(same ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent)
+            .setQueueFamilyIndexCount(same ? 0 : 2)
+            .setPQueueFamilyIndices(same ? nullptr : queue_family_indices.data())
+            .setPreTransform(surface_support.capabilities.currentTransform)
+            .setCompositeAlpha(m_info.composite_alpha_flags)
+            .setPresentMode(present_mode)
+            .setClipped(m_info.clipped);
 
-      if(!creation_res)
-      {
-         return monad::make_left(detail::make_error(err_t::failed_to_create_swapchain,
-                  creation_res.left()->code()));
-      }
+      return monad::try_wrap<vk::SystemError>([&] {
+                return m_info.device.createSwapchainKHRUnique(create_info);
+             })
+         .left_map([](vk::SystemError&& err) {
+            return detail::make_error(err_t::failed_to_create_swapchain, err.code());
+         })
+         .right_flat_map([&](vk::UniqueSwapchainKHR&& handle) {
+            util::log_info(m_plogger, "[vkn] swapchain created.");
+            util::log_info(m_plogger, "[vkn] swapchain image count: {0}", image_count);
 
-      util::log_info(m_plogger, "[vkn] swapchain created.");
-      util::log_info(m_plogger, "[vkn] swapchain image count: {0}", image_count);
-
-      vk::SwapchainKHR swap = creation_res.right().value();
-
-      const auto image_res = monad::try_wrap<std::system_error>([&] {
-                                return m_info.device.getSwapchainImagesKHR(swap);
-                             }).right_map([](const auto& images) {
-         return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
-      });
-
-      if (!image_res)
-      {
-         return monad::make_left(
-            detail::make_error(swapchain::error_type::failed_to_get_swapchain_images, image_res.left()->code()));
-      }
-
-      const auto images = image_res.right().value();
-
-      util::small_dynamic_array<vk::ImageView, 3> views{};
-
-      if (!monad::try_wrap<std::bad_alloc>([&] {
-             views.reserve(images.size());
-             return 0;
-          }))
-      {
-         return monad::make_left(
-            detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views, {}));
-      }
-
-      for (const auto& image : images)
-      {
-         // clang-format off
-         const auto create_info = vk::ImageViewCreateInfo{}
-            .setImage(image)
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(surface_format.format)
-            .setComponents(vk::ComponentMapping{}
-               .setR(vk::ComponentSwizzle::eIdentity)
-               .setG(vk::ComponentSwizzle::eIdentity)
-               .setB(vk::ComponentSwizzle::eIdentity)
-               .setA(vk::ComponentSwizzle::eIdentity))
-            .setSubresourceRange(vk::ImageSubresourceRange{}
-               .setAspectMask(vk::ImageAspectFlagBits::eColor)
-               .setBaseMipLevel(0u)
-               .setLevelCount(1u)
-               .setBaseArrayLayer(0u)
-               .setLayerCount(1u));
-         // clang-format on
-
-         const auto view_res = monad::try_wrap<vk::SystemError>([&] {
-            return m_info.device.createImageView(create_info);
+            return create_images(handle.get()).right_flat_map([&](auto&& images) {
+               return create_image_views(images, surface_format).right_map([&](auto&& views) {
+                  return swapchain{{.swapchain = std::move(handle),
+                                    .format = surface_format.format,
+                                    .extent = extent,
+                                    .images = std::move(images),
+                                    .image_views = std::move(views)}};
+               });
+            });
          });
-
-         if (!view_res)
-         {
-            return monad::make_left(
-               detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views,
-                                  view_res.left()->code()));
-         }
-
-         views.push_back(*view_res.right());
-      }
-
-      // clang-format off
-      return monad::make_right(swapchain{swapchain::create_info{
-         .device = m_info.device,
-         .swapchain = creation_res.right().value(),
-         .format = surface_format.format,
-         .extent = extent,
-         .images = std::move(image_res.right().value()),
-         .image_views = std::move(views)
-         }
-      });
-      // clang-format on
    }
 
    auto builder::set_old_swapchain(const swapchain& swap) noexcept -> builder&
@@ -550,4 +447,70 @@ namespace vkn
       // clang-format on
    }
 
+   auto builder::create_images(vk::SwapchainKHR swapchain) const
+      -> vkn::result<image_dynamic_array<vk::Image>>
+   {
+      return monad::try_wrap<std::system_error>([&] {
+                return m_info.device.getSwapchainImagesKHR(swapchain);
+             })
+         .left_map([](const std::system_error& err) {
+            return detail::make_error(error_type::failed_to_get_swapchain_images, err.code());
+         })
+
+         .right_map([](const auto& images) {
+            return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
+         });
+   }
+
+   auto builder::create_image_views(const image_dynamic_array<vk::Image>& images,
+                                    vk::SurfaceFormatKHR format) const
+      -> vkn::result<image_dynamic_array<vk::ImageView>>
+   {
+      util::small_dynamic_array<vk::ImageView, 3> views{};
+
+      if (!monad::try_wrap<std::bad_alloc>([&] {
+             views.reserve(images.size());
+             return 0;
+          }))
+      {
+         return monad::make_left(
+            detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views, {}));
+      }
+
+      for (const auto& image : images)
+      {
+         // clang-format off
+         const auto create_info = vk::ImageViewCreateInfo{}
+            .setImage(image)
+            .setViewType(vk::ImageViewType::e2D)
+            .setFormat(format.format)
+            .setComponents(vk::ComponentMapping{}
+               .setR(vk::ComponentSwizzle::eIdentity)
+               .setG(vk::ComponentSwizzle::eIdentity)
+               .setB(vk::ComponentSwizzle::eIdentity)
+               .setA(vk::ComponentSwizzle::eIdentity))
+            .setSubresourceRange(vk::ImageSubresourceRange{}
+               .setAspectMask(vk::ImageAspectFlagBits::eColor)
+               .setBaseMipLevel(0u)
+               .setLevelCount(1u)
+               .setBaseArrayLayer(0u)
+               .setLayerCount(1u));
+         // clang-format on
+
+         const auto view_res = monad::try_wrap<vk::SystemError>([&] {
+            return m_info.device.createImageView(create_info);
+         });
+
+         if (!view_res)
+         {
+            return monad::make_left(
+               detail::make_error(swapchain::error_type::failed_to_create_swapchain_image_views,
+                                  view_res.left()->code()));
+         }
+
+         views.push_back(*view_res.right());
+      }
+
+      return monad::make_right(std::move(views));
+   }
 } // namespace vkn

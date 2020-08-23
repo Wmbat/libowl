@@ -429,10 +429,8 @@ namespace core
       tshader.setEnvTarget(glslang::EshTargetSpv,
                            get_spirv_version(m_pdevice->get_vulkan_version()));
 
-      {
-         const char* shader_data_cstr = shader_data.c_str();
-         tshader.setStrings(&shader_data_cstr, 1);
-      }
+      const char* shader_data_cstr = shader_data.c_str();
+      tshader.setStrings(&shader_data_cstr, 1);
 
       const auto resources = detail::default_built_in_resource;
       const auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
@@ -538,8 +536,7 @@ namespace core
       // clang-format off
       return match(major, minor)(
          pattern(1u, 0u) = [] { return glslang::EShTargetSpv_1_0; },
-         pattern(1u, 1u) = [] { return glslang::EShTargetSpv_1_3; },
-         pattern(1u, 2u) = [] { return glslang::EShTargetSpv_1_5; },
+         pattern(1u, _) = [] { return glslang::EShTargetSpv_1_3; },
          pattern(_, _) = [] { return glslang::EShTargetLanguageVersionCount; }
       );
       // clang-format on

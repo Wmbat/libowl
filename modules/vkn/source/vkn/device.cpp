@@ -288,6 +288,9 @@ namespace vkn
          });
    }
 
+   auto device::operator->() -> vk::Device* { return &m_device; }
+   auto device::operator->() const noexcept -> const vk::Device* { return &m_device; }
+
    auto device::value() const noexcept -> vk::Device { return m_device; }
    auto device::physical() const noexcept -> const physical_device& { return m_physical_device; }
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
@@ -381,7 +384,7 @@ namespace vkn
          m_loader.load_device(dev);
 
          return device{std::move(m_info.phys_device),
-                       device::create_info{dev, m_info.api_version, std::move(extensions)}};
+                       {dev, m_info.api_version, std::move(extensions)}};
       });
       // clang-format on
    } // namespace vkn

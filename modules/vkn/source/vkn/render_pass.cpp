@@ -75,7 +75,7 @@ namespace vkn
          return monad::make_left(make_error(error::no_device_provided, {}));
       }
 
-      const std::array<vk::AttachmentDescription, 1> attachment_descriptions{
+      const std::array attachment_descriptions{
          vk::AttachmentDescription{.flags = {},
                                    .format = m_swapchain_format,
                                    .loadOp = vk::AttachmentLoadOp::eClear,
@@ -85,10 +85,10 @@ namespace vkn
                                    .initialLayout = vk::ImageLayout::eUndefined,
                                    .finalLayout = vk::ImageLayout::ePresentSrcKHR}};
 
-      const std::array<vk::AttachmentReference, 1> attachment_references{vk::AttachmentReference{
+      const std::array attachment_references{vk::AttachmentReference{
          .attachment = 0, .layout = vk::ImageLayout::eColorAttachmentOptimal}};
 
-      const std::array<vk::SubpassDescription, 1> subpass_descriptions{
+      const std::array subpass_descriptions{
          vk::SubpassDescription{.flags = {},
                                 .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
                                 .inputAttachmentCount = 0u,
@@ -100,15 +100,24 @@ namespace vkn
                                 .preserveAttachmentCount = 0u,
                                 .pPreserveAttachments = nullptr}};
 
+      const std::array subpass_dependencies{
+         vk::SubpassDependency{.srcSubpass = VK_SUBPASS_EXTERNAL,
+                               .dstSubpass = 0,
+                               .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                               .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                               .srcAccessMask = {},
+                               .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+                               .dependencyFlags = {}}};
+
       const auto pass_info = vk::RenderPassCreateInfo{}
                                 .setPNext(nullptr)
                                 .setFlags({})
-                                .setDependencyCount(0)
-                                .setPDependencies(nullptr)
-                                .setAttachmentCount(attachment_descriptions.size())
-                                .setPAttachments(attachment_descriptions.data())
-                                .setSubpassCount(subpass_descriptions.size())
-                                .setPSubpasses(subpass_descriptions.data());
+                                .setDependencyCount(std::size(subpass_dependencies))
+                                .setPDependencies(std::data(subpass_dependencies))
+                                .setAttachmentCount(std::size(attachment_descriptions))
+                                .setPAttachments(std::data(attachment_descriptions))
+                                .setSubpassCount(std::size(subpass_descriptions))
+                                .setPSubpasses(std::data(subpass_descriptions));
 
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createRenderPass(pass_info);
@@ -122,5 +131,5 @@ namespace vkn
             return render_pass{
                {.device = m_device, .render_pass = handle, .format = m_swapchain_format}};
          });
-   }
+   } // namespace vkn
 } // namespace vkn

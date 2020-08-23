@@ -14,6 +14,8 @@
 #include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 
+#include <limits>
+
 namespace core
 {
    auto handle_instance_error(const vkn::error&, util::logger* const) -> vkn::instance;
@@ -90,8 +92,8 @@ namespace core
       {
          m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, plogger}
                                         .add_attachment(img_view)
-                                        .set_buffer_height(m_swapchain.extent().width)
-                                        .set_buffer_width(m_swapchain.extent().height)
+                                        .set_buffer_width(m_swapchain.extent().width)
+                                        .set_buffer_height(m_swapchain.extent().height)
                                         .set_layer_count(1u)
                                         .build()
                                         .left_map([plogger](vkn::error&& err) {
@@ -109,7 +111,7 @@ namespace core
          shader_codex::builder{m_device, plogger}
             .add_shader_filepath("resources/shaders/test_shader.vert")
             .add_shader_filepath("resources/shaders/test_shader.frag")
-            .allow_caching()
+            .allow_caching(false)
             .build()
             .left_map([plogger](auto&& err) {
                log_error(plogger, "[core] Failed to create shader codex: \"{0}\"", err.message());
@@ -121,7 +123,16 @@ namespace core
 
       m_command_pool =
          vkn::command_pool::builder{m_device, plogger}
-            .set_queue_family_index(m_device.get_queue_index(vkn::queue::type::graphics))
+            .set_queue_family_index(
+               m_device.get_queue_index(vkn::queue::type::graphics)
+                  .left_map([&](auto&& err) {
+                     log_error(plogger, "[core] No usable graphics queues found: \"{0}\"",
+                               err.type.message());
+                     abort();
+
+                     return 0u;
+                  })
+                  .join())
             .set_primary_buffer_count(std::size(m_framebuffers))
             .build()
             .left_map([plogger](auto&& err) {
@@ -158,27 +169,50 @@ namespace core
             })
             .join();
 
-      m_image_available_semaphore =
-         vkn::semaphore::builder{m_device, mp_logger}
-            .build()
-            .left_map([&](vkn::error&& err) {
-               log_error(plogger, "[core] Failed to create semaphore: \"{0}\"", err.type.message());
-               abort();
+      for (auto& semaphore : m_image_available_semaphores)
+      {
+         semaphore = vkn::semaphore::builder{m_device, mp_logger}
+                        .build()
+                        .left_map([&](vkn::error&& err) {
+                           log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
+                                     err.type.message());
+                           abort();
 
-               return vkn::semaphore{};
-            })
-            .join();
+                           return vkn::semaphore{};
+                        })
+                        .join();
+      }
 
-      m_image_available_semaphore =
-         vkn::semaphore::builder{m_device, mp_logger}
-            .build()
-            .left_map([&](vkn::error&& err) {
-               log_error(plogger, "[core] Failed to create semaphore: \"{0}\"", err.type.message());
-               abort();
+      for (auto& semaphore : m_render_finished_semaphores)
+      {
+         semaphore = vkn::semaphore::builder{m_device, mp_logger}
+                        .build()
+                        .left_map([&](vkn::error&& err) {
+                           log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
+                                     err.type.message());
+                           abort();
 
-               return vkn::semaphore{};
-            })
-            .join();
+                           return vkn::semaphore{};
+                        })
+                        .join();
+      }
+
+      for (auto& fence : m_in_flight_fences)
+      {
+         fence = vkn::fence::builder{m_device, mp_logger}
+                    .set_signaled()
+                    .build()
+                    .left_map([&](vkn::error&& err) {
+                       log_error(plogger, "[core] Failed to create in flight fence: \"{0}\"",
+                                 err.type.message());
+                       abort();
+
+                       return vkn::fence{};
+                    })
+                    .join();
+      }
+
+      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
 
       util::log_info(mp_logger, "[core] recording main rendering command buffers");
       for (std::size_t i = 0; const auto& buffer : m_command_pool.primary_cmd_buffers())
@@ -203,7 +237,85 @@ namespace core
       }
    }
 
-   void render_manager::render_frame() { [[maybe_unused]] std::uint32_t image_index{0}; }
+   void render_manager::render_frame()
+   {
+      m_device->waitForFences({m_in_flight_fences.at(m_current_frame).value()}, true,
+                              std::numeric_limits<std::uint64_t>::max());
+
+      auto [image_res, image_index] = m_device->acquireNextImageKHR(
+         m_swapchain.value(), std::numeric_limits<std::uint64_t>::max(),
+         m_image_available_semaphores.at(m_current_frame).value(), nullptr);
+
+      if (m_images_in_flight[image_index].value())
+      {
+         m_device->waitForFences({m_in_flight_fences.at(m_current_frame).value()}, true,
+                                 std::numeric_limits<std::uint64_t>::max());
+      }
+      m_images_in_flight[image_index] = m_in_flight_fences.at(m_current_frame).value();
+
+      const std::array wait_semaphores{m_image_available_semaphores.at(m_current_frame).value()};
+      const std::array signal_semaphores{m_render_finished_semaphores.at(m_current_frame).value()};
+      const std::array command_buffers{m_command_pool.primary_cmd_buffers()[image_index]};
+      const std::array<vk::PipelineStageFlags, 1> wait_stages{
+         vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+      m_device->resetFences({m_in_flight_fences.at(m_current_frame).value()});
+
+      const auto gfx_queue = m_device.get_queue(vkn::queue::type::graphics);
+      if (gfx_queue)
+      {
+         const std::array submit_infos{
+            vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
+                           .pWaitSemaphores = std::data(wait_semaphores),
+                           .pWaitDstStageMask = std::data(wait_stages),
+                           .commandBufferCount = std::size(command_buffers),
+                           .pCommandBuffers = std::data(command_buffers),
+                           .signalSemaphoreCount = std::size(signal_semaphores),
+                           .pSignalSemaphores = std::data(signal_semaphores)}};
+
+         try
+         {
+            // NOLINTNEXTLINE
+            gfx_queue.right()->submit(submit_infos, m_in_flight_fences[m_current_frame].value());
+         }
+         catch (const vk::SystemError& err)
+         {
+            util::log_error(mp_logger, "[core] failed to submit graphics queue");
+            abort();
+         }
+      }
+      else
+      {
+         util::log_error(mp_logger, "[core] failed to find a graphics queue");
+         abort();
+      }
+
+      const std::array swapchains{m_swapchain.value()};
+
+      const auto present_queue = m_device.get_queue(vkn::queue::type::present);
+      if (present_queue)
+      {
+         if (present_queue.right()->presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
+                                                .pWaitSemaphores = std::data(signal_semaphores),
+                                                .swapchainCount = std::size(swapchains),
+                                                .pSwapchains = std::data(swapchains),
+                                                .pImageIndices = &image_index}) !=
+             vk::Result::eSuccess)
+         {
+            util::log_error(mp_logger, "[core] failed to present present queue");
+            abort();
+         }
+      }
+      else
+      {
+         util::log_error(mp_logger, "[core] failed to find a present queue");
+         abort();
+      }
+
+      m_current_frame = (m_current_frame + 1) % max_frames_in_flight;
+   }
+
+   void render_manager::wait() { m_device->waitIdle(); }
 
    auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance
    {

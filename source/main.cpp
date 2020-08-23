@@ -26,5 +26,7 @@ auto main() -> int
       render_manager.render_frame();
    }
 
+   render_manager.wait();
+
    return 0;
 }

@@ -44,22 +44,14 @@ namespace vkn
 
       struct create_info
       {
-         vk::Device device{nullptr};
-         vk::Framebuffer framebuffer{nullptr};
+         vk::UniqueFramebuffer framebuffer{nullptr};
 
          vk::Extent2D dimensions{};
       };
 
    public:
       framebuffer() noexcept = default;
-      framebuffer(const create_info& info) noexcept;
       framebuffer(create_info&& info) noexcept;
-      framebuffer(const framebuffer&) noexcept = delete;
-      framebuffer(framebuffer&& rhs) noexcept;
-      ~framebuffer();
-
-      auto operator=(const framebuffer&) noexcept = delete;
-      auto operator=(framebuffer&& rhs) noexcept -> framebuffer&;
 
       [[nodiscard]] auto value() const noexcept -> vk::Framebuffer;
       /**
@@ -77,8 +69,7 @@ namespace vkn
       }
 
    private:
-      vk::Framebuffer m_framebuffer{nullptr};
-      vk::Device m_device{nullptr};
+      vk::UniqueFramebuffer m_framebuffer{nullptr};
 
       vk::Extent2D m_dimensions{};
 

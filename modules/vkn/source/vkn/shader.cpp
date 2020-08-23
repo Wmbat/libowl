@@ -43,37 +43,11 @@ namespace vkn
    }
 
    shader::shader(create_info&& info) :
-      m_shader_module{info.shader_module}, m_device{info.device}, m_type{info.type},
-      m_name{std::move(info.name)}
+      m_shader_module{std::move(info.shader_module)}, m_type{info.type}, m_name{
+                                                                            std::move(info.name)}
    {}
-   shader::shader(shader&& other) noexcept { *this = std::move(other); }
-   shader::~shader()
-   {
-      if (m_device && m_shader_module)
-      {
-         m_device.destroyShaderModule(m_shader_module);
 
-         m_shader_module = nullptr;
-         m_device = nullptr;
-      }
-   }
-
-   auto vkn::shader::operator=(shader&& rhs) noexcept -> shader&
-   {
-      if (this != &rhs)
-      {
-         std::swap(m_device, rhs.m_device);
-         std::swap(m_shader_module, rhs.m_shader_module);
-         std::swap(m_name, rhs.m_name);
-
-         m_type = rhs.m_type;
-         rhs.m_type = shader::type::count;
-      }
-
-      return *this;
-   }
-
-   auto shader::value() const noexcept -> vk::ShaderModule { return m_shader_module; }
+   auto shader::value() const noexcept -> vk::ShaderModule { return m_shader_module.get(); }
    auto shader::name() const noexcept -> std::string_view { return m_name; }
    auto shader::stage() const noexcept -> type { return m_type; }
 
@@ -86,13 +60,11 @@ namespace vkn
    auto shader::builder::build() -> result<shader>
    {
       const auto create_info = vk::ShaderModuleCreateInfo{}
-                                  .setPNext(nullptr)
-                                  .setFlags({})
                                   .setCodeSize(m_info.spirv_binary.size() * 4)
                                   .setPCode(m_info.spirv_binary.data());
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createShaderModule(create_info);
+                return m_info.device.createShaderModuleUnique(create_info);
              })
          .left_map([](auto&& error) {
             return vkn::error{shader::make_error_code(error::failed_to_create_shader_module),
@@ -101,10 +73,8 @@ namespace vkn
          .right_map([&](auto&& handle) {
             util::log_info(m_plogger, "[vkn] shader module created");
 
-            return shader{shader::create_info{.device = m_info.device,
-                                              .shader_module = handle,
-                                              .name = m_info.name,
-                                              .type = m_info.m_type}};
+            return shader{shader::create_info{
+               .shader_module = std::move(handle), .name = m_info.name, .type = m_info.m_type}};
          });
    }
 

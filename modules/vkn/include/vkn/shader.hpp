@@ -73,8 +73,7 @@ namespace vkn
        */
       struct create_info
       {
-         vk::Device device{};
-         vk::ShaderModule shader_module{};
+         vk::UniqueShaderModule shader_module{};
 
          std::string name{};
 
@@ -84,12 +83,6 @@ namespace vkn
    public:
       shader() = default;
       shader(create_info&& info);
-      shader(const shader&) = delete;
-      shader(shader&& other) noexcept;
-      ~shader();
-
-      auto operator=(const shader&) -> shader& = delete;
-      auto operator=(shader&& rhs) noexcept -> shader&;
 
       [[nodiscard]] auto value() const noexcept -> vk::ShaderModule;
       /**
@@ -110,8 +103,7 @@ namespace vkn
       }
 
    private:
-      vk::ShaderModule m_shader_module;
-      vk::Device m_device;
+      vk::UniqueShaderModule m_shader_module;
 
       type m_type{type::count};
       std::string m_name{};

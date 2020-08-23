@@ -37,29 +37,21 @@ namespace vkn
 
       struct create_info
       {
-         vk::Device device{nullptr};
-         vk::Pipeline pipeline{nullptr};
-         vk::PipelineLayout pipeline_layout{nullptr};
+         vk::UniquePipeline pipeline{nullptr};
+         vk::UniquePipelineLayout pipeline_layout{nullptr};
       };
 
    public:
       graphics_pipeline() = default;
       graphics_pipeline(create_info&& info) noexcept;
-      graphics_pipeline(const graphics_pipeline&) = delete;
-      graphics_pipeline(graphics_pipeline&& other) noexcept;
-      ~graphics_pipeline();
-
-      auto operator=(const graphics_pipeline&) -> graphics_pipeline& = delete;
-      auto operator=(graphics_pipeline&& rhs) noexcept -> graphics_pipeline&;
 
       [[nodiscard]] auto value() const noexcept -> vk::Pipeline;
-      [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
+      [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::Pipeline m_pipeline{nullptr};
-      vk::PipelineLayout m_pipeline_layout{nullptr};
-      vk::Device m_device{nullptr};
+      vk::UniquePipeline m_pipeline{nullptr};
+      vk::UniquePipelineLayout m_pipeline_layout{nullptr};
 
    private:
       /**
@@ -91,7 +83,7 @@ namespace vkn
          auto enable_primitive_restart(bool enable = true) -> builder&;
 
       private:
-         [[nodiscard]] auto create_pipeline(vk::PipelineLayout layout) const
+         [[nodiscard]] auto create_pipeline(vk::UniquePipelineLayout layout) const
             -> vkn::result<graphics_pipeline>;
 
       private:

@@ -1,10 +1,3 @@
-/**
- * @file swapchain.hpp
- * @author wmbat wmbat@protonmail.com
- * @date Saturday, 20th of June, 2020
- * @copyright MIT License
- */
-
 #pragma once
 
 #include <vkn/core.hpp>
@@ -37,6 +30,9 @@ namespace vkn
 
       inline static const error_category m_category{};
 
+      template <typename any_>
+      using image_dynamic_array = util::small_dynamic_array<any_, expected_image_count>;
+
    public:
       /**
        * Contains all possible error values comming from the swapchain class.
@@ -55,8 +51,7 @@ namespace vkn
        */
       struct create_info
       {
-         vk::Device device{nullptr};
-         vk::SwapchainKHR swapchain{nullptr};
+         vk::UniqueSwapchainKHR swapchain{nullptr};
          vk::Format format{};
          vk::Extent2D extent{};
 
@@ -67,12 +62,6 @@ namespace vkn
    public:
       swapchain() = default;
       swapchain(create_info&& info) noexcept;
-      swapchain(const swapchain&) = delete;
-      swapchain(swapchain&& rhs) noexcept;
-      ~swapchain();
-
-      auto operator=(const swapchain&) -> swapchain& = delete;
-      auto operator=(swapchain&&) noexcept -> swapchain&;
 
       [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
       [[nodiscard]] auto format() const noexcept -> vk::Format;
@@ -89,8 +78,7 @@ namespace vkn
       }
 
    private:
-      vk::SwapchainKHR m_swapchain{nullptr};
-      vk::Device m_device{nullptr};
+      vk::UniqueSwapchainKHR m_swapchain{nullptr};
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
@@ -131,6 +119,12 @@ namespace vkn
             -> util::small_dynamic_array<vk::SurfaceFormatKHR, 2>;
          [[nodiscard]] auto add_desired_present_modes() const
             -> util::small_dynamic_array<vk::PresentModeKHR, 2>;
+
+         [[nodiscard]] auto create_images(vk::SwapchainKHR swapchain) const
+            -> vkn::result<image_dynamic_array<vk::Image>>;
+         [[nodiscard]] auto create_image_views(const image_dynamic_array<vk::Image>& images,
+                                               vk::SurfaceFormatKHR format) const
+            -> vkn::result<image_dynamic_array<vk::ImageView>>;
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;

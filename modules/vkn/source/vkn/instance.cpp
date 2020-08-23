@@ -216,6 +216,11 @@ namespace vkn
       util::dynamic_array<const char*> layers{m_info.layers};
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
+         for (const auto& name : sys_layers)
+         {
+            log_info(m_plogger, "[vkn] instance layers: {0} - ENABLED", name.layerName);
+         }
+
          if (has_validation_layer_support(sys_layers))
          {
             layers.push_back("VK_LAYER_KHRONOS_validation");

@@ -25,28 +25,10 @@ namespace vkn
    }
 
    semaphore::semaphore(create_info&& info) noexcept :
-      m_semaphore{info.semaphore}, m_device{info.device}
+      m_semaphore{std::move(info.semaphore)}, m_device{info.device}
    {}
-   semaphore::semaphore(semaphore&& other) noexcept { *this = std::move(other); }
-   semaphore::~semaphore()
-   {
-      if (m_device && m_semaphore)
-      {
-         m_device.destroySemaphore(m_semaphore);
-         m_semaphore = nullptr;
-         m_device = nullptr;
-      }
-   }
 
-   auto semaphore::operator=(semaphore&& rhs) noexcept -> semaphore&
-   {
-      std::swap(m_device, rhs.m_device);
-      std::swap(m_semaphore, rhs.m_semaphore);
-
-      return *this;
-   }
-
-   auto semaphore::value() const noexcept -> vk::Semaphore { return m_semaphore; }
+   auto semaphore::value() const noexcept -> vk::Semaphore { return m_semaphore.get(); }
    auto semaphore::device() const noexcept -> vk::Device { return m_device; }
 
    using builder = semaphore::builder;
@@ -60,15 +42,15 @@ namespace vkn
    auto builder::build() const noexcept -> vkn::result<semaphore>
    {
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createSemaphore({});
+                return m_info.device.createSemaphoreUnique({});
              })
          .left_map([](vk::SystemError&& err) {
             return make_error(error::failed_to_create_semaphore, err.code());
          })
-         .right_map([&](vk::Semaphore&& handle) {
+         .right_map([&](vk::UniqueSemaphore&& handle) {
             util::log_info(mp_logger, "[vkn] semaphore semaphore");
 
-            return semaphore{{.device = m_info.device, .semaphore = handle}};
+            return semaphore{{.device = m_info.device, .semaphore = std::move(handle)}};
          });
    }
 } // namespace vkn

@@ -33,24 +33,18 @@ namespace vkn
       struct create_info
       {
          vk::Device device;
-         vk::Fence fence;
+         vk::UniqueFence fence;
       };
 
    public:
       fence() = default;
       fence(create_info&& info) noexcept;
-      fence(const fence& other) = delete;
-      fence(fence&& other) noexcept;
-      ~fence();
-
-      auto operator=(const fence&) = delete;
-      auto operator=(fence&& rhs) noexcept -> fence&;
 
       [[nodiscard]] auto value() const noexcept -> vk::Fence;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::Fence m_fence{nullptr};
+      vk::UniqueFence m_fence{nullptr};
       vk::Device m_device{nullptr};
 
    private:

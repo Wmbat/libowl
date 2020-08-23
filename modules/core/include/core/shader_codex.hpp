@@ -51,7 +51,7 @@ namespace core
       }
 
    private:
-      util::dense_hash_map<std::string, vkn::shader> m_shaders;
+      std::map<std::string, vkn::shader> m_shaders;
 
       static inline constexpr int client_input_semantics_version = 100;
       static inline constexpr int default_version = 100;

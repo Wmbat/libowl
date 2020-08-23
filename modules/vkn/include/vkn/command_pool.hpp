@@ -33,14 +33,15 @@ namespace vkn
          [[nodiscard]] auto message(int err) const -> std::string override;
       };
 
+      inline static const error_category m_category{};
+
    public:
       /**
        * All necessary data needed to construct a command_pool object.
        */
       struct create_info
       {
-         vk::Device device{nullptr};
-         vk::CommandPool command_pool{nullptr};
+         vk::UniqueCommandPool command_pool{nullptr};
 
          uint32_t queue_index{0};
 
@@ -60,12 +61,6 @@ namespace vkn
 
       command_pool() = default;
       command_pool(create_info&& info);
-      command_pool(const command_pool&) = delete;
-      command_pool(command_pool&& rhs) noexcept;
-      ~command_pool();
-
-      auto operator=(const command_pool&) -> command_pool& = delete;
-      auto operator=(command_pool&& rhs) noexcept -> command_pool&;
 
       [[nodiscard]] auto value() const noexcept -> vk::CommandPool;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
@@ -83,15 +78,12 @@ namespace vkn
       }
 
    private:
-      vk::CommandPool m_command_pool{nullptr};
-      vk::Device m_device{nullptr};
+      vk::UniqueCommandPool m_command_pool{nullptr};
 
       uint32_t m_queue_index{0};
 
       util::dynamic_array<vk::CommandBuffer> m_primary_buffers;
       util::dynamic_array<vk::CommandBuffer> m_secondary_buffers;
-
-      inline static const error_category m_category{};
 
    public:
       /**
@@ -125,7 +117,7 @@ namespace vkn
          auto set_secondary_buffer_count(uint32_t count) noexcept -> builder&;
 
       private:
-         auto create_command_pool(vk::CommandPool handle) -> vkn::result<command_pool>;
+         auto create_command_pool(vk::UniqueCommandPool handle) -> vkn::result<command_pool>;
          auto create_primary_buffers(vk::CommandPool pool)
             -> vkn::result<util::dynamic_array<vk::CommandBuffer>>;
          auto create_secondary_buffers(vk::CommandPool handle)

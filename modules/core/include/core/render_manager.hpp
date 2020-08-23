@@ -21,6 +21,8 @@
 #include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
 #include <vkn/swapchain.hpp>
+#include <vkn/sync/fence.hpp>
+#include <vkn/sync/fence_observer.hpp>
 #include <vkn/sync/semaphore.hpp>
 
 #include <util/logger.hpp>
@@ -29,10 +31,13 @@ namespace core
 {
    class render_manager
    {
+      static constexpr std::size_t max_frames_in_flight = 2;
+
    public:
       render_manager(gfx::window* const p_wnd, util::logger* p_logger = nullptr);
 
       void render_frame();
+      void wait();
 
    private:
       gfx::window* const mp_window;
@@ -50,9 +55,13 @@ namespace core
 
       util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
 
-      vkn::semaphore m_image_available_semaphore;
-      vkn::semaphore m_render_finished_semaphore;
+      std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
+      std::array<vkn::semaphore, max_frames_in_flight> m_render_finished_semaphores;
+      std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
+      util::dynamic_array<vkn::fence_observer> m_images_in_flight;
 
       shader_codex m_shader_codex;
+
+      std::size_t m_current_frame{0};
    };
 } // namespace core

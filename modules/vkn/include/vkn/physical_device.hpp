@@ -22,14 +22,12 @@ namespace vkn
       get_graphics_queue_index(const util::range_over<vk::QueueFamilyProperties> auto& families)
          -> monad::maybe<uint32_t>
       {
-         for (uint32_t i = 0; const auto& fam : families)
+         for (uint32_t i = 0; i < families.size(); ++i)
          {
-            if (fam.queueFlags & vk::QueueFlagBits::eGraphics)
+            if (families[i].queueFlags & vk::QueueFlagBits::eGraphics)
             {
                return i;
             }
-
-            ++i;
          }
 
          return monad::none;

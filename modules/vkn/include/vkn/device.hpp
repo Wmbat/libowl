@@ -115,6 +115,9 @@ namespace vkn
       [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
          -> vkn::result<vk::Queue>;
 
+      auto operator->() -> vk::Device*;
+      auto operator->() const noexcept -> const vk::Device*;
+
       [[nodiscard]] auto value() const noexcept -> vk::Device;
       /**
        * Get a const reference to the physical representation of the device.

@@ -36,24 +36,18 @@ namespace vkn
       struct create_info
       {
          vk::Device device;
-         vk::Semaphore semaphore;
+         vk::UniqueSemaphore semaphore;
       };
 
    public:
       semaphore() = default;
       semaphore(create_info&& info) noexcept;
-      semaphore(const semaphore& other) = delete;
-      semaphore(semaphore&& other) noexcept;
-      ~semaphore();
-
-      auto operator=(const semaphore&) = delete;
-      auto operator=(semaphore&& rhs) noexcept -> semaphore&;
 
       [[nodiscard]] auto value() const noexcept -> vk::Semaphore;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::Semaphore m_semaphore{nullptr};
+      vk::UniqueSemaphore m_semaphore{nullptr};
       vk::Device m_device{nullptr};
 
    private:

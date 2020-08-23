@@ -31,38 +31,12 @@ namespace vkn
       return detail::to_string(static_cast<error>(err));
    }
 
-   framebuffer::framebuffer(const create_info& info) noexcept :
-      m_device{info.device}, m_dimensions{info.dimensions}
-   {
-      m_framebuffer = info.framebuffer;
-   }
    framebuffer::framebuffer(create_info&& info) noexcept :
-      m_device{info.device}, m_dimensions{info.dimensions}
-   {
-      m_framebuffer = info.framebuffer;
-   }
-   framebuffer::framebuffer(framebuffer&& rhs) noexcept { *this = std::move(rhs); }
-   framebuffer::~framebuffer()
-   {
-      if (m_device && m_framebuffer)
-      {
-         m_device.destroyFramebuffer(m_framebuffer);
-         m_framebuffer = nullptr;
-         m_device = nullptr;
-      }
-   }
+      m_framebuffer{std::move(info.framebuffer)}, m_dimensions{info.dimensions}
+   {}
 
-   auto framebuffer::operator=(framebuffer&& rhs) noexcept -> framebuffer&
-   {
-      std::swap(m_device, rhs.m_device);
-      std::swap(m_framebuffer, rhs.m_framebuffer);
-      std::swap(m_dimensions, rhs.m_dimensions);
-
-      return *this;
-   }
-
-   auto framebuffer::value() const noexcept -> vk::Framebuffer { return m_framebuffer; }
-   auto framebuffer::device() const noexcept -> vk::Device { return m_device; }
+   auto framebuffer::value() const noexcept -> vk::Framebuffer { return m_framebuffer.get(); }
+   auto framebuffer::device() const noexcept -> vk::Device { return m_framebuffer.getOwner(); }
 
    using builder = framebuffer::builder;
 
@@ -92,17 +66,16 @@ namespace vkn
                                   .setLayers(m_info.layer_count);
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_device.createFramebuffer(create_info);
+                return m_device.createFramebufferUnique(create_info);
              })
          .left_map([](vk::SystemError&& err) {
             return framebuffer::make_error(error::failed_to_create_framebuffer, err.code());
          })
-         .right_map([&](vk::Framebuffer&& handle) {
+         .right_map([&](vk::UniqueFramebuffer&& handle) {
             util::log_info(m_plogger, "[vkn] framebuffer created");
 
-            return framebuffer{{.device = m_device,
-                                .framebuffer = handle,
-                                .dimensions = {m_info.width, m_info.height}}};
+            return framebuffer{
+               {.framebuffer = std::move(handle), .dimensions = {m_info.width, m_info.height}}};
          });
    }
 
