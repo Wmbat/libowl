@@ -36,7 +36,13 @@ namespace core
       render_manager(gfx::window* const p_wnd, util::logger* p_logger = nullptr);
 
       void render_frame();
+      /**
+       * Wait for all resources to stop being used
+       */
       void wait();
+
+   private:
+      void recreate_swapchain();
 
    private:
       gfx::window* const mp_window;

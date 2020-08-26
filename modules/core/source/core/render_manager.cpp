@@ -13,7 +13,6 @@
 
 namespace core
 {
-   auto handle_instance_error(const vkn::error&, util::logger* const) -> vkn::instance;
    auto handle_physical_device_error(const vkn::error&, util::logger* const)
       -> vkn::physical_device;
    auto handle_device_error(const vkn::error&, util::logger* const) -> vkn::device;
@@ -31,7 +30,10 @@ namespace core
             .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
             .build()
             .map_error([plogger](auto&& err) {
-               return handle_instance_error(err, plogger);
+               log_error(plogger, "[core] Failed to create instance: {0}", err.type.message());
+               abort();
+
+               return vkn::instance{};
             })
             .join();
 
@@ -296,13 +298,6 @@ namespace core
 
    void render_manager::wait() { m_device->waitIdle(); }
 
-   auto handle_instance_error(const vkn::error& err, util::logger* const plogger) -> vkn::instance
-   {
-      log_error(plogger, "[core] Failed to create instance: {0}", err.type.message());
-      abort();
-
-      return {};
-   }
    auto handle_physical_device_error(const vkn::error& err, util::logger* const plogger)
       -> vkn::physical_device
    {

@@ -349,7 +349,7 @@ namespace vkn
 
    auto builder::set_old_swapchain(const swapchain& swap) noexcept -> builder&
    {
-      m_info.old_swapchain = swap.value();
+      m_info.old_swapchain = vkn::value(swap);
       return *this;
    }
 
