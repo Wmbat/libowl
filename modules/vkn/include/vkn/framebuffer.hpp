@@ -13,27 +13,8 @@
 
 namespace vkn
 {
-   class framebuffer final : handle_traits<vk::Framebuffer>
+   class framebuffer final
    {
-   public:
-      /**
-       * Set of possible errors that may happen at construction of a framebuffer
-       */
-      enum struct error
-      {
-         no_device_handle,
-         failed_to_create_framebuffer
-      };
-
-      struct create_info
-      {
-         vk::Device device{nullptr};
-         vk::Framebuffer framebuffer{nullptr};
-
-         vk::Extent2D dimensions{};
-      };
-
-   private:
       /**
        * A struct used for error handling and displaying error messages
        */
@@ -51,45 +32,44 @@ namespace vkn
 
       inline static const error_category m_category{};
 
+   public:
       /**
-       * Turns the error enum values into an std::error_code
+       * Set of possible errors that may happen at construction of a framebuffer
        */
-      inline static auto make_error_code(error err) -> std::error_code
+      enum struct error
       {
-         return {static_cast<int>(err), m_category};
-      }
+         no_device_handle,
+         failed_to_create_framebuffer
+      };
+
+      struct create_info
+      {
+         vk::UniqueFramebuffer framebuffer{nullptr};
+
+         vk::Extent2D dimensions{};
+      };
 
    public:
       framebuffer() noexcept = default;
-      framebuffer(const create_info& info) noexcept;
       framebuffer(create_info&& info) noexcept;
-      framebuffer(const framebuffer&) noexcept = delete;
-      framebuffer(framebuffer&& rhs) noexcept;
-      ~framebuffer();
 
-      auto operator=(const framebuffer&) noexcept = delete;
-      auto operator=(framebuffer&& rhs) noexcept -> framebuffer&;
-
-      /**
-       * Get the underlying vulkan framebuffer handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::Framebuffer;
       /**
        * Get the device used for the creation of the framebuffer handle
        */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
+   private:
       /**
        * Turn an error flag and a standard error code into a vkn::error
        */
       inline static auto make_error(error err, std::error_code ec) -> vkn::error
       {
-         return {make_error_code(err), static_cast<vk::Result>(ec.value())};
+         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
       }
 
    private:
-      vk::Device m_device{nullptr};
-      vk::Framebuffer m_framebuffer{nullptr};
+      vk::UniqueFramebuffer m_framebuffer{nullptr};
 
       vk::Extent2D m_dimensions{};
 

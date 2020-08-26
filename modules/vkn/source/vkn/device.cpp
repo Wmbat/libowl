@@ -98,11 +98,11 @@ namespace vkn
    } // namespace detail
 
    device::device(physical_device&& physical_device, const create_info& info) :
-      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
       m_extensions{info.extensions}
    {}
    device::device(physical_device&& physical_device, create_info&& info) :
-      m_physical_device{std::move(physical_device)}, m_device{info.device}, m_version{info.version},
+      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
       m_extensions{std::move(info.extensions)}
    {}
    device::device(device&& rhs) noexcept { *this = std::move(rhs); }
@@ -120,8 +120,7 @@ namespace vkn
       {
          m_physical_device = std::move(rhs.m_physical_device);
 
-         m_device = rhs.m_device;
-         rhs.m_device = nullptr;
+         std::swap(m_device, rhs.m_device);
 
          m_version = rhs.m_version;
          m_extensions = std::move(rhs.m_extensions);
@@ -142,7 +141,7 @@ namespace vkn
          if (!index)
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::present_unavailable), 
                .result = {}
             });
@@ -150,19 +149,19 @@ namespace vkn
          }
          else
          {
-            return monad::make_right(index.value_or(0u));
+            return monad::make_value(index.value_or(0u));
          }
       }
       else if (type == queue::type::graphics)
       {
          if (auto i = detail::get_graphics_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_right(i.value());
+            return monad::make_value(i.value());
          }
          else
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::graphics_unavailable), 
                .result = {}
             });
@@ -174,12 +173,12 @@ namespace vkn
          if (const auto i =
                 detail::get_separated_compute_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_right(i.value());
+            return monad::make_value(i.value());
          }
          else
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::compute_unavailable), 
                .result = {}
             });
@@ -191,12 +190,12 @@ namespace vkn
          if (const auto i =
                 detail::get_separated_transfer_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_right(i.value());
+            return monad::make_value(i.value());
          }
          else
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::transfer_unavailable), 
                .result = {}
             });
@@ -206,7 +205,7 @@ namespace vkn
       else
       {
          // clang-format off
-         return monad::make_left(err_t{
+         return monad::make_error(err_t{
             .type = detail::make_error_code(queue::error::invalid_queue_family_index), 
             .result = {}
          });
@@ -223,12 +222,12 @@ namespace vkn
          if (const auto i =
                 detail::get_dedicated_compute_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_right(i.value());
+            return monad::make_value(i.value());
          }
          else
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::compute_unavailable), 
                .result = {}
             });
@@ -240,12 +239,12 @@ namespace vkn
          if (const auto i =
                 detail::get_dedicated_transfer_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_right(i.value());
+            return monad::make_value(i.value());
          }
          else
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = detail::make_error_code(queue::error::transfer_unavailable), 
                .result = {}
             });
@@ -255,7 +254,7 @@ namespace vkn
       else
       {
          // clang-format off
-         return monad::make_left(err_t{
+         return monad::make_error(err_t{
             .type = detail::make_error_code(queue::error::invalid_queue_family_index), 
             .result = {}
          });
@@ -268,11 +267,11 @@ namespace vkn
       using err_t = vkn::error;
 
       return get_queue_index(type).join(
-         [](const err_t& err) -> vkn::result<vk::Queue> {
-            return monad::make_left(err_t{err});
-         },
          [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return monad::make_right(m_device.getQueue(i, 0));
+            return monad::make_value(m_device.getQueue(i, 0));
+         },
+         [](const err_t& err) -> vkn::result<vk::Queue> {
+            return monad::make_error(err_t{err});
          });
    }
 
@@ -281,15 +280,18 @@ namespace vkn
       using err_t = vkn::error;
 
       return get_dedicated_queue_index(type).join(
-         [](const err_t& err) -> vkn::result<vk::Queue> {
-            return monad::make_left(err_t{err});
-         },
          [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return monad::make_right(m_device.getQueue(i, 0));
+            return monad::make_value(m_device.getQueue(i, 0));
+         },
+         [](const err_t& err) -> vkn::result<vk::Queue> {
+            return monad::make_error(err_t{err});
          });
    }
 
-   auto device::value() const noexcept -> value_type { return m_device; }
+   auto device::operator->() -> vk::Device* { return &m_device; }
+   auto device::operator->() const noexcept -> const vk::Device* { return &m_device; }
+
+   auto device::value() const noexcept -> vk::Device { return m_device; }
    auto device::physical() const noexcept -> const physical_device& { return m_physical_device; }
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
 
@@ -351,7 +353,7 @@ namespace vkn
 
          if (!is_present)
          {
-            monad::make_left(detail::make_error(device::error::device_extension_not_supported, {}));
+            monad::make_error(detail::make_error(device::error::device_extension_not_supported, {}));
          }
       }
 
@@ -374,15 +376,15 @@ namespace vkn
 
       return monad::try_wrap<vk::SystemError>([&] {
          return gpu.createDevice(device_create_info);
-      }).left_map([](auto err){
+      }).map_error([](auto err){
          return detail::make_error(device::error::failed_to_create_device, err.code());
-      }).right_map([&](vk::Device dev) {
+      }).map([&](vk::Device dev) {
          log_info(m_plogger, "[vkn] device created");
 
          m_loader.load_device(dev);
 
          return device{std::move(m_info.phys_device),
-                       device::create_info{dev, m_info.api_version, std::move(extensions)}};
+                       {dev, m_info.api_version, std::move(extensions)}};
       });
       // clang-format on
    } // namespace vkn

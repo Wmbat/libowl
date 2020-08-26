@@ -32,12 +32,6 @@ namespace core
 
    public:
       shader_codex() = default;
-      shader_codex(const shader_codex&) = delete;
-      shader_codex(shader_codex&&) = default;
-      ~shader_codex() = default;
-
-      auto operator=(const shader_codex&) -> shader_codex& = delete;
-      auto operator=(shader_codex &&) -> shader_codex& = default;
 
       auto add_shader(const std::filesystem::path& path) -> std::string;
       auto add_precompiled_shader(vkn::shader&& shader) -> std::string;
@@ -51,7 +45,7 @@ namespace core
       }
 
    private:
-      util::dense_hash_map<std::string, vkn::shader> m_shaders;
+      std::unordered_map<std::string, vkn::shader> m_shaders;
 
       static inline constexpr int client_input_semantics_version = 100;
       static inline constexpr int default_version = 100;

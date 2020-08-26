@@ -2,25 +2,27 @@
 
 #include <vkn/core.hpp>
 #include <vkn/device.hpp>
-#include <vkn/swapchain.hpp>
 
 namespace vkn
 {
-   class render_pass final
+   /**
+    * Wrapper class around the vulkan semaphore handle. May only
+    * be built uing the inner builder class.
+    */
+   class semaphore final
    {
    public:
-      using value_type = vk::RenderPass;
-      using pointer = vk::RenderPass*;
-      using const_pointer = const vk::RenderPass*;
+      using value_type = vk::Semaphore;
+      using pointer = vk::Semaphore*;
+      using const_pointer = const vk::Semaphore*;
 
       enum struct error
       {
-         no_device_provided,
-         failed_to_create_render_pass
+         failed_to_create_semaphore
       };
 
    public:
-      render_pass() noexcept = default;
+      semaphore() = default;
 
       /**
        * Allow direct access to the underlying handle functions
@@ -42,62 +44,54 @@ namespace vkn
        * Get the underlying handle
        */
       [[nodiscard]] auto value() const noexcept -> value_type;
+      /**
+       * Get the device used to create the underlying handle
+       */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::UniqueRenderPass m_render_pass{nullptr};
-      vk::Format m_swapchain_format{};
+      vk::UniqueSemaphore m_semaphore{nullptr};
 
    public:
+      /**
+       * Helper class to simplify the building of a semaphore object
+       */
       class builder
       {
       public:
-         builder(const vkn::device& device, const vkn::swapchain& swapchain,
-                 util::logger* plogger) noexcept;
+         builder(const vkn::device& device, util::logger* p_logger) noexcept;
 
          /**
-          * Construct a render_pass object. If construction fails, an error will be
-          * returned instead
+          * Attempt to create the semaphore object. Returns an error
+          * otherwise
           */
-         auto build() -> vkn::result<render_pass>;
+         [[nodiscard]] auto build() const noexcept -> vkn::result<semaphore>;
 
       private:
-         vk::Device m_device;
-         vk::Format m_swapchain_format;
-         vk::Extent2D m_swapchain_extent;
+         util::logger* const mp_logger;
 
-         util::logger* const m_plogger;
+         struct info
+         {
+            vk::Device device;
+         } m_info;
       };
 
    private:
       struct create_info
       {
-         vk::UniqueRenderPass render_pass{nullptr};
-         vk::Format format{};
+         vk::UniqueSemaphore semaphore;
       };
 
-      render_pass(create_info&& info) noexcept;
+      semaphore(create_info&& info) noexcept;
 
-      /**
-       * A struct used for error handling and displaying error messages
-       */
       struct error_category : std::error_category
       {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
          [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
          [[nodiscard]] auto message(int err) const -> std::string override;
       };
 
       inline static const error_category m_category{};
 
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
       inline static auto make_error(error err, std::error_code ec) -> vkn::error
       {
          return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
@@ -108,7 +102,7 @@ namespace vkn
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::render_pass::error> : true_type
+   struct is_error_code_enum<vkn::semaphore::error> : true_type
    {
    };
 } // namespace std

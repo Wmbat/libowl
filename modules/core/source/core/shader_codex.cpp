@@ -228,14 +228,14 @@ namespace core
       {
          for ([[maybe_unused]] const auto& path : m_info.shader_paths)
          {
-            const auto shader_result = create_shader(path).right_map([&](auto&& shader) {
+            const auto shader_result = create_shader(path).map([&](auto&& shader) {
                codex.add_precompiled_shader(std::move(shader));
                return 0u;
             });
 
-            if (!shader_result.is_right())
+            if (!shader_result.is_value())
             {
-               return monad::make_left(*shader_result.left());
+               return monad::make_error(*shader_result.error());
             }
          }
       }
@@ -244,7 +244,7 @@ namespace core
          util::log_warn(m_plogger, "[core] no shaders provided");
       }
 
-      return monad::make_right(std::move(codex));
+      return monad::make_value(std::move(codex));
    }
 
    auto builder::set_cache_directory(const std::filesystem::path& path) -> builder&
@@ -308,24 +308,24 @@ namespace core
                {
                   util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
 
-                  if (const auto cache_res = cache_shader(hashed_path, *res.right()))
+                  if (const auto cache_res = cache_shader(hashed_path, *res.value()))
                   {
-                     return monad::make_left(cache_res.value());
+                     return monad::make_error(cache_res.value());
                   }
 
                   const auto extension = path.extension().string();
                   return vkn::shader::builder{*m_pdevice, m_plogger}
-                     .set_spirv_binary(*res.right())
+                     .set_spirv_binary(*res.value())
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
-                     .left_map([]([[maybe_unused]] auto&& err) {
+                     .map_error([]([[maybe_unused]] auto&& err) {
                         return make_error_code(error_type::failed_to_create_shader);
                      });
                }
                else
                {
-                  return monad::make_left(*res.left());
+                  return monad::make_error(*res.error());
                }
             }
             else
@@ -334,14 +334,14 @@ namespace core
                util::log_info(m_plogger, R"([core] loading shader "{0}" from cache)", path.string(),
                               hashed_path.string());
 
-               return load_shader(hashed_path).right_flat_map([&](auto&& spirv) {
+               return load_shader(hashed_path).and_then([&](auto&& spirv) {
                   const std::string extension = path.extension();
                   return vkn::shader::builder{*m_pdevice, m_plogger}
                      .set_spirv_binary(std::move(spirv))
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
-                     .left_map([]([[maybe_unused]] auto&& err) {
+                     .map_error([]([[maybe_unused]] auto&& err) {
                         return make_error_code(error_type::failed_to_create_shader);
                      });
                });
@@ -357,24 +357,24 @@ namespace core
             {
                util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
 
-               if (const auto cache_res = cache_shader(hashed_path, *res.right()))
+               if (const auto cache_res = cache_shader(hashed_path, *res.value()))
                {
-                  return monad::make_left(cache_res.value());
+                  return monad::make_error(cache_res.value());
                }
 
                const auto extension = path.extension().string();
                return vkn::shader::builder{*m_pdevice, m_plogger}
-                  .set_spirv_binary(*res.right())
+                  .set_spirv_binary(*res.value())
                   .set_name(path.filename().string())
                   .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                   .build()
-                  .left_map([]([[maybe_unused]] auto&& err) {
+                  .map_error([]([[maybe_unused]] auto&& err) {
                      return make_error_code(error_type::failed_to_create_shader);
                   });
             }
             else
             {
-               return monad::make_left(*res.left());
+               return monad::make_error(*res.error());
             }
          }
       }
@@ -382,20 +382,20 @@ namespace core
       {
          util::log_info(m_plogger, "[core] compiling shader: \"{0}\"", path.string());
 
-         return compile_shader(path).right_flat_map([&](auto&& spirv) {
+         return compile_shader(path).and_then([&](auto&& spirv) {
             const auto extension = path.extension().string();
             return vkn::shader::builder{*m_pdevice, m_plogger}
                .set_spirv_binary(std::move(spirv))
                .set_name(path.filename().string())
                .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                .build()
-               .left_map([]([[maybe_unused]] auto&& err) {
+               .map_error([]([[maybe_unused]] auto&& err) {
                   return make_error_code(error_type::failed_to_create_shader);
                });
          });
       }
 
-      return monad::make_left(std::error_code{});
+      return monad::make_error(std::error_code{});
    }
 
    auto builder::compile_shader(const std::filesystem::path& path)
@@ -404,7 +404,7 @@ namespace core
       std::ifstream file{path};
       if (!file.is_open())
       {
-         return monad::make_left(make_error_code(error_type::failed_to_open_file));
+         return monad::make_error(make_error_code(error_type::failed_to_open_file));
       }
 
       std::string spirv_version{};
@@ -415,7 +415,7 @@ namespace core
 
       if (shader_stage == EShLangCount)
       {
-         return monad::make_left(make_error_code(error_type::unknow_shader_type));
+         return monad::make_error(make_error_code(error_type::unknow_shader_type));
       }
 
       using file_it = std::istreambuf_iterator<char>;
@@ -429,10 +429,8 @@ namespace core
       tshader.setEnvTarget(glslang::EshTargetSpv,
                            get_spirv_version(m_pdevice->get_vulkan_version()));
 
-      {
-         const char* shader_data_cstr = shader_data.c_str();
-         tshader.setStrings(&shader_data_cstr, 1);
-      }
+      const char* shader_data_cstr = shader_data.c_str();
+      tshader.setStrings(&shader_data_cstr, 1);
 
       const auto resources = detail::default_built_in_resource;
       const auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
@@ -446,7 +444,7 @@ namespace core
       {
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
 
-         return monad::make_left(make_error_code(error_type::failed_to_preprocess_shader));
+         return monad::make_error(make_error_code(error_type::failed_to_preprocess_shader));
       }
 
       const char* preprocessed_glsl_c_str = preprocessed_glsl.c_str();
@@ -456,7 +454,7 @@ namespace core
       {
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
 
-         return monad::make_left(make_error_code(error_type::failed_to_parse_shader));
+         return monad::make_error(make_error_code(error_type::failed_to_parse_shader));
       }
 
       glslang::TProgram program;
@@ -467,7 +465,7 @@ namespace core
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoDebugLog());
 
-         return monad::make_left(make_error_code(error_type::failed_to_link_shader));
+         return monad::make_error(make_error_code(error_type::failed_to_link_shader));
       }
 
       std::vector<uint32_t> spirv;
@@ -475,7 +473,7 @@ namespace core
       glslang::SpvOptions spv_options;
       glslang::GlslangToSpv(*program.getIntermediate(shader_stage), spirv, &logger, &spv_options);
 
-      return monad::make_right(util::dynamic_array<uint32_t>{spirv.begin(), spirv.end()});
+      return monad::make_value(util::dynamic_array<uint32_t>{spirv.begin(), spirv.end()});
    }
    auto builder::load_shader(const std::filesystem::path& path)
       -> core::result<util::dynamic_array<std::uint32_t>>
@@ -483,7 +481,7 @@ namespace core
       std::ifstream file{path, std::ios::binary};
       if (!file.is_open())
       {
-         return monad::make_left(make_error_code(error_type::failed_to_open_file));
+         return monad::make_error(make_error_code(error_type::failed_to_open_file));
       }
 
       using file_it = std::istreambuf_iterator<char>;
@@ -492,7 +490,7 @@ namespace core
       std::memcpy(static_cast<void*>(data.data()), raw_shader_data.data(),
                   sizeof(std::uint32_t) * data.size());
 
-      return monad::make_right(data);
+      return monad::make_value(data);
    }
 
    auto builder::cache_shader(const std::filesystem::path& path,
@@ -538,8 +536,7 @@ namespace core
       // clang-format off
       return match(major, minor)(
          pattern(1u, 0u) = [] { return glslang::EShTargetSpv_1_0; },
-         pattern(1u, 1u) = [] { return glslang::EShTargetSpv_1_3; },
-         pattern(1u, 2u) = [] { return glslang::EShTargetSpv_1_5; },
+         pattern(1u, _) = [] { return glslang::EShTargetSpv_1_3; },
          pattern(_, _) = [] { return glslang::EShTargetLanguageVersionCount; }
       );
       // clang-format on

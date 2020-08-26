@@ -1,4 +1,5 @@
 #include "vkn/instance.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <monads/try.hpp>
 
@@ -108,44 +109,12 @@ namespace vkn
 
    /* INSTANCE */
 
-   instance::instance(vk::Instance instance, vk::DebugUtilsMessengerEXT debug_utils,
-                      util::dynamic_array<const char*> extension, uint32_t version) :
-      m_instance{instance},
-      m_debug_utils{debug_utils}, m_extensions(std::move(extension)), m_version(version)
+   instance::instance(create_info&& info) :
+      m_instance{std::move(info.instance)}, m_debug_utils{std::move(info.debug_utils)},
+      m_extensions(std::move(info.extensions)), m_version(info.version)
    {}
-   instance::instance(instance&& rhs) noexcept { *this = std::move(rhs); }
-   instance::~instance()
-   {
-      if (m_instance)
-      {
-         if (m_debug_utils)
-         {
-            m_instance.destroyDebugUtilsMessengerEXT(m_debug_utils);
-         }
 
-         m_instance.destroy();
-      }
-   }
-
-   auto instance::operator=(instance&& rhs) noexcept -> instance&
-   {
-      if (this != &rhs)
-      {
-         m_instance = rhs.m_instance;
-         rhs.m_instance = nullptr;
-
-         m_debug_utils = rhs.m_debug_utils;
-         rhs.m_debug_utils = nullptr;
-
-         m_extensions = std::move(rhs.m_extensions);
-
-         std::swap(m_version, rhs.m_version);
-      }
-
-      return *this;
-   }
-
-   auto instance::value() const noexcept -> value_type { return m_instance; }
+   auto instance::value() const noexcept -> vk::Instance { return m_instance.get(); }
    auto instance::version() const noexcept -> uint32_t { return m_version; }
    auto instance::extensions() const -> const util::dynamic_array<const char*>&
    {
@@ -159,7 +128,7 @@ namespace vkn
       m_loader{vk_loader}, m_plogger{plogger}
    {}
 
-   auto builder::build() -> vkn::result<instance>
+   auto builder::build() -> monad::result<instance, vkn::error>
    {
       const auto version_res = monad::try_wrap<vk::SystemError>([] {
          return vk::enumerateInstanceVersion(); // may throw
@@ -167,15 +136,15 @@ namespace vkn
 
       if (!version_res)
       {
-         return monad::make_left(detail::make_error(instance::error::vulkan_version_unavailable,
-                                                    version_res.left()->code()));
+         return monad::make_error(detail::make_error(instance::error::vulkan_version_unavailable,
+                                                     version_res.error()->code()));
       }
 
-      const uint32_t api_version = version_res.right().value();
+      const uint32_t api_version = version_res.value().value();
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
-         return monad::make_left(
+         return monad::make_error(
             detail::make_error(instance::error::vulkan_version_1_2_unavailable, {}));
       }
 
@@ -186,27 +155,27 @@ namespace vkn
       const auto sys_layers = monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceLayerProperties();
       }).join(
+         [](const auto& data) {
+            return util::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
+         },
          [logger = m_plogger](const auto& err) {
             if constexpr (detail::ENABLE_VALIDATION_LAYERS)
             {
                log_warn(logger, "[vkn] instance layer enumeration error: {0}", err.what());
             }
             return util::dynamic_array<vk::LayerProperties>{};
-         },
-         [](const auto& data) {
-            return util::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
          }
       );
   
       const auto sys_exts = monad::try_wrap<vk::SystemError>([&] {
          return vk::enumerateInstanceExtensionProperties();
       }).join(
+         [](const auto& data){
+            return util::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
+         },
          [logger=m_plogger](const auto& err) {
             log_warn(logger, "[vkn] instance layer enumeration error: {1}", err.what());
             return util::dynamic_array<vk::ExtensionProperties>{};
-         }, 
-         [](const auto& data){
-            return util::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
          }
       );
       // clang-format on
@@ -224,10 +193,10 @@ namespace vkn
       auto extension_names_res = get_all_ext(sys_exts, has_debug_utils_support(sys_exts));
       if (!extension_names_res)
       {
-         return monad::make_left(extension_names_res.left().value());
+         return monad::make_error(extension_names_res.error().value());
       }
 
-      const util::dynamic_array<const char*> extensions = std::move(*extension_names_res.right());
+      const util::dynamic_array<const char*> extensions = std::move(*extension_names_res.value());
       for (const char* name : extensions)
       {
          log_info(m_plogger, "[vkn] instance extension: {0} - ENABLED", name);
@@ -247,6 +216,11 @@ namespace vkn
       util::dynamic_array<const char*> layers{m_info.layers};
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
+         for (const auto& name : sys_layers)
+         {
+            log_info(m_plogger, "[vkn] instance layers: {0} - ENABLED", name.layerName);
+         }
+
          if (has_validation_layer_support(sys_layers))
          {
             layers.push_back("VK_LAYER_KHRONOS_validation");
@@ -260,7 +234,7 @@ namespace vkn
 
                if (!is_present)
                {
-                  return monad::make_left(
+                  return monad::make_error(
                      detail::make_error(instance::error::instance_layer_not_supported, {}));
                }
             }
@@ -275,22 +249,20 @@ namespace vkn
          }
       }
 
-      // clang-format off
       return monad::try_wrap<vk::SystemError>([&] {
-         return vk::createInstance(instance_create_info);
-      })
-      .left_map([](auto err) { // Error creating instance
-         return detail::make_error(instance::error::failed_to_create_instance, err.code());
-      })
-      .right_flat_map([&](auto inst) { // Instance created
-         log_info(m_plogger, "[vkn] instance created");
-         m_loader.load_instance(inst);
+                return vk::createInstanceUnique(instance_create_info);
+             })
+         .map_error([](auto err) { // Error creating instance
+            return detail::make_error(instance::error::failed_to_create_instance, err.code());
+         })
+         .and_then([&](vk::UniqueInstance&& inst) { // Instance created
+            log_info(m_plogger, "[vkn] instance created");
+            m_loader.load_instance(inst.get());
 
-         return build_debug_utils(inst, m_plogger).right_map([&](auto debug) {
-            return instance{inst, debug, extensions, api_version};
+            return build_debug_utils(inst.get(), m_plogger).map([&](auto debug) {
+               return instance{{std::move(inst), std::move(debug), extensions, api_version}};
+            });
          });
-      });
-      // clang-format off
    } // namespace vkn
 
    auto builder::set_application_name(std::string_view app_name) -> builder&
@@ -331,12 +303,12 @@ namespace vkn
    }
 
    auto builder::build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
-      -> vkn::result<vk::DebugUtilsMessengerEXT>
+      -> monad::result<vk::UniqueDebugUtilsMessengerEXT, vkn::error>
    {
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
       {
          return monad::try_wrap<vk::SystemError>([&] {
-                   return inst.createDebugUtilsMessengerEXT(
+                   return inst.createDebugUtilsMessengerEXTUnique(
                       {.pNext = nullptr,
                        .flags = {},
                        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -348,17 +320,17 @@ namespace vkn
                        .pfnUserCallback = debug_callback,
                        .pUserData = static_cast<void*>(m_plogger)});
                 })
-            .left_map([](const auto& err) -> vkn::error {
+            .map_error([](const auto& err) -> vkn::error {
                return detail::make_error(instance::error::failed_to_create_debug_utils, err.code());
             })
-            .right_map([plogger](auto handle) {
+            .map([plogger](vk::UniqueDebugUtilsMessengerEXT handle) {
                log_info(plogger, "[vkn] debug utils created");
                return handle;
             });
       }
       else
       {
-         return monad::make_right(vk::DebugUtilsMessengerEXT{nullptr});
+         return monad::make_value(vk::UniqueDebugUtilsMessengerEXT{nullptr});
       }
    }
 
@@ -382,7 +354,7 @@ namespace vkn
 
    auto builder::get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
                              bool are_debug_utils_available) const
-      -> vkn::result<util::dynamic_array<const char*>>
+      -> monad::result<util::dynamic_array<const char*>, vkn::error>
    {
       using err_t = vkn::error;
 
@@ -431,7 +403,7 @@ namespace vkn
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
          // clang-format off
-         return monad::make_left(err_t{
+         return monad::make_error(err_t{
             .type = instance::make_error_code(instance::error::window_extensions_not_present),
             .result = {}
          });
@@ -448,7 +420,7 @@ namespace vkn
          if (!is_present)
          {
             // clang-format off
-            return monad::make_left(err_t{
+            return monad::make_error(err_t{
                .type = instance::make_error_code(instance::error::instance_extension_not_supported),
                .result = {}
             });
@@ -456,6 +428,6 @@ namespace vkn
          }
       }
 
-      return monad::make_right(extensions);
+      return monad::make_value(extensions);
    }
 } // namespace vkn

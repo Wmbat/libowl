@@ -24,10 +24,8 @@ namespace vkn
             case shader::type::tess_control:
                return vk::ShaderStageFlagBits::eTessellationControl;
             default:
-               break;
+               return {};
          }
-
-         assert(false && "something went wrong here");
       }
 
       auto to_string(graphics_pipeline::error err) -> std::string
@@ -41,10 +39,8 @@ namespace vkn
             case err_t::failed_to_create_pipeline_layout:
                return "failed_to_create_pipeline_layout";
             default:
-               break;
+               return "UNKNOWN";
          }
-
-         assert(false && "something wrong happened");
       }
    }; // namespace detail
 
@@ -58,43 +54,25 @@ namespace vkn
    }
 
    graphics_pipeline::graphics_pipeline(create_info&& info) noexcept :
-      m_value{info.pipeline}, m_pipeline_layout{info.pipeline_layout}, m_device{info.device}
+      m_pipeline{std::move(info.pipeline)}, m_pipeline_layout{std::move(info.pipeline_layout)}
    {}
-   graphics_pipeline::graphics_pipeline(graphics_pipeline&& other) noexcept
-   {
-      *this = std::move(other);
-   }
-   graphics_pipeline::~graphics_pipeline()
-   {
-      if (m_device)
-      {
-         if (m_value)
-         {
-            m_device.destroyPipeline(m_value);
-         }
 
-         if (m_pipeline_layout)
-         {
-            m_device.destroyPipelineLayout(m_pipeline_layout);
-         }
-      }
+   auto graphics_pipeline::operator->() noexcept -> pointer { return &m_pipeline.get(); }
+   auto graphics_pipeline::operator->() const noexcept -> const_pointer
+   {
+      return &m_pipeline.get();
    }
 
-   auto graphics_pipeline::operator=(graphics_pipeline&& rhs) noexcept -> graphics_pipeline&
-   {
-      std::swap(m_value, rhs.m_value);
-      std::swap(m_pipeline_layout, rhs.m_pipeline_layout);
-      std::swap(m_device, rhs.m_device);
+   auto graphics_pipeline::operator*() const noexcept -> value_type { return value(); }
 
-      return *this;
-   }
+   graphics_pipeline::operator bool() const noexcept { return m_pipeline.get(); }
 
-   auto graphics_pipeline::value() const noexcept -> value_type { return m_value; }
-   auto graphics_pipeline::device() const noexcept -> vk::Device { return m_device; }
+   auto graphics_pipeline::value() const noexcept -> vk::Pipeline { return m_pipeline.get(); }
    auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
    {
-      return m_pipeline_layout;
+      return m_pipeline_layout.get();
    }
+   auto graphics_pipeline::device() const noexcept -> vk::Device { return m_pipeline.getOwner(); }
 
    graphics_pipeline::builder::builder(const vkn::device& device,
                                        const vkn::render_pass& render_pass, util::logger* plogger) :
@@ -108,20 +86,20 @@ namespace vkn
    {
       // Maybe move pipeline layout into it's own abstraction
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createPipelineLayout({.pNext = nullptr,
-                                                           .flags = {},
-                                                           .setLayoutCount = 0u,
-                                                           .pSetLayouts = nullptr,
-                                                           .pushConstantRangeCount = 0u,
-                                                           .pPushConstantRanges = nullptr});
+                return m_info.device.createPipelineLayoutUnique({.pNext = nullptr,
+                                                                 .flags = {},
+                                                                 .setLayoutCount = 0u,
+                                                                 .pSetLayouts = nullptr,
+                                                                 .pushConstantRangeCount = 0u,
+                                                                 .pPushConstantRanges = nullptr});
              })
-         .left_map([](vk::SystemError&& err) {
+         .map_error([](vk::SystemError&& err) {
             return make_error(error::failed_to_create_pipeline_layout, err.code());
          })
-         .right_flat_map([&](vk::PipelineLayout&& handle) {
+         .and_then([&](vk::UniquePipelineLayout&& handle) {
             util::log_info(m_plogger, "[vkn] pipeline layout created");
 
-            return create_pipeline(handle);
+            return create_pipeline(std::move(handle));
          });
    }
 
@@ -152,7 +130,7 @@ namespace vkn
       return *this;
    }
 
-   auto graphics_pipeline::builder::create_pipeline(vk::PipelineLayout layout) const
+   auto graphics_pipeline::builder::create_pipeline(vk::UniquePipelineLayout layout) const
       -> vkn::result<graphics_pipeline>
    {
       shader_dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
@@ -229,22 +207,22 @@ namespace vkn
                                   .setPViewportState(&viewport_state_create_info)
                                   .setPMultisampleState(&multisample_state_create_info)
                                   .setPColorBlendState(&colour_blend_state_create_info)
-                                  .setLayout(layout)
+                                  .setLayout(layout.get())
                                   .setRenderPass(m_info.render_pass)
                                   .setSubpass(0)
                                   .setBasePipelineHandle(nullptr);
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createGraphicsPipeline(nullptr, create_info);
+                return m_info.device.createGraphicsPipelineUnique(nullptr, create_info);
              })
-         .left_map([](auto&& err) {
+         .map_error([](auto&& err) {
             return make_error(error::failed_to_create_pipeline, err.code());
          })
-         .right_map([&](auto&& handle) {
+         .map([&](vk::UniquePipeline&& handle) {
             util::log_info(m_plogger, R"([vkn] graphics pipeline created)");
 
-            return graphics_pipeline(
-               {.device = m_info.device, .pipeline = handle, .pipeline_layout = layout});
+            return graphics_pipeline{
+               {.pipeline = std::move(handle), .pipeline_layout = std::move(layout)}};
          });
    }
 } // namespace vkn

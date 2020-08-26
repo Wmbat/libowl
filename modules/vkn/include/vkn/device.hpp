@@ -55,7 +55,7 @@ namespace vkn
     * Holds all functionality around the lifetime and use of a vulkan device, it hold the physical
     * and logical representation of the graphics card.
     */
-   class device final : handle_traits<vk::Device>
+   class device final
    {
    public:
       /**
@@ -115,10 +115,10 @@ namespace vkn
       [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
          -> vkn::result<vk::Queue>;
 
-      /**
-       * Get a const reference to the underlying vulkan device handle.
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      auto operator->() -> vk::Device*;
+      auto operator->() const noexcept -> const vk::Device*;
+
+      [[nodiscard]] auto value() const noexcept -> vk::Device;
       /**
        * Get a const reference to the physical representation of the device.
        */
@@ -129,9 +129,8 @@ namespace vkn
       [[nodiscard]] auto get_vulkan_version() const noexcept -> uint32_t;
 
    private:
+      vk::Device m_device{nullptr};
       vkn::physical_device m_physical_device;
-
-      vk::Device m_device;
 
       uint32_t m_version{0};
 

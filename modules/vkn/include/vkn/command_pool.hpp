@@ -1,52 +1,21 @@
-/**
- * @file command_pool.hpp
- * @author wmbat wmbat@protonmail.com
- * @date 9th of August, 2020
- * @copyright MIT License.
- */
-
 #pragma once
 
-#include "vkn/core.hpp"
-#include "vkn/device.hpp"
+#include <vkn/core.hpp>
+#include <vkn/device.hpp>
 
 namespace vkn
 {
    /**
     * A class that wraps around the functionality of a vulkan command pool
-    * and maintains command buffers associated with the pool.
+    * and maintains command buffers associated with the pool. May only be
+    * built using the inner builder class.
     */
-   class command_pool final : handle_traits<vk::CommandPool>
+   class command_pool final
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
    public:
-      /**
-       * All necessary data needed to construct a command_pool object.
-       */
-      struct create_info
-      {
-         vk::Device device{nullptr};
-         vk::CommandPool command_pool{nullptr};
-
-         uint32_t queue_index{0};
-
-         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
-         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
-      };
+      using value_type = vk::CommandPool;
+      using pointer = vk::CommandPool*;
+      using const_pointer = const vk::CommandPool*;
 
       /**
        * Contains all possible error values comming from the command_pool class.
@@ -59,40 +28,43 @@ namespace vkn
       };
 
       command_pool() = default;
-      command_pool(const create_info& info);
-      command_pool(create_info&& info);
-      command_pool(const command_pool&) = delete;
-      command_pool(command_pool&& rhs) noexcept;
-      ~command_pool();
 
-      auto operator=(const command_pool&) -> command_pool& = delete;
-      auto operator=(command_pool&& rhs) noexcept -> command_pool&;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() noexcept -> pointer;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer;
 
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type;
+
+      operator bool() const noexcept;
+
+      /**
+       * Get the underlying handle
+       */
+      [[nodiscard]] auto value() const noexcept -> vk::CommandPool;
+      /**
+       * Get the device used to create the underlying handle
+       */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto primary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
       [[nodiscard]] auto secondary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
 
-      /**
-       * Transfer an #error_type enum value into a standard error_code.
-       */
-      inline static auto make_error_code(error_type err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
-
    private:
-      vk::Device m_device{nullptr};
-      vk::CommandPool m_command_pool{nullptr};
+      vk::UniqueCommandPool m_command_pool{nullptr};
 
       uint32_t m_queue_index{0};
 
       util::dynamic_array<vk::CommandBuffer> m_primary_buffers;
       util::dynamic_array<vk::CommandBuffer> m_secondary_buffers;
-
-      inline static const error_category m_category{};
 
    public:
       /**
@@ -104,7 +76,7 @@ namespace vkn
          builder(const vkn::device& device, util::logger* plogger);
 
          /**
-          * Attempt to build a command_pool object.
+          * Attempt to build a command_pool object. May return an error
           */
          auto build() noexcept -> vkn::result<command_pool>;
 
@@ -126,7 +98,7 @@ namespace vkn
          auto set_secondary_buffer_count(uint32_t count) noexcept -> builder&;
 
       private:
-         auto create_command_pool(vk::CommandPool handle) -> vkn::result<command_pool>;
+         auto create_command_pool(vk::UniqueCommandPool handle) -> vkn::result<command_pool>;
          auto create_primary_buffers(vk::CommandPool pool)
             -> vkn::result<util::dynamic_array<vk::CommandBuffer>>;
          auto create_secondary_buffers(vk::CommandPool handle)
@@ -145,6 +117,39 @@ namespace vkn
             uint32_t secondary_buffer_count{0};
          } m_info;
       };
+
+   private:
+      struct create_info
+      {
+         vk::UniqueCommandPool command_pool{nullptr};
+
+         uint32_t queue_index{0};
+
+         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
+         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
+      };
+
+      command_pool(create_info&& info);
+
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
+      static auto make_error(command_pool::error_type flag, std::error_code ec) -> vkn::error
+      {
+         return vkn::error{{static_cast<int>(flag), m_category},
+                           static_cast<vk::Result>(ec.value())};
+      }
    };
 } // namespace vkn
 

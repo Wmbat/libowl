@@ -19,26 +19,13 @@ namespace vkn
    /**
     * Holds all data related to the vulkan shader
     */
-   class shader final : handle_traits<vk::ShaderModule>
+   class shader final
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
    public:
+      using value_type = vk::ShaderModule;
+      using pointer = value_type*;
+      using const_pointer = const value_type*;
+
       /**
        * Contains all possible error values comming from the shader class.
        */
@@ -68,34 +55,29 @@ namespace vkn
          count
       };
 
-      /**
-       * The information necessary for the creation of a shader instance
-       */
-      struct create_info
-      {
-         vk::Device device{};
-         vk::ShaderModule shader_module{};
-
-         std::string name{};
-
-         shader::type type{};
-      };
-
    public:
       shader() = default;
-      shader(const create_info& info);
-      shader(create_info&& info);
-      shader(const shader&) = delete;
-      shader(shader&& other) noexcept;
-      ~shader();
-
-      auto operator=(const shader&) -> shader& = delete;
-      auto operator=(shader&& rhs) noexcept -> shader&;
 
       /**
-       * Get a const reference to the underlying vulkan shader module
+       * Allow direct access to the underlying handle functions
        */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      auto operator->() noexcept -> pointer;
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer;
+
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type;
+
+      operator bool() const noexcept;
+
+      /**
+       * Get the underlying handle
+       */
+      [[nodiscard]] auto value() const noexcept -> vk::ShaderModule;
       /**
        * Get the name of the shader
        */
@@ -105,17 +87,8 @@ namespace vkn
        */
       [[nodiscard]] auto stage() const noexcept -> type;
 
-      /**
-       * Turns the error enum values into an std::error_code
-       */
-      inline static auto make_error_code(error err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
-
    private:
-      vk::Device m_device;
-      vk::ShaderModule m_shader_module;
+      vk::UniqueShaderModule m_shader_module;
 
       type m_type{type::count};
       std::string m_name{};
@@ -161,6 +134,44 @@ namespace vkn
             type m_type{type::count};
             std::string name{};
          } m_info;
+      };
+
+   private:
+      /**
+       * The information necessary for the creation of a shader instance
+       */
+      struct create_info
+      {
+         vk::UniqueShaderModule shader_module{};
+
+         std::string name{};
+
+         shader::type type{};
+      };
+
+      shader(create_info&& info);
+
+      /**
+       * A struct used for error handling and displaying error messages
+       */
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
+      static auto make_error(error flag, std::error_code ec) -> vkn::error
+      {
+         return vkn::error{{static_cast<int>(flag), m_category},
+                           static_cast<vk::Result>(ec.value())};
       };
    };
 } // namespace vkn

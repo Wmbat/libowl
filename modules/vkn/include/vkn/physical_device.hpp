@@ -22,14 +22,12 @@ namespace vkn
       get_graphics_queue_index(const util::range_over<vk::QueueFamilyProperties> auto& families)
          -> monad::maybe<uint32_t>
       {
-         for (uint32_t i = 0; const auto& fam : families)
+         for (uint32_t i = 0; i < families.size(); ++i)
          {
-            if (fam.queueFlags & vk::QueueFlagBits::eGraphics)
+            if (families[i].queueFlags & vk::QueueFlagBits::eGraphics)
             {
                return i;
             }
-
-            ++i;
          }
 
          return monad::none;
@@ -164,7 +162,7 @@ namespace vkn
    /**
     * The physical representation of a graphics card
     */
-   class physical_device final : handle_traits<vk::PhysicalDevice>
+   class physical_device final
    {
    public:
       /**
@@ -236,10 +234,7 @@ namespace vkn
        */
       [[nodiscard]] auto has_separated_transfer_queue() const -> bool;
 
-      /**
-       * Get a const reference to the underlying vulkan physical device handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
+      [[nodiscard]] auto value() const noexcept -> vk::PhysicalDevice;
       /**
        * Get a const reference to features of the graphics card
        */
@@ -261,8 +256,8 @@ namespace vkn
       vk::PhysicalDeviceProperties m_properties{};
       vk::PhysicalDeviceMemoryProperties m_mem_properties{};
 
+      vk::PhysicalDevice m_physical_device{nullptr};
       vk::Instance m_instance{nullptr};
-      vk::PhysicalDevice m_device{nullptr};
       vk::SurfaceKHR m_surface{nullptr};
 
       util::dynamic_array<vk::QueueFamilyProperties> m_queue_families{};
