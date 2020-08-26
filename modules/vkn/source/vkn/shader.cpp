@@ -47,6 +47,13 @@ namespace vkn
                                                                             std::move(info.name)}
    {}
 
+   auto shader::operator->() noexcept -> pointer { return &m_shader_module.get(); }
+   auto shader::operator->() const noexcept -> const_pointer { return &m_shader_module.get(); }
+
+   auto shader::operator*() const noexcept -> value_type { return value(); }
+
+   shader::operator bool() const noexcept { return m_shader_module.get(); }
+
    auto shader::value() const noexcept -> vk::ShaderModule { return m_shader_module.get(); }
    auto shader::name() const noexcept -> std::string_view { return m_name; }
    auto shader::stage() const noexcept -> type { return m_type; }
@@ -66,11 +73,10 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createShaderModuleUnique(create_info);
              })
-         .left_map([](auto&& error) {
-            return vkn::error{shader::make_error_code(error::failed_to_create_shader_module),
-                              static_cast<vk::Result>(error.code().value())};
+         .map_error([](auto&& error) {
+            return make_error(error::failed_to_create_shader_module, error.code());
          })
-         .right_map([&](auto&& handle) {
+         .map([&](auto&& handle) {
             util::log_info(m_plogger, "[vkn] shader module created");
 
             return shader{shader::create_info{

@@ -32,32 +32,18 @@ namespace vkn
    }
 
    render_pass::render_pass(create_info&& info) noexcept :
-      m_device{info.device}, m_swapchain_format{info.format}
-   {
-      m_render_pass = info.render_pass;
-   }
-   render_pass::render_pass(render_pass&& other) noexcept { *this = std::move(other); }
-   render_pass::~render_pass()
-   {
-      if (m_device && m_render_pass)
-      {
-         m_device.destroyRenderPass(m_render_pass);
-         m_device = nullptr;
-         m_render_pass = nullptr;
-      }
-   }
+      m_render_pass{std::move(info.render_pass)}, m_swapchain_format{info.format}
+   {}
 
-   auto render_pass::operator=(render_pass&& rhs) noexcept -> render_pass&
-   {
-      std::swap(m_device, rhs.m_device);
-      std::swap(m_render_pass, rhs.m_render_pass);
-      std::swap(m_swapchain_format, rhs.m_swapchain_format);
+   auto render_pass::operator->() noexcept -> pointer { return &m_render_pass.get(); }
+   auto render_pass::operator->() const noexcept -> const_pointer { return &m_render_pass.get(); }
 
-      return *this;
-   }
+   auto render_pass::operator*() const noexcept -> value_type { return value(); }
 
-   auto render_pass::value() const noexcept -> vk::RenderPass { return m_render_pass; }
-   auto render_pass::device() const noexcept -> vk::Device { return m_device; }
+   render_pass::operator bool() const noexcept { return m_render_pass.get(); }
+
+   auto render_pass::value() const noexcept -> vk::RenderPass { return m_render_pass.get(); }
+   auto render_pass::device() const noexcept -> vk::Device { return m_render_pass.getOwner(); }
 
    using builder = render_pass::builder;
 
@@ -72,7 +58,7 @@ namespace vkn
    {
       if (!m_device)
       {
-         return monad::make_left(make_error(error::no_device_provided, {}));
+         return monad::make_error(make_error(error::no_device_provided, {}));
       }
 
       const std::array attachment_descriptions{
@@ -120,16 +106,15 @@ namespace vkn
                                 .setPSubpasses(std::data(subpass_descriptions));
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_device.createRenderPass(pass_info);
+                return m_device.createRenderPassUnique(pass_info);
              })
-         .left_map([](auto&& err) {
+         .map_error([](auto&& err) {
             return make_error(error::failed_to_create_render_pass, err.code());
          })
-         .right_map([&](auto&& handle) {
+         .map([&](auto&& handle) {
             util::log_info(m_plogger, "[vkn] render pass created");
 
-            return render_pass{
-               {.device = m_device, .render_pass = handle, .format = m_swapchain_format}};
+            return render_pass{{.render_pass = std::move(handle), .format = m_swapchain_format}};
          });
    } // namespace vkn
 } // namespace vkn

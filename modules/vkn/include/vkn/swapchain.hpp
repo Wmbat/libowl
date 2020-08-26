@@ -18,8 +18,8 @@ namespace vkn
 
    public:
       using value_type = vk::SwapchainKHR;
-      using pointer = vk::SwapchainKHR*;
-      using const_pointer = const vk::SwapchainKHR*;
+      using pointer = value_type*;
+      using const_pointer = const value_type*;
 
       /**
        * Contains all possible error values comming from the swapchain class.
@@ -33,6 +33,7 @@ namespace vkn
          failed_to_create_swapchain_image_views,
       };
 
+   public:
       swapchain() = default;
 
       /**

@@ -60,11 +60,11 @@ namespace core::gfx
 
       if (res != VK_SUCCESS)
       {
-         return monad::make_left(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
+         return monad::make_error(vkn::error{.type = {}, .result = static_cast<vk::Result>(res)});
       }
       else
       {
-         return monad::make_right(vk::SurfaceKHR{surface});
+         return monad::make_value(vk::SurfaceKHR{surface});
       }
    }
 } // namespace core::gfx

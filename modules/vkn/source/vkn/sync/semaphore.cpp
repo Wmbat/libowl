@@ -49,11 +49,11 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createSemaphoreUnique({});
              })
-         .left_map([](vk::SystemError&& err) {
+         .map_error([](vk::SystemError&& err) {
             return make_error(error::failed_to_create_semaphore, err.code());
          })
-         .right_map([&](vk::UniqueSemaphore&& handle) {
-            util::log_info(mp_logger, "[vkn] semaphore semaphore");
+         .map([&](vk::UniqueSemaphore&& handle) {
+            util::log_info(mp_logger, "[vkn] semaphore created");
 
             return semaphore{{.semaphore = std::move(handle)}};
          });

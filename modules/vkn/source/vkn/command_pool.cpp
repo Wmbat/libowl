@@ -22,12 +22,6 @@ namespace vkn
                return "UNKNOWN";
          }
       };
-
-      auto make_error(command_pool::error_type flag, std::error_code ec) -> vkn::error
-      {
-         return vkn::error{command_pool::make_error_code(flag),
-                           static_cast<vk::Result>(ec.value())};
-      }
    } // namespace detail
 
    auto command_pool::error_category::name() const noexcept -> const char*
@@ -82,9 +76,9 @@ namespace vkn
 
       return monad::try_wrap<vk::SystemError>([&] {
          return m_info.device.createCommandPoolUnique(create_info);
-      }).left_map([](auto err) {
-         return detail::make_error(err_t::failed_to_create_command_pool, err.code()); 
-      }).right_flat_map([&](auto handle){           
+      }).map_error([](auto err) {
+         return make_error(err_t::failed_to_create_command_pool, err.code()); 
+      }).and_then([&](auto handle){           
          util::log_info(m_plogger, "[vkn] command pool created");
 
          return create_command_pool(std::move(handle)); 
@@ -111,23 +105,23 @@ namespace vkn
    auto builder::create_command_pool(vk::UniqueCommandPool handle) -> vkn::result<command_pool>
    {
       const auto primary_res = create_primary_buffers(handle.get());
-      if (!primary_res.is_right())
+      if (!primary_res.is_value())
       {
-         return monad::make_left(primary_res.left().value());
+         return monad::make_error(primary_res.error().value());
       }
 
       const auto secondary_res = create_secondary_buffers(handle.get());
-      if (!secondary_res.is_right())
+      if (!secondary_res.is_value())
       {
-         return monad::make_left(secondary_res.left().value());
+         return monad::make_error(secondary_res.error().value());
       }
 
       // clang-format off
-      return monad::make_right(command_pool{{
+      return monad::make_value(command_pool{{
          .command_pool = std::move(handle),
          .queue_index = m_info.queue_family_index,
-         .primary_buffers = primary_res.right().value(),
-         .secondary_buffers = secondary_res.right().value()
+         .primary_buffers = primary_res.value().value(),
+         .secondary_buffers = secondary_res.value().value()
       }});
       // clang-format on
    }
@@ -144,11 +138,10 @@ namespace vkn
                       .setLevel(vk::CommandBufferLevel::ePrimary)
                       .setCommandBufferCount(m_info.primary_buffer_count));
              })
-         .left_map([](auto err) {
-            return detail::make_error(err_t::failed_to_allocate_primary_command_buffers,
-                                      err.code());
+         .map_error([](auto err) {
+            return make_error(err_t::failed_to_allocate_primary_command_buffers, err.code());
          })
-         .right_map([&](const auto& buffers) {
+         .map([&](const auto& buffers) {
             util::log_info(m_plogger, "[vkn] {0} primary command buffers created",
                            m_info.primary_buffer_count);
 
@@ -168,11 +161,10 @@ namespace vkn
                       .setLevel(vk::CommandBufferLevel::eSecondary)
                       .setCommandBufferCount(m_info.primary_buffer_count));
              })
-         .left_map([](auto err) {
-            return detail::make_error(err_t::failed_to_allocate_primary_command_buffers,
-                                      err.code());
+         .map_error([](auto err) {
+            return make_error(err_t::failed_to_allocate_primary_command_buffers, err.code());
          })
-         .right_map([&](const auto& buffers) {
+         .map([&](const auto& buffers) {
             util::log_info(m_plogger, "[vkn] {0} secondary command buffers created",
                            m_info.secondary_buffer_count);
 

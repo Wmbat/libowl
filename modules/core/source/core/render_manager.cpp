@@ -30,7 +30,7 @@ namespace core
             .set_engine_name(m_engine_name)
             .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
             .build()
-            .left_map([plogger](auto&& err) {
+            .map_error([plogger](auto&& err) {
                return handle_instance_error(err, plogger);
             })
             .join();
@@ -39,7 +39,7 @@ namespace core
          vkn::device::builder{m_loader,
                               vkn::physical_device::selector{m_instance, mp_logger}
                                  .set_surface(mp_window->get_surface(m_instance.value())
-                                                 .left_map([plogger](auto&& err) {
+                                                 .map_error([plogger](auto&& err) {
                                                     return handle_surface_error(err, plogger);
                                                  })
                                                  .join())
@@ -47,13 +47,13 @@ namespace core
                                  .allow_any_gpu_type()
                                  .require_present()
                                  .select()
-                                 .left_map([plogger](auto&& err) {
+                                 .map_error([plogger](auto&& err) {
                                     return handle_physical_device_error(err, plogger);
                                  })
                                  .join(),
                               m_instance.version(), mp_logger}
             .build()
-            .left_map([plogger](auto&& err) {
+            .map_error([plogger](auto&& err) {
                return handle_device_error(err, plogger);
             })
             .join();
@@ -66,14 +66,14 @@ namespace core
             .set_clipped(true)
             .set_composite_alpha_flags(vk::CompositeAlphaFlagBitsKHR::eOpaque)
             .build()
-            .left_map([plogger](auto&& err) {
+            .map_error([plogger](auto&& err) {
                return handle_swapchain_error(err, plogger);
             })
             .join();
 
       m_render_pass = vkn::render_pass::builder{m_device, m_swapchain, plogger}
                          .build()
-                         .left_map([plogger](auto&& err) {
+                         .map_error([plogger](auto&& err) {
                             log_error(plogger, "[core] Failed to create render pass: \"{0}\"",
                                       err.type.message());
                             abort();
@@ -91,7 +91,7 @@ namespace core
                                         .set_buffer_height(m_swapchain.extent().height)
                                         .set_layer_count(1u)
                                         .build()
-                                        .left_map([plogger](vkn::error&& err) {
+                                        .map_error([plogger](vkn::error&& err) {
                                            log_error(plogger,
                                                      "[core] Failed to create framebuffer: \"{0}\"",
                                                      err.type.message());
@@ -108,7 +108,7 @@ namespace core
             .add_shader_filepath("resources/shaders/test_shader.frag")
             .allow_caching(false)
             .build()
-            .left_map([plogger](auto&& err) {
+            .map_error([plogger](auto&& err) {
                log_error(plogger, "[core] Failed to create shader codex: \"{0}\"", err.message());
                abort();
 
@@ -120,7 +120,7 @@ namespace core
          vkn::command_pool::builder{m_device, plogger}
             .set_queue_family_index(
                m_device.get_queue_index(vkn::queue::type::graphics)
-                  .left_map([&](auto&& err) {
+                  .map_error([&](auto&& err) {
                      log_error(plogger, "[core] No usable graphics queues found: \"{0}\"",
                                err.type.message());
                      abort();
@@ -130,7 +130,7 @@ namespace core
                   .join())
             .set_primary_buffer_count(std::size(m_framebuffers))
             .build()
-            .left_map([plogger](auto&& err) {
+            .map_error([plogger](auto&& err) {
                log_error(plogger, "[core] Failed to create command pool: \"{0}\"",
                          err.type.message());
 
@@ -154,7 +154,7 @@ namespace core
             .set_topology(vk::PrimitiveTopology::eTriangleList)
             .enable_primitive_restart(false)
             .build()
-            .left_map([&](vkn::error&& err) {
+            .map_error([&](vkn::error&& err) {
                log_error(plogger, "[core] Failed to create graphics pipeline: \"{0}\"",
                          err.type.message());
 
@@ -168,7 +168,7 @@ namespace core
       {
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
-                        .left_map([&](vkn::error&& err) {
+                        .map_error([&](vkn::error&& err) {
                            log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
                                      err.type.message());
                            abort();
@@ -182,7 +182,7 @@ namespace core
       {
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
-                        .left_map([&](vkn::error&& err) {
+                        .map_error([&](vkn::error&& err) {
                            log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
                                      err.type.message());
                            abort();
@@ -197,7 +197,7 @@ namespace core
          fence = vkn::fence::builder{m_device, mp_logger}
                     .set_signaled()
                     .build()
-                    .left_map([&](vkn::error&& err) {
+                    .map_error([&](vkn::error&& err) {
                        log_error(plogger, "[core] Failed to create in flight fence: \"{0}\"",
                                  err.type.message());
                        abort();
@@ -269,7 +269,7 @@ namespace core
 
       try
       {
-         const auto gfx_queue = *m_device.get_queue(vkn::queue::type::graphics).right();
+         const auto gfx_queue = *m_device.get_queue(vkn::queue::type::graphics).value();
          gfx_queue.submit(submit_infos, vkn::value(m_in_flight_fences.at(m_current_frame)));
       }
       catch (const vk::SystemError& err)
@@ -280,7 +280,7 @@ namespace core
 
       const std::array swapchains{vkn::value(m_swapchain)};
 
-      const auto present_queue = *m_device.get_queue(vkn::queue::type::present).right();
+      const auto present_queue = *m_device.get_queue(vkn::queue::type::present).value();
       if (present_queue.presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
                                     .pWaitSemaphores = std::data(signal_semaphores),
                                     .swapchainCount = std::size(swapchains),

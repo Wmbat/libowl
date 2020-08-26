@@ -2,7 +2,7 @@
 
 #include <util/logger.hpp>
 
-#include <monads/either.hpp>
+#include <monads/result.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -34,5 +34,5 @@ namespace core
    }
 
    template <class any_>
-   using result = monad::either<std::error_code, any_>;
+   using result = monad::result<any_, std::error_code>;
 }; // namespace core

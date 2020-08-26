@@ -39,10 +39,8 @@ namespace vkn
             case err_t::failed_to_create_pipeline_layout:
                return "failed_to_create_pipeline_layout";
             default:
-               break;
+               return "UNKNOWN";
          }
-
-         assert(false && "something wrong happened");
       }
    }; // namespace detail
 
@@ -58,6 +56,16 @@ namespace vkn
    graphics_pipeline::graphics_pipeline(create_info&& info) noexcept :
       m_pipeline{std::move(info.pipeline)}, m_pipeline_layout{std::move(info.pipeline_layout)}
    {}
+
+   auto graphics_pipeline::operator->() noexcept -> pointer { return &m_pipeline.get(); }
+   auto graphics_pipeline::operator->() const noexcept -> const_pointer
+   {
+      return &m_pipeline.get();
+   }
+
+   auto graphics_pipeline::operator*() const noexcept -> value_type { return value(); }
+
+   graphics_pipeline::operator bool() const noexcept { return m_pipeline.get(); }
 
    auto graphics_pipeline::value() const noexcept -> vk::Pipeline { return m_pipeline.get(); }
    auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
@@ -85,10 +93,10 @@ namespace vkn
                                                                  .pushConstantRangeCount = 0u,
                                                                  .pPushConstantRanges = nullptr});
              })
-         .left_map([](vk::SystemError&& err) {
+         .map_error([](vk::SystemError&& err) {
             return make_error(error::failed_to_create_pipeline_layout, err.code());
          })
-         .right_flat_map([&](vk::UniquePipelineLayout&& handle) {
+         .and_then([&](vk::UniquePipelineLayout&& handle) {
             util::log_info(m_plogger, "[vkn] pipeline layout created");
 
             return create_pipeline(std::move(handle));
@@ -207,10 +215,10 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createGraphicsPipelineUnique(nullptr, create_info);
              })
-         .left_map([](auto&& err) {
+         .map_error([](auto&& err) {
             return make_error(error::failed_to_create_pipeline, err.code());
          })
-         .right_map([&](vk::UniquePipeline&& handle) {
+         .map([&](vk::UniquePipeline&& handle) {
             util::log_info(m_plogger, R"([vkn] graphics pipeline created)");
 
             return graphics_pipeline{

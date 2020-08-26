@@ -51,10 +51,12 @@ namespace vkn
                                                            ? vk::FenceCreateFlagBits::eSignaled
                                                            : vk::FenceCreateFlagBits{}});
              })
-         .left_map([](vk::SystemError&& err) {
+         .map_error([](vk::SystemError&& err) {
             return make_error(error::failed_to_create_fence, err.code());
          })
-         .right_map([&](vk::UniqueFence&& handle) {
+         .map([&](vk::UniqueFence&& handle) {
+            util::log_info(mp_logger, "[vkn] fence created");
+
             return fence{{.fence = std::move(handle)}};
          });
    }

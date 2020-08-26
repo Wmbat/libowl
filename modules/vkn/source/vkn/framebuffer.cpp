@@ -52,7 +52,8 @@ namespace vkn
    {
       if (!m_device)
       {
-         return monad::make_left(framebuffer::make_error(framebuffer::error::no_device_handle, {}));
+         return monad::make_error(
+            framebuffer::make_error(framebuffer::error::no_device_handle, {}));
       }
 
       const auto create_info = vk::FramebufferCreateInfo{}
@@ -68,10 +69,10 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createFramebufferUnique(create_info);
              })
-         .left_map([](vk::SystemError&& err) {
+         .map_error([](vk::SystemError&& err) {
             return framebuffer::make_error(error::failed_to_create_framebuffer, err.code());
          })
-         .right_map([&](vk::UniqueFramebuffer&& handle) {
+         .map([&](vk::UniqueFramebuffer&& handle) {
             util::log_info(m_plogger, "[vkn] framebuffer created");
 
             return framebuffer{

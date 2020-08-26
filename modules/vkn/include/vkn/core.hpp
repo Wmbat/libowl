@@ -14,6 +14,7 @@
 #include <util/logger.hpp>
 
 #include <monads/either.hpp>
+#include <monads/result.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -47,7 +48,7 @@ namespace vkn
     * An alias for an either monad using an error as the left type.
     */
    template <typename any_>
-   using result = monad::either<error, any_>;
+   using result = monad::result<any_, vkn::error>;
 
    /**
     * Class used for the dynamic loading of the Vulkan API functions.

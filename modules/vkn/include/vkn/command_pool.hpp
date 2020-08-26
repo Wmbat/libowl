@@ -12,32 +12,6 @@ namespace vkn
     */
    class command_pool final
    {
-      struct create_info
-      {
-         vk::UniqueCommandPool command_pool{nullptr};
-
-         uint32_t queue_index{0};
-
-         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
-         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
-      };
-
-      command_pool(create_info&& info);
-
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
    public:
       using value_type = vk::CommandPool;
       using pointer = vk::CommandPool*;
@@ -83,14 +57,6 @@ namespace vkn
          -> const util::dynamic_array<vk::CommandBuffer>&;
       [[nodiscard]] auto secondary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
-
-      /**
-       * Transfer an #error_type enum value into a standard error_code.
-       */
-      inline static auto make_error_code(error_type err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
 
    private:
       vk::UniqueCommandPool m_command_pool{nullptr};
@@ -151,6 +117,39 @@ namespace vkn
             uint32_t secondary_buffer_count{0};
          } m_info;
       };
+
+   private:
+      struct create_info
+      {
+         vk::UniqueCommandPool command_pool{nullptr};
+
+         uint32_t queue_index{0};
+
+         util::dynamic_array<vk::CommandBuffer> primary_buffers{};
+         util::dynamic_array<vk::CommandBuffer> secondary_buffers{};
+      };
+
+      command_pool(create_info&& info);
+
+      struct error_category : std::error_category
+      {
+         /**
+          * The name of the vkn object the error appeared from.
+          */
+         [[nodiscard]] auto name() const noexcept -> const char* override;
+         /**
+          * Get the message associated with a specific error code.
+          */
+         [[nodiscard]] auto message(int err) const -> std::string override;
+      };
+
+      inline static const error_category m_category{};
+
+      static auto make_error(command_pool::error_type flag, std::error_code ec) -> vkn::error
+      {
+         return vkn::error{{static_cast<int>(flag), m_category},
+                           static_cast<vk::Result>(ec.value())};
+      }
    };
 } // namespace vkn
 

@@ -133,3 +133,11 @@ namespace vkn
       value_type m_value{nullptr};
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::fence::error> : true_type
+   {
+   };
+} // namespace std
