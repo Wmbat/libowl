@@ -67,10 +67,9 @@ namespace vkn
          auto add_shader(const vkn::shader& shader) noexcept -> builder&;
          auto add_viewport(const vk::Viewport& viewport, const vk::Rect2D& scissor) noexcept
             -> builder&;
-
-         auto set_topology(vk::PrimitiveTopology topology) noexcept -> builder&;
-
-         auto enable_primitive_restart(bool enable = true) -> builder&;
+         auto add_vertex_binding(vk::VertexInputBindingDescription&& binding) noexcept -> builder&;
+         auto add_vertex_attribute(vk::VertexInputAttributeDescription&& attribute) noexcept
+            -> builder&;
 
       private:
          [[nodiscard]] auto create_pipeline(vk::UniquePipelineLayout layout) const
@@ -86,11 +85,11 @@ namespace vkn
 
             shader_dynamic_array<const vkn::shader*> shaders;
 
-            vk::PrimitiveTopology topology{vk::PrimitiveTopology::eTriangleList};
-            bool enable_primitive_restart{false};
-
             util::small_dynamic_array<vk::Viewport, 1> viewports;
             util::small_dynamic_array<vk::Rect2D, 1> scissors;
+
+            util::dynamic_array<vk::VertexInputBindingDescription> binding_descriptions;
+            util::dynamic_array<vk::VertexInputAttributeDescription> attribute_descriptions;
          } m_info;
       };
 

@@ -1,17 +1,17 @@
-#include "core/shader_codex.hpp"
+#include <core/shader_codex.hpp>
 
-#include <monads/try.hpp>
 #include <util/logger.hpp>
+
 #include <vkn/shader.hpp>
 
-#include <mpark/patterns/match.hpp>
+#include <monads/try.hpp>
+
+#include <mpark/patterns.hpp>
 
 #include <cstring>
 #include <fstream>
 #include <functional>
 #include <iterator>
-
-#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -19,27 +19,6 @@ namespace core
 {
    namespace detail
    {
-      auto to_string(shader_codex::error_type err) -> std::string
-      {
-         using error = shader_codex::error_type;
-         using namespace mpark::patterns;
-
-         // clang-format off
-         return match(err) (
-            pattern(error::failed_to_open_file) = [] { return "failed_to_open_file"; },
-            pattern(error::unknow_shader_type) = [] { return "unknow_shader_type"; },
-            pattern(error::failed_to_preprocess_shader) = [] { 
-               return "failed_to_preprocess_shader";
-            },
-            pattern(error::failed_to_parse_shader) = [] { return "failed_to_parse_shader"; },
-            pattern(error::failed_to_link_shader) = [] { return "failed_to_link_shader"; },
-            pattern(error::failed_to_cache_shader) = [] { return "failed_to_cache_shader"; },
-            pattern(error::failed_to_create_shader) = [] { return "failed_to_create_shader"; },
-            pattern(_) = [] { return "unknown_error"; }
-         );
-         // clang-format on
-      };
-
       // clang-format off
       const TBuiltInResource default_built_in_resource
       {
@@ -150,13 +129,44 @@ namespace core
       // clang-format on
    } // namespace detail
 
-   auto shader_codex::error_category::name() const noexcept -> const char*
+   auto to_string(shader_codex_error err) -> std::string
    {
-      return "shader_codex";
-   }
-   auto shader_codex::error_category::message(int err) const -> std::string
+      switch (err)
+      {
+         case shader_codex_error::failed_to_open_file:
+            return "failed_to_open_file";
+         case shader_codex_error::unknow_shader_type:
+            return "unknow_shader_type";
+         case shader_codex_error::failed_to_preprocess_shader:
+            return "failed_to_preprocess_shader";
+         case shader_codex_error::failed_to_parse_shader:
+            return "failed_to_parse_shader";
+         case shader_codex_error::failed_to_link_shader:
+            return "failed_to_link_shader";
+         case shader_codex_error::failed_to_cache_shader:
+            return "failed_to_cache_shader";
+         case shader_codex_error::failed_to_create_shader:
+            return "failed_to_create_shader";
+      }
+   };
+
+   struct shader_codex_error_category : std::error_category
    {
-      return detail::to_string(static_cast<shader_codex::error_type>(err));
+      [[nodiscard]] auto name() const noexcept -> const char* override
+      {
+         return "core_shader_codex";
+      }
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return to_string(static_cast<shader_codex_error>(err));
+      }
+   };
+
+   inline static const shader_codex_error_category shader_codex_error_category{};
+
+   auto make_error(shader_codex_error err) noexcept -> error_t
+   {
+      return {{static_cast<int>(err), shader_codex_error_category}};
    }
 
    auto shader_codex::add_precompiled_shader(vkn::shader&& shader) -> std::string
@@ -319,8 +329,11 @@ namespace core
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
-                     .map_error([]([[maybe_unused]] auto&& err) {
-                        return make_error_code(error_type::failed_to_create_shader);
+                     .map_error([&](auto&& err) {
+                        util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                                        err.type.category().name(), err.type.message());
+
+                        return make_error(shader_codex_error::failed_to_create_shader);
                      });
                }
                else
@@ -341,8 +354,11 @@ namespace core
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
-                     .map_error([]([[maybe_unused]] auto&& err) {
-                        return make_error_code(error_type::failed_to_create_shader);
+                     .map_error([&](auto&& err) {
+                        util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                                        err.type.category().name(), err.type.message());
+
+                        return make_error(shader_codex_error::failed_to_create_shader);
                      });
                });
             }
@@ -368,8 +384,11 @@ namespace core
                   .set_name(path.filename().string())
                   .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                   .build()
-                  .map_error([]([[maybe_unused]] auto&& err) {
-                     return make_error_code(error_type::failed_to_create_shader);
+                  .map_error([&](auto&& err) {
+                     util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                                     err.type.category().name(), err.type.message());
+
+                     return make_error(shader_codex_error::failed_to_create_shader);
                   });
             }
             else
@@ -389,13 +408,16 @@ namespace core
                .set_name(path.filename().string())
                .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                .build()
-               .map_error([]([[maybe_unused]] auto&& err) {
-                  return make_error_code(error_type::failed_to_create_shader);
+               .map_error([&](auto&& err) {
+                  util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                                  err.type.category().name(), err.type.message());
+
+                  return make_error(shader_codex_error::failed_to_create_shader);
                });
          });
       }
 
-      return monad::make_error(std::error_code{});
+      return monad::make_error(make_error(shader_codex_error::failed_to_create_shader));
    }
 
    auto builder::compile_shader(const std::filesystem::path& path)
@@ -404,7 +426,7 @@ namespace core
       std::ifstream file{path};
       if (!file.is_open())
       {
-         return monad::make_error(make_error_code(error_type::failed_to_open_file));
+         return monad::make_error(make_error(shader_codex_error::failed_to_open_file));
       }
 
       std::string spirv_version{};
@@ -415,7 +437,7 @@ namespace core
 
       if (shader_stage == EShLangCount)
       {
-         return monad::make_error(make_error_code(error_type::unknow_shader_type));
+         return monad::make_error(make_error(shader_codex_error::unknow_shader_type));
       }
 
       using file_it = std::istreambuf_iterator<char>;
@@ -444,7 +466,7 @@ namespace core
       {
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
 
-         return monad::make_error(make_error_code(error_type::failed_to_preprocess_shader));
+         return monad::make_error(make_error(shader_codex_error::failed_to_preprocess_shader));
       }
 
       const char* preprocessed_glsl_c_str = preprocessed_glsl.c_str();
@@ -454,7 +476,7 @@ namespace core
       {
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
 
-         return monad::make_error(make_error_code(error_type::failed_to_parse_shader));
+         return monad::make_error(make_error(shader_codex_error::failed_to_parse_shader));
       }
 
       glslang::TProgram program;
@@ -465,7 +487,7 @@ namespace core
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
          util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoDebugLog());
 
-         return monad::make_error(make_error_code(error_type::failed_to_link_shader));
+         return monad::make_error(make_error(shader_codex_error::failed_to_link_shader));
       }
 
       std::vector<uint32_t> spirv;
@@ -481,7 +503,7 @@ namespace core
       std::ifstream file{path, std::ios::binary};
       if (!file.is_open())
       {
-         return monad::make_error(make_error_code(error_type::failed_to_open_file));
+         return monad::make_error(make_error(shader_codex_error::failed_to_open_file));
       }
 
       using file_it = std::istreambuf_iterator<char>;
@@ -495,12 +517,12 @@ namespace core
 
    auto builder::cache_shader(const std::filesystem::path& path,
                               const util::dynamic_array<std::uint32_t>& data) const
-      -> monad::maybe<std::error_code>
+      -> monad::maybe<error_t>
    {
       std::ofstream cache_file{path, std::ios::trunc | std::ios::binary};
       if (!cache_file.is_open())
       {
-         return monad::make_maybe(make_error_code(error_type::failed_to_open_file));
+         return make_error(shader_codex_error::failed_to_open_file);
       }
 
       cache_file.write(reinterpret_cast<const char*>(data.data()), // NOLINT

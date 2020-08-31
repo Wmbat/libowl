@@ -256,10 +256,9 @@ namespace vkn
    auto builder::build() -> vkn::result<swapchain>
    {
       using err_t = swapchain::error_type;
-
       if (!m_info.surface)
       {
-         return monad::make_error(make_error(err_t::surface_handle_not_provided, {}));
+         return make_error_res(err_t::surface_handle_not_provided, {});
       }
 
       const auto surface_support_res =
@@ -306,31 +305,22 @@ namespace vkn
 
       const bool same = m_info.graphics_queue_index == m_info.present_queue_index;
 
-      const auto create_info =
-         vk::SwapchainCreateInfoKHR{}
-            .setFlags({})
-            .setPNext(nullptr)
-            .setSurface(m_info.surface)
-            .setMinImageCount(image_count)
-            .setImageFormat(surface_format.format)
-            .setImageColorSpace(surface_format.colorSpace)
-            .setImageExtent(extent)
-            .setImageUsage(m_info.image_usage_flags)
-            .setImageArrayLayers(1u)
-            .setImageSharingMode(same ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent)
-            .setQueueFamilyIndexCount(same ? 0 : 2)
-            .setPQueueFamilyIndices(same ? nullptr : queue_family_indices.data())
-            .setPreTransform(surface_support.capabilities.currentTransform)
-            .setCompositeAlpha(m_info.composite_alpha_flags)
-            .setPresentMode(present_mode)
-            .setClipped(m_info.clipped);
-
-      return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createSwapchainKHRUnique(create_info);
-             })
-         .map_error([](vk::SystemError&& err) {
-            return make_error(err_t::failed_to_create_swapchain, err.code());
-         })
+      return create_swapchain({.surface = m_info.surface,
+                               .minImageCount = image_count,
+                               .imageFormat = surface_format.format,
+                               .imageColorSpace = surface_format.colorSpace,
+                               .imageExtent = extent,
+                               .imageArrayLayers = 1u,
+                               .imageUsage = m_info.image_usage_flags,
+                               .imageSharingMode =
+                                  same ? vk::SharingMode::eExclusive : vk::SharingMode::eConcurrent,
+                               .queueFamilyIndexCount = same ? 0u : 2u,
+                               .pQueueFamilyIndices = same ? nullptr : queue_family_indices.data(),
+                               .preTransform = surface_support.capabilities.currentTransform,
+                               .compositeAlpha = m_info.composite_alpha_flags,
+                               .presentMode = present_mode,
+                               .clipped = m_info.clipped,
+                               .oldSwapchain = m_info.old_swapchain})
          .and_then([&](vk::UniqueSwapchainKHR&& handle) {
             util::log_info(m_plogger, "[vkn] swapchain created.");
             util::log_info(m_plogger, "[vkn] swapchain image count: {0}", image_count);
@@ -448,6 +438,16 @@ namespace vkn
       // clang-format on
    }
 
+   auto builder::create_swapchain(vk::SwapchainCreateInfoKHR&& info) const
+      -> vkn::result<vk::UniqueSwapchainKHR>
+   {
+      return monad::try_wrap<vk::SystemError>([&] {
+                return m_info.device.createSwapchainKHRUnique(info);
+             })
+         .map_error([](vk::SystemError&& err) {
+            return make_error(error_type::failed_to_create_swapchain, err.code());
+         });
+   }
    auto builder::create_images(vk::SwapchainKHR swapchain) const
       -> vkn::result<image_dynamic_array<vk::Image>>
    {

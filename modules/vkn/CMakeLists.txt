@@ -101,6 +101,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         source/vkn/sync/fence.cpp
         source/vkn/sync/semaphore.cpp
+        source/vkn/buffer.cpp
         source/vkn/command_pool.cpp
         source/vkn/core.cpp
         source/vkn/device.cpp

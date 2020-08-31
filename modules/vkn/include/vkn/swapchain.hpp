@@ -116,6 +116,8 @@ namespace vkn
          [[nodiscard]] auto add_desired_present_modes() const
             -> util::small_dynamic_array<vk::PresentModeKHR, 2>;
 
+         [[nodiscard]] auto create_swapchain(vk::SwapchainCreateInfoKHR&& info) const
+            -> vkn::result<vk::UniqueSwapchainKHR>;
          [[nodiscard]] auto create_images(vk::SwapchainKHR swapchain) const
             -> vkn::result<image_dynamic_array<vk::Image>>;
          [[nodiscard]] auto create_image_views(const image_dynamic_array<vk::Image>& images,
@@ -189,6 +191,12 @@ namespace vkn
          return vkn::error{{static_cast<int>(flag), m_category},
                            static_cast<vk::Result>(ec.value())};
       };
+
+      static auto make_error_res(swapchain::error_type flag, std::error_code ec)
+         -> monad::error_t<vkn::error>
+      {
+         return {make_error(flag, ec)};
+      }
    };
 } // namespace vkn
 

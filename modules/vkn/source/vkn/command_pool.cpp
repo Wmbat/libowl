@@ -56,6 +56,24 @@ namespace vkn
       return m_secondary_buffers;
    }
 
+   auto command_pool::create_primary_buffer() const noexcept -> vkn::result<vk::UniqueCommandBuffer>
+   {
+      using err_t = command_pool::error_type;
+
+      return monad::try_wrap<vk::SystemError>([&] {
+                return device().allocateCommandBuffersUnique(
+                   {.commandPool = value(),
+                    .level = vk::CommandBufferLevel::ePrimary,
+                    .commandBufferCount = 1});
+             })
+         .map([&](auto&& buffers) {
+            return std::move(buffers[0]);
+         })
+         .map_error([](auto err) {
+            return make_error(err_t::failed_to_allocate_primary_command_buffers, err.code());
+         });
+   }
+
    using builder = command_pool::builder;
 
    builder::builder(const vkn::device& device, util::logger* plogger) : m_plogger{plogger}

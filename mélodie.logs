@@ -1,0 +1,53 @@
+[22:05:21.793864] [mélodie] [info] [core] glfw initialized
+[22:05:21.809301] [mélodie] [info] [vkn] base functions have been loaded
+[22:05:21.810201] [mélodie] [info] [vkn] glslang initialized
+[22:05:21.810727] [mélodie] [info] [vkn] using vulkan version 1.2.148
+[22:05:22.253130] [mélodie] [info] [vkn] instance extension: VK_EXT_debug_utils - ENABLED
+[22:05:22.253174] [mélodie] [info] [vkn] instance extension: VK_KHR_surface - ENABLED
+[22:05:22.253184] [mélodie] [info] [vkn] instance extension: VK_KHR_xcb_surface - ENABLED
+[22:05:22.253196] [mélodie] [info] [vkn] instance layers: VK_LAYER_NV_optimus - ENABLED
+[22:05:22.253205] [mélodie] [info] [vkn] instance layers: VK_LAYER_VALVE_steam_overlay_64 - ENABLED
+[22:05:22.253214] [mélodie] [info] [vkn] instance layers: VK_LAYER_VALVE_steam_overlay_32 - ENABLED
+[22:05:22.253222] [mélodie] [info] [vkn] instance layers: VK_LAYER_VALVE_steam_fossilize_32 - ENABLED
+[22:05:22.253232] [mélodie] [info] [vkn] instance layers: VK_LAYER_VALVE_steam_fossilize_64 - ENABLED
+[22:05:22.253241] [mélodie] [info] [vkn] instance layers: VK_LAYER_LUNARG_api_dump - ENABLED
+[22:05:22.253249] [mélodie] [info] [vkn] instance layers: VK_LAYER_KHRONOS_validation - ENABLED
+[22:05:22.253258] [mélodie] [info] [vkn] instance layers: VK_LAYER_LUNARG_screenshot - ENABLED
+[22:05:22.253267] [mélodie] [info] [vkn] instance layers: VK_LAYER_LUNARG_gfxreconstruct - ENABLED
+[22:05:22.253276] [mélodie] [info] [vkn] instance layers: VK_LAYER_LUNARG_device_simulation - ENABLED
+[22:05:22.253285] [mélodie] [info] [vkn] instance layers: VK_LAYER_LUNARG_monitor - ENABLED
+[22:05:22.253301] [mélodie] [info] [vkn] instance layers: VK_LAYER_KHRONOS_validation - ENABLED
+[22:05:23.366725] [mélodie] [info] [vkn] instance created
+[22:05:23.367660] [mélodie] [info] [vkn] all instance functions have been loaded
+[22:05:23.367715] [mélodie] [info] [vkn] debug utils created
+[22:05:23.373173] [mélodie] [info] [vkn] selected physical device: GeForce RTX 2060 SUPER
+[22:05:23.373709] [mélodie] [info] [vkn] device extension: VK_KHR_swapchain - ENABLED
+[22:05:23.466694] [mélodie] [info] [vkn] device created
+[22:05:23.467418] [mélodie] [info] [vkn] all device functions have been loaded
+[22:05:23.500787] [mélodie] [info] [vkn] swapchain created.
+[22:05:23.500818] [mélodie] [info] [vkn] swapchain image count: 3
+[22:05:23.501006] [mélodie] [info] [vkn] render pass created
+[22:05:23.501044] [mélodie] [info] [vkn] framebuffer created
+[22:05:23.501062] [mélodie] [info] [vkn] framebuffer created
+[22:05:23.501076] [mélodie] [info] [vkn] framebuffer created
+[22:05:23.501126] [mélodie] [info] [core] no shader directory provided
+[22:05:23.501134] [mélodie] [info] [core] shader caching: DISABLED
+[22:05:23.501150] [mélodie] [info] [core] compiling shader: "resources/shaders/test_shader.vert"
+[22:05:23.774695] [mélodie] [info] [vkn] shader module created
+[22:05:23.774784] [mélodie] [info] [core] compiling shader: "resources/shaders/test_shader.frag"
+[22:05:23.779861] [mélodie] [info] [vkn] shader module created
+[22:05:23.779936] [mélodie] [info] [vkn] command pool created
+[22:05:23.779997] [mélodie] [info] [vkn] 3 primary command buffers created
+[22:05:23.780037] [mélodie] [info] [vkn] 0 secondary command buffers created
+[22:05:23.780121] [mélodie] [info] [vkn] pipeline layout created
+[22:05:23.780136] [mélodie] [info] [vkn] using shader "test_shader.vert" for graphics pipeline
+[22:05:23.780147] [mélodie] [info] [vkn] using shader "test_shader.frag" for graphics pipeline
+[22:05:23.784277] [mélodie] [info] [vkn] graphics pipeline created
+[22:05:23.784319] [mélodie] [info] [vkn] semaphore created
+[22:05:23.784338] [mélodie] [info] [vkn] semaphore created
+[22:05:23.784351] [mélodie] [info] [vkn] semaphore created
+[22:05:23.784363] [mélodie] [info] [vkn] semaphore created
+[22:05:23.784437] [mélodie] [info] [vkn] fence created
+[22:05:23.784483] [mélodie] [info] [vkn] fence created
+[22:05:23.805890] [mélodie] [info] [vkn] buffer created
+[22:05:51.197694] [mélodie] [error] VALIDATION - Validation Error: [ VUID-vkBindBufferMemory-buffer-01029 ] Object 0: handle = 0x1b000000001b, type = VK_OBJECT_TYPE_DEVICE_MEMORY; Object 1: handle = 0x190000000019, type = VK_OBJECT_TYPE_BUFFER; Object 2: handle = 0x1b000000001b, type = VK_OBJECT_TYPE_DEVICE_MEMORY; | MessageID = 0xd5d70a6e | In vkBindBufferMemory(), attempting to bind VkDeviceMemory 0x1b000000001b[] to VkBuffer 0x190000000019[] which has already been bound to VkDeviceMemory 0x1b000000001b[]. The Vulkan spec states: buffer must not already be backed by a memory object (https://vulkan.lunarg.com/doc/view/1.2.148.0/linux/1.2-extensions/vkspec.html#VUID-vkBindBufferMemory-buffer-01029)

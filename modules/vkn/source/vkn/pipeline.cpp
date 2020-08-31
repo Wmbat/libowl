@@ -1,5 +1,6 @@
-#include "monads/try.hpp"
 #include <vkn/pipeline.hpp>
+
+#include <monads/try.hpp>
 
 #include <cassert>
 
@@ -116,17 +117,16 @@ namespace vkn
 
       return *this;
    }
-
-   auto graphics_pipeline::builder::set_topology(vk::PrimitiveTopology topology) noexcept
-      -> builder&
+   auto graphics_pipeline::builder::add_vertex_binding(
+      vk::VertexInputBindingDescription&& binding) noexcept -> builder&
    {
-      m_info.topology = topology;
+      m_info.binding_descriptions.emplace_back(binding);
       return *this;
    }
-
-   auto graphics_pipeline::builder::enable_primitive_restart(bool enable) -> builder&
+   auto graphics_pipeline::builder::add_vertex_attribute(
+      vk::VertexInputAttributeDescription&& attribute) noexcept -> builder&
    {
-      m_info.enable_primitive_restart = enable;
+      m_info.attribute_descriptions.emplace_back(attribute);
       return *this;
    }
 
@@ -151,16 +151,17 @@ namespace vkn
                .setPName("main"));
       }
 
-      const auto vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo{}
-                                                     .setVertexBindingDescriptionCount(0u)
-                                                     .setPVertexBindingDescriptions(nullptr)
-                                                     .setVertexAttributeDescriptionCount(0u)
-                                                     .setPVertexAttributeDescriptions(nullptr);
+      const auto vertex_input_state_create_info =
+         vk::PipelineVertexInputStateCreateInfo{}
+            .setVertexBindingDescriptionCount(std::size(m_info.binding_descriptions))
+            .setPVertexBindingDescriptions(std::data(m_info.binding_descriptions))
+            .setVertexAttributeDescriptionCount(std::size(m_info.attribute_descriptions))
+            .setPVertexAttributeDescriptions(std::data(m_info.attribute_descriptions));
 
       const auto input_assembly_state_create_info =
          vk::PipelineInputAssemblyStateCreateInfo{}
-            .setTopology(m_info.topology)
-            .setPrimitiveRestartEnable(m_info.enable_primitive_restart);
+            .setTopology(vk::PrimitiveTopology::eTriangleList)
+            .setPrimitiveRestartEnable(false);
 
       const auto viewport_state_create_info = vk::PipelineViewportStateCreateInfo{}
                                                  .setViewportCount(std::size(m_info.viewports))

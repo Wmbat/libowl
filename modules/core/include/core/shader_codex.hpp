@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/core.hpp"
+#include <core/core.hpp>
 
 #include <util/containers/dense_hash_map.hpp>
 
@@ -10,26 +10,22 @@
 
 namespace core
 {
+   enum class shader_codex_error
+   {
+      failed_to_open_file,
+      unknow_shader_type,
+      failed_to_preprocess_shader,
+      failed_to_parse_shader,
+      failed_to_link_shader,
+      failed_to_cache_shader,
+      failed_to_create_shader
+   };
+
+   auto to_string(shader_codex_error err) -> std::string;
+   auto make_error(shader_codex_error err) noexcept -> error_t;
+
    class shader_codex
    {
-      struct error_category : std::error_category
-      {
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-   public:
-      enum class error_type
-      {
-         failed_to_open_file,
-         unknow_shader_type,
-         failed_to_preprocess_shader,
-         failed_to_parse_shader,
-         failed_to_link_shader,
-         failed_to_cache_shader,
-         failed_to_create_shader
-      };
-
    public:
       shader_codex() = default;
 
@@ -39,18 +35,11 @@ namespace core
       auto get_shader(const std::string& name) noexcept -> vkn::shader&;
       [[nodiscard]] auto get_shader(const std::string& name) const noexcept -> const vkn::shader&;
 
-      inline static auto make_error_code(error_type err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
-
    private:
       std::unordered_map<std::string, vkn::shader> m_shaders;
 
       static inline constexpr int client_input_semantics_version = 100;
       static inline constexpr int default_version = 100;
-
-      inline static const error_category m_category{};
 
    public:
       class builder
@@ -75,7 +64,7 @@ namespace core
 
          [[nodiscard]] auto cache_shader(const std::filesystem::path& path,
                                          const util::dynamic_array<std::uint32_t>& data) const
-            -> monad::maybe<std::error_code>;
+            -> monad::maybe<error_t>;
 
          [[nodiscard]] auto get_shader_stage(std::string_view stage_name) const -> EShLanguage;
          [[nodiscard]] auto get_spirv_version(uint32_t version) const

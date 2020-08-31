@@ -1,5 +1,7 @@
 #include <core/render_manager.hpp>
 
+#include <core/graphics/vertex.hpp>
+
 #include <vkn/device.hpp>
 #include <vkn/physical_device.hpp>
 #include <vkn/shader.hpp>
@@ -104,19 +106,19 @@ namespace core
                                         .join());
       }
 
-      m_shader_codex =
-         shader_codex::builder{m_device, plogger}
-            .add_shader_filepath("resources/shaders/test_shader.vert")
-            .add_shader_filepath("resources/shaders/test_shader.frag")
-            .allow_caching(false)
-            .build()
-            .map_error([plogger](auto&& err) {
-               log_error(plogger, "[core] Failed to create shader codex: \"{0}\"", err.message());
-               abort();
+      m_shader_codex = shader_codex::builder{m_device, plogger}
+                          .add_shader_filepath("resources/shaders/test_shader.vert")
+                          .add_shader_filepath("resources/shaders/test_shader.frag")
+                          .allow_caching(false)
+                          .build()
+                          .map_error([plogger](error_t&& err) {
+                             log_error(plogger, "[core] Failed to create shader codex: \"{0}\"",
+                                       err.value().message());
+                             abort();
 
-               return shader_codex{};
-            })
-            .join();
+                             return shader_codex{};
+                          })
+                          .join();
 
       m_command_pool =
          vkn::command_pool::builder{m_device, plogger}
@@ -146,6 +148,17 @@ namespace core
          vkn::graphics_pipeline::builder{m_device, m_render_pass, plogger}
             .add_shader(m_shader_codex.get_shader("test_shader.vert"))
             .add_shader(m_shader_codex.get_shader("test_shader.frag"))
+            .add_vertex_binding({.binding = 0,
+                                 .stride = sizeof(core::vertex),
+                                 .inputRate = vk::VertexInputRate::eVertex})
+            .add_vertex_attribute({.location = 0,
+                                   .binding = 0,
+                                   .format = vk::Format::eR32G32B32Sfloat,
+                                   .offset = offsetof(core::vertex, position)})
+            .add_vertex_attribute({.location = 1,
+                                   .binding = 0,
+                                   .format = vk::Format::eR32G32B32Sfloat,
+                                   .offset = offsetof(core::vertex, colour)})
             .add_viewport({.x = 0.0f,
                            .y = 0.0f,
                            .width = static_cast<float>(m_swapchain.extent().width),
@@ -153,8 +166,6 @@ namespace core
                            .minDepth = 0.0f,
                            .maxDepth = 1.0f},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
-            .set_topology(vk::PrimitiveTopology::eTriangleList)
-            .enable_primitive_restart(false)
             .build()
             .map_error([&](vkn::error&& err) {
                log_error(plogger, "[core] Failed to create graphics pipeline: \"{0}\"",
@@ -209,6 +220,31 @@ namespace core
                     .join();
       }
 
+      m_vertex_buffer = core::vertex_buffer::make({.vertices = m_triangle_vertices,
+                                                   .p_device = &m_device,
+                                                   .p_command_pool = &m_command_pool,
+                                                   .p_logger = mp_logger})
+                           .map_error([&](error_t err) {
+                              log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
+                                        err.value().message());
+                              std::terminate();
+
+                              return vertex_buffer{};
+                           })
+                           .join();
+      m_index_buffer = core::index_buffer::make({.indices = m_triangle_indices,
+                                                 .p_device = &m_device,
+                                                 .p_command_pool = &m_command_pool,
+                                                 .p_logger = mp_logger})
+                          .map_error([&](error_t err) {
+                             log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
+                                       err.value().message());
+                             std::terminate();
+
+                             return index_buffer{};
+                          })
+                          .join();
+
       m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
 
       util::log_info(mp_logger, "[core] recording main rendering command buffers");
@@ -227,7 +263,10 @@ namespace core
 
          buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
 
-         buffer.draw(3u, 1u, 0u, 0u);
+         buffer.bindVertexBuffers(0, {m_vertex_buffer->value()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_index_buffer->value(), 0, vk::IndexType::eUint32);
+
+         buffer.drawIndexed(std::size(m_triangle_indices), 1, 0, 0, 0);
 
          buffer.endRenderPass();
          buffer.end();
