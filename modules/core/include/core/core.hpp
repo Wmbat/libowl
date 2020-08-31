@@ -1,6 +1,9 @@
 #pragma once
 
 #include <util/logger.hpp>
+#include <util/strong_type.hpp>
+
+#include <vkn/core.hpp>
 
 #include <monads/result.hpp>
 
@@ -33,6 +36,8 @@ namespace core
       log_info(plogger, "[core] glfw initialized");
    }
 
+   using error_t = util::strong_type<std::error_code, struct error_code_tag>;
+
    template <class any_>
-   using result = monad::result<any_, std::error_code>;
+   using result = monad::result<any_, error_t>;
 }; // namespace core

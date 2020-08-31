@@ -58,6 +58,9 @@ namespace vkn
       [[nodiscard]] auto secondary_cmd_buffers() const
          -> const util::dynamic_array<vk::CommandBuffer>&;
 
+      [[nodiscard]] auto create_primary_buffer() const noexcept
+         -> vkn::result<vk::UniqueCommandBuffer>;
+
    private:
       vk::UniqueCommandPool m_command_pool{nullptr};
 

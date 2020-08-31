@@ -202,7 +202,7 @@ namespace util
 
       constexpr auto at(size_type pos) -> reference
       {
-         if (index >= size())
+         if (pos >= size())
          {
             handle_out_of_range_error("Index: " + std::to_string(pos) + " is out of bounds");
          }
@@ -213,7 +213,7 @@ namespace util
       }
       constexpr auto at(size_type pos) const -> const_reference
       {
-         if (index >= size())
+         if (pos >= size())
          {
             handle_out_of_range_error("Index: " + std::to_string(pos) + " is out of bounds");
          }
