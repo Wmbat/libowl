@@ -64,7 +64,7 @@ namespace core::gfx
       }
       else
       {
-         return monad::make_value(vk::SurfaceKHR{surface});
+         return vk::SurfaceKHR{surface};
       }
    }
 } // namespace core::gfx

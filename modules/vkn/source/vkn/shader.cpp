@@ -1,4 +1,4 @@
-#include "vkn/shader.hpp"
+#include <vkn/shader.hpp>
 
 #include <monads/try.hpp>
 

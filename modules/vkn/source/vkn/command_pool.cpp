@@ -134,14 +134,10 @@ namespace vkn
          return monad::make_error(secondary_res.error().value());
       }
 
-      // clang-format off
-      return monad::make_value(command_pool{{
-         .command_pool = std::move(handle),
-         .queue_index = m_info.queue_family_index,
-         .primary_buffers = primary_res.value().value(),
-         .secondary_buffers = secondary_res.value().value()
-      }});
-      // clang-format on
+      return command_pool{{.command_pool = std::move(handle),
+                           .queue_index = m_info.queue_family_index,
+                           .primary_buffers = primary_res.value().value(),
+                           .secondary_buffers = secondary_res.value().value()}};
    }
    auto builder::create_primary_buffers(vk::CommandPool handle)
       -> vkn::result<util::dynamic_array<vk::CommandBuffer>>

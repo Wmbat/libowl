@@ -118,14 +118,11 @@ namespace vkn
          const auto formats = format_res.value().value();
          const auto present_mode = present_mode_res.value().value();
 
-         // clang-format off
-         return monad::make_value(surface_support{
-            .capabilities = capabilities_res.value().value(), 
-            .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()}, 
-            .present_modes = util::dynamic_array<vk::PresentModeKHR>{
-               present_mode.begin(), present_mode.end()}
-         });
-         // clang-format on
+         return surface_support{
+            .capabilities = capabilities_res.value().value(),
+            .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()},
+            .present_modes =
+               util::dynamic_array<vk::PresentModeKHR>{present_mode.begin(), present_mode.end()}};
       }
 
       auto find_surface_format(const util::range_over<vk::SurfaceFormatKHR> auto& available_formats,
@@ -511,6 +508,6 @@ namespace vkn
          }
       }
 
-      return monad::make_value(std::move(views));
+      return std::move(views);
    }
 } // namespace vkn

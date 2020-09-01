@@ -140,23 +140,19 @@ namespace vkn
                                             m_physical_device.queue_families());
          if (!index)
          {
-            // clang-format off
             return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::present_unavailable), 
-               .result = {}
-            });
-            // clang-format on
+               .type = detail::make_error_code(queue::error::present_unavailable), .result = {}});
          }
          else
          {
-            return monad::make_value(index.value_or(0u));
+            return index.value_or(0u);
          }
       }
       else if (type == queue::type::graphics)
       {
          if (auto i = detail::get_graphics_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_value(i.value());
+            return i.value();
          }
          else
          {
@@ -173,7 +169,7 @@ namespace vkn
          if (const auto i =
                 detail::get_separated_compute_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_value(i.value());
+            return i.value();
          }
          else
          {
@@ -190,7 +186,7 @@ namespace vkn
          if (const auto i =
                 detail::get_separated_transfer_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_value(i.value());
+            return i.value();
          }
          else
          {
@@ -222,7 +218,7 @@ namespace vkn
          if (const auto i =
                 detail::get_dedicated_compute_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_value(i.value());
+            return i.value();
          }
          else
          {
@@ -239,7 +235,7 @@ namespace vkn
          if (const auto i =
                 detail::get_dedicated_transfer_queue_index(m_physical_device.queue_families()))
          {
-            return monad::make_value(i.value());
+            return i.value();
          }
          else
          {
@@ -268,7 +264,7 @@ namespace vkn
 
       return get_queue_index(type).join(
          [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return monad::make_value(m_device.getQueue(i, 0));
+            return m_device.getQueue(i, 0);
          },
          [](const err_t& err) -> vkn::result<vk::Queue> {
             return monad::make_error(err_t{err});
@@ -281,7 +277,7 @@ namespace vkn
 
       return get_dedicated_queue_index(type).join(
          [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return monad::make_value(m_device.getQueue(i, 0));
+            return m_device.getQueue(i, 0);
          },
          [](const err_t& err) -> vkn::result<vk::Queue> {
             return monad::make_error(err_t{err});

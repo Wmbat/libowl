@@ -1,7 +1,5 @@
 #include <core/render_manager.hpp>
 
-#include <core/graphics/vertex.hpp>
-
 #include <vkn/device.hpp>
 #include <vkn/physical_device.hpp>
 #include <vkn/shader.hpp>
@@ -149,16 +147,16 @@ namespace core
             .add_shader(m_shader_codex.get_shader("test_shader.vert"))
             .add_shader(m_shader_codex.get_shader("test_shader.frag"))
             .add_vertex_binding({.binding = 0,
-                                 .stride = sizeof(core::vertex),
+                                 .stride = sizeof(::gfx::vertex),
                                  .inputRate = vk::VertexInputRate::eVertex})
             .add_vertex_attribute({.location = 0,
                                    .binding = 0,
                                    .format = vk::Format::eR32G32B32Sfloat,
-                                   .offset = offsetof(core::vertex, position)})
+                                   .offset = offsetof(::gfx::vertex, position)})
             .add_vertex_attribute({.location = 1,
                                    .binding = 0,
                                    .format = vk::Format::eR32G32B32Sfloat,
-                                   .offset = offsetof(core::vertex, colour)})
+                                   .offset = offsetof(::gfx::vertex, colour)})
             .add_viewport({.x = 0.0f,
                            .y = 0.0f,
                            .width = static_cast<float>(m_swapchain.extent().width),
@@ -220,28 +218,28 @@ namespace core
                     .join();
       }
 
-      m_vertex_buffer = core::vertex_buffer::make({.vertices = m_triangle_vertices,
-                                                   .p_device = &m_device,
-                                                   .p_command_pool = &m_command_pool,
-                                                   .p_logger = mp_logger})
-                           .map_error([&](error_t err) {
+      m_vertex_buffer = ::gfx::vertex_buffer::make({.vertices = m_triangle_vertices,
+                                                    .p_device = &m_device,
+                                                    .p_command_pool = &m_command_pool,
+                                                    .p_logger = mp_logger})
+                           .map_error([&](::gfx::error_t err) {
                               log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
                                         err.value().message());
                               std::terminate();
 
-                              return vertex_buffer{};
+                              return ::gfx::vertex_buffer{};
                            })
                            .join();
-      m_index_buffer = core::index_buffer::make({.indices = m_triangle_indices,
-                                                 .p_device = &m_device,
-                                                 .p_command_pool = &m_command_pool,
-                                                 .p_logger = mp_logger})
-                          .map_error([&](error_t err) {
+      m_index_buffer = ::gfx::index_buffer::make({.indices = m_triangle_indices,
+                                                  .p_device = &m_device,
+                                                  .p_command_pool = &m_command_pool,
+                                                  .p_logger = mp_logger})
+                          .map_error([&](::gfx::error_t err) {
                              log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
                                        err.value().message());
                              std::terminate();
 
-                             return index_buffer{};
+                             return ::gfx::index_buffer{};
                           })
                           .join();
 

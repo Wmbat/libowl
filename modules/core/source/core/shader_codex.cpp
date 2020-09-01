@@ -254,7 +254,7 @@ namespace core
          util::log_warn(m_plogger, "[core] no shaders provided");
       }
 
-      return monad::make_value(std::move(codex));
+      return std::move(codex);
    }
 
    auto builder::set_cache_directory(const std::filesystem::path& path) -> builder&
@@ -495,7 +495,7 @@ namespace core
       glslang::SpvOptions spv_options;
       glslang::GlslangToSpv(*program.getIntermediate(shader_stage), spirv, &logger, &spv_options);
 
-      return monad::make_value(util::dynamic_array<uint32_t>{spirv.begin(), spirv.end()});
+      return util::dynamic_array<uint32_t>{spirv.begin(), spirv.end()};
    }
    auto builder::load_shader(const std::filesystem::path& path)
       -> core::result<util::dynamic_array<std::uint32_t>>
@@ -512,7 +512,7 @@ namespace core
       std::memcpy(static_cast<void*>(data.data()), raw_shader_data.data(),
                   sizeof(std::uint32_t) * data.size());
 
-      return monad::make_value(data);
+      return data;
    }
 
    auto builder::cache_shader(const std::filesystem::path& path,

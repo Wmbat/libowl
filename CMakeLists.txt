@@ -55,6 +55,7 @@ message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
 add_subdirectory(modules/core)
+add_subdirectory(modules/gfx)
 add_subdirectory(modules/util)
 add_subdirectory(modules/vkn)
 

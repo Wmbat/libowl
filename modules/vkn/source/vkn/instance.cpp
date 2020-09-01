@@ -330,7 +330,7 @@ namespace vkn
       }
       else
       {
-         return monad::make_value(vk::UniqueDebugUtilsMessengerEXT{nullptr});
+         return vk::UniqueDebugUtilsMessengerEXT{nullptr};
       }
    }
 
@@ -428,6 +428,6 @@ namespace vkn
          }
       }
 
-      return monad::make_value(extensions);
+      return extensions;
    }
 } // namespace vkn

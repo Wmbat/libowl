@@ -8,9 +8,10 @@
 #pragma once
 
 #include <core/graphics/gui/window.hpp>
-#include <core/graphics/index_buffer.hpp>
-#include <core/graphics/vertex_buffer.hpp>
 #include <core/shader_codex.hpp>
+
+#include <gfx/memory/index_buffer.hpp>
+#include <gfx/memory/vertex_buffer.hpp>
 
 #include <util/containers/dense_hash_map.hpp>
 
@@ -72,13 +73,14 @@ namespace core
 
       std::size_t m_current_frame{0};
 
-      core::vertex_buffer m_vertex_buffer;
-      core::index_buffer m_index_buffer;
+      ::gfx::vertex_buffer m_vertex_buffer;
+      ::gfx::index_buffer m_index_buffer;
 
-      util::dynamic_array<vertex> m_triangle_vertices{{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-                                                      {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-                                                      {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-                                                      {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}};
+      util::dynamic_array<::gfx::vertex> m_triangle_vertices{
+         {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+         {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+         {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+         {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}};
 
       util::dynamic_array<std::uint32_t> m_triangle_indices{0, 1, 2, 2, 3, 0};
    };

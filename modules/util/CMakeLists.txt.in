@@ -7,7 +7,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME monads
     GITHUB_REPOSITORY Wmbat/monads
-    GIT_TAG master
+    GIT_TAG rework_result
     OPTIONS
       "BUILD_TESTS OFF"
 )

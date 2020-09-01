@@ -1,18 +1,18 @@
-#include <core/graphics/vertex_buffer.hpp>
+#include <gfx/memory/vertex_buffer.hpp>
 
-namespace core
+namespace gfx
 {
    auto to_string(vertex_buffer_error err) -> std::string
    {
       switch (err)
       {
-         case core::vertex_buffer_error::failed_to_create_staging_buffer:
+         case gfx::vertex_buffer_error::failed_to_create_staging_buffer:
             return "failed_to_create_staging_buffer";
-         case core::vertex_buffer_error::failed_to_create_vertex_buffer:
+         case gfx::vertex_buffer_error::failed_to_create_vertex_buffer:
             return "failed_to_create_vertex_buffer";
-         case core::vertex_buffer_error::failed_to_create_command_buffer:
+         case gfx::vertex_buffer_error::failed_to_create_command_buffer:
             return "failed_to_create_command_buffer";
-         case core::vertex_buffer_error::failed_to_find_a_suitable_queue:
+         case gfx::vertex_buffer_error::failed_to_find_a_suitable_queue:
             return "failed_to_find_a_suitable_queue";
          default:
             return "UNKNOWN";
@@ -38,7 +38,7 @@ namespace core
       return {{static_cast<int>(err), m_vertex_buffer_category}};
    }
 
-   auto vertex_buffer::make(make_info&& info) noexcept -> core::result<vertex_buffer>
+   auto vertex_buffer::make(make_info&& info) noexcept -> gfx::result<vertex_buffer>
    {
       const vkn::device& device = *info.p_device;
       const vkn::command_pool& command_pool = *info.p_command_pool;
@@ -133,4 +133,4 @@ namespace core
 
    auto vertex_buffer::value() noexcept -> vkn::buffer& { return m_buffer; }
    auto vertex_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
-} // namespace core
+} // namespace gfx

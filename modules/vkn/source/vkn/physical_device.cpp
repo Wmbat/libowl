@@ -178,7 +178,7 @@ namespace vkn
 
       log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
-      return monad::make_value(physical_device{
+      return physical_device{
          {.name = static_cast<const char*>(selected.properties.deviceName),
           .features = selected.features,
           .properties = selected.properties,
@@ -187,7 +187,7 @@ namespace vkn
           .device = selected.phys_device,
           .surface = m_system_info.surface,
           .queue_families = util::dynamic_array<vk::QueueFamilyProperties>{
-             std::begin(selected.queue_families), std::end(selected.queue_families)}}});
+             std::begin(selected.queue_families), std::end(selected.queue_families)}}};
    }
 
    auto selector::set_preferred_gpu_type(physical_device::type type) noexcept -> selector&

@@ -1,39 +1,40 @@
 #pragma once
 
-#include <core/core.hpp>
-#include <core/graphics/vertex.hpp>
+#include <gfx/commons.hpp>
+#include <gfx/data_types.hpp>
 
+#include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 
 #include <vkn/buffer.hpp>
 #include <vkn/command_pool.hpp>
 
-namespace core
+namespace gfx
 {
-   enum struct vertex_buffer_error
+   enum struct index_buffer_error
    {
       failed_to_create_staging_buffer,
-      failed_to_create_vertex_buffer,
+      failed_to_create_index_buffer,
       failed_to_create_command_buffer,
       failed_to_find_a_suitable_queue
    };
 
-   auto to_string(vertex_buffer_error err) -> std::string;
-   auto make_error(vertex_buffer_error err) noexcept -> error_t;
+   auto to_string(index_buffer_error err) -> std::string;
+   auto make_error(index_buffer_error err) noexcept -> error_t;
 
-   class vertex_buffer
+   class index_buffer
    {
    public:
-      struct make_info
+      struct create_info
       {
-         util::dynamic_array<vertex> vertices;
+         util::dynamic_array<uint32_t> indices;
 
          vkn::device* p_device;
          vkn::command_pool* p_command_pool;
          util::logger* p_logger;
       };
 
-      static auto make(make_info&& info) noexcept -> core::result<vertex_buffer>;
+      static auto make(create_info&& info) noexcept -> gfx::result<index_buffer>;
 
       auto operator->() noexcept -> vkn::buffer*;
       auto operator->() const noexcept -> const vkn::buffer*;
@@ -47,12 +48,12 @@ namespace core
    private:
       vkn::buffer m_buffer;
    };
-} // namespace core
+} // namespace gfx
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<core::vertex_buffer_error> : true_type
+   struct is_error_code_enum<gfx::index_buffer_error> : true_type
    {
    };
 } // namespace std
