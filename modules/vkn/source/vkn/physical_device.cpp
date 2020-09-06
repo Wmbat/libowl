@@ -116,7 +116,8 @@ namespace vkn
 
    using selector = physical_device::selector;
 
-   selector::selector(const instance& inst, util::logger* const plogger) : m_plogger{plogger}
+   selector::selector(const instance& inst, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_system_info.instance = inst.value();
       m_system_info.instance_extensions = inst.extensions();
@@ -176,7 +177,7 @@ namespace vkn
          // clang-format on
       }
 
-      log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
+      log_info(mp_logger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
       return physical_device{
          {.name = static_cast<const char*>(selected.properties.deviceName),

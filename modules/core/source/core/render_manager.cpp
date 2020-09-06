@@ -13,14 +13,10 @@
 
 namespace core
 {
-   auto handle_physical_device_error(const vkn::error&, util::logger* const)
-      -> vkn::physical_device;
-   auto handle_device_error(const vkn::error&, util::logger* const) -> vkn::device;
-   auto handle_surface_error(const vkn::error&, util::logger* const) -> vk::SurfaceKHR;
-   auto handle_swapchain_error(const vkn::error&, util::logger* const) -> vkn::swapchain;
-
-   render_manager::render_manager(gfx::window* const p_wnd, util::logger* const plogger) :
-      mp_window{p_wnd}, mp_logger{plogger}, m_loader{mp_logger}
+   render_manager::render_manager(gfx::window* const p_wnd,
+                                  const std::shared_ptr<util::logger>& p_logger) :
+      mp_window{p_wnd},
+      mp_logger{p_logger}, m_loader{mp_logger}
    {
       m_instance =
          vkn::instance::builder{m_loader, mp_logger}
@@ -29,54 +25,70 @@ namespace core
             .set_engine_name(m_engine_name)
             .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
             .build()
-            .map_error([plogger](auto&& err) {
-               log_error(plogger, "[core] Failed to create instance: {0}", err.type.message());
-               abort();
+            .map_error([&](auto&& err) {
+               log_error(mp_logger, "[core] Failed to create instance: {0}", err.type.message());
+
+               std::terminate();
 
                return vkn::instance{};
             })
             .join();
 
       m_device =
-         vkn::device::builder{m_loader,
-                              vkn::physical_device::selector{m_instance, mp_logger}
-                                 .set_surface(mp_window->get_surface(m_instance.value())
-                                                 .map_error([plogger](auto&& err) {
-                                                    return handle_surface_error(err, plogger);
-                                                 })
-                                                 .join())
-                                 .set_preferred_gpu_type(vkn::physical_device::type::discrete)
-                                 .allow_any_gpu_type()
-                                 .require_present()
-                                 .select()
-                                 .map_error([plogger](auto&& err) {
-                                    return handle_physical_device_error(err, plogger);
-                                 })
-                                 .join(),
-                              m_instance.version(), mp_logger}
+         vkn::device::builder{
+            m_loader,
+            vkn::physical_device::selector{m_instance, mp_logger}
+               .set_surface(mp_window->get_surface(m_instance.value())
+                               .map_error([&](auto&& err) {
+                                  log_error(mp_logger, "[core] Failed to create surface: {0}",
+                                            err.type.message());
+                                  std::terminate();
+
+                                  return vk::SurfaceKHR{};
+                               })
+                               .join())
+               .set_preferred_gpu_type(vkn::physical_device::type::discrete)
+               .allow_any_gpu_type()
+               .require_present()
+               .select()
+               .map_error([&](auto&& err) {
+                  log_error(mp_logger, "[core] Failed to create physical device: {0}",
+                            err.type.message());
+                  std::terminate();
+
+                  return vkn::physical_device{};
+               })
+               .join(),
+            m_instance.version(), mp_logger}
             .build()
-            .map_error([plogger](auto&& err) {
-               return handle_device_error(err, plogger);
+            .map_error([&](auto&& err) {
+               log_error(mp_logger, "[core] Failed to create device: {0}", err.type.message());
+               std::terminate();
+
+               return vkn::device{};
             })
             .join();
 
       m_swapchain =
-         vkn::swapchain::builder{m_device, plogger}
+         vkn::swapchain::builder{m_device, mp_logger}
             .set_desired_format({vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear})
             .set_desired_present_mode(vk::PresentModeKHR::eMailbox)
             .add_fallback_present_mode(vk::PresentModeKHR::eFifo)
             .set_clipped(true)
             .set_composite_alpha_flags(vk::CompositeAlphaFlagBitsKHR::eOpaque)
             .build()
-            .map_error([plogger](auto&& err) {
-               return handle_swapchain_error(err, plogger);
+            .map_error([&](auto&& err) {
+               log_error(mp_logger, "[core] Failed to create swapchain: {0}", err.type.message());
+               std::terminate();
+
+               return vkn::swapchain{};
             })
             .join();
 
-      m_render_pass = vkn::render_pass::builder{m_device, m_swapchain, plogger}
+      m_render_pass = vkn::render_pass::builder{m_device, m_swapchain, mp_logger}
                          .build()
-                         .map_error([plogger](auto&& err) {
-                            log_error(plogger, "[core] Failed to create render pass: \"{0}\"",
+                         .map_error([&](auto&& err) {
+                            log_error(mp_logger, "[core] Failed to create render pass: \"{0}\"",
                                       err.type.message());
                             abort();
 
@@ -87,14 +99,14 @@ namespace core
       m_framebuffers.reserve(std::size(m_swapchain.image_views()));
       for (const auto& img_view : m_swapchain.image_views())
       {
-         m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, plogger}
+         m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, mp_logger}
                                         .add_attachment(img_view.get())
                                         .set_buffer_width(m_swapchain.extent().width)
                                         .set_buffer_height(m_swapchain.extent().height)
                                         .set_layer_count(1u)
                                         .build()
-                                        .map_error([plogger](vkn::error&& err) {
-                                           log_error(plogger,
+                                        .map_error([&](vkn::error&& err) {
+                                           log_error(mp_logger,
                                                      "[core] Failed to create framebuffer: \"{0}\"",
                                                      err.type.message());
                                            abort();
@@ -104,46 +116,46 @@ namespace core
                                         .join());
       }
 
-      m_shader_codex = shader_codex::builder{m_device, plogger}
+      m_shader_codex = shader_codex::builder{m_device, mp_logger}
                           .add_shader_filepath("resources/shaders/test_shader.vert")
                           .add_shader_filepath("resources/shaders/test_shader.frag")
                           .allow_caching(false)
                           .build()
-                          .map_error([plogger](error_t&& err) {
-                             log_error(plogger, "[core] Failed to create shader codex: \"{0}\"",
+                          .map_error([&](error_t&& err) {
+                             log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
                                        err.value().message());
-                             abort();
+                             std::terminate();
 
                              return shader_codex{};
                           })
                           .join();
 
       m_command_pool =
-         vkn::command_pool::builder{m_device, plogger}
+         vkn::command_pool::builder{m_device, mp_logger}
             .set_queue_family_index(
                m_device.get_queue_index(vkn::queue::type::graphics)
                   .map_error([&](auto&& err) {
-                     log_error(plogger, "[core] No usable graphics queues found: \"{0}\"",
+                     log_error(mp_logger, "[core] No usable graphics queues found: \"{0}\"",
                                err.type.message());
-                     abort();
+                     std::terminate();
 
                      return 0u;
                   })
                   .join())
             .set_primary_buffer_count(std::size(m_framebuffers))
             .build()
-            .map_error([plogger](auto&& err) {
-               log_error(plogger, "[core] Failed to create command pool: \"{0}\"",
+            .map_error([&](auto&& err) {
+               log_error(mp_logger, "[core] Failed to create command pool: \"{0}\"",
                          err.type.message());
 
-               abort();
+               std::terminate();
 
                return vkn::command_pool{};
             })
             .join();
 
       m_graphics_pipeline =
-         vkn::graphics_pipeline::builder{m_device, m_render_pass, plogger}
+         vkn::graphics_pipeline::builder{m_device, m_render_pass, mp_logger}
             .add_shader(m_shader_codex.get_shader("test_shader.vert"))
             .add_shader(m_shader_codex.get_shader("test_shader.frag"))
             .add_vertex_binding({.binding = 0,
@@ -166,7 +178,7 @@ namespace core
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
             .build()
             .map_error([&](vkn::error&& err) {
-               log_error(plogger, "[core] Failed to create graphics pipeline: \"{0}\"",
+               log_error(mp_logger, "[core] Failed to create graphics pipeline: \"{0}\"",
                          err.type.message());
 
                abort();
@@ -180,7 +192,7 @@ namespace core
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
                         .map_error([&](vkn::error&& err) {
-                           log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
+                           log_error(mp_logger, "[core] Failed to create semaphore: \"{0}\"",
                                      err.type.message());
                            abort();
 
@@ -194,9 +206,10 @@ namespace core
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
                         .map_error([&](vkn::error&& err) {
-                           log_error(plogger, "[core] Failed to create semaphore: \"{0}\"",
+                           log_error(mp_logger, "[core] Failed to create semaphore: \"{0}\"",
                                      err.type.message());
-                           abort();
+
+                           std::terminate();
 
                            return vkn::semaphore{};
                         })
@@ -209,9 +222,10 @@ namespace core
                     .set_signaled()
                     .build()
                     .map_error([&](vkn::error&& err) {
-                       log_error(plogger, "[core] Failed to create in flight fence: \"{0}\"",
+                       log_error(mp_logger, "[core] Failed to create in flight fence: \"{0}\"",
                                  err.type.message());
-                       abort();
+
+                       std::terminate();
 
                        return vkn::fence{};
                     })
@@ -223,19 +237,20 @@ namespace core
                                                     .p_command_pool = &m_command_pool,
                                                     .p_logger = mp_logger})
                            .map_error([&](::gfx::error_t err) {
-                              log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
+                              log_error(mp_logger, "[core] Failed to create vertex buffer: \"{0}\"",
                                         err.value().message());
                               std::terminate();
 
                               return ::gfx::vertex_buffer{};
                            })
                            .join();
+
       m_index_buffer = ::gfx::index_buffer::make({.indices = m_triangle_indices,
                                                   .p_device = &m_device,
                                                   .p_command_pool = &m_command_pool,
                                                   .p_logger = mp_logger})
                           .map_error([&](::gfx::error_t err) {
-                             log_error(plogger, "[core] Failed to create vertex buffer: \"{0}\"",
+                             log_error(mp_logger, "[core] Failed to create vertex buffer: \"{0}\"",
                                        err.value().message());
                              std::terminate();
 
@@ -334,35 +349,4 @@ namespace core
    }
 
    void render_manager::wait() { m_device->waitIdle(); }
-
-   auto handle_physical_device_error(const vkn::error& err, util::logger* const plogger)
-      -> vkn::physical_device
-   {
-      log_error(plogger, "[core] Failed to create physical device: {0}", err.type.message());
-      abort();
-
-      return {};
-   }
-   auto handle_device_error(const vkn::error& err, util::logger* const plogger) -> vkn::device
-   {
-      log_error(plogger, "[core] Failed to create device: {0}", err.type.message());
-      abort();
-
-      return {};
-   }
-
-   auto handle_surface_error(const vkn::error& err, util::logger* const plogger) -> vk::SurfaceKHR
-   {
-      log_error(plogger, "[core] Failed to create surface: {0}", err.type.message());
-      abort();
-
-      return {};
-   }
-   auto handle_swapchain_error(const vkn::error& err, util::logger* const plogger) -> vkn::swapchain
-   {
-      log_error(plogger, "[core] Failed to create swapchain: {0}", err.type.message());
-      abort();
-
-      return {};
-   }
 } // namespace core

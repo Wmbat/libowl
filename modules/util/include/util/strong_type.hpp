@@ -182,8 +182,8 @@ namespace util
    template <typename any_>
    struct subtractable : binary_subtractable<any_>, unary_subtractable<any_>
    {
-      using binary_addable<any_>::operator-;
-      using unary_addable<any_>::operator-;
+      using binary_subtractable<any_>::operator-;
+      using unary_subtractable<any_>::operator-;
    };
 
    template <typename any_>

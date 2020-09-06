@@ -45,6 +45,8 @@ namespace gfx
 
       const std::size_t size = sizeof(vertex) * std::size(info.vertices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
+         util::log_info(info.p_logger, "[gfx] mapping vertex data into staging buffer");
+
          void* p_data = device->mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.vertices.data(), size);
          device->unmapMemory(buffer.memory());
@@ -52,11 +54,14 @@ namespace gfx
          return std::move(buffer);
       };
       const auto buffer_error = [&](vkn::error&& err) noexcept {
-         util::log_error(info.p_logger, "[core] staging buffer error: {}-{}",
+         util::log_error(info.p_logger, "[gfx] staging buffer error: {}-{}",
                          err.type.category().name(), err.type.message());
 
          return make_error(vertex_buffer_error::failed_to_create_staging_buffer);
       };
+
+      util::log_info(info.p_logger, "[gfx] staging buffer of size {} on memory {}", size,
+                     vk::to_string(vk::MemoryPropertyFlagBits::eHostVisible));
 
       auto staging_buffer_res =
          vkn::buffer::builder{device, info.p_logger}
@@ -72,6 +77,9 @@ namespace gfx
       {
          return monad::make_error(*staging_buffer_res.error());
       }
+
+      util::log_info(info.p_logger, "[gfx] vertex buffer of size {} on memory {}", size,
+                     vk::to_string(vk::MemoryPropertyFlagBits::eDeviceLocal));
 
       auto vertex_buffer_res = vkn::buffer::builder{device, info.p_logger}
                                   .set_size(size)
@@ -90,6 +98,11 @@ namespace gfx
       auto vertex_buffer = *std::move(vertex_buffer_res).value();
 
       const auto copy_n_create = [&](vk::UniqueCommandBuffer buffer) noexcept {
+         util::log_info(info.p_logger,
+                        "[gfx] copying data from staging buffer ({}) to vertex buffer ({})",
+                        vk::to_string(vk::MemoryPropertyFlagBits::eHostVisible),
+                        vk::to_string(vk::MemoryPropertyFlagBits::eDeviceLocal));
+
          buffer->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
          buffer->copyBuffer(vkn::value(staging_buffer), vkn::value(vertex_buffer),
                             {{.size = size}});
@@ -106,7 +119,7 @@ namespace gfx
                queue.submit({{.commandBufferCount = 1, .pCommandBuffers = &buffer.get()}}, nullptr);
                queue.waitIdle();
 
-               util::log_info(info.p_logger, "[core] vertex buffer created");
+               util::log_info(info.p_logger, "[gfx] vertex buffer created");
 
                class vertex_buffer buf = {};
                buf.m_buffer = std::move(vertex_buffer);
@@ -117,7 +130,7 @@ namespace gfx
 
       return command_pool.create_primary_buffer()
          .map_error([&](vkn::error&& err) {
-            util::log_error(info.p_logger, "[core] transfer cmd buffer error: {}-{}",
+            util::log_error(info.p_logger, "[gfx] transfer cmd buffer error: {}-{}",
                             err.type.category().name(), err.type.message());
 
             return make_error(vertex_buffer_error::failed_to_create_command_buffer);

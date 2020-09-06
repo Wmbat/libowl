@@ -4,46 +4,51 @@
 
 namespace vkn
 {
-   namespace detail
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct framebuffer_error_category : std::error_category
    {
-      auto to_string(vkn::framebuffer::error err) -> std::string
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_framebuffer"; }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
       {
-         using error = vkn::framebuffer::error;
+         return to_string(static_cast<framebuffer_error>(err));
+      }
+   };
 
-         switch (err)
-         {
-            case error::no_device_handle:
-               return "no_device_handle";
-            case error::failed_to_create_framebuffer:
-               return "failed_to_create_framebuffer";
-            default:
-               return "UNKNOWN";
-         }
-      };
-   }; // namespace detail
+   inline static const framebuffer_error_category framebuffer_category{};
 
-   auto framebuffer::error_category::name() const noexcept -> const char*
+   auto to_string(vkn::framebuffer_error err) -> std::string
    {
-      return "vkn_framebuffer";
-   }
-   auto framebuffer::error_category::message(int err) const -> std::string
+      switch (err)
+      {
+         case framebuffer_error::no_device_handle:
+            return "no_device_handle";
+         case framebuffer_error::failed_to_create_framebuffer:
+            return "failed_to_create_framebuffer";
+         default:
+            return "UNKNOWN";
+      }
+   };
+   auto make_error(framebuffer_error err, std::error_code ec) -> vkn::error
    {
-      return detail::to_string(static_cast<error>(err));
+      return {{static_cast<int>(err), framebuffer_category}, static_cast<vk::Result>(ec.value())};
    }
 
-   framebuffer::framebuffer(create_info&& info) noexcept :
-      m_framebuffer{std::move(info.framebuffer)}, m_dimensions{info.dimensions}
-   {}
-
-   auto framebuffer::value() const noexcept -> vk::Framebuffer { return m_framebuffer.get(); }
-   auto framebuffer::device() const noexcept -> vk::Device { return m_framebuffer.getOwner(); }
+   auto framebuffer::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    using builder = framebuffer::builder;
 
    builder::builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                    util::logger* plogger) noexcept :
+                    std::shared_ptr<util::logger> p_logger) noexcept :
       m_device{device.value()},
-      m_plogger{plogger}
+      mp_logger{std::move(p_logger)}
    {
       m_info.render_pass = render_pass.value();
    }
@@ -52,8 +57,7 @@ namespace vkn
    {
       if (!m_device)
       {
-         return monad::make_error(
-            framebuffer::make_error(framebuffer::error::no_device_handle, {}));
+         return monad::make_error(make_error(framebuffer_error::no_device_handle, {}));
       }
 
       const auto create_info = vk::FramebufferCreateInfo{}
@@ -70,13 +74,16 @@ namespace vkn
                 return m_device.createFramebufferUnique(create_info);
              })
          .map_error([](vk::SystemError&& err) {
-            return framebuffer::make_error(error::failed_to_create_framebuffer, err.code());
+            return make_error(framebuffer_error::failed_to_create_framebuffer, err.code());
          })
          .map([&](vk::UniqueFramebuffer&& handle) {
-            util::log_info(m_plogger, "[vkn] framebuffer created");
+            util::log_info(mp_logger, "[vkn] framebuffer created");
 
-            return framebuffer{
-               {.framebuffer = std::move(handle), .dimensions = {m_info.width, m_info.height}}};
+            framebuffer f{};
+            f.m_value = std::move(handle);
+            f.m_dimensions = {m_info.width, m_info.height};
+
+            return f;
          });
    }
 

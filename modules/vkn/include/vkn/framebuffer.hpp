@@ -13,64 +13,23 @@
 
 namespace vkn
 {
-   class framebuffer final
+   /**
+    * Set of possible errors that may happen at construction of a framebuffer
+    */
+   enum struct framebuffer_error
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
+      no_device_handle,
+      failed_to_create_framebuffer
+   };
 
-      inline static const error_category m_category{};
-
-   public:
-      /**
-       * Set of possible errors that may happen at construction of a framebuffer
-       */
-      enum struct error
-      {
-         no_device_handle,
-         failed_to_create_framebuffer
-      };
-
-      struct create_info
-      {
-         vk::UniqueFramebuffer framebuffer{nullptr};
-
-         vk::Extent2D dimensions{};
-      };
-
-   public:
-      framebuffer() noexcept = default;
-      framebuffer(create_info&& info) noexcept;
-
-      [[nodiscard]] auto value() const noexcept -> vk::Framebuffer;
+   class framebuffer final : public owning_handle<vk::Framebuffer>
+   {
       /**
        * Get the device used for the creation of the framebuffer handle
        */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
-      inline static auto make_error(error err, std::error_code ec) -> vkn::error
-      {
-         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
-      }
-
-   private:
-      vk::UniqueFramebuffer m_framebuffer{nullptr};
-
       vk::Extent2D m_dimensions{};
 
    public:
@@ -81,7 +40,7 @@ namespace vkn
       {
       public:
          builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                 util::logger* plogger) noexcept;
+                 std::shared_ptr<util::logger> p_logger) noexcept;
 
          /**
           * Attemp to create the framebuffer object with the given information. If something
@@ -112,7 +71,7 @@ namespace vkn
 
       private:
          vk::Device m_device{nullptr};
-         util::logger* const m_plogger{nullptr};
+         std::shared_ptr<util::logger> mp_logger{nullptr};
 
          struct info
          {
@@ -126,12 +85,22 @@ namespace vkn
          } m_info;
       };
    };
+
+   /**
+    * Convert an framebuffer_error enum to a string
+    */
+   auto to_string(vkn::framebuffer_error err) -> std::string;
+   /**
+    * Convert an framebuffer_error enum value and an error code from a vulkan error into
+    * a vkn::error
+    */
+   auto make_error(framebuffer_error err, std::error_code ec) -> vkn::error;
 } // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::framebuffer::error> : true_type
+   struct is_error_code_enum<vkn::framebuffer_error> : true_type
    {
    };
 } // namespace std

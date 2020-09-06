@@ -7,49 +7,25 @@
 
 namespace vkn
 {
-   class graphics_pipeline final
+   enum struct graphics_pipeline_error
+   {
+      failed_to_create_descriptor_set_layout,
+      failed_to_create_pipeline_layout,
+      failed_to_create_pipeline
+   };
+
+   auto to_string(graphics_pipeline_error err) -> std::string;
+   auto make_error(graphics_pipeline_error err, std::error_code ec) -> vkn::error;
+
+   class graphics_pipeline final : public owning_handle<vk::Pipeline>
    {
       static constexpr std::size_t expected_shader_count{2u};
 
    public:
-      using value_type = vk::Pipeline;
-      using pointer = value_type*;
-      using const_pointer = const value_type*;
-
-      enum struct error
-      {
-         failed_to_create_pipeline_layout,
-         failed_to_create_pipeline
-      };
-
-   public:
-      graphics_pipeline() = default;
-
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() noexcept -> pointer;
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() const noexcept -> const_pointer;
-
-      /**
-       * Get the underlying handle
-       */
-      auto operator*() const noexcept -> value_type;
-
-      operator bool() const noexcept;
-
-      /**
-       * Get the underlying handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::UniquePipeline m_pipeline{nullptr};
       vk::UniquePipelineLayout m_pipeline_layout{nullptr};
 
    public:
@@ -60,7 +36,7 @@ namespace vkn
 
       public:
          builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                 util::logger* plogger);
+                 std::shared_ptr<util::logger> p_logger);
 
          auto build() -> vkn::result<graphics_pipeline>;
 
@@ -70,13 +46,20 @@ namespace vkn
          auto add_vertex_binding(vk::VertexInputBindingDescription&& binding) noexcept -> builder&;
          auto add_vertex_attribute(vk::VertexInputAttributeDescription&& attribute) noexcept
             -> builder&;
+         auto add_set_layout(const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding)
+            -> builder&;
 
       private:
          [[nodiscard]] auto create_pipeline(vk::UniquePipelineLayout layout) const
             -> vkn::result<graphics_pipeline>;
 
       private:
-         util::logger* const m_plogger;
+         std::shared_ptr<util::logger> mp_logger;
+
+         struct descriptor_set_layout_info
+         {
+            util::dynamic_array<vk::DescriptorSetLayoutBinding> binding;
+         };
 
          struct info
          {
@@ -90,48 +73,17 @@ namespace vkn
 
             util::dynamic_array<vk::VertexInputBindingDescription> binding_descriptions;
             util::dynamic_array<vk::VertexInputAttributeDescription> attribute_descriptions;
+
+            util::dynamic_array<descriptor_set_layout_info> set_layouts;
          } m_info;
       };
-
-   private:
-      struct create_info
-      {
-         vk::UniquePipeline pipeline{nullptr};
-         vk::UniquePipelineLayout pipeline_layout{nullptr};
-      };
-
-      graphics_pipeline(create_info&& info) noexcept;
-
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
-      inline static auto make_error(error err, std::error_code ec) -> vkn::error
-      {
-         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
-      }
    };
 } // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::graphics_pipeline::error> : true_type
+   struct is_error_code_enum<vkn::graphics_pipeline_error> : true_type
    {
    };
 } // namespace std

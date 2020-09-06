@@ -6,43 +6,20 @@
 
 namespace vkn
 {
-   class buffer
+   /**
+    * The possible errors that may occur the construction of the
+    * buffer object
+    */
+   enum class buffer_error
+   {
+      failed_to_create_buffer,
+      failed_to_allocate_memory,
+      failed_to_find_desired_memory_type
+   };
+
+   class buffer : public owning_handle<vk::Buffer>
    {
    public:
-      using value_type = vk::Buffer;
-      using pointer = vk::Buffer*;
-      using const_pointer = const vk::Buffer*;
-
-      enum class error_type
-      {
-         failed_to_create_buffer,
-         failed_to_allocate_memory,
-         failed_to_find_desired_memory_type
-      };
-
-   public:
-      buffer() noexcept = default;
-
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() noexcept -> pointer;
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() const noexcept -> const_pointer;
-
-      /**
-       * Get the underlying handle
-       */
-      auto operator*() const noexcept -> value_type;
-
-      operator bool() const noexcept;
-
-      /**
-       * Get the underlying handle
-       */
-      [[nodiscard]] auto value() const noexcept -> value_type;
       [[nodiscard]] auto memory() const noexcept -> vk::DeviceMemory;
       /**
        * Get the device used to create the underlying handle
@@ -50,14 +27,13 @@ namespace vkn
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
    private:
-      vk::UniqueBuffer m_buffer;
       vk::UniqueDeviceMemory m_memory;
 
    public:
       class builder
       {
       public:
-         builder(const vkn::device& device, util::logger* p_logger) noexcept;
+         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
          [[nodiscard]] auto build() const noexcept -> vkn::result<buffer>;
 
@@ -78,7 +54,7 @@ namespace vkn
             -> monad::maybe<std::uint32_t>;
 
       private:
-         util::logger* const mp_logger;
+         std::shared_ptr<util::logger> mp_logger;
 
          struct info
          {
@@ -93,39 +69,15 @@ namespace vkn
             vk::MemoryPropertyFlags fallback_mem_flags;
          } m_info;
       };
-
-   private:
-      struct create_info
-      {
-         vk::UniqueBuffer buffer;
-         vk::UniqueDeviceMemory memory;
-      };
-
-      buffer(create_info&& info) noexcept;
-
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
-      static auto make_error(error_type flag, std::error_code ec) -> vkn::error
-      {
-         return vkn::error{{static_cast<int>(flag), m_category},
-                           static_cast<vk::Result>(ec.value())};
-      }
-
-      static auto make_error_res(error_type flag, std::error_code ec) -> monad::error_t<vkn::error>
-      {
-         return {make_error(flag, ec)};
-      }
    };
+
+   /**
+    * Convert an buffer_error enum to a string
+    */
+   auto to_string(buffer_error err) -> std::string;
+   /**
+    * Convert an buffer_error enum value and an error code from a vulkan error into
+    * a vkn::error
+    */
+   auto make_error(buffer_error err, std::error_code ec) -> vkn::error;
 } // namespace vkn

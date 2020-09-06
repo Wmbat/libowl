@@ -1,5 +1,5 @@
-#include "vkn/instance.hpp"
-#include "vulkan/vulkan.hpp"
+#include <vkn/instance.hpp>
+#include <vulkan/vulkan.hpp>
 
 #include <monads/try.hpp>
 
@@ -33,22 +33,22 @@ namespace vkn
       {
          if (!type.empty())
          {
-            log_error(p_logger, "{0} - {1}", type, p_callback_data->pMessage);
+            p_logger->error("{0} - {1}", type, p_callback_data->pMessage);
          }
          else
          {
-            log_error(p_logger, "{0}", p_callback_data->pMessage);
+            p_logger->error("{0}", p_callback_data->pMessage);
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
       {
          if (!type.empty())
          {
-            log_warn(p_logger, "{0} - {1}", type, p_callback_data->pMessage);
+            p_logger->warn("{0} - {1}", type, p_callback_data->pMessage);
          }
          else
          {
-            log_warn(p_logger, "{0}", p_callback_data->pMessage);
+            p_logger->warn("{0}", p_callback_data->pMessage);
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
@@ -68,53 +68,56 @@ namespace vkn
       return VK_FALSE;
    }
 
-   namespace detail
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct instance_error_category : std::error_category
    {
-      auto to_string(instance::error err) -> std::string
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_instance"; }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
       {
-         using error = instance::error;
-
-         switch (err)
-         {
-            case error::vulkan_version_unavailable:
-               return "vulkan_version_unavailable";
-            case error::vulkan_version_1_2_unavailable:
-               return "vulkan_version_1_2_unavailable";
-            case error::window_extensions_not_present:
-               return "window_extensions_not_present";
-            case error::instance_extension_not_supported:
-               return "instance_extension_not_supported";
-            case error::instance_layer_not_supported:
-               return "instance_layer_not_supported";
-            case error::failed_to_create_instance:
-               return "failed_create_instance";
-            case error::failed_to_create_debug_utils:
-               return "failed_create_debug_utils";
-            default:
-               return "UNKNOWN";
-         }
-      };
-
-      auto make_error(instance::error flag, std::error_code ec) -> vkn::error
-      {
-         return vkn::error{instance::make_error_code(flag), static_cast<vk::Result>(ec.value())};
+         return to_string(static_cast<instance_error>(err));
       }
-   } // namespace detail
+   };
 
-   auto instance::error_category::name() const noexcept -> const char* { return "vk_instance"; }
-   auto instance::error_category::message(int err) const -> std::string
+   inline static const instance_error_category instance_category{};
+
+   auto to_string(instance_error err) -> std::string
    {
-      return detail::to_string(static_cast<instance::error>(err));
+      switch (err)
+      {
+         case instance_error::vulkan_version_unavailable:
+            return "vulkan_version_unavailable";
+         case instance_error::vulkan_version_1_2_unavailable:
+            return "vulkan_version_1_2_unavailable";
+         case instance_error::window_extensions_not_present:
+            return "window_extensions_not_present";
+         case instance_error::instance_extension_not_supported:
+            return "instance_extension_not_supported";
+         case instance_error::instance_layer_not_supported:
+            return "instance_layer_not_supported";
+         case instance_error::failed_to_create_instance:
+            return "failed_create_instance";
+         case instance_error::failed_to_create_debug_utils:
+            return "failed_create_debug_utils";
+         default:
+            return "UNKNOWN";
+      }
+   };
+
+   auto make_error(instance_error err, std::error_code ec) noexcept -> vkn::error
+   {
+      return {{static_cast<int>(err), instance_category}, static_cast<vk::Result>(ec.value())};
    }
 
    /* INSTANCE */
 
-   instance::instance(create_info&& info) :
-      m_instance{std::move(info.instance)}, m_debug_utils{std::move(info.debug_utils)},
-      m_extensions(std::move(info.extensions)), m_version(info.version)
-   {}
-
-   auto instance::value() const noexcept -> vk::Instance { return m_instance.get(); }
    auto instance::version() const noexcept -> uint32_t { return m_version; }
    auto instance::extensions() const -> const util::dynamic_array<const char*>&
    {
@@ -124,8 +127,8 @@ namespace vkn
    /* INSTANCE BUILDER */
    using builder = instance::builder;
 
-   builder::builder(const loader& vk_loader, util::logger* const plogger) :
-      m_loader{vk_loader}, m_plogger{plogger}
+   builder::builder(const loader& vk_loader, std::shared_ptr<util::logger> p_logger) :
+      m_loader{vk_loader}, mp_logger{std::move(p_logger)}
    {}
 
    auto builder::build() -> monad::result<instance, vkn::error>
@@ -136,19 +139,18 @@ namespace vkn
 
       if (!version_res)
       {
-         return monad::make_error(detail::make_error(instance::error::vulkan_version_unavailable,
-                                                     version_res.error()->code()));
+         return monad::make_error(
+            make_error(instance_error::vulkan_version_unavailable, version_res.error()->code()));
       }
 
       const uint32_t api_version = version_res.value().value();
 
       if (VK_VERSION_MINOR(api_version) < 2)
       {
-         return monad::make_error(
-            detail::make_error(instance::error::vulkan_version_1_2_unavailable, {}));
+         return monad::make_error(make_error(instance_error::vulkan_version_1_2_unavailable, {}));
       }
 
-      log_info(m_plogger, "[vkn] using vulkan version {0}.{1}.{2}", VK_VERSION_MAJOR(api_version),
+      log_info(mp_logger, "[vkn] using vulkan version {0}.{1}.{2}", VK_VERSION_MAJOR(api_version),
                VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
 
       // clang-format off
@@ -158,10 +160,10 @@ namespace vkn
          [](const auto& data) {
             return util::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
          },
-         [logger = m_plogger](const auto& err) {
+         [&](const auto& err) {
             if constexpr (detail::ENABLE_VALIDATION_LAYERS)
             {
-               log_warn(logger, "[vkn] instance layer enumeration error: {0}", err.what());
+               log_warn(mp_logger, "[vkn] instance layer enumeration error: {0}", err.what());
             }
             return util::dynamic_array<vk::LayerProperties>{};
          }
@@ -173,8 +175,8 @@ namespace vkn
          [](const auto& data){
             return util::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
          },
-         [logger=m_plogger](const auto& err) {
-            log_warn(logger, "[vkn] instance layer enumeration error: {1}", err.what());
+         [&](const auto& err) {
+            log_warn(mp_logger, "[vkn] instance layer enumeration error: {1}", err.what());
             return util::dynamic_array<vk::ExtensionProperties>{};
          }
       );
@@ -199,7 +201,7 @@ namespace vkn
       const util::dynamic_array<const char*> extensions = std::move(*extension_names_res.value());
       for (const char* name : extensions)
       {
-         log_info(m_plogger, "[vkn] instance extension: {0} - ENABLED", name);
+         log_info(mp_logger, "[vkn] instance extension: {0} - ENABLED", name);
       }
 
       // clang-format off
@@ -218,7 +220,7 @@ namespace vkn
       {
          for (const auto& name : sys_layers)
          {
-            log_info(m_plogger, "[vkn] instance layers: {0} - ENABLED", name.layerName);
+            log_info(mp_logger, "[vkn] instance layers: {0} - ENABLED", name.layerName);
          }
 
          if (has_validation_layer_support(sys_layers))
@@ -235,7 +237,7 @@ namespace vkn
                if (!is_present)
                {
                   return monad::make_error(
-                     detail::make_error(instance::error::instance_layer_not_supported, {}));
+                     make_error(instance_error::instance_layer_not_supported, {}));
                }
             }
 
@@ -245,7 +247,7 @@ namespace vkn
 
          for (const char* name : layers)
          {
-            log_info(m_plogger, "[vkn] instance layers: {0} - ENABLED", name);
+            log_info(mp_logger, "[vkn] instance layers: {0} - ENABLED", name);
          }
       }
 
@@ -253,14 +255,20 @@ namespace vkn
                 return vk::createInstanceUnique(instance_create_info);
              })
          .map_error([](auto err) { // Error creating instance
-            return detail::make_error(instance::error::failed_to_create_instance, err.code());
+            return make_error(instance_error::failed_to_create_instance, err.code());
          })
          .and_then([&](vk::UniqueInstance&& inst) { // Instance created
-            log_info(m_plogger, "[vkn] instance created");
+            log_info(mp_logger, "[vkn] instance created");
             m_loader.load_instance(inst.get());
 
-            return build_debug_utils(inst.get(), m_plogger).map([&](auto debug) {
-               return instance{{std::move(inst), std::move(debug), extensions, api_version}};
+            return build_debug_utils(inst.get()).map([&](auto debug) {
+               instance value{};
+               value.m_value = std::move(inst);
+               value.m_debug_utils = std::move(debug);
+               value.m_extensions = extensions;
+               value.m_version = api_version;
+
+               return value;
             });
          });
    } // namespace vkn
@@ -302,7 +310,7 @@ namespace vkn
       return *this;
    }
 
-   auto builder::build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
+   auto builder::build_debug_utils(vk::Instance inst) const noexcept
       -> monad::result<vk::UniqueDebugUtilsMessengerEXT, vkn::error>
    {
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
@@ -318,13 +326,13 @@ namespace vkn
                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
                           vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                        .pfnUserCallback = debug_callback,
-                       .pUserData = static_cast<void*>(m_plogger)});
+                       .pUserData = static_cast<void*>(mp_logger.get())});
                 })
             .map_error([](const auto& err) -> vkn::error {
-               return detail::make_error(instance::error::failed_to_create_debug_utils, err.code());
+               return make_error(instance_error::failed_to_create_debug_utils, err.code());
             })
-            .map([plogger](vk::UniqueDebugUtilsMessengerEXT handle) {
-               log_info(plogger, "[vkn] debug utils created");
+            .map([&](vk::UniqueDebugUtilsMessengerEXT handle) {
+               log_info(mp_logger, "[vkn] debug utils created");
                return handle;
             });
       }
@@ -356,8 +364,6 @@ namespace vkn
                              bool are_debug_utils_available) const
       -> monad::result<util::dynamic_array<const char*>, vkn::error>
    {
-      using err_t = vkn::error;
-
       util::dynamic_array<const char*> extensions{m_info.extensions};
 
       if constexpr (detail::ENABLE_VALIDATION_LAYERS)
@@ -402,12 +408,7 @@ namespace vkn
 
       if (!has_wnd_exts || !has_khr_surface_ext)
       {
-         // clang-format off
-         return monad::make_error(err_t{
-            .type = instance::make_error_code(instance::error::window_extensions_not_present),
-            .result = {}
-         });
-         // clang-format on
+         return monad::make_error(make_error(instance_error::window_extensions_not_present, {}));
       }
 
       for (const char* name : extensions)
@@ -419,12 +420,8 @@ namespace vkn
 
          if (!is_present)
          {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = instance::make_error_code(instance::error::instance_extension_not_supported),
-               .result = {}
-            });
-            // clang-format on
+            return monad::make_error(
+               make_error(instance_error::instance_extension_not_supported, {}));
          }
       }
 

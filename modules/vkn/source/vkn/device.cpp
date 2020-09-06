@@ -292,9 +292,9 @@ namespace vkn
    auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
 
    device::builder::builder(const loader& vk_loader, physical_device&& phys_device,
-                            uint32_t version, util::logger* plogger) :
+                            uint32_t version, std::shared_ptr<util::logger> p_logger) :
       m_loader{vk_loader},
-      m_plogger{plogger}
+      mp_logger{std::move(p_logger)}
    {
       m_info.phys_device = std::move(phys_device);
       m_info.api_version = version;
@@ -355,7 +355,7 @@ namespace vkn
 
       for(const char* name : extensions)
       {
-         log_info(m_plogger, "[vkn] device extension: {0} - ENABLED", name);
+         log_info(mp_logger, "[vkn] device extension: {0} - ENABLED", name);
       }
 
       // clang-format off
@@ -375,7 +375,7 @@ namespace vkn
       }).map_error([](auto err){
          return detail::make_error(device::error::failed_to_create_device, err.code());
       }).map([&](vk::Device dev) {
-         log_info(m_plogger, "[vkn] device created");
+         log_info(mp_logger, "[vkn] device created");
 
          m_loader.load_device(dev);
 

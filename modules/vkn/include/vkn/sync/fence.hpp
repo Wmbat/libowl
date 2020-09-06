@@ -6,55 +6,35 @@
 namespace vkn
 {
    /**
+    * The possible errors that may occur the construction of the
+    * fence object
+    */
+   enum struct fence_error
+   {
+      failed_to_create_fence
+   };
+
+   /**
+    * Convert an fence_error enum to a string
+    */
+   auto to_string(fence_error err) -> std::string;
+   /**
+    * Convert an fence error code and an error code from a vulkan error into
+    * a vkn::error
+    */
+   auto make_error(fence_error err, std::error_code ec) -> vkn::error;
+
+   /**
     * A class to wrap around the vulkan fence handle. May only
     * be built using the inner builder class
     */
-   class fence final
+   class fence final : public owning_handle<vk::Fence>
    {
    public:
-      using value_type = vk::Fence;
-      using pointer = vk::Fence*;
-      using const_pointer = const vk::Fence*;
-
-      /**
-       * The possible errors that may occur the construction of the
-       * fence object
-       */
-      enum struct error
-      {
-         failed_to_create_fence
-      };
-
-   public:
-      fence() = default;
-
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() noexcept -> pointer;
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() const noexcept -> const_pointer;
-
-      /**
-       * Get the underlying handle
-       */
-      auto operator*() const noexcept -> value_type;
-
-      operator bool() const noexcept;
-
-      /**
-       * Get the underlying handle
-       */
-      [[nodiscard]] auto value() const noexcept -> vk::Fence;
       /**
        * Get the device used to create the underlying handle
        */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
-
-   private:
-      vk::UniqueFence m_fence{nullptr};
 
    public:
       /**
@@ -63,7 +43,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, util::logger* p_logger);
+         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger);
 
          /**
           * Attempt to create the fence object. Returns an error
@@ -74,7 +54,7 @@ namespace vkn
          auto set_signaled(bool signaled = true) noexcept -> builder&;
 
       private:
-         util::logger* const mp_logger{nullptr};
+         std::shared_ptr<util::logger> mp_logger{nullptr};
 
          struct info
          {
@@ -83,30 +63,6 @@ namespace vkn
             bool signaled{false};
          } m_info;
       };
-
-   private:
-      struct create_info
-      {
-         vk::UniqueFence fence;
-      };
-
-      fence(create_info&& info) noexcept;
-
-      struct error_category : std::error_category
-      {
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
-      /**
-       * Turn an error flag and a standard error code into a vkn::error
-       */
-      inline static auto make_error(error err, std::error_code ec) -> vkn::error
-      {
-         return {{static_cast<int>(err), m_category}, static_cast<vk::Result>(ec.value())};
-      }
    };
 
    class fence_observer final
@@ -118,7 +74,7 @@ namespace vkn
 
       constexpr fence_observer() = default;
       constexpr fence_observer(value_type value) noexcept : m_value{value} {}
-      constexpr fence_observer(const fence& fence) noexcept : m_value{vkn::value(fence)} {}
+      constexpr fence_observer(const fence& fence) noexcept : m_value{fence.value()} {}
 
       constexpr auto operator->() noexcept -> pointer { return &m_value; }
       constexpr auto operator->() const noexcept -> const_pointer { return &m_value; }
@@ -137,7 +93,7 @@ namespace vkn
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::fence::error> : true_type
+   struct is_error_code_enum<vkn::fence_error> : true_type
    {
    };
 } // namespace std

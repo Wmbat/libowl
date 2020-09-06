@@ -6,59 +6,62 @@
 
 namespace vkn
 {
-   namespace detail
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct shader_error_category : std::error_category
    {
-      auto to_string(shader::error err) -> std::string
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_shader"; }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
       {
-         using error = shader::error;
+         return to_string(static_cast<shader_error>(err));
+      }
+   };
 
-         switch (err)
-         {
-            case error::no_filepath:
-               return "NO_FILEPATH";
-            case error::invalid_filepath:
-               return "INVALID_FILEPATH";
-            case error::filepath_not_a_file:
-               return "FILEPATH_NOT_A_FILE";
-            case error::failed_to_open_file:
-               return "FAILED_TO_OPEN_FILE";
-            case error::failed_to_preprocess_shader:
-               return "FAILED_TO_PREPROCESS_SHADER";
-            case error::failed_to_parse_shader:
-               return "FAILED_TO_PARSE_SHADER";
-            case error::failed_to_link_shader:
-               return "FAILED_TO_LINK_SHADER";
-            case error::failed_to_create_shader_module:
-               return "FAILED_TO_CREATE_SHADER_MODULE";
-            default:
-               return "UNKNOWN";
-         }
-      };
-   } // namespace detail
+   inline static const shader_error_category shader_category{};
 
-   auto shader::error_category::name() const noexcept -> const char* { return "vk_shader"; }
-   auto shader::error_category::message(int err) const -> std::string
+   auto to_string(shader_error flag) -> std::string
    {
-      return detail::to_string(static_cast<shader::error>(err));
-   }
+      switch (flag)
+      {
+         case shader_error::no_filepath:
+            return "NO_FILEPATH";
+         case shader_error::invalid_filepath:
+            return "INVALID_FILEPATH";
+         case shader_error::filepath_not_a_file:
+            return "FILEPATH_NOT_A_FILE";
+         case shader_error::failed_to_open_file:
+            return "FAILED_TO_OPEN_FILE";
+         case shader_error::failed_to_preprocess_shader:
+            return "FAILED_TO_PREPROCESS_SHADER";
+         case shader_error::failed_to_parse_shader:
+            return "FAILED_TO_PARSE_SHADER";
+         case shader_error::failed_to_link_shader:
+            return "FAILED_TO_LINK_SHADER";
+         case shader_error::failed_to_create_shader_module:
+            return "FAILED_TO_CREATE_SHADER_MODULE";
+         default:
+            return "UNKNOWN";
+      }
+   };
 
-   shader::shader(create_info&& info) :
-      m_shader_module{std::move(info.shader_module)}, m_type{info.type}, m_name{
-                                                                            std::move(info.name)}
-   {}
+   auto make_error(shader_error flag, std::error_code ec) noexcept -> vkn::error
+   {
+      return vkn::error{{static_cast<int>(flag), shader_category},
+                        static_cast<vk::Result>(ec.value())};
+   };
 
-   auto shader::operator->() noexcept -> pointer { return &m_shader_module.get(); }
-   auto shader::operator->() const noexcept -> const_pointer { return &m_shader_module.get(); }
-
-   auto shader::operator*() const noexcept -> value_type { return value(); }
-
-   shader::operator bool() const noexcept { return m_shader_module.get(); }
-
-   auto shader::value() const noexcept -> vk::ShaderModule { return m_shader_module.get(); }
    auto shader::name() const noexcept -> std::string_view { return m_name; }
-   auto shader::stage() const noexcept -> type { return m_type; }
+   auto shader::stage() const noexcept -> shader_type { return m_type; }
 
-   shader::builder::builder(const device& device, util::logger* const plogger) : m_plogger{plogger}
+   shader::builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_info.device = device.value();
       m_info.version = device.get_vulkan_version();
@@ -74,13 +77,17 @@ namespace vkn
                 return m_info.device.createShaderModuleUnique(create_info);
              })
          .map_error([](auto&& error) {
-            return make_error(error::failed_to_create_shader_module, error.code());
+            return make_error(shader_error::failed_to_create_shader_module, error.code());
          })
          .map([&](auto&& handle) {
-            util::log_info(m_plogger, "[vkn] shader module created");
+            util::log_info(mp_logger, "[vkn] shader module created");
 
-            return shader{shader::create_info{
-               .shader_module = std::move(handle), .name = m_info.name, .type = m_info.m_type}};
+            shader s{};
+            s.m_value = std::move(handle);
+            s.m_name = m_info.name;
+            s.m_type = m_info.type;
+
+            return s;
          });
    }
 
@@ -95,9 +102,9 @@ namespace vkn
       m_info.name = name;
       return *this;
    }
-   auto shader::builder::set_type(type shader_type) -> builder&
+   auto shader::builder::set_type(shader_type type) -> builder&
    {
-      m_info.m_type = shader_type;
+      m_info.type = type;
       return *this;
    }
 } // namespace vkn

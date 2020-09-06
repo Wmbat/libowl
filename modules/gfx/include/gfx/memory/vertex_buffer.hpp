@@ -31,7 +31,7 @@ namespace gfx
 
          vkn::device* p_device;
          vkn::command_pool* p_command_pool;
-         util::logger* p_logger;
+         std::shared_ptr<util::logger> p_logger;
       };
 
       static auto make(make_info&& info) noexcept -> gfx::result<vertex_buffer>;

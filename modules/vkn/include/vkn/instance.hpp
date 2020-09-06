@@ -19,69 +19,30 @@
 namespace vkn
 {
    /**
+    * Contains all possible error values comming from the instance class.
+    */
+   enum class instance_error
+   {
+      vulkan_version_unavailable,
+      vulkan_version_1_2_unavailable,
+      window_extensions_not_present,
+      instance_extension_not_supported,
+      instance_layer_not_supported,
+      failed_to_create_instance,
+      failed_to_create_debug_utils
+   };
+
+   /**
     * Holds all data related to the vulkan instance
     */
-   class instance final
+   class instance final : public owning_handle<vk::Instance>
    {
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
    public:
-      /**
-       * Contains all possible error values comming from the instance class.
-       */
-      enum class error
-      {
-         vulkan_version_unavailable,
-         vulkan_version_1_2_unavailable,
-         window_extensions_not_present,
-         instance_extension_not_supported,
-         instance_layer_not_supported,
-         failed_to_create_instance,
-         failed_to_create_debug_utils
-      };
-
-      struct create_info
-      {
-         vk::UniqueInstance instance;
-         vk::UniqueDebugUtilsMessengerEXT debug_utils;
-         util::dynamic_array<const char*> extensions;
-         uint32_t version;
-      };
-
-   public:
-      instance() = default;
-      instance(create_info&& info);
-
-      [[nodiscard]] auto value() const noexcept -> vk::Instance;
-      /**
-       * Get the version of the vulkan used by the instance.
-       */
       [[nodiscard]] auto version() const noexcept -> std::uint32_t;
       /**
        * Get all extensions that have been enabled in the instance
        */
       [[nodiscard]] auto extensions() const -> const util::dynamic_array<const char*>&;
-
-      /**
-       * Turns the error enum values into an std::error_code
-       */
-      inline static auto make_error_code(error err) -> std::error_code
-      {
-         return {static_cast<int>(err), m_category};
-      }
 
    private:
       vk::UniqueInstance m_instance{nullptr};
@@ -91,8 +52,6 @@ namespace vkn
 
       uint32_t m_version{0u};
 
-      inline static const error_category m_category{};
-
    public:
       /**
        * A class to help in the construction of an instance object.
@@ -100,7 +59,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const loader& vk_loader, util::logger* p_logger = nullptr);
+         builder(const loader& vk_loader, std::shared_ptr<util::logger> p_logger = nullptr);
 
          /**
           * Attempt to build a command_pool object. If something goes wrong, an error
@@ -134,7 +93,7 @@ namespace vkn
          auto enable_extension(std::string_view extension_name) -> builder&;
 
       private:
-         auto build_debug_utils(vk::Instance inst, util::logger* plogger) const noexcept
+         [[nodiscard]] auto build_debug_utils(vk::Instance inst) const noexcept
             -> vkn::result<vk::UniqueDebugUtilsMessengerEXT>;
 
          auto has_validation_layer_support(
@@ -149,7 +108,7 @@ namespace vkn
 
          const loader& m_loader;
 
-         util::logger* const m_plogger;
+         std::shared_ptr<util::logger> const mp_logger;
 
          struct info
          {
@@ -163,12 +122,22 @@ namespace vkn
          } m_info;
       };
    };
+
+   /**
+    * Convert an instance_error enum to a string
+    */
+   auto to_string(instance_error err) -> std::string;
+   /**
+    * Convert an instance_error enum value and an error code from a vulkan error into
+    * a vkn::error
+    */
+   auto make_error(instance_error err, std::error_code ec) noexcept -> vkn::error;
 } // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::instance::error> : true_type
+   struct is_error_code_enum<vkn::instance_error> : true_type
    {
    };
 } // namespace std

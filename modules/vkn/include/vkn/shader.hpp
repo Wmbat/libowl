@@ -17,67 +17,40 @@
 namespace vkn
 {
    /**
+    * Contains all possible error values comming from the shader class.
+    */
+   enum class shader_error
+   {
+      no_filepath,
+      invalid_filepath,
+      filepath_not_a_file,
+      failed_to_open_file,
+      failed_to_preprocess_shader,
+      failed_to_parse_shader,
+      failed_to_link_shader,
+      failed_to_create_shader_module
+   };
+
+   /**
+    * The supported types of shaders
+    */
+   enum class shader_type
+   {
+      vertex,
+      fragment,
+      compute,
+      geometry,
+      tess_eval,
+      tess_control,
+      count
+   };
+
+   /**
     * Holds all data related to the vulkan shader
     */
-   class shader final
+   class shader final : public owning_handle<vk::ShaderModule>
    {
    public:
-      using value_type = vk::ShaderModule;
-      using pointer = value_type*;
-      using const_pointer = const value_type*;
-
-      /**
-       * Contains all possible error values comming from the shader class.
-       */
-      enum class error
-      {
-         no_filepath,
-         invalid_filepath,
-         filepath_not_a_file,
-         failed_to_open_file,
-         failed_to_preprocess_shader,
-         failed_to_parse_shader,
-         failed_to_link_shader,
-         failed_to_create_shader_module
-      };
-
-      /**
-       * The supported types of shaders
-       */
-      enum class type
-      {
-         vertex,
-         fragment,
-         compute,
-         geometry,
-         tess_eval,
-         tess_control,
-         count
-      };
-
-   public:
-      shader() = default;
-
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() noexcept -> pointer;
-      /**
-       * Allow direct access to the underlying handle functions
-       */
-      auto operator->() const noexcept -> const_pointer;
-
-      /**
-       * Get the underlying handle
-       */
-      auto operator*() const noexcept -> value_type;
-
-      operator bool() const noexcept;
-
-      /**
-       * Get the underlying handle
-       */
-      [[nodiscard]] auto value() const noexcept -> vk::ShaderModule;
       /**
        * Get the name of the shader
        */
@@ -85,12 +58,11 @@ namespace vkn
       /**
        * Get the type of the shader
        */
-      [[nodiscard]] auto stage() const noexcept -> type;
+      [[nodiscard]] auto stage() const noexcept -> shader_type;
 
    private:
-      vk::UniqueShaderModule m_shader_module;
+      shader_type m_type{shader_type::count};
 
-      type m_type{type::count};
       std::string m_name{};
 
    public:
@@ -100,7 +72,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const device& device, util::logger* const plogger);
+         builder(const device& device, std::shared_ptr<util::logger> p_logger);
 
          /**
           * Attempt to construct a shader object using the provided data. If unable to create
@@ -119,10 +91,10 @@ namespace vkn
          /**
           * Set the type of the shader
           */
-         auto set_type(type shader_type) -> builder&;
+         auto set_type(shader_type shader_type) -> builder&;
 
       private:
-         util::logger* const m_plogger{nullptr};
+         std::shared_ptr<util::logger> mp_logger{nullptr};
 
          struct info
          {
@@ -131,55 +103,20 @@ namespace vkn
 
             util::dynamic_array<std::uint32_t> spirv_binary{};
 
-            type m_type{type::count};
+            shader_type type{shader_type::count};
             std::string name{};
          } m_info;
       };
-
-   private:
-      /**
-       * The information necessary for the creation of a shader instance
-       */
-      struct create_info
-      {
-         vk::UniqueShaderModule shader_module{};
-
-         std::string name{};
-
-         shader::type type{};
-      };
-
-      shader(create_info&& info);
-
-      /**
-       * A struct used for error handling and displaying error messages
-       */
-      struct error_category : std::error_category
-      {
-         /**
-          * The name of the vkn object the error appeared from.
-          */
-         [[nodiscard]] auto name() const noexcept -> const char* override;
-         /**
-          * Get the message associated with a specific error code.
-          */
-         [[nodiscard]] auto message(int err) const -> std::string override;
-      };
-
-      inline static const error_category m_category{};
-
-      static auto make_error(error flag, std::error_code ec) -> vkn::error
-      {
-         return vkn::error{{static_cast<int>(flag), m_category},
-                           static_cast<vk::Result>(ec.value())};
-      };
    };
+
+   auto to_string(shader_error err) -> std::string;
+   auto make_error(shader_error err, std::error_code ec) noexcept -> vkn::error;
 } // namespace vkn
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<vkn::shader::error> : true_type
+   struct is_error_code_enum<vkn::shader_error> : true_type
    {
    };
 } // namespace std

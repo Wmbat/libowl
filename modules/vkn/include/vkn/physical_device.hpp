@@ -269,7 +269,7 @@ namespace vkn
       class selector
       {
       public:
-         selector(const instance& instance, util::logger* plogger = nullptr);
+         selector(const instance& instance, std::shared_ptr<util::logger> p_logger = nullptr);
 
          /**
           * Attempt to find a suitable physical device, if no physical devices are found,
@@ -317,7 +317,7 @@ namespace vkn
          auto select_first_gpu() noexcept -> selector&;
 
       private:
-         util::logger* m_plogger;
+         std::shared_ptr<util::logger> mp_logger;
 
          struct system_info
          {

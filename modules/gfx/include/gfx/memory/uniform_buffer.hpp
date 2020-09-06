@@ -30,7 +30,7 @@ namespace gfx
          util::dynamic_array<uint32_t> indices;
 
          vkn::device* p_device;
-         util::logger* p_logger;
+         std::shared_ptr<util::logger> p_logger;
       };
 
       static auto make(create_info&& info) noexcept -> gfx::result<uniform_buffer>;

@@ -4,61 +4,59 @@
 
 namespace vkn
 {
-   namespace detail
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct render_pass_error_category : std::error_category
    {
-      auto to_string(render_pass::error err) -> std::string
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_render_pass"; }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
       {
-         using error = render_pass::error;
+         return to_string(static_cast<render_pass_error>(err));
+      }
+   };
 
-         switch (err)
-         {
-            case error::no_device_provided:
-               return "no_device_provided";
-            case error::failed_to_create_render_pass:
-               return "failed_to_create_render_pass";
-            default:
-               return "UNKNOWN";
-         }
-      };
-   } // namespace detail
+   inline static const render_pass_error_category render_pass_category{};
 
-   auto render_pass::error_category::name() const noexcept -> const char*
+   auto make_error(render_pass_error err, std::error_code ec) -> vkn::error
    {
-      return "vkn_render_pass";
+      return {{static_cast<int>(err), render_pass_category}, static_cast<vk::Result>(ec.value())};
    }
-   auto render_pass::error_category::message(int err) const -> std::string
+   auto to_string(render_pass_error err) -> std::string
    {
-      return detail::to_string(static_cast<render_pass::error>(err));
-   }
+      switch (err)
+      {
+         case render_pass_error::no_device_provided:
+            return "no_device_provided";
+         case render_pass_error::failed_to_create_render_pass:
+            return "failed_to_create_render_pass";
+         default:
+            return "UNKNOWN";
+      }
+   };
 
-   render_pass::render_pass(create_info&& info) noexcept :
-      m_render_pass{std::move(info.render_pass)}, m_swapchain_format{info.format}
-   {}
-
-   auto render_pass::operator->() noexcept -> pointer { return &m_render_pass.get(); }
-   auto render_pass::operator->() const noexcept -> const_pointer { return &m_render_pass.get(); }
-
-   auto render_pass::operator*() const noexcept -> value_type { return value(); }
-
-   render_pass::operator bool() const noexcept { return m_render_pass.get(); }
-
-   auto render_pass::value() const noexcept -> vk::RenderPass { return m_render_pass.get(); }
-   auto render_pass::device() const noexcept -> vk::Device { return m_render_pass.getOwner(); }
+   auto render_pass::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    using builder = render_pass::builder;
 
    builder::builder(const vkn::device& device, const vkn::swapchain& swapchain,
-                    util::logger* plogger) noexcept :
+                    std::shared_ptr<util::logger> p_logger) noexcept :
       m_device{device.value()},
-      m_swapchain_format{swapchain.format()}, m_swapchain_extent{swapchain.extent()}, m_plogger{
-                                                                                         plogger}
+      m_swapchain_format{swapchain.format()},
+      m_swapchain_extent{swapchain.extent()}, mp_logger{std::move(p_logger)}
    {}
 
    auto builder::build() -> vkn::result<render_pass>
    {
       if (!m_device)
       {
-         return monad::make_error(make_error(error::no_device_provided, {}));
+         return monad::make_error(make_error(render_pass_error::no_device_provided, {}));
       }
 
       const std::array attachment_descriptions{
@@ -109,12 +107,16 @@ namespace vkn
                 return m_device.createRenderPassUnique(pass_info);
              })
          .map_error([](auto&& err) {
-            return make_error(error::failed_to_create_render_pass, err.code());
+            return make_error(render_pass_error::failed_to_create_render_pass, err.code());
          })
          .map([&](auto&& handle) {
-            util::log_info(m_plogger, "[vkn] render pass created");
+            util::log_info(mp_logger, "[vkn] render pass created");
 
-            return render_pass{{.render_pass = std::move(handle), .format = m_swapchain_format}};
+            render_pass pass{};
+            pass.m_value = std::move(handle);
+            pass.m_swapchain_format = m_swapchain_format;
+
+            return pass;
          });
    } // namespace vkn
 } // namespace vkn

@@ -6,40 +6,41 @@ namespace vkn
 {
    namespace detail
    {
-      auto to_string(semaphore::error err) -> std::string
-      {
-         switch (err)
-         {
-            case semaphore::error::failed_to_create_semaphore:
-               return "failed_to_create_semaphore";
-            default:
-               return "UNKNOWN";
-         }
-      }
    } // namespace detail
 
-   auto semaphore::error_category::name() const noexcept -> const char* { return "vkn_semaphore"; }
-   auto semaphore::error_category::message(int err) const -> std::string
+   struct semaphore_error_category : std::error_category
    {
-      return detail::to_string(static_cast<semaphore::error>(err));
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_semaphore"; }
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return to_string(static_cast<semaphore_error>(err));
+      }
+   };
+
+   inline static const semaphore_error_category semaphore_category{};
+
+   auto to_string(semaphore_error err) -> std::string
+   {
+      switch (err)
+      {
+         case semaphore_error::failed_to_create_semaphore:
+            return "failed_to_create_semaphore";
+         default:
+            return "UNKNOWN";
+      }
    }
 
-   semaphore::semaphore(create_info&& info) noexcept : m_semaphore{std::move(info.semaphore)} {}
+   auto make_error(semaphore_error err, std::error_code ec) -> vkn::error
+   {
+      return {{static_cast<int>(err), semaphore_category}, static_cast<vk::Result>(ec.value())};
+   }
 
-   auto semaphore::operator->() noexcept -> pointer { return &m_semaphore.get(); }
-   auto semaphore::operator->() const noexcept -> const_pointer { return &m_semaphore.get(); }
-
-   auto semaphore::operator*() const noexcept -> value_type { return value(); }
-
-   semaphore::operator bool() const noexcept { return m_semaphore.get(); }
-
-   auto semaphore::value() const noexcept -> value_type { return m_semaphore.get(); }
-   auto semaphore::device() const noexcept -> vk::Device { return m_semaphore.getOwner(); }
+   auto semaphore::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    using builder = semaphore::builder;
 
-   builder::builder(const vkn::device& device, util::logger* p_logger) noexcept :
-      mp_logger{p_logger}
+   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
+      mp_logger{std::move(p_logger)}
    {
       m_info.device = device.value();
    }
@@ -50,12 +51,15 @@ namespace vkn
                 return m_info.device.createSemaphoreUnique({});
              })
          .map_error([](vk::SystemError&& err) {
-            return make_error(error::failed_to_create_semaphore, err.code());
+            return make_error(semaphore_error::failed_to_create_semaphore, err.code());
          })
          .map([&](vk::UniqueSemaphore&& handle) {
             util::log_info(mp_logger, "[vkn] semaphore created");
 
-            return semaphore{{.semaphore = std::move(handle)}};
+            semaphore s{};
+            s.m_value = std::move(handle);
+
+            return s;
          });
    }
 } // namespace vkn

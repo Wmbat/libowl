@@ -94,61 +94,65 @@ namespace util
       spdlog::logger log;
    };
 
-   inline void log_info(logger* const plogger, std::string_view message)
+   inline void log_info(const std::shared_ptr<logger>& p_logger, std::string_view message)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->info(message);
+         p_logger->info(message);
       }
    }
-   inline void log_debug(logger* const plogger, std::string_view message)
+   inline void log_debug(const std::shared_ptr<logger>& p_logger, std::string_view message)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->debug(message);
+         p_logger->debug(message);
       }
    }
-   inline void log_warn(logger* const plogger, std::string_view message)
+   inline void log_warn(const std::shared_ptr<logger>& p_logger, std::string_view message)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->warn(message);
+         p_logger->warn(message);
       }
    }
-   inline void log_error(logger* const plogger, std::string_view message)
+   inline void log_error(const std::shared_ptr<logger>& p_logger, std::string_view message)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->error(message);
+         p_logger->error(message);
       }
    }
 
-   void log_info(logger* const plogger, std::string_view message, const auto&... args)
+   inline void log_info(const std::shared_ptr<logger>& p_logger, const std::string& message,
+                        const auto&... args)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->info(message, args...);
+         p_logger->info(message, args...);
       }
    }
-   void log_debug(logger* const plogger, std::string_view message, const auto&... args)
+   inline void log_debug(const std::shared_ptr<logger>& p_logger, const std::string& message,
+                         const auto&... args)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->debug(message, args...);
+         p_logger->debug(message, args...);
       }
    }
-   void log_warn(logger* const plogger, std::string_view message, const auto&... args)
+   inline void log_warn(const std::shared_ptr<logger>& p_logger, const std::string& message,
+                        const auto&... args)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->warn(message, args...);
+         p_logger->warn(message, args...);
       }
    }
-   void log_error(logger* const plogger, std::string_view message, const auto&... args)
+   inline void log_error(const std::shared_ptr<logger>& p_logger, const std::string& message,
+                         const auto&... args)
    {
-      if (plogger)
+      if (p_logger)
       {
-         plogger->error(message, args...);
+         p_logger->error(message, args...);
       }
    }
 } // namespace util

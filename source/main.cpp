@@ -8,16 +8,14 @@
 
 #include <util/logger.hpp>
 
-#include <map>
-
 auto main() -> int
 {
-   util::logger main_logger{"mélodie"};
+   auto main_logger = std::make_shared<util::logger>("mélodie");
 
-   core::initialize(&main_logger);
+   core::initialize(main_logger);
 
    core::gfx::window main_window{"Engine", 1080, 720};
-   core::render_manager render_manager{&main_window, &main_logger};
+   core::render_manager render_manager{&main_window, main_logger};
 
    while (main_window.is_open())
    {

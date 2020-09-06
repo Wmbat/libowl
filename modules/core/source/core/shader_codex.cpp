@@ -189,8 +189,8 @@ namespace core
 
    using builder = shader_codex::builder;
 
-   builder::builder(const vkn::device& device, util::logger* plogger) noexcept :
-      m_plogger{plogger}, m_pdevice{&device}
+   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
+      mp_logger{std::move(p_logger)}, mp_device{&device}
    {}
 
    auto builder::build() -> core::result<shader_codex>
@@ -210,28 +210,28 @@ namespace core
             }
             else
             {
-               util::log_warn(m_plogger, "[core] provided path \"{0}\" is not a directory",
+               util::log_warn(mp_logger, "[core] provided path \"{0}\" is not a directory",
                               m_info.shader_directory_path.string());
             }
          }
          else
          {
-            util::log_warn(m_plogger, "[core] provided path \"{0}\" does not exist",
+            util::log_warn(mp_logger, "[core] provided path \"{0}\" does not exist",
                            m_info.shader_directory_path.string());
          }
       }
       else
       {
-         util::log_info(m_plogger, "[core] no shader directory provided");
+         util::log_info(mp_logger, "[core] no shader directory provided");
       }
 
       if (m_info.is_caching_allowed)
       {
-         util::log_info(m_plogger, "[core] shader caching: ENABLED");
+         util::log_info(mp_logger, "[core] shader caching: ENABLED");
       }
       else
       {
-         util::log_info(m_plogger, "[core] shader caching: DISABLED");
+         util::log_info(mp_logger, "[core] shader caching: DISABLED");
       }
 
       if (!m_info.shader_paths.empty())
@@ -251,7 +251,7 @@ namespace core
       }
       else
       {
-         util::log_warn(m_plogger, "[core] no shaders provided");
+         util::log_warn(mp_logger, "[core] no shaders provided");
       }
 
       return std::move(codex);
@@ -286,7 +286,7 @@ namespace core
          {
             fs::create_directories(m_info.cache_directory_path);
 
-            util::log_info(m_plogger, R"([core] no shader cache directory found. using "{0}")",
+            util::log_info(mp_logger, R"([core] no shader cache directory found. using "{0}")",
                            m_info.cache_directory_path.string());
          }
 
@@ -311,12 +311,12 @@ namespace core
 
             if (raw_last_write >= cache_last_write) // NOLINT
             {
-               util::log_info(m_plogger, R"([core] out-dated shader found in cache)");
-               util::log_info(m_plogger, R"([core] recompiling shader: "{0}")", path.string());
+               util::log_info(mp_logger, R"([core] out-dated shader found in cache)");
+               util::log_info(mp_logger, R"([core] recompiling shader: "{0}")", path.string());
 
                if (auto res = compile_shader(path))
                {
-                  util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
+                  util::log_info(mp_logger, R"([core] caching shader "{0}")", path.string());
 
                   if (const auto cache_res = cache_shader(hashed_path, *res.value()))
                   {
@@ -324,13 +324,13 @@ namespace core
                   }
 
                   const auto extension = path.extension().string();
-                  return vkn::shader::builder{*m_pdevice, m_plogger}
+                  return vkn::shader::builder{*mp_device, mp_logger}
                      .set_spirv_binary(*res.value())
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
                      .map_error([&](auto&& err) {
-                        util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                        util::log_error(mp_logger, "[core] shader creation error: {}-{}",
                                         err.type.category().name(), err.type.message());
 
                         return make_error(shader_codex_error::failed_to_create_shader);
@@ -343,19 +343,19 @@ namespace core
             }
             else
             {
-               util::log_info(m_plogger, R"([core] up-to-date shader found in cache)");
-               util::log_info(m_plogger, R"([core] loading shader "{0}" from cache)", path.string(),
+               util::log_info(mp_logger, R"([core] up-to-date shader found in cache)");
+               util::log_info(mp_logger, R"([core] loading shader "{0}" from cache)", path.string(),
                               hashed_path.string());
 
                return load_shader(hashed_path).and_then([&](auto&& spirv) {
                   const std::string extension = path.extension();
-                  return vkn::shader::builder{*m_pdevice, m_plogger}
+                  return vkn::shader::builder{*mp_device, mp_logger}
                      .set_spirv_binary(std::move(spirv))
                      .set_name(path.filename().string())
                      .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                      .build()
                      .map_error([&](auto&& err) {
-                        util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                        util::log_error(mp_logger, "[core] shader creation error: {}-{}",
                                         err.type.category().name(), err.type.message());
 
                         return make_error(shader_codex_error::failed_to_create_shader);
@@ -365,13 +365,13 @@ namespace core
          }
          else
          {
-            util::log_info(m_plogger, R"([core] shader "{0}" not found in cache)", path.string(),
+            util::log_info(mp_logger, R"([core] shader "{0}" not found in cache)", path.string(),
                            hashed_path.string());
-            util::log_info(m_plogger, R"([core] compiling shader: "{0}")", path.string());
+            util::log_info(mp_logger, R"([core] compiling shader: "{0}")", path.string());
 
             if (auto res = compile_shader(path))
             {
-               util::log_info(m_plogger, R"([core] caching shader "{0}")", path.string());
+               util::log_info(mp_logger, R"([core] caching shader "{0}")", path.string());
 
                if (const auto cache_res = cache_shader(hashed_path, *res.value()))
                {
@@ -379,13 +379,13 @@ namespace core
                }
 
                const auto extension = path.extension().string();
-               return vkn::shader::builder{*m_pdevice, m_plogger}
+               return vkn::shader::builder{*mp_device, mp_logger}
                   .set_spirv_binary(*res.value())
                   .set_name(path.filename().string())
                   .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                   .build()
                   .map_error([&](auto&& err) {
-                     util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                     util::log_error(mp_logger, "[core] shader creation error: {}-{}",
                                      err.type.category().name(), err.type.message());
 
                      return make_error(shader_codex_error::failed_to_create_shader);
@@ -399,17 +399,17 @@ namespace core
       }
       else
       {
-         util::log_info(m_plogger, "[core] compiling shader: \"{0}\"", path.string());
+         util::log_info(mp_logger, "[core] compiling shader: \"{0}\"", path.string());
 
          return compile_shader(path).and_then([&](auto&& spirv) {
             const auto extension = path.extension().string();
-            return vkn::shader::builder{*m_pdevice, m_plogger}
+            return vkn::shader::builder{*mp_device, mp_logger}
                .set_spirv_binary(std::move(spirv))
                .set_name(path.filename().string())
                .set_type(get_shader_type({extension.begin() + 1, extension.end()}))
                .build()
                .map_error([&](auto&& err) {
-                  util::log_error(m_plogger, "[core] shader creation error: {}-{}",
+                  util::log_error(mp_logger, "[core] shader creation error: {}-{}",
                                   err.type.category().name(), err.type.message());
 
                   return make_error(shader_codex_error::failed_to_create_shader);
@@ -447,9 +447,9 @@ namespace core
       tshader.setEnvInput(glslang::EShSourceGlsl, shader_stage, glslang::EShClientVulkan,
                           client_input_semantics_version);
       tshader.setEnvClient(glslang::EShClientVulkan,
-                           get_vulkan_version(m_pdevice->get_vulkan_version()));
+                           get_vulkan_version(mp_device->get_vulkan_version()));
       tshader.setEnvTarget(glslang::EshTargetSpv,
-                           get_spirv_version(m_pdevice->get_vulkan_version()));
+                           get_spirv_version(mp_device->get_vulkan_version()));
 
       const char* shader_data_cstr = shader_data.c_str();
       tshader.setStrings(&shader_data_cstr, 1);
@@ -464,7 +464,7 @@ namespace core
       if (!tshader.preprocess(&resources, default_version, ENoProfile, false, false, messages,
                               &preprocessed_glsl, includer))
       {
-         util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
+         util::log_error(mp_logger, "[vkn] {0}", tshader.getInfoLog());
 
          return monad::make_error(make_error(shader_codex_error::failed_to_preprocess_shader));
       }
@@ -474,7 +474,7 @@ namespace core
 
       if (!tshader.parse(&resources, default_version, false, messages))
       {
-         util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
+         util::log_error(mp_logger, "[vkn] {0}", tshader.getInfoLog());
 
          return monad::make_error(make_error(shader_codex_error::failed_to_parse_shader));
       }
@@ -484,8 +484,8 @@ namespace core
 
       if (!program.link(messages))
       {
-         util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoLog());
-         util::log_error(m_plogger, "[vkn] {0}", tshader.getInfoDebugLog());
+         util::log_error(mp_logger, "[vkn] {0}", tshader.getInfoLog());
+         util::log_error(mp_logger, "[vkn] {0}", tshader.getInfoDebugLog());
 
          return monad::make_error(make_error(shader_codex_error::failed_to_link_shader));
       }
@@ -580,19 +580,19 @@ namespace core
       // clang-format on
    }
 
-   auto builder::get_shader_type(std::string_view ext_name) const -> vkn::shader::type
+   auto builder::get_shader_type(std::string_view ext_name) const -> vkn::shader_type
    {
       using namespace mpark::patterns;
 
       // clang-format off
       return match(ext_name)(
-         pattern("vert") = [] { return vkn::shader::type::vertex; },
-         pattern("tesc") = [] { return vkn::shader::type::tess_control; },
-         pattern("tese") = [] { return vkn::shader::type::tess_eval; },
-         pattern("geom") = [] { return vkn::shader::type::geometry; },
-         pattern("frag") = [] { return vkn::shader::type::fragment; },
-         pattern("comp") = [] { return vkn::shader::type::compute; },
-         pattern(_) = [] { return vkn::shader::type::count; }
+         pattern("vert") = [] { return vkn::shader_type::vertex; },
+         pattern("tesc") = [] { return vkn::shader_type::tess_control; },
+         pattern("tese") = [] { return vkn::shader_type::tess_eval; },
+         pattern("geom") = [] { return vkn::shader_type::geometry; },
+         pattern("frag") = [] { return vkn::shader_type::fragment; },
+         pattern("comp") = [] { return vkn::shader_type::compute; },
+         pattern(_) = [] { return vkn::shader_type::count; }
       );
       // clang-format on  
    }

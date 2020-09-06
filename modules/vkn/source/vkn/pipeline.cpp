@@ -1,3 +1,4 @@
+#include <utility>
 #include <vkn/pipeline.hpp>
 
 #include <monads/try.hpp>
@@ -8,76 +9,83 @@ namespace vkn
 {
    namespace detail
    {
-      auto to_shader_stage_flag(vkn::shader::type stage) noexcept -> vk::ShaderStageFlagBits
+      auto to_shader_stage_flag(vkn::shader_type stage) noexcept -> vk::ShaderStageFlagBits
       {
          switch (stage)
          {
-            case shader::type::vertex:
+            case shader_type::vertex:
                return vk::ShaderStageFlagBits::eVertex;
-            case shader::type::fragment:
+            case shader_type::fragment:
                return vk::ShaderStageFlagBits::eFragment;
-            case shader::type::compute:
+            case shader_type::compute:
                return vk::ShaderStageFlagBits::eCompute;
-            case shader::type::geometry:
+            case shader_type::geometry:
                return vk::ShaderStageFlagBits::eGeometry;
-            case shader::type::tess_eval:
+            case shader_type::tess_eval:
                return vk::ShaderStageFlagBits::eTessellationEvaluation;
-            case shader::type::tess_control:
+            case shader_type::tess_control:
                return vk::ShaderStageFlagBits::eTessellationControl;
             default:
                return {};
          }
       }
-
-      auto to_string(graphics_pipeline::error err) -> std::string
-      {
-         using err_t = vkn::graphics_pipeline::error;
-
-         switch (err)
-         {
-            case err_t::failed_to_create_pipeline:
-               return "failed_to_create_pipeline";
-            case err_t::failed_to_create_pipeline_layout:
-               return "failed_to_create_pipeline_layout";
-            default:
-               return "UNKNOWN";
-         }
-      }
    }; // namespace detail
 
-   auto graphics_pipeline::error_category::name() const noexcept -> const char*
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct graphics_pipeline_error_category : std::error_category
    {
-      return "vkn_graphics_pipeline";
-   }
-   auto graphics_pipeline::error_category::message(int err) const -> std::string
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override
+      {
+         return "vkn_graphics_pipeline";
+      }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return to_string(static_cast<graphics_pipeline_error>(err));
+      }
+   };
+
+   inline static const graphics_pipeline_error_category graphics_pipeline_category{};
+
+   auto to_string(graphics_pipeline_error err) -> std::string
    {
-      return detail::to_string(static_cast<graphics_pipeline::error>(err));
+      using err_t = graphics_pipeline_error;
+
+      switch (err)
+      {
+         case err_t::failed_to_create_descriptor_set_layout:
+            return "failed_to_create_descriptor_set_layout";
+         case err_t::failed_to_create_pipeline:
+            return "failed_to_create_pipeline";
+         case err_t::failed_to_create_pipeline_layout:
+            return "failed_to_create_pipeline_layout";
+         default:
+            return "UNKNOWN";
+      }
    }
-
-   graphics_pipeline::graphics_pipeline(create_info&& info) noexcept :
-      m_pipeline{std::move(info.pipeline)}, m_pipeline_layout{std::move(info.pipeline_layout)}
-   {}
-
-   auto graphics_pipeline::operator->() noexcept -> pointer { return &m_pipeline.get(); }
-   auto graphics_pipeline::operator->() const noexcept -> const_pointer
+   auto make_error(graphics_pipeline_error err, std::error_code ec) -> vkn::error
    {
-      return &m_pipeline.get();
+      return {{static_cast<int>(err), graphics_pipeline_category},
+              static_cast<vk::Result>(ec.value())};
    }
 
-   auto graphics_pipeline::operator*() const noexcept -> value_type { return value(); }
-
-   graphics_pipeline::operator bool() const noexcept { return m_pipeline.get(); }
-
-   auto graphics_pipeline::value() const noexcept -> vk::Pipeline { return m_pipeline.get(); }
    auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
    {
       return m_pipeline_layout.get();
    }
-   auto graphics_pipeline::device() const noexcept -> vk::Device { return m_pipeline.getOwner(); }
+   auto graphics_pipeline::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    graphics_pipeline::builder::builder(const vkn::device& device,
-                                       const vkn::render_pass& render_pass, util::logger* plogger) :
-      m_plogger{plogger}
+                                       const vkn::render_pass& render_pass,
+                                       std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_info.device = device.value();
       m_info.render_pass = render_pass.value();
@@ -95,10 +103,11 @@ namespace vkn
                                                                  .pPushConstantRanges = nullptr});
              })
          .map_error([](vk::SystemError&& err) {
-            return make_error(error::failed_to_create_pipeline_layout, err.code());
+            return make_error(graphics_pipeline_error::failed_to_create_pipeline_layout,
+                              err.code());
          })
          .and_then([&](vk::UniquePipelineLayout&& handle) {
-            util::log_info(m_plogger, "[vkn] pipeline layout created");
+            util::log_info(mp_logger, "[vkn] pipeline layout created");
 
             return create_pipeline(std::move(handle));
          });
@@ -129,6 +138,12 @@ namespace vkn
       m_info.attribute_descriptions.emplace_back(attribute);
       return *this;
    }
+   auto graphics_pipeline::builder::add_set_layout(
+      const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding) -> builder&
+   {
+      m_info.set_layouts.emplace_back(descriptor_set_layout_info{.binding = binding});
+      return *this;
+   }
 
    auto graphics_pipeline::builder::create_pipeline(vk::UniquePipelineLayout layout) const
       -> vkn::result<graphics_pipeline>
@@ -138,7 +153,7 @@ namespace vkn
 
       for (const auto* shader_handle : m_info.shaders)
       {
-         util::log_info(m_plogger, R"([vkn] using shader "{0}" for graphics pipeline)",
+         util::log_info(mp_logger, R"([vkn] using shader "{0}" for graphics pipeline)",
                         shader_handle->name());
 
          shader_stage_info.emplace_back(
@@ -217,13 +232,16 @@ namespace vkn
                 return m_info.device.createGraphicsPipelineUnique(nullptr, create_info);
              })
          .map_error([](auto&& err) {
-            return make_error(error::failed_to_create_pipeline, err.code());
+            return make_error(graphics_pipeline_error::failed_to_create_pipeline, err.code());
          })
          .map([&](vk::UniquePipeline&& handle) {
-            util::log_info(m_plogger, R"([vkn] graphics pipeline created)");
+            util::log_info(mp_logger, R"([vkn] graphics pipeline created)");
 
-            return graphics_pipeline{
-               {.pipeline = std::move(handle), .pipeline_layout = std::move(layout)}};
+            graphics_pipeline pipeline{};
+            pipeline.m_value = std::move(handle);
+            pipeline.m_pipeline_layout = std::move(layout);
+
+            return pipeline;
          });
    }
 } // namespace vkn

@@ -104,7 +104,7 @@ namespace gfx
                queue.submit({{.commandBufferCount = 1, .pCommandBuffers = &buffer.get()}}, nullptr);
                queue.waitIdle();
 
-               util::log_info(info.p_logger, "[core] vertex buffer created");
+               util::log_info(info.p_logger, "[core] index buffer created");
 
                class index_buffer buf = {};
                buf.m_buffer = std::move(index_buffer);

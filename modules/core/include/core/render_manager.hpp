@@ -37,7 +37,8 @@ namespace core
       static constexpr std::size_t max_frames_in_flight = 2;
 
    public:
-      render_manager(gfx::window* const p_wnd, util::logger* p_logger = nullptr);
+      render_manager(gfx::window* const p_wnd,
+                     const std::shared_ptr<util::logger>& p_logger = nullptr);
 
       void render_frame();
       /**
@@ -50,7 +51,8 @@ namespace core
 
    private:
       gfx::window* const mp_window;
-      util::logger* const mp_logger;
+
+      std::shared_ptr<util::logger> mp_logger;
 
       std::string m_engine_name = "Epona";
 

@@ -144,7 +144,7 @@ namespace vkn
       {
       public:
          builder(const loader& vk_loader, physical_device&& phys_device, uint32_t version,
-                 util::logger* const plogger = nullptr);
+                 std::shared_ptr<util::logger> p_logger = nullptr);
 
          /**
           * Finalize the construction of a device object. If the construction results in a failure,
@@ -165,7 +165,7 @@ namespace vkn
       private:
          const loader& m_loader;
 
-         util::logger* const m_plogger;
+         std::shared_ptr<util::logger> mp_logger;
 
          struct info
          {
