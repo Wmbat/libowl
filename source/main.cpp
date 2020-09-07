@@ -14,7 +14,7 @@ auto main() -> int
 
    core::initialize(main_logger);
 
-   core::gfx::window main_window{"Engine", 1080, 720};
+   core::gfx::window main_window{"Engine", 1080, 720}; // NOLINT
    core::render_manager render_manager{&main_window, main_logger};
 
    while (main_window.is_open())

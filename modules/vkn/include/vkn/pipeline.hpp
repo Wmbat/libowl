@@ -27,6 +27,7 @@ namespace vkn
 
    private:
       vk::UniquePipelineLayout m_pipeline_layout{nullptr};
+      util::dynamic_array<vk::UniqueDescriptorSetLayout> m_set_layouts{};
 
    public:
       class builder final
@@ -34,11 +35,13 @@ namespace vkn
          template <typename any_>
          using shader_dynamic_array = util::small_dynamic_array<any_, expected_shader_count>;
 
+         struct layout_info;
+
       public:
          builder(const vkn::device& device, const vkn::render_pass& render_pass,
                  std::shared_ptr<util::logger> p_logger);
 
-         auto build() -> vkn::result<graphics_pipeline>;
+         [[nodiscard]] auto build() const -> vkn::result<graphics_pipeline>;
 
          auto add_shader(const vkn::shader& shader) noexcept -> builder&;
          auto add_viewport(const vk::Viewport& viewport, const vk::Rect2D& scissor) noexcept
@@ -50,7 +53,12 @@ namespace vkn
             -> builder&;
 
       private:
-         [[nodiscard]] auto create_pipeline(vk::UniquePipelineLayout layout) const
+         [[nodiscard]] auto create_descriptor_set_layouts() const
+            -> vkn::result<util::dynamic_array<vk::UniqueDescriptorSetLayout>>;
+         [[nodiscard]] auto create_pipeline_layout(
+            util::dynamic_array<vk::UniqueDescriptorSetLayout>&& set_layouts) const
+            -> vkn::result<layout_info>;
+         [[nodiscard]] auto create_pipeline(layout_info&& layout) const
             -> vkn::result<graphics_pipeline>;
 
       private:
@@ -59,6 +67,13 @@ namespace vkn
          struct descriptor_set_layout_info
          {
             util::dynamic_array<vk::DescriptorSetLayoutBinding> binding;
+         };
+
+         struct layout_info
+         {
+            util::dynamic_array<vk::UniqueDescriptorSetLayout> set_layouts;
+
+            vk::UniquePipelineLayout pipeline_layout;
          };
 
          struct info

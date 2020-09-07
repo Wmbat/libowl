@@ -7,8 +7,8 @@
 #include <util/logger.hpp>
 #include <util/strong_type.hpp>
 
-#include <monads/either.hpp>
 #include <monads/result.hpp>
+#include <monads/try.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -45,6 +45,14 @@ namespace vkn
     */
    template <typename any_>
    using result = monad::result<any_, vkn::error>;
+
+   template <typename... args_>
+   auto try_wrap(std::invocable<args_...> auto&& fun, args_&&... args)
+      -> monad::result<std::invoke_result_t<decltype(fun), args_...>, vk::SystemError>
+   {
+      return monad::try_wrap<vk::SystemError>(std::forward<decltype(fun)>(fun),
+                                              std::forward<args_>(args)...);
+   }
 
    /**
     * Class used for the dynamic loading of the Vulkan API functions.

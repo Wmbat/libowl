@@ -176,6 +176,10 @@ namespace core
                            .minDepth = 0.0f,
                            .maxDepth = 1.0f},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
+            .add_set_layout({{.binding = 0,
+                              .descriptorType = vk::DescriptorType::eUniformBuffer,
+                              .descriptorCount = 1,
+                              .stageFlags = vk::ShaderStageFlagBits::eVertex}})
             .build()
             .map_error([&](vkn::error&& err) {
                log_error(mp_logger, "[core] Failed to create graphics pipeline: \"{0}\"",
