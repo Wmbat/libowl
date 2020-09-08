@@ -35,31 +35,7 @@ namespace core
             .join();
 
       m_device =
-         vkn::device::builder{
-            m_loader,
-            vkn::physical_device::selector{m_instance, mp_logger}
-               .set_surface(mp_window->get_surface(m_instance.value())
-                               .map_error([&](auto&& err) {
-                                  log_error(mp_logger, "[core] Failed to create surface: {0}",
-                                            err.type.message());
-                                  std::terminate();
-
-                                  return vk::SurfaceKHR{};
-                               })
-                               .join())
-               .set_preferred_gpu_type(vkn::physical_device::type::discrete)
-               .allow_any_gpu_type()
-               .require_present()
-               .select()
-               .map_error([&](auto&& err) {
-                  log_error(mp_logger, "[core] Failed to create physical device: {0}",
-                            err.type.message());
-                  std::terminate();
-
-                  return vkn::physical_device{};
-               })
-               .join(),
-            m_instance.version(), mp_logger}
+         vkn::device::builder{m_loader, create_physical_device(), m_instance.version(), mp_logger}
             .build()
             .map_error([&](auto&& err) {
                log_error(mp_logger, "[core] Failed to create device: {0}", err.type.message());
@@ -96,25 +72,7 @@ namespace core
                          })
                          .join();
 
-      m_framebuffers.reserve(std::size(m_swapchain.image_views()));
-      for (const auto& img_view : m_swapchain.image_views())
-      {
-         m_framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, mp_logger}
-                                        .add_attachment(img_view.get())
-                                        .set_buffer_width(m_swapchain.extent().width)
-                                        .set_buffer_height(m_swapchain.extent().height)
-                                        .set_layer_count(1u)
-                                        .build()
-                                        .map_error([&](vkn::error&& err) {
-                                           log_error(mp_logger,
-                                                     "[core] Failed to create framebuffer: \"{0}\"",
-                                                     err.type.message());
-                                           abort();
-
-                                           return vkn::framebuffer{};
-                                        })
-                                        .join());
-      }
+      m_framebuffers = create_swapchain_framebuffers();
 
       m_shader_codex = shader_codex::builder{m_device, mp_logger}
                           .add_shader_filepath("resources/shaders/test_shader.vert")
@@ -176,6 +134,7 @@ namespace core
                            .minDepth = 0.0f,
                            .maxDepth = 1.0f},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
+            // TODO: Use SPIRV-cross to infer layout from shaders directly.
             .add_set_layout({{.binding = 0,
                               .descriptorType = vk::DescriptorType::eUniformBuffer,
                               .descriptorCount = 1,
@@ -190,6 +149,44 @@ namespace core
                return vkn::graphics_pipeline{};
             })
             .join();
+
+      const auto set_layouts = m_graphics_pipeline.descriptor_set_layouts();
+      if (std::size(set_layouts) == 1)
+      {
+         m_descriptor_pool =
+            vkn::descriptor_pool::builder{m_device, mp_logger}
+               .add_pool_size(vk::DescriptorType::eUniformBuffer,
+                              util::count32_t{std::size(m_swapchain.image_views())})
+               .set_max_sets(util::count32_t{std::size(m_swapchain.image_views())})
+               .set_singular_descriptor_set_layout(set_layouts[0])
+               .build()
+               .map_error([&](vkn::error err) {
+                  log_error(mp_logger, "[core] failed to create descriptor pool: \"{}\"",
+                            err.type.message());
+                  std::terminate();
+
+                  return vkn::descriptor_pool{};
+               })
+               .join();
+      }
+      else
+      {
+         m_descriptor_pool =
+            vkn::descriptor_pool::builder{m_device, mp_logger}
+               .add_pool_size(vk::DescriptorType::eUniformBuffer,
+                              util::count32_t{std::size(m_swapchain.image_views())})
+               .set_max_sets(util::count32_t{std::size(m_swapchain.image_views())})
+               .set_unique_descriptor_set_layouts(set_layouts)
+               .build()
+               .map_error([&](vkn::error err) {
+                  log_error(mp_logger, "[core] failed to create descriptor pool: \"{}\"",
+                            err.type.message());
+                  std::terminate();
+
+                  return vkn::descriptor_pool{};
+               })
+               .join();
+      }
 
       for (auto& semaphore : m_image_available_semaphores)
       {
@@ -353,4 +350,58 @@ namespace core
    }
 
    void render_manager::wait() { m_device->waitIdle(); }
+
+   auto render_manager::create_physical_device() const noexcept -> vkn::physical_device
+   {
+      return vkn::physical_device::selector{m_instance, mp_logger}
+         .set_surface(mp_window->get_surface(m_instance.value())
+                         .map_error([&](auto&& err) {
+                            log_error(mp_logger, "[core] Failed to create surface: {0}",
+                                      err.type.message());
+                            std::terminate();
+
+                            return vk::SurfaceKHR{};
+                         })
+                         .join())
+         .set_preferred_gpu_type(vkn::physical_device::type::discrete)
+         .allow_any_gpu_type()
+         .require_present()
+         .select()
+         .map_error([&](auto&& err) {
+            log_error(mp_logger, "[core] Failed to create physical device: {0}",
+                      err.type.message());
+            std::terminate();
+
+            return vkn::physical_device{};
+         })
+         .join();
+   }
+
+   auto render_manager::create_swapchain_framebuffers() const noexcept
+      -> util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>
+   {
+      util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()> framebuffers;
+      framebuffers.reserve(std::size(m_swapchain.image_views()));
+
+      for (const auto& img_view : m_swapchain.image_views())
+      {
+         framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, mp_logger}
+                                      .add_attachment(img_view.get())
+                                      .set_buffer_width(m_swapchain.extent().width)
+                                      .set_buffer_height(m_swapchain.extent().height)
+                                      .set_layer_count(1u)
+                                      .build()
+                                      .map_error([&](vkn::error&& err) {
+                                         log_error(mp_logger,
+                                                   "[core] Failed to create framebuffer: \"{0}\"",
+                                                   err.type.message());
+                                         abort();
+
+                                         return vkn::framebuffer{};
+                                      })
+                                      .join());
+      }
+
+      return framebuffers;
+   }
 } // namespace core

@@ -1,9 +1,10 @@
-#include <utility>
 #include <vkn/pipeline.hpp>
 
 #include <monads/try.hpp>
 
 #include <cassert>
+#include <ranges>
+#include <utility>
 
 namespace vkn
 {
@@ -81,6 +82,19 @@ namespace vkn
       return m_pipeline_layout.get();
    }
    auto graphics_pipeline::device() const noexcept -> vk::Device { return m_value.getOwner(); }
+   auto graphics_pipeline::descriptor_set_layouts() const noexcept
+      -> util::dynamic_array<vk::DescriptorSetLayout>
+   {
+      util::dynamic_array<vk::DescriptorSetLayout> set_layouts{};
+      set_layouts.reserve(std::size(m_set_layouts));
+
+      for (const auto& layout : m_set_layouts)
+      {
+         set_layouts.emplace_back(layout.get());
+      }
+
+      return set_layouts;
+   }
 
    graphics_pipeline::builder::builder(const vkn::device& device,
                                        const vkn::render_pass& render_pass,

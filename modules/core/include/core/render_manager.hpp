@@ -17,6 +17,7 @@
 
 #include <vkn/command_pool.hpp>
 #include <vkn/core.hpp>
+#include <vkn/descriptor_pool.hpp>
 #include <vkn/device.hpp>
 #include <vkn/framebuffer.hpp>
 #include <vkn/instance.hpp>
@@ -49,6 +50,10 @@ namespace core
    private:
       void recreate_swapchain();
 
+      auto create_physical_device() const noexcept -> vkn::physical_device;
+      auto create_swapchain_framebuffers() const noexcept
+         -> util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>;
+
    private:
       gfx::window* const mp_window;
 
@@ -62,9 +67,10 @@ namespace core
       vkn::swapchain m_swapchain;
       vkn::render_pass m_render_pass;
       vkn::command_pool m_command_pool;
+      vkn::descriptor_pool m_descriptor_pool; // Should be recreated with swapchain
       vkn::graphics_pipeline m_graphics_pipeline;
 
-      util::small_dynamic_array<vkn::framebuffer, 3> m_framebuffers;
+      util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()> m_framebuffers;
 
       std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
       std::array<vkn::semaphore, max_frames_in_flight> m_render_finished_semaphores;

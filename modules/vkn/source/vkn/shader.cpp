@@ -2,6 +2,8 @@
 
 #include <monads/try.hpp>
 
+#include <spirv_glsl.hpp>
+
 #include <fstream>
 
 namespace vkn

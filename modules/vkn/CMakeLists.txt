@@ -61,6 +61,7 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan-Headers
         glslang
         SPIRV
+        spirv-cross-core
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>

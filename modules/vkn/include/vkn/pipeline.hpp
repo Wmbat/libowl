@@ -24,6 +24,8 @@ namespace vkn
    public:
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
+      [[nodiscard]] auto descriptor_set_layouts() const noexcept
+         -> util::dynamic_array<vk::DescriptorSetLayout>;
 
    private:
       vk::UniquePipelineLayout m_pipeline_layout{nullptr};

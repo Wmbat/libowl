@@ -8,7 +8,9 @@ namespace vkn
 {
    enum struct descriptor_pool_error
    {
-      failed_to_create_descriptor_pool
+      failed_to_create_descriptor_pool,
+      failed_to_allocate_descriptor_sets,
+      invalid_number_of_descriptor_set_layouts_provided
    };
 
    class descriptor_pool final : public owning_handle<vk::DescriptorPool>
@@ -16,14 +18,21 @@ namespace vkn
    public:
       [[nodiscard]] auto device() const noexcept -> vk::Device;
 
+   private:
+      std::shared_ptr<util::logger> mp_logger;
+
+      util::dynamic_array<vk::DescriptorSet> m_sets;
+
    public:
       class builder final
       {
          using pool_size_dynamic_array =
             util::small_dynamic_array<vk::DescriptorPoolSize, expected_image_count.value()>;
 
+         struct creation_info;
+
       public:
-         builder(const vkn::device& device, util::logger* p_logger) noexcept;
+         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
          auto build() -> vkn::result<descriptor_pool>;
 
@@ -31,16 +40,36 @@ namespace vkn
 
          auto add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&;
 
+         auto set_unique_descriptor_set_layouts(
+            const util::dynamic_array<vk::DescriptorSetLayout>& layouts) -> builder&;
+         auto set_singular_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept
+            -> builder&;
+
+      private:
+         [[nodiscard]] auto create_descriptor_pool() const noexcept
+            -> vkn::result<vk::UniqueDescriptorPool>;
+         auto allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle) const
+            -> vkn::result<creation_info>;
+
       private:
          vk::Device m_device;
 
-         util::logger* mp_logger;
+         std::shared_ptr<util::logger> mp_logger;
+
+         struct creation_info
+         {
+            vk::UniqueDescriptorPool pool;
+            util::dynamic_array<vk::DescriptorSet> sets;
+         };
 
          struct info
          {
             util::count32_t max_set_count;
 
             pool_size_dynamic_array pool_sizes;
+
+            vk::DescriptorSetLayout singular_layout;
+            util::dynamic_array<vk::DescriptorSetLayout> unique_layouts;
          } m_info;
       };
    };
