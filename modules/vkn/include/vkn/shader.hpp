@@ -94,6 +94,7 @@ namespace vkn
          auto set_type(shader_type shader_type) -> builder&;
 
       private:
+      private:
          std::shared_ptr<util::logger> mp_logger{nullptr};
 
          struct info

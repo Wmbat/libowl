@@ -2,7 +2,7 @@
 
 #include <monads/try.hpp>
 
-#include <spirv_glsl.hpp>
+#include <spirv_cross.hpp>
 
 #include <fstream>
 
@@ -71,12 +71,17 @@ namespace vkn
 
    auto shader::builder::build() -> result<shader>
    {
-      const auto create_info = vk::ShaderModuleCreateInfo{}
-                                  .setCodeSize(m_info.spirv_binary.size() * 4)
-                                  .setPCode(m_info.spirv_binary.data());
+      spirv_cross::Compiler glsl{{std::begin(m_info.spirv_binary), std::end(m_info.spirv_binary)}};
+      const auto resources = glsl.get_shader_resources();
+      for (const auto& test : resources.uniform_buffers)
+      {
+         [[maybe_unused]] auto t = glsl.get_decoration(test.id, spv::DecorationDescriptorSet);
+      }
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createShaderModuleUnique(create_info);
+                return m_info.device.createShaderModuleUnique(
+                   {.codeSize = std::size(m_info.spirv_binary) * 4,
+                    .pCode = std::data(m_info.spirv_binary)});
              })
          .map_error([](auto&& error) {
             return make_error(shader_error::failed_to_create_shader_module, error.code());

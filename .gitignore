@@ -13,3 +13,5 @@ html
 latex
 
 .vimspector.json
+
+*.logs

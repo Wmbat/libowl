@@ -150,8 +150,9 @@ namespace vkn
          return monad::make_error(make_error(instance_error::vulkan_version_1_2_unavailable, {}));
       }
 
-      log_info(mp_logger, "[vkn] using vulkan version {0}.{1}.{2}", VK_VERSION_MAJOR(api_version),
-               VK_VERSION_MINOR(api_version), VK_VERSION_PATCH(api_version));
+      util::log_info(mp_logger, "[vkn] using vulkan version {}.{}.{}",
+                     VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version),
+                     VK_VERSION_PATCH(api_version));
 
       // clang-format off
       const auto sys_layers = monad::try_wrap<vk::SystemError>([&] {
