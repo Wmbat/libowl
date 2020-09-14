@@ -65,6 +65,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        MELODIE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        MELODIE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        MELODIE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+)
+
+
 target_compile_options(${PROJECT_NAME}
     PRIVATE
         $<$<PLATFORM_ID:UNIX>:-pthread>
@@ -81,6 +89,7 @@ target_compile_options(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         melodie::core
+        melodie::gfx
         melodie::util
         melodie::vkn
 

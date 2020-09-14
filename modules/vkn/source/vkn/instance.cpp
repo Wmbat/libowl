@@ -169,19 +169,17 @@ namespace vkn
             return util::dynamic_array<vk::LayerProperties>{};
          }
       );
-  
-      const auto sys_exts = monad::try_wrap<vk::SystemError>([&] {
-         return vk::enumerateInstanceExtensionProperties();
-      }).join(
-         [](const auto& data){
-            return util::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
-         },
-         [&](const auto& err) {
-            log_warn(mp_logger, "[vkn] instance layer enumeration error: {1}", err.what());
-            return util::dynamic_array<vk::ExtensionProperties>{};
-         }
-      );
       // clang-format on
+
+      const auto sys_exts =
+         monad::try_wrap<vk::SystemError>([&] {
+            return vk::enumerateInstanceExtensionProperties();
+         })
+            .map_error([&](const auto& err) {
+               log_warn(mp_logger, "[vkn] instance layer enumeration error: {1}", err.what());
+               return std::vector<vk::ExtensionProperties>{};
+            })
+            .join();
 
       // clang-format off
       const auto app_info = vk::ApplicationInfo{}
@@ -343,8 +341,8 @@ namespace vkn
       }
    }
 
-   auto builder::has_validation_layer_support(
-      const util::range_over<vk::LayerProperties> auto& properties) const -> bool
+   auto builder::has_validation_layer_support(std::span<const vk::LayerProperties> properties) const
+      -> bool
    {
       return std::ranges::find_if(properties, [](const VkLayerProperties& layer) {
                 return strcmp(static_cast<const char*>(layer.layerName),
@@ -353,7 +351,7 @@ namespace vkn
    }
 
    auto instance::builder::has_debug_utils_support(
-      const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool
+      std::span<const vk::ExtensionProperties> properties) const -> bool
    {
       return std::ranges::find_if(properties, [](const VkExtensionProperties& ext) {
                 return strcmp(static_cast<const char*>(ext.extensionName),
@@ -361,7 +359,7 @@ namespace vkn
              }) != properties.end();
    }
 
-   auto builder::get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
+   auto builder::get_all_ext(std::span<const vk::ExtensionProperties> properties,
                              bool are_debug_utils_available) const
       -> monad::result<util::dynamic_array<const char*>, vkn::error>
    {
@@ -380,7 +378,7 @@ namespace vkn
             return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
          });
 
-         if (it != properties.cend())
+         if (it != properties.end())
          {
             extensions.push_back(name);
 
@@ -417,7 +415,7 @@ namespace vkn
          const bool is_present =
             std::ranges::find_if(properties, [name](const auto& ext) {
                return strcmp(name, static_cast<const char*>(ext.extensionName)) == 0;
-            }) != properties.cend();
+            }) != properties.end();
 
          if (!is_present)
          {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vkn/buffer.hpp>
 #include <vkn/device.hpp>
 
 #include <util/strong_type.hpp>
@@ -17,6 +18,10 @@ namespace vkn
    {
    public:
       [[nodiscard]] auto device() const noexcept -> vk::Device;
+
+      void update_sets(const vk::DescriptorBufferInfo& info);
+
+      [[nodiscard]] auto sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>;
 
    private:
       std::shared_ptr<util::logger> mp_logger;
@@ -40,10 +45,10 @@ namespace vkn
 
          auto add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&;
 
-         auto set_unique_descriptor_set_layouts(
-            const util::dynamic_array<vk::DescriptorSetLayout>& layouts) -> builder&;
-         auto set_singular_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept
+         auto
+         set_descriptor_set_layouts(const util::dynamic_array<vk::DescriptorSetLayout>& layouts)
             -> builder&;
+         auto set_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept -> builder&;
 
       private:
          [[nodiscard]] auto create_descriptor_pool() const noexcept

@@ -103,7 +103,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         melodie::util 
         melodie::vkn
-        melodie::gfx
         glfw
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
@@ -128,8 +127,7 @@ target_sources(${PROJECT_NAME}
         source/core/memory/stack_allocator.cpp
 
         source/core/graphics/gui/widget.cpp
-        source/core/graphics/gui/window.cpp
 
-        source/core/render_manager.cpp
+        #        source/core/render_manager.cpp
         source/core/shader_codex.cpp
 )

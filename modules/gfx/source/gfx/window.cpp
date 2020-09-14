@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#include <core/graphics/gui/window.hpp>
+#include <gfx/window.hpp>
 
 #include <memory>
 
-namespace core::gfx
+namespace gfx
 {
    window::window()
    {
@@ -67,4 +67,4 @@ namespace core::gfx
          return vk::SurfaceKHR{surface};
       }
    }
-} // namespace core::gfx
+} // namespace gfx

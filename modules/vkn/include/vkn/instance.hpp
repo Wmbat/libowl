@@ -13,6 +13,7 @@
 #include <util/containers/dynamic_array.hpp>
 
 #include <ranges>
+#include <span>
 
 #include <iostream>
 
@@ -50,7 +51,7 @@ namespace vkn
 
       util::dynamic_array<const char*> m_extensions{};
 
-      uint32_t m_version{0u};
+      uint32_t m_version{0U};
 
    public:
       /**
@@ -59,7 +60,8 @@ namespace vkn
       class builder
       {
       public:
-         builder(const loader& vk_loader, std::shared_ptr<util::logger> p_logger = nullptr);
+         explicit builder(const loader& vk_loader,
+                          std::shared_ptr<util::logger> p_logger = nullptr);
 
          /**
           * Attempt to build a command_pool object. If something goes wrong, an error
@@ -96,14 +98,14 @@ namespace vkn
          [[nodiscard]] auto build_debug_utils(vk::Instance inst) const noexcept
             -> vkn::result<vk::UniqueDebugUtilsMessengerEXT>;
 
-         auto has_validation_layer_support(
-            const util::range_over<vk::LayerProperties> auto& properties) const -> bool;
-         auto has_debug_utils_support(
-            const util::range_over<vk::ExtensionProperties> auto& properties) const -> bool;
-
          [[nodiscard]] auto
-         get_all_ext(const util::dynamic_array<vk::ExtensionProperties>& properties,
-                     bool are_debug_utils_available) const
+         has_validation_layer_support(std::span<const vk::LayerProperties> properties) const
+            -> bool;
+         [[nodiscard]] auto
+         has_debug_utils_support(std::span<const vk::ExtensionProperties> properties) const -> bool;
+
+         [[nodiscard]] auto get_all_ext(std::span<const vk::ExtensionProperties> properties,
+                                        bool are_debug_utils_available) const
             -> vkn::result<util::dynamic_array<const char*>>;
 
          const loader& m_loader;

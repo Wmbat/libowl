@@ -106,6 +106,7 @@ target_sources(${PROJECT_NAME}
         source/vkn/command_pool.cpp
         source/vkn/core.cpp
         source/vkn/descriptor_pool.cpp
+        source/vkn/descriptor_set_layout.cpp
         source/vkn/device.cpp
         source/vkn/framebuffer.cpp
         source/vkn/instance.cpp

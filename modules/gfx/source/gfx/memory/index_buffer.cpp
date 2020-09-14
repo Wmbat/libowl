@@ -108,6 +108,7 @@ namespace gfx
 
                class index_buffer buf = {};
                buf.m_buffer = std::move(index_buffer);
+               buf.m_index_count = std::size(info.indices);
 
                return buf;
             });
@@ -132,4 +133,5 @@ namespace gfx
    auto index_buffer::value() noexcept -> vkn::buffer& { return m_buffer; }
    auto index_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
 
+   auto index_buffer::index_count() const noexcept -> std::size_t { return m_index_count; }
 } // namespace gfx

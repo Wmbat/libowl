@@ -76,7 +76,9 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         melodie::util 
         melodie::vkn
+        melodie::core
         glm::glm
+        glfw
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
@@ -85,7 +87,12 @@ target_link_libraries(${PROJECT_NAME}
 
 target_sources(${PROJECT_NAME}
     PRIVATE
+        source/gfx/camera.cpp
+        source/gfx/context.cpp
+        source/gfx/render_manager.cpp
+        source/gfx/render_pass.cpp
+        source/gfx/window.cpp
+        source/gfx/memory/camera_buffer.cpp
         source/gfx/memory/index_buffer.cpp
-        source/gfx/memory/uniform_buffer.cpp
         source/gfx/memory/vertex_buffer.cpp
 )

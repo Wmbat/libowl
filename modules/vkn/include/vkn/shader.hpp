@@ -11,6 +11,8 @@
 
 #include <util/logger.hpp>
 
+#include <spirv_cross.hpp>
+
 #include <filesystem>
 #include <string_view>
 
@@ -50,6 +52,8 @@ namespace vkn
     */
    class shader final : public owning_handle<vk::ShaderModule>
    {
+      struct shader_data;
+
    public:
       /**
        * Get the name of the shader
@@ -60,8 +64,22 @@ namespace vkn
        */
       [[nodiscard]] auto stage() const noexcept -> shader_type;
 
+      [[nodiscard]] auto get_data() const noexcept -> const shader_data&;
+
    private:
       shader_type m_type{shader_type::count};
+
+      using shader_input_location_t =
+         util::strong_type<std::uint32_t, struct input_location, util::arithmetic>;
+
+      using shader_uniform_binding_t =
+         util::strong_type<std::uint32_t, struct uniform_binding, util::arithmetic>;
+
+      struct shader_data
+      {
+         util::dynamic_array<shader_input_location_t> inputs;
+         util::dynamic_array<shader_uniform_binding_t> uniforms;
+      } m_data;
 
       std::string m_name{};
 
@@ -94,6 +112,18 @@ namespace vkn
          auto set_type(shader_type shader_type) -> builder&;
 
       private:
+         [[nodiscard]] auto create_shader() const noexcept -> vkn::result<vk::UniqueShaderModule>;
+
+         [[nodiscard]] auto
+         populate_shader_input(const spirv_cross::Compiler& compiler,
+                               const spirv_cross::ShaderResources& resources) const
+            -> util::dynamic_array<shader_input_location_t>;
+
+         [[nodiscard]] auto
+         populate_uniform_buffer(const spirv_cross::Compiler& compiler,
+                                 const spirv_cross::ShaderResources& resources) const
+            -> util::dynamic_array<shader_uniform_binding_t>;
+
       private:
          std::shared_ptr<util::logger> mp_logger{nullptr};
 

@@ -1,57 +1,60 @@
-#include <core/render_manager.hpp>
+#include <gfx/memory/index_buffer.hpp>
+#include <gfx/render_manager.hpp>
 
-#include <vkn/device.hpp>
-#include <vkn/physical_device.hpp>
-#include <vkn/shader.hpp>
+#include <gfx/data_types.hpp>
 
-#include <util/containers/dynamic_array.hpp>
-#include <util/logger.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include <monads/maybe.hpp>
+#include <chrono>
 
-#include <limits>
-
-namespace core
+namespace gfx
 {
-   render_manager::render_manager(gfx::window* const p_wnd,
-                                  const std::shared_ptr<util::logger>& p_logger) :
-      mp_window{p_wnd},
-      mp_logger{p_logger}, m_loader{mp_logger}
+   render_manager::render_manager(const context& ctx, const window& wnd,
+                                  std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)},
+      m_ctx{ctx}, m_wnd{wnd}
    {
-      m_instance = create_instance();
       m_device = create_logical_device();
       m_swapchain = create_swapchain();
-      m_render_pass = create_swapchain_render_pass();
-      m_framebuffers = create_swapchain_framebuffers();
-      m_shader_codex = create_shader_codex();
+      m_swapchain_render_pass = create_swapchain_render_pass();
+      m_swapchain_framebuffers = create_swapchain_framebuffers();
+
+      m_image_available_semaphores = create_image_available_semaphores();
+      m_render_finished_semaphores = create_render_finished_semaphores();
+      m_in_flight_fences = create_in_flight_fences();
+
       m_command_pool = create_command_pool();
 
+      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
+
+      m_shader_codex = create_shader_codex();
+
       m_graphics_pipeline =
-         vkn::graphics_pipeline::builder{m_device, m_render_pass, mp_logger}
+         vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
             .add_shader(m_shader_codex.get_shader("test_shader.vert"))
             .add_shader(m_shader_codex.get_shader("test_shader.frag"))
             .add_vertex_binding({.binding = 0,
-                                 .stride = sizeof(::gfx::vertex),
+                                 .stride = sizeof(gfx::vertex),
                                  .inputRate = vk::VertexInputRate::eVertex})
             .add_vertex_attribute({.location = 0,
                                    .binding = 0,
                                    .format = vk::Format::eR32G32B32Sfloat,
-                                   .offset = offsetof(::gfx::vertex, position)})
+                                   .offset = offsetof(gfx::vertex, position)})
             .add_vertex_attribute({.location = 1,
                                    .binding = 0,
                                    .format = vk::Format::eR32G32B32Sfloat,
-                                   .offset = offsetof(::gfx::vertex, colour)})
+                                   .offset = offsetof(gfx::vertex, colour)})
             .add_set_layout("camera_layout",
                             {{.binding = 0,
                               .descriptorType = vk::DescriptorType::eUniformBuffer,
                               .descriptorCount = 1,
                               .stageFlags = vk::ShaderStageFlagBits::eVertex}})
-            .add_viewport({.x = 0.0f,
-                           .y = 0.0f,
+            .add_viewport({.x = 0.0F,
+                           .y = 0.0F,
                            .width = static_cast<float>(m_swapchain.extent().width),
                            .height = static_cast<float>(m_swapchain.extent().height),
-                           .minDepth = 0.0f,
-                           .maxDepth = 1.0f},
+                           .minDepth = 0.0F,
+                           .maxDepth = 1.0F},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
             .build()
             .map_error([&](vkn::error&& err) {
@@ -64,48 +67,117 @@ namespace core
             })
             .join();
 
-      m_image_available_semaphores = create_image_available_semaphores();
-      m_render_finished_semaphores = create_render_finished_semaphores();
-      m_in_flight_fences = create_in_flight_fences();
       m_camera_descriptor_pool = create_camera_descriptor_pool();
+      m_camera_buffers = create_camera_buffers();
 
-      m_vertex_buffer = ::gfx::vertex_buffer::make({.vertices = m_triangle_vertices,
-                                                    .p_device = &m_device,
-                                                    .p_command_pool = &m_command_pool,
-                                                    .p_logger = mp_logger})
-                           .map_error([&](::gfx::error_t err) {
-                              log_error(mp_logger, "[core] Failed to create vertex buffer: \"{0}\"",
-                                        err.value().message());
-                              std::terminate();
+      for (std::size_t i = 0; auto set : m_camera_descriptor_pool.sets())
+      {
+         std::array buf_info{vk::DescriptorBufferInfo{.buffer = vkn::value(*m_camera_buffers[i++]),
+                                                      .offset = 0,
+                                                      .range = sizeof(gfx::camera_matrices)}};
+         vk::WriteDescriptorSet write{.dstSet = set,
+                                      .dstBinding = 0,
+                                      .dstArrayElement = 0,
+                                      .descriptorCount = std::size(buf_info),
+                                      .descriptorType = vk::DescriptorType::eUniformBuffer,
+                                      .pBufferInfo = std::data(buf_info)};
 
-                              return ::gfx::vertex_buffer{};
-                           })
-                           .join();
+         m_device->updateDescriptorSets({write}, {});
+      }
+   }
 
-      m_index_buffer = ::gfx::index_buffer::make({.indices = m_triangle_indices,
-                                                  .p_device = &m_device,
-                                                  .p_command_pool = &m_command_pool,
-                                                  .p_logger = mp_logger})
-                          .map_error([&](::gfx::error_t err) {
-                             log_error(mp_logger, "[core] Failed to create vertex buffer: \"{0}\"",
-                                       err.value().message());
-                             std::terminate();
+   void render_manager::update_camera(uint32_t image_index)
+   {
+      static auto startTime = std::chrono::high_resolution_clock::now();
 
-                             return ::gfx::index_buffer{};
-                          })
-                          .join();
+      auto currentTime = std::chrono::high_resolution_clock::now();
+      float time =
+         std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
+            .count();
 
-      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
+      gfx::camera_matrices matrices{
+         .model =
+            glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+         .perspective = glm::perspective(
+            glm::radians(45.0f), m_swapchain.extent().width / (float)m_swapchain.extent().height,
+            0.1f, 10.0f),
+         .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                             glm::vec3(0.0f, 0.0f, 1.0f))};
+      matrices.perspective[1][1] *= -1;
 
+      void* p_data =
+         m_device->mapMemory(m_camera_buffers[image_index]->memory(), 0, sizeof(matrices), {});
+      memcpy(p_data, &matrices, sizeof(matrices));
+      m_device->unmapMemory(m_camera_buffers[image_index]->memory());
+   }
+
+   auto render_manager::add_vertex_buffer(const util::dynamic_array<vertex>& vertices) -> bool
+   {
+      return vertex_buffer::make({.vertices = vertices,
+                                  .p_device = &m_device,
+                                  .p_command_pool = &m_command_pool,
+                                  .p_logger = mp_logger})
+         .join(
+            [&](vertex_buffer&& buffer) {
+               m_vertex_buffers.push_back(std::move(buffer));
+
+               return true;
+            },
+            [&](error_t err) {
+               util::log_error(mp_logger, "[gfx] failed to create vertex buffer {}",
+                               err.value().message());
+
+               return false;
+            });
+   }
+   auto render_manager::add_index_buffer(const util::dynamic_array<std::uint32_t>& indices) -> bool
+   {
+      return index_buffer::make({.indices = indices,
+                                 .p_device = &m_device,
+                                 .p_command_pool = &m_command_pool,
+                                 .p_logger = mp_logger})
+         .join(
+            [&](index_buffer&& buffer) {
+               m_index_buffers.push_back(std::move(buffer));
+
+               return true;
+            },
+            [&](error_t err) {
+               util::log_error(mp_logger, "[gfx] failed to create index buffer {}",
+                               err.value().message());
+
+               return false;
+            });
+   }
+
+   auto render_manager::add_pass(const std::string& name,
+                                 [[maybe_unused]] vkn::queue::type queue_type) -> render_pass&
+   {
+      auto it = m_render_pass_to_index.find(name);
+      if (it != std::end(m_render_pass_to_index))
+      {
+         return m_render_passes[it->second.value()];
+      }
+      else
+      {
+         const auto index = std::size(m_render_passes);
+         m_render_passes.emplace_back(render_pass{this});
+         m_render_pass_to_index[name] = index;
+         return m_render_passes.back();
+      }
+   }
+
+   void render_manager::bake()
+   {
       util::log_info(mp_logger, "[core] recording main rendering command buffers");
       for (std::size_t i = 0; const auto& buffer : m_command_pool.primary_cmd_buffers())
       {
          buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
 
-         const auto clear_colour = vk::ClearValue{std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}};
+         const auto clear_colour = vk::ClearValue{std::array<float, 4>{0.0F, 0.0F, 0.0F, 0.0F}};
          buffer.beginRenderPass({.pNext = nullptr,
-                                 .renderPass = m_render_pass.value(),
-                                 .framebuffer = m_framebuffers[i].value(),
+                                 .renderPass = m_swapchain_render_pass.value(),
+                                 .framebuffer = m_swapchain_framebuffers[i].value(),
                                  .renderArea = {{0, 0}, m_swapchain.extent()},
                                  .clearValueCount = 1,
                                  .pClearValues = &clear_colour},
@@ -113,12 +185,13 @@ namespace core
 
          buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
 
-         buffer.bindVertexBuffers(0, {m_vertex_buffer->value()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_index_buffer->value(), 0, vk::IndexType::eUint32);
+         buffer.bindVertexBuffers(0, {m_vertex_buffers[0]->value()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_index_buffers[0]->value(), 0, vk::IndexType::eUint32);
 
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
                                    0, {m_camera_descriptor_pool.sets()[i]}, {});
-         buffer.drawIndexed(std::size(m_triangle_indices), 1, 0, 0, 0);
+         buffer.draw(3, 1, 0, 0);
+         buffer.drawIndexed(m_index_buffers[0].index_count(), 1, 0, 0, 0);
 
          buffer.endRenderPass();
          buffer.end();
@@ -135,10 +208,16 @@ namespace core
       auto [image_res, image_index] = m_device->acquireNextImageKHR(
          vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
          vkn::value(m_image_available_semaphores.at(m_current_frame)), nullptr);
+      if (image_res != vk::Result::eSuccess)
+      {
+         abort();
+      }
+
+      update_camera(image_index);
 
       if (m_images_in_flight[image_index])
       {
-         m_device->waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
+         m_device->waitForFences({vkn::value(m_images_in_flight.at(m_current_frame))}, true,
                                  std::numeric_limits<std::uint64_t>::max());
       }
       m_images_in_flight[image_index] = vkn::value(m_in_flight_fences.at(m_current_frame));
@@ -191,27 +270,10 @@ namespace core
 
    void render_manager::wait() { m_device->waitIdle(); }
 
-   auto render_manager::create_instance() const noexcept -> vkn::instance
-   {
-      return vkn::instance::builder{m_loader, mp_logger}
-         .set_application_name("")
-         .set_application_version(0, 0, 0)
-         .set_engine_name(m_engine_name)
-         .set_engine_version(CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH)
-         .build()
-         .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create instance: {0}", err.type.message());
-
-            std::terminate();
-
-            return vkn::instance{};
-         })
-         .join();
-   }
    auto render_manager::create_physical_device() const noexcept -> vkn::physical_device
    {
-      return vkn::physical_device::selector{m_instance, mp_logger}
-         .set_surface(mp_window->get_surface(m_instance.value())
+      return vkn::physical_device::selector{m_ctx.vulkan_instance(), mp_logger}
+         .set_surface(m_wnd.get_surface(m_ctx.vulkan_instance().value())
                          .map_error([&](auto&& err) {
                             log_error(mp_logger, "[core] Failed to create surface: {0}",
                                       err.type.message());
@@ -235,8 +297,8 @@ namespace core
    }
    auto render_manager::create_logical_device() const noexcept -> vkn::device
    {
-      return vkn::device::builder{m_loader, create_physical_device(), m_instance.version(),
-                                  mp_logger}
+      return vkn::device::builder{m_ctx.vulkan_loader(), create_physical_device(),
+                                  m_ctx.vulkan_instance().version(), mp_logger}
          .build()
          .map_error([&](auto&& err) {
             log_error(mp_logger, "[core] Failed to create device: {0}", err.type.message());
@@ -284,40 +346,24 @@ namespace core
 
       for (const auto& img_view : m_swapchain.image_views())
       {
-         framebuffers.emplace_back(vkn::framebuffer::builder{m_device, m_render_pass, mp_logger}
-                                      .add_attachment(img_view.get())
-                                      .set_buffer_width(m_swapchain.extent().width)
-                                      .set_buffer_height(m_swapchain.extent().height)
-                                      .set_layer_count(1u)
-                                      .build()
-                                      .map_error([&](vkn::error&& err) {
-                                         log_error(mp_logger,
-                                                   "[core] Failed to create framebuffer: \"{0}\"",
-                                                   err.type.message());
-                                         abort();
+         framebuffers.emplace_back(
+            vkn::framebuffer::builder{m_device, m_swapchain_render_pass, mp_logger}
+               .add_attachment(img_view.get())
+               .set_buffer_width(m_swapchain.extent().width)
+               .set_buffer_height(m_swapchain.extent().height)
+               .set_layer_count(1U)
+               .build()
+               .map_error([&](vkn::error&& err) {
+                  log_error(mp_logger, "[core] Failed to create framebuffer: \"{0}\"",
+                            err.type.message());
+                  abort();
 
-                                         return vkn::framebuffer{};
-                                      })
-                                      .join());
+                  return vkn::framebuffer{};
+               })
+               .join());
       }
 
       return framebuffers;
-   }
-   auto render_manager::create_shader_codex() const noexcept -> shader_codex
-   {
-      return shader_codex::builder{m_device, mp_logger}
-         .add_shader_filepath("resources/shaders/test_shader.vert")
-         .add_shader_filepath("resources/shaders/test_shader.frag")
-         .allow_caching(false)
-         .build()
-         .map_error([&](error_t&& err) {
-            log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
-                      err.value().message());
-            std::terminate();
-
-            return shader_codex{};
-         })
-         .join();
    }
    auto render_manager::create_command_pool() const noexcept -> vkn::command_pool
    {
@@ -332,7 +378,7 @@ namespace core
                                        return 0u;
                                     })
                                     .join())
-         .set_primary_buffer_count(std::size(m_framebuffers))
+         .set_primary_buffer_count(std::size(m_swapchain_framebuffers))
          .build()
          .map_error([&](auto&& err) {
             log_error(mp_logger, "[core] Failed to create command pool: \"{0}\"",
@@ -359,6 +405,48 @@ namespace core
             std::terminate();
 
             return vkn::descriptor_pool{};
+         })
+         .join();
+   }
+   auto render_manager::create_camera_buffers() const noexcept
+      -> util::dynamic_array<gfx::camera_buffer>
+   {
+      const std::size_t buf_count = std::size(m_swapchain.image_views());
+
+      util::dynamic_array<gfx::camera_buffer> buffers{};
+      buffers.reserve(buf_count);
+
+      // for ([[maybe_unused]] std::size_t i : std::views::iota(buf_count))
+      for (std::size_t i = 0; i < buf_count; ++i)
+      {
+         if (auto res = gfx::camera_buffer::make({.p_device = &m_device, .p_logger = mp_logger}))
+         {
+            buffers.emplace_back(std::move(res).value().value());
+         }
+         else
+         {
+            // TODO: handle error
+
+            return util::dynamic_array<gfx::camera_buffer>{};
+         }
+      }
+
+      return buffers;
+   }
+
+   auto render_manager::create_shader_codex() const noexcept -> core::shader_codex
+   {
+      return core::shader_codex::builder{m_device, mp_logger}
+         .add_shader_filepath("resources/shaders/test_shader.vert")
+         .add_shader_filepath("resources/shaders/test_shader.frag")
+         .allow_caching(false)
+         .build()
+         .map_error([&](auto&& err) {
+            log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
+                      err.value().message());
+            std::terminate();
+
+            return core::shader_codex{};
          })
          .join();
    }
@@ -426,5 +514,4 @@ namespace core
 
       return fences;
    }
-
-} // namespace core
+} // namespace gfx

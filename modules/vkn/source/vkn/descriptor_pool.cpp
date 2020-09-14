@@ -41,6 +41,11 @@ namespace vkn
 
    auto descriptor_pool::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
+   auto descriptor_pool::sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>
+   {
+      return m_sets;
+   }
+
    using builder = descriptor_pool::builder;
 
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
@@ -69,14 +74,14 @@ namespace vkn
       return *this;
    }
 
-   auto builder::set_unique_descriptor_set_layouts(
-      const util::dynamic_array<vk::DescriptorSetLayout>& layouts) -> builder&
+   auto
+   builder::set_descriptor_set_layouts(const util::dynamic_array<vk::DescriptorSetLayout>& layouts)
+      -> builder&
    {
       m_info.unique_layouts = layouts;
       return *this;
    }
-   auto builder::set_singular_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept
-      -> builder&
+   auto builder::set_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept -> builder&
    {
       m_info.singular_layout = layout;
       return *this;

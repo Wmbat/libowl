@@ -11,29 +11,26 @@
 
 namespace gfx
 {
-   enum struct uniform_buffer_error
+   enum struct camera_buffer_error
    {
-      failed_to_create_staging_buffer,
-      failed_to_create_uniform_buffer,
-      failed_to_create_command_buffer,
-      failed_to_find_a_suitable_queue
+      failed_to_create_uniform_buffer
    };
 
-   auto to_string(uniform_buffer_error err) -> std::string;
-   auto make_error(uniform_buffer_error err) noexcept -> error_t;
+   auto to_string(camera_buffer_error err) -> std::string;
+   auto make_error(camera_buffer_error err) noexcept -> error_t;
 
-   class uniform_buffer
+   class camera_buffer
    {
    public:
       struct create_info
       {
-         util::dynamic_array<uint32_t> indices;
-
-         vkn::device* p_device;
+         const vkn::device* p_device;
          std::shared_ptr<util::logger> p_logger;
       };
 
-      static auto make(create_info&& info) noexcept -> gfx::result<uniform_buffer>;
+      static auto make(create_info&& info) noexcept -> gfx::result<camera_buffer>;
+
+      void update_data() noexcept;
 
       auto operator->() noexcept -> vkn::buffer*;
       auto operator->() const noexcept -> const vkn::buffer*;
@@ -52,7 +49,7 @@ namespace gfx
 namespace std
 {
    template <>
-   struct is_error_code_enum<gfx::uniform_buffer_error> : true_type
+   struct is_error_code_enum<gfx::camera_buffer_error> : true_type
    {
    };
 } // namespace std

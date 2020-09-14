@@ -65,6 +65,8 @@ namespace vkn
             return "failed_to_create_descriptor_set_layout";
          case err_t::failed_to_create_pipeline:
             return "failed_to_create_pipeline";
+         case err_t::invalid_vertex_shader_bindings:
+            return "invalid_vertex_shader_bindings";
          case err_t::failed_to_create_pipeline_layout:
             return "failed_to_create_pipeline_layout";
          default:
@@ -82,18 +84,10 @@ namespace vkn
       return m_pipeline_layout.get();
    }
    auto graphics_pipeline::device() const noexcept -> vk::Device { return m_value.getOwner(); }
-   auto graphics_pipeline::descriptor_set_layouts() const noexcept
-      -> util::dynamic_array<vk::DescriptorSetLayout>
+   auto graphics_pipeline::get_descriptor_set_layout(const std::string& name) const
+      -> const vkn::descriptor_set_layout&
    {
-      util::dynamic_array<vk::DescriptorSetLayout> set_layouts{};
-      set_layouts.reserve(std::size(m_set_layouts));
-
-      for (const auto& layout : m_set_layouts)
-      {
-         set_layouts.emplace_back(layout.get());
-      }
-
-      return set_layouts;
+      return m_set_layouts.at(name);
    }
 
    graphics_pipeline::builder::builder(const vkn::device& device,
@@ -108,13 +102,13 @@ namespace vkn
    auto graphics_pipeline::builder::build() const -> vkn::result<graphics_pipeline>
    {
       return create_descriptor_set_layouts()
-         .and_then([&](util::dynamic_array<vk::UniqueDescriptorSetLayout>&& data) {
+         .and_then([&](auto data) {
             util::log_info(mp_logger, "[vkn] {} descriptor set layouts created",
                            std::size(m_info.set_layouts));
 
             return create_pipeline_layout(std::move(data));
          })
-         .and_then([&](layout_info&& info) {
+         .and_then([&](auto info) {
             util::log_info(mp_logger, "[vkn] pipeline layout created");
 
             return create_pipeline(std::move(info));
@@ -146,33 +140,31 @@ namespace vkn
       m_info.attribute_descriptions.emplace_back(attribute);
       return *this;
    }
+
    auto graphics_pipeline::builder::add_set_layout(
-      const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding) -> builder&
+      const std::string& name, const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding)
+      -> builder&
    {
-      m_info.set_layouts.emplace_back(descriptor_set_layout_info{.binding = binding});
+      m_info.set_layouts.emplace_back(descriptor_set_layout_info{.name = name, .binding = binding});
       return *this;
    }
 
    auto graphics_pipeline::builder::create_descriptor_set_layouts() const
-      -> vkn::result<util::dynamic_array<vk::UniqueDescriptorSetLayout>>
+      -> vkn::result<graphics_pipeline>
    {
-      util::dynamic_array<vk::UniqueDescriptorSetLayout> layouts;
-      layouts.reserve(std::size(m_info.set_layouts));
+      graphics_pipeline pipeline;
+      pipeline.m_set_layouts.reserve(std::size(m_info.set_layouts));
 
       for (const auto& set_info : m_info.set_layouts)
       {
-         auto result = try_wrap([&] {
-                          return m_info.device.createDescriptorSetLayoutUnique(
-                             {.bindingCount = static_cast<uint32_t>(std::size(set_info.binding)),
-                              .pBindings = set_info.binding.data()});
-                       }).map_error([](const vk::SystemError& err) {
-            return make_error(graphics_pipeline_error::failed_to_create_descriptor_set_layout,
-                              err.code());
-         });
+         auto result = vkn::descriptor_set_layout::builder{m_info.device, mp_logger}
+                          .set_bindings(set_info.binding)
+                          .build();
 
          if (result)
          {
-            layouts.emplace_back(std::move(result).value().value());
+            pipeline.m_set_layouts.insert_or_assign(set_info.name,
+                                                    std::move(result).value().value());
          }
          else
          {
@@ -180,18 +172,18 @@ namespace vkn
          }
       }
 
-      return layouts;
+      return pipeline;
    }
-   auto graphics_pipeline::builder::create_pipeline_layout(
-      util::dynamic_array<vk::UniqueDescriptorSetLayout>&& set_layouts) const
-      -> vkn::result<layout_info>
+
+   auto graphics_pipeline::builder::create_pipeline_layout(graphics_pipeline&& pipeline) const
+      -> vkn::result<graphics_pipeline>
    {
       util::dynamic_array<vk::DescriptorSetLayout> layouts;
-      layouts.reserve(std::size(set_layouts));
+      layouts.reserve(std::size(pipeline.m_set_layouts));
 
-      for (const auto& layout : set_layouts)
+      for (const auto& [name, layout] : pipeline.m_set_layouts)
       {
-         layouts.emplace_back(layout.get());
+         layouts.emplace_back(layout.value());
       }
 
       return monad::try_wrap<vk::SystemError>([&] {
@@ -204,8 +196,9 @@ namespace vkn
                     .pPushConstantRanges = nullptr});
              })
          .map([&](vk::UniquePipelineLayout&& layout) {
-            return layout_info{.set_layouts = std::move(set_layouts),
-                               .pipeline_layout = std::move(layout)};
+            pipeline.m_pipeline_layout = std::move(layout);
+
+            return std::move(pipeline);
          })
          .map_error([](vk::SystemError&& err) {
             return make_error(graphics_pipeline_error::failed_to_create_pipeline_layout,
@@ -213,13 +206,14 @@ namespace vkn
          });
    }
 
-   auto graphics_pipeline::builder::create_pipeline(layout_info&& layout) const
+   auto graphics_pipeline::builder::create_pipeline(graphics_pipeline&& pipeline) const
       -> vkn::result<graphics_pipeline>
    {
       shader_dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
       shader_stage_info.reserve(std::size(m_info.shaders));
 
-      for (const auto* shader_handle : m_info.shaders)
+      util::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
+      for (std::uint32_t index = 0; const auto* shader_handle : m_info.shaders)
       {
          util::log_info(mp_logger, R"([vkn] using shader "{0}" for graphics pipeline)",
                         shader_handle->name());
@@ -232,6 +226,20 @@ namespace vkn
                .setStage(detail::to_shader_stage_flag(shader_handle->stage()))
                .setModule(shader_handle->value())
                .setPName("main"));
+
+         if (shader_handle->stage() == shader_type::vertex)
+         {
+            vertex_shader_index = index;
+         }
+
+         ++index;
+      }
+
+      const auto* p_vertex_shader = m_info.shaders[vertex_shader_index.value()];
+      if (!check_vertex_attribute_support(p_vertex_shader))
+      {
+         return monad::make_error(
+            make_error(graphics_pipeline_error::invalid_vertex_shader_bindings, {}));
       }
 
       const auto vertex_input_state_create_info =
@@ -252,14 +260,15 @@ namespace vkn
                                                  .setScissorCount(std::size(m_info.scissors))
                                                  .setPScissors(m_info.scissors.data());
 
-      const auto rasterization_state_create_info = vk::PipelineRasterizationStateCreateInfo{}
-                                                      .setDepthClampEnable(false)
-                                                      .setRasterizerDiscardEnable(false)
-                                                      .setPolygonMode(vk::PolygonMode::eFill)
-                                                      .setLineWidth(1.0f)
-                                                      .setCullMode(vk::CullModeFlagBits::eBack)
-                                                      .setFrontFace(vk::FrontFace::eClockwise)
-                                                      .setDepthBiasEnable(true);
+      const auto rasterization_state_create_info =
+         vk::PipelineRasterizationStateCreateInfo{}
+            .setDepthClampEnable(false)
+            .setRasterizerDiscardEnable(false)
+            .setPolygonMode(vk::PolygonMode::eFill)
+            .setLineWidth(1.0F)
+            .setCullMode(vk::CullModeFlagBits::eBack)
+            .setFrontFace(vk::FrontFace::eClockwise)
+            .setDepthBiasEnable(true);
 
       const auto multisample_state_create_info =
          vk::PipelineMultisampleStateCreateInfo{}
@@ -276,9 +285,9 @@ namespace vkn
          vk::PipelineColorBlendStateCreateInfo{}
             .setLogicOpEnable(false)
             .setLogicOp(vk::LogicOp::eCopy)
-            .setAttachmentCount(1u)
+            .setAttachmentCount(1U)
             .setPAttachments(&colour_blend_attachment_state)
-            .setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f});
+            .setBlendConstants({0.0F, 0.0F, 0.0F, 0.0F});
 
       const auto create_info = vk::GraphicsPipelineCreateInfo{}
                                   .setPNext(nullptr)
@@ -291,7 +300,7 @@ namespace vkn
                                   .setPViewportState(&viewport_state_create_info)
                                   .setPMultisampleState(&multisample_state_create_info)
                                   .setPColorBlendState(&colour_blend_state_create_info)
-                                  .setLayout(layout.pipeline_layout.get())
+                                  .setLayout(pipeline.m_pipeline_layout.get())
                                   .setRenderPass(m_info.render_pass)
                                   .setSubpass(0)
                                   .setBasePipelineHandle(nullptr);
@@ -305,12 +314,38 @@ namespace vkn
          .map([&](vk::UniquePipeline&& handle) {
             util::log_info(mp_logger, R"([vkn] graphics pipeline created)");
 
-            graphics_pipeline pipeline{};
             pipeline.m_value = std::move(handle);
-            pipeline.m_pipeline_layout = std::move(layout.pipeline_layout);
-            pipeline.m_set_layouts = std::move(layout.set_layouts);
 
-            return pipeline;
+            return std::move(pipeline);
          });
+   }
+
+   auto graphics_pipeline::builder::check_vertex_attribute_support(
+      const vkn::shader* p_shader) const noexcept -> bool
+   {
+      const auto& data = p_shader->get_data();
+      for (const auto& attrib : m_info.attribute_descriptions)
+      {
+         bool is_attrib_supported = false;
+         for (const auto& input : data.inputs)
+         {
+            if (attrib.location == input.value())
+            {
+               is_attrib_supported = true;
+            }
+         }
+
+         if (!is_attrib_supported)
+         {
+            util::log_error(mp_logger,
+                            "[vkn] vertex shader attribute at location {} and binding {} is not "
+                            "supported by the shader",
+                            attrib.location, attrib.binding);
+
+            return false;
+         }
+      }
+
+      return true;
    }
 } // namespace vkn

@@ -20,7 +20,7 @@
 
 namespace vkn
 {
-   static constexpr util::count32_t expected_image_count = 3u;
+   static constexpr util::count32_t expected_image_count = 3U;
 
    namespace detail
    {
@@ -60,7 +60,7 @@ namespace vkn
    class loader final
    {
    public:
-      loader(const std::shared_ptr<util::logger>& p_logger = nullptr);
+      explicit loader(const std::shared_ptr<util::logger>& p_logger = nullptr);
 
       /**
        * Load all vulkan functions based on the Vulkan instance.
@@ -100,7 +100,7 @@ namespace vkn
        * Get the underlying handle
        */
       auto operator*() const noexcept -> value_type { return m_value.get(); }
-      operator bool() const noexcept { return m_value.get(); }
+      operator bool() const noexcept { return m_value.get(); } // NOLINT
 
       /**
        * Get the underlying handle

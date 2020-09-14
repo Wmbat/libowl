@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vkn/core.hpp>
+#include <vkn/descriptor_set_layout.hpp>
 #include <vkn/device.hpp>
 #include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
@@ -11,6 +12,7 @@ namespace vkn
    {
       failed_to_create_descriptor_set_layout,
       failed_to_create_pipeline_layout,
+      invalid_vertex_shader_bindings,
       failed_to_create_pipeline
    };
 
@@ -19,17 +21,18 @@ namespace vkn
 
    class graphics_pipeline final : public owning_handle<vk::Pipeline>
    {
-      static constexpr std::size_t expected_shader_count{2u};
+      static constexpr std::size_t expected_shader_count{2U};
 
    public:
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
-      [[nodiscard]] auto descriptor_set_layouts() const noexcept
-         -> util::dynamic_array<vk::DescriptorSetLayout>;
+      auto get_descriptor_set_layout(const std::string& name) const
+         -> const vkn::descriptor_set_layout&;
 
    private:
       vk::UniquePipelineLayout m_pipeline_layout{nullptr};
-      util::dynamic_array<vk::UniqueDescriptorSetLayout> m_set_layouts{};
+
+      std::unordered_map<std::string, vkn::descriptor_set_layout> m_set_layouts{};
 
    public:
       class builder final
@@ -51,28 +54,32 @@ namespace vkn
          auto add_vertex_binding(vk::VertexInputBindingDescription&& binding) noexcept -> builder&;
          auto add_vertex_attribute(vk::VertexInputAttributeDescription&& attribute) noexcept
             -> builder&;
-         auto add_set_layout(const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding)
+         auto add_set_layout(const std::string& name,
+                             const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding)
             -> builder&;
 
       private:
-         [[nodiscard]] auto create_descriptor_set_layouts() const
-            -> vkn::result<util::dynamic_array<vk::UniqueDescriptorSetLayout>>;
-         [[nodiscard]] auto create_pipeline_layout(
-            util::dynamic_array<vk::UniqueDescriptorSetLayout>&& set_layouts) const
-            -> vkn::result<layout_info>;
-         [[nodiscard]] auto create_pipeline(layout_info&& layout) const
+         [[nodiscard]] auto create_descriptor_set_layouts() const -> vkn::result<graphics_pipeline>;
+         [[nodiscard]] auto create_pipeline_layout(graphics_pipeline&& set_layouts) const
             -> vkn::result<graphics_pipeline>;
+         [[nodiscard]] auto create_pipeline(graphics_pipeline&& layout) const
+            -> vkn::result<graphics_pipeline>;
+
+         [[nodiscard]] auto
+         check_vertex_attribute_support(const vkn::shader* p_shader) const noexcept -> bool;
 
       private:
          std::shared_ptr<util::logger> mp_logger;
 
          struct descriptor_set_layout_info
          {
+            std::string name;
             util::dynamic_array<vk::DescriptorSetLayoutBinding> binding;
          };
 
          struct layout_info
          {
+            vk::UniqueDescriptorSetLayout camera_layout;
             util::dynamic_array<vk::UniqueDescriptorSetLayout> set_layouts;
 
             vk::UniquePipelineLayout pipeline_layout;

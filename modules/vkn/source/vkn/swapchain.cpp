@@ -125,8 +125,8 @@ namespace vkn
                util::dynamic_array<vk::PresentModeKHR>{present_mode.begin(), present_mode.end()}};
       }
 
-      auto find_surface_format(const util::range_over<vk::SurfaceFormatKHR> auto& available_formats,
-                               const util::range_over<vk::SurfaceFormatKHR> auto& desired_formats)
+      auto find_surface_format(std::span<const vk::SurfaceFormatKHR> available_formats,
+                               std::span<const vk::SurfaceFormatKHR> desired_formats)
          -> vk::SurfaceFormatKHR
       {
          for (const vk::SurfaceFormatKHR& desired : desired_formats)
@@ -143,14 +143,13 @@ namespace vkn
          return available_formats[0];
       }
 
-      auto
-      find_present_mode(const util::range_over<vk::PresentModeKHR> auto& available_present_modes,
-                        const util::range_over<vk::PresentModeKHR> auto& desired_present_modes)
+      auto find_present_mode(std::span<const vk::PresentModeKHR> available_present_modes,
+                             std::span<const vk::PresentModeKHR> desired_present_modes)
          -> vk::PresentModeKHR
       {
-         for (const vk::PresentModeKHR& desired : desired_present_modes)
+         for (const auto desired : desired_present_modes)
          {
-            for (const vk::PresentModeKHR& available : available_present_modes)
+            for (const auto available : available_present_modes)
             {
                if (desired == available)
                {

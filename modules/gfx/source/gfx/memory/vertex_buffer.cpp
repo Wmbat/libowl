@@ -45,7 +45,7 @@ namespace gfx
 
       const std::size_t size = sizeof(vertex) * std::size(info.vertices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
-         util::log_info(info.p_logger, "[gfx] mapping vertex data into staging buffer");
+         util::log_debug(info.p_logger, "[gfx] mapping vertex data into staging buffer");
 
          void* p_data = device->mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.vertices.data(), size);
@@ -60,8 +60,8 @@ namespace gfx
          return make_error(vertex_buffer_error::failed_to_create_staging_buffer);
       };
 
-      util::log_info(info.p_logger, "[gfx] staging buffer of size {} on memory {}", size,
-                     vk::to_string(vk::MemoryPropertyFlagBits::eHostVisible));
+      util::log_debug(info.p_logger, "[gfx] staging buffer of size {} on memory {}", size,
+                      vk::to_string(vk::MemoryPropertyFlagBits::eHostVisible));
 
       auto staging_buffer_res =
          vkn::buffer::builder{device, info.p_logger}
@@ -78,8 +78,8 @@ namespace gfx
          return monad::make_error(*staging_buffer_res.error());
       }
 
-      util::log_info(info.p_logger, "[gfx] vertex buffer of size {} on memory {}", size,
-                     vk::to_string(vk::MemoryPropertyFlagBits::eDeviceLocal));
+      util::log_debug(info.p_logger, "[gfx] vertex buffer of size {} on memory {}", size,
+                      vk::to_string(vk::MemoryPropertyFlagBits::eDeviceLocal));
 
       auto vertex_buffer_res = vkn::buffer::builder{device, info.p_logger}
                                   .set_size(size)

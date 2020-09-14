@@ -45,8 +45,12 @@ namespace gfx
       auto value() noexcept -> vkn::buffer&;
       [[nodiscard]] auto value() const noexcept -> const vkn::buffer&;
 
+      auto index_count() const noexcept -> std::size_t; // NOLINT
+
    private:
       vkn::buffer m_buffer;
+
+      std::size_t m_index_count;
    };
 } // namespace gfx
 

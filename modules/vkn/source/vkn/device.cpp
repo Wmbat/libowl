@@ -133,11 +133,12 @@ namespace vkn
    {
       using err_t = vkn::error;
 
+      const auto families = m_physical_device.queue_families();
+
       if (type == queue::type::present)
       {
-         const auto index =
-            detail::get_present_queue_index(m_physical_device.value(), m_physical_device.surface(),
-                                            m_physical_device.queue_families());
+         const auto index = detail::get_present_queue_index(m_physical_device.value(),
+                                                            m_physical_device.surface(), families);
          if (!index)
          {
             return monad::make_error(err_t{
@@ -150,7 +151,7 @@ namespace vkn
       }
       else if (type == queue::type::graphics)
       {
-         if (auto i = detail::get_graphics_queue_index(m_physical_device.queue_families()))
+         if (auto i = detail::get_graphics_queue_index(families))
          {
             return i.value();
          }
@@ -166,8 +167,7 @@ namespace vkn
       }
       else if (type == queue::type::compute)
       {
-         if (const auto i =
-                detail::get_separated_compute_queue_index(m_physical_device.queue_families()))
+         if (const auto i = detail::get_separated_compute_queue_index(families))
          {
             return i.value();
          }
@@ -183,8 +183,7 @@ namespace vkn
       }
       else if (type == queue::type::transfer)
       {
-         if (const auto i =
-                detail::get_separated_transfer_queue_index(m_physical_device.queue_families()))
+         if (const auto i = detail::get_separated_transfer_queue_index(families))
          {
             return i.value();
          }
