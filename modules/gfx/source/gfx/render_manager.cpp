@@ -95,14 +95,14 @@ namespace gfx
          std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
             .count();
 
-      gfx::camera_matrices matrices{
-         .model =
-            glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-         .perspective = glm::perspective(
-            glm::radians(45.0f), m_swapchain.extent().width / (float)m_swapchain.extent().height,
-            0.1f, 10.0f),
-         .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                             glm::vec3(0.0f, 0.0f, 1.0f))};
+      gfx::camera_matrices matrices{};
+      matrices.model =
+         glm::rotate(glm::mat4{1.0f}, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+      matrices.perspective = glm::perspective(
+         glm::radians(45.0F), m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F,
+         10.0F);
+      matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                                  glm::vec3(0.0F, 0.0F, 1.0F));
       matrices.perspective[1][1] *= -1;
 
       void* p_data =
@@ -190,7 +190,7 @@ namespace gfx
 
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
                                    0, {m_camera_descriptor_pool.sets()[i]}, {});
-         buffer.draw(3, 1, 0, 0);
+         // buffer.draw(3, 1, 0, 0);
          buffer.drawIndexed(m_index_buffers[0].index_count(), 1, 0, 0, 0);
 
          buffer.endRenderPass();

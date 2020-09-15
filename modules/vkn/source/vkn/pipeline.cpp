@@ -267,7 +267,7 @@ namespace vkn
             .setPolygonMode(vk::PolygonMode::eFill)
             .setLineWidth(1.0F)
             .setCullMode(vk::CullModeFlagBits::eBack)
-            .setFrontFace(vk::FrontFace::eClockwise)
+            .setFrontFace(vk::FrontFace::eCounterClockwise)
             .setDepthBiasEnable(true);
 
       const auto multisample_state_create_info =
