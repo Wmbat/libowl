@@ -4,41 +4,38 @@
 
 namespace vkn
 {
-   namespace detail
+   struct fence_error_category : std::error_category
    {
-      auto to_string(fence::error err) -> std::string
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_fence"; }
+      [[nodiscard]] auto message(int err) const -> std::string override
       {
-         switch (err)
-         {
-            case fence::error::failed_to_create_fence:
-               return "failed_to_create_fence";
-            default:
-               return "UNKNOWN";
-         }
+         return to_string(static_cast<fence_error>(err));
       }
-   } // namespace detail
+   };
 
-   auto fence::error_category::name() const noexcept -> const char* { return "vkn_fence"; }
-   auto fence::error_category::message(int err) const -> std::string
+   inline static const fence_error_category fence_category{};
+
+   auto to_string(fence_error err) -> std::string
    {
-      return detail::to_string(static_cast<fence::error>(err));
+      switch (err)
+      {
+         case fence_error::failed_to_create_fence:
+            return "failed_to_create_fence";
+         default:
+            return "UNKNOWN";
+      }
+   }
+   auto make_error(fence_error err, std::error_code ec) -> vkn::error
+   {
+      return {{static_cast<int>(err), fence_category}, static_cast<vk::Result>(ec.value())};
    }
 
-   fence::fence(create_info&& info) noexcept : m_fence{std::move(info.fence)} {}
-
-   auto fence::operator->() noexcept -> pointer { return &m_fence.get(); }
-   auto fence::operator->() const noexcept -> const_pointer { return &m_fence.get(); }
-
-   auto fence::operator*() const noexcept -> value_type { return value(); }
-
-   fence::operator bool() const noexcept { return m_fence.get(); }
-
-   auto fence::value() const noexcept -> vk::Fence { return m_fence.get(); }
-   auto fence::device() const noexcept -> vk::Device { return m_fence.getOwner(); }
+   auto fence::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    using builder = fence::builder;
 
-   builder::builder(const vkn::device& device, util::logger* p_logger) : mp_logger{p_logger}
+   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_info.device = device.value();
    }
@@ -52,12 +49,16 @@ namespace vkn
                                                            : vk::FenceCreateFlagBits{}});
              })
          .map_error([](vk::SystemError&& err) {
-            return make_error(error::failed_to_create_fence, err.code());
+            return make_error(fence_error::failed_to_create_fence, err.code());
          })
          .map([&](vk::UniqueFence&& handle) {
-            util::log_info(mp_logger, "[vkn] fence created");
+            util::log_info(mp_logger, "[vkn] {} fence created",
+                           m_info.signaled ? "signaled" : "unsignaled");
 
-            return fence{{.fence = std::move(handle)}};
+            fence f{};
+            f.m_value = std::move(handle);
+
+            return f;
          });
    }
 

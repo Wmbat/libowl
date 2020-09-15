@@ -1,10 +1,3 @@
-/**
- * @file core.hpp
- * @author wmbat wmbat@protonmail.com
- * @date Saturday, 20th of April, 2020
- * @copyright MIT License.
- */
-
 #pragma once
 
 #if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
@@ -12,9 +5,10 @@
 #endif
 
 #include <util/logger.hpp>
+#include <util/strong_type.hpp>
 
-#include <monads/either.hpp>
 #include <monads/result.hpp>
+#include <monads/try.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -26,6 +20,8 @@
 
 namespace vkn
 {
+   static constexpr util::count32_t expected_image_count = 3U;
+
    namespace detail
    {
 #if defined(NDEBUG)
@@ -50,13 +46,21 @@ namespace vkn
    template <typename any_>
    using result = monad::result<any_, vkn::error>;
 
+   template <typename... args_>
+   auto try_wrap(std::invocable<args_...> auto&& fun, args_&&... args)
+      -> monad::result<std::invoke_result_t<decltype(fun), args_...>, vk::SystemError>
+   {
+      return monad::try_wrap<vk::SystemError>(std::forward<decltype(fun)>(fun),
+                                              std::forward<args_>(args)...);
+   }
+
    /**
     * Class used for the dynamic loading of the Vulkan API functions.
     */
    class loader final
    {
    public:
-      loader(util::logger* p_logger = nullptr);
+      explicit loader(const std::shared_ptr<util::logger>& p_logger = nullptr);
 
       /**
        * Load all vulkan functions based on the Vulkan instance.
@@ -68,11 +72,43 @@ namespace vkn
       void load_device(const vk::Device& device) const;
 
    private:
-      util::logger* const p_logger;
+      std::shared_ptr<util::logger> mp_logger;
 
-      vk::DynamicLoader dynamic_loader;
+      vk::DynamicLoader m_dynamic_loader;
 
       inline static bool IS_GLSLANG_INIT = false;
+   };
+
+   template <typename any_>
+   class owning_handle
+   {
+   public:
+      using value_type = any_;
+      using pointer = any_*;
+      using const_pointer = const any_*;
+
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() noexcept -> pointer { return &m_value.get(); }
+      /**
+       * Allow direct access to the underlying handle functions
+       */
+      auto operator->() const noexcept -> const_pointer { return &m_value.get(); }
+
+      /**
+       * Get the underlying handle
+       */
+      auto operator*() const noexcept -> value_type { return m_value.get(); }
+      operator bool() const noexcept { return m_value.get(); } // NOLINT
+
+      /**
+       * Get the underlying handle
+       */
+      [[nodiscard]] auto value() const noexcept -> value_type { return m_value.get(); }
+
+   protected:
+      vk::UniqueHandle<any_, vk::DispatchLoaderDynamic> m_value; // NOLINT
    };
 
    // clang-format off

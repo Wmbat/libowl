@@ -55,6 +55,7 @@ message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
 add_subdirectory(modules/core)
+add_subdirectory(modules/gfx)
 add_subdirectory(modules/util)
 add_subdirectory(modules/vkn)
 
@@ -63,6 +64,14 @@ add_executable(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        MELODIE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        MELODIE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        MELODIE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+)
+
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
@@ -80,6 +89,7 @@ target_compile_options(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         melodie::core
+        melodie::gfx
         melodie::util
         melodie::vkn
 

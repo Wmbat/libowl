@@ -44,7 +44,7 @@ namespace util
    class random_access_iterator
    {
    public:
-      using iterator_category = std::random_access_iterator_tag;
+      using iterator_category = std::contiguous_iterator_tag;
       using self_type = random_access_iterator;
       using value_type = type_;
       using reference = type_&;
@@ -135,6 +135,17 @@ namespace util
       constexpr auto operator-(self_type const& it) const noexcept -> difference_type
       {
          return p_type - it.p_type;
+      }
+
+      friend constexpr auto operator+(difference_type lhs, const self_type& rhs) noexcept
+         -> self_type
+      {
+         return {rhs + lhs};
+      }
+      friend constexpr auto operator-(difference_type lhs, const self_type& rhs) noexcept
+         -> self_type
+      {
+         return {rhs - lhs};
       }
 
       constexpr auto operator[](difference_type diff) const noexcept -> reference

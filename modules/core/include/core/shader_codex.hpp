@@ -45,7 +45,7 @@ namespace core
       class builder
       {
       public:
-         builder(const vkn::device& device, util::logger* plogger) noexcept;
+         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
          auto build() -> core::result<shader_codex>;
 
@@ -71,11 +71,11 @@ namespace core
             -> glslang::EShTargetLanguageVersion;
          [[nodiscard]] auto get_vulkan_version(uint32_t version) const
             -> glslang::EshTargetClientVersion;
-         [[nodiscard]] auto get_shader_type(std::string_view ext_name) const -> vkn::shader::type;
+         [[nodiscard]] auto get_shader_type(std::string_view ext_name) const -> vkn::shader_type;
 
       private:
-         util::logger* m_plogger;
-         const vkn::device* m_pdevice;
+         std::shared_ptr<util::logger> mp_logger;
+         const vkn::device* mp_device;
 
          struct info
          {

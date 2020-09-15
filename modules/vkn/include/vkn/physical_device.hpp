@@ -11,6 +11,8 @@
 
 #include <monads/maybe.hpp>
 
+#include <span>
+
 namespace vkn
 {
    namespace detail
@@ -18,145 +20,41 @@ namespace vkn
       /**
        * Get the index of a queue that support graphics operation if it exists.
        */
-      auto
-      get_graphics_queue_index(const util::range_over<vk::QueueFamilyProperties> auto& families)
-         -> monad::maybe<uint32_t>
-      {
-         for (uint32_t i = 0; i < families.size(); ++i)
-         {
-            if (families[i].queueFlags & vk::QueueFlagBits::eGraphics)
-            {
-               return i;
-            }
-         }
-
-         return monad::none;
-      }
+      auto get_graphics_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
 
       /**
        * Get the index of a queue that support present operation if it exists.
        */
       auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
-                                   const util::range_over<vk::QueueFamilyProperties> auto& families)
-         -> monad::maybe<uint32_t>
-      {
-         for (uint32_t i = 0; i < families.size(); ++i)
-         {
-            VkBool32 present_support = VK_FALSE;
-            if (surface)
-            {
-               if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
-                   vk::Result::eSuccess)
-               {
-                  return monad::none;
-               }
-            }
-
-            if (present_support == VK_TRUE)
-            {
-               return i;
-            }
-         }
-
-         return monad::none;
-      }
+                                   std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
 
       /**
        * Get the index of a queue that does compute operation only if it exists.
        */
-      auto get_dedicated_compute_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
-      {
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
-            {
-               return i;
-            }
-
-            ++i;
-         }
-
-         return monad::none;
-      }
+      auto get_dedicated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
 
       /**
        * Get the index of a queue that does transfer operation only, otherwise returns nothing.
        */
-      auto get_dedicated_transfer_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
-      {
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
-            {
-               return i;
-            }
-
-            ++i;
-         }
-
-         return monad::none;
-      }
+      auto get_dedicated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
 
       /**
        * Get a queue that support compute operation but not graphics operation, otherwise returns
        * nothing
        */
-      auto get_separated_compute_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
-      {
-         monad::maybe<uint32_t> compute{};
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
-            {
-               if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) ==
-                   0)
-               {
-                  return i;
-               }
-
-               compute = i;
-            }
-
-            ++i;
-         }
-
-         return compute;
-      }
+      auto get_separated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
 
       /**
        * Get a queue that support transfer operation but not graphics operation, otherwise returns
        * nothing
        */
-      auto get_separated_transfer_queue_index(
-         const util::range_over<vk::QueueFamilyProperties> auto& families) -> monad::maybe<uint32_t>
-      {
-         monad::maybe<uint32_t> transfer{};
-         for (uint32_t i = 0; const auto& fam : families)
-         {
-            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
-                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
-            {
-               if (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0)
-               {
-                  return i;
-               }
-
-               transfer = i;
-            }
-
-            ++i;
-         }
-
-         return transfer;
-      }
+      auto get_separated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>;
    } // namespace detail
 
    /**
@@ -269,7 +167,7 @@ namespace vkn
       class selector
       {
       public:
-         selector(const instance& instance, util::logger* plogger = nullptr);
+         selector(const instance& instance, std::shared_ptr<util::logger> p_logger = nullptr);
 
          /**
           * Attempt to find a suitable physical device, if no physical devices are found,
@@ -317,7 +215,7 @@ namespace vkn
          auto select_first_gpu() noexcept -> selector&;
 
       private:
-         util::logger* m_plogger;
+         std::shared_ptr<util::logger> mp_logger;
 
          struct system_info
          {
@@ -363,26 +261,9 @@ namespace vkn
          [[nodiscard]] auto is_device_suitable(const physical_device_description& desc) const
             -> suitable;
 
-         auto go_through_available_gpus(
-            const util::range_over<physical_device_description> auto& range) const
-            -> physical_device_description
-         {
-            physical_device_description selected;
-            for (const auto& desc : range)
-            {
-               const auto suitable = is_device_suitable(desc);
-               if (suitable == suitable::yes)
-               {
-                  selected = desc;
-                  break;
-               }
-               else if (suitable == suitable::partial)
-               {
-                  selected = desc;
-               }
-            }
-            return selected;
-         }
+         [[nodiscard]] auto
+         go_through_available_gpus(std::span<const physical_device_description> range) const
+            -> physical_device_description;
       };
    };
 } // namespace vkn

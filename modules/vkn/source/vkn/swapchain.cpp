@@ -118,18 +118,15 @@ namespace vkn
          const auto formats = format_res.value().value();
          const auto present_mode = present_mode_res.value().value();
 
-         // clang-format off
-         return monad::make_value(surface_support{
-            .capabilities = capabilities_res.value().value(), 
-            .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()}, 
-            .present_modes = util::dynamic_array<vk::PresentModeKHR>{
-               present_mode.begin(), present_mode.end()}
-         });
-         // clang-format on
+         return surface_support{
+            .capabilities = capabilities_res.value().value(),
+            .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()},
+            .present_modes =
+               util::dynamic_array<vk::PresentModeKHR>{present_mode.begin(), present_mode.end()}};
       }
 
-      auto find_surface_format(const util::range_over<vk::SurfaceFormatKHR> auto& available_formats,
-                               const util::range_over<vk::SurfaceFormatKHR> auto& desired_formats)
+      auto find_surface_format(std::span<const vk::SurfaceFormatKHR> available_formats,
+                               std::span<const vk::SurfaceFormatKHR> desired_formats)
          -> vk::SurfaceFormatKHR
       {
          for (const vk::SurfaceFormatKHR& desired : desired_formats)
@@ -146,14 +143,13 @@ namespace vkn
          return available_formats[0];
       }
 
-      auto
-      find_present_mode(const util::range_over<vk::PresentModeKHR> auto& available_present_modes,
-                        const util::range_over<vk::PresentModeKHR> auto& desired_present_modes)
+      auto find_present_mode(std::span<const vk::PresentModeKHR> available_present_modes,
+                             std::span<const vk::PresentModeKHR> desired_present_modes)
          -> vk::PresentModeKHR
       {
-         for (const vk::PresentModeKHR& desired : desired_present_modes)
+         for (const auto desired : desired_present_modes)
          {
-            for (const vk::PresentModeKHR& available : available_present_modes)
+            for (const auto available : available_present_modes)
             {
                if (desired == available)
                {
@@ -236,7 +232,8 @@ namespace vkn
 
    using builder = swapchain::builder;
 
-   builder::builder(const device& device, util::logger* const plogger) : m_plogger{plogger}
+   builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_info.device = device.value();
       m_info.physical_device = device.physical().value();
@@ -322,8 +319,8 @@ namespace vkn
                                .clipped = m_info.clipped,
                                .oldSwapchain = m_info.old_swapchain})
          .and_then([&](vk::UniqueSwapchainKHR&& handle) {
-            util::log_info(m_plogger, "[vkn] swapchain created.");
-            util::log_info(m_plogger, "[vkn] swapchain image count: {0}", image_count);
+            util::log_info(mp_logger, "[vkn] swapchain created.");
+            util::log_info(mp_logger, "[vkn] swapchain image count: {0}", image_count);
 
             return create_images(handle.get()).and_then([&](auto&& images) {
                return create_image_views(images, surface_format).map([&](auto&& views) {
@@ -511,6 +508,6 @@ namespace vkn
          }
       }
 
-      return monad::make_value(std::move(views));
+      return std::move(views);
    }
 } // namespace vkn

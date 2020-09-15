@@ -7,6 +7,128 @@ namespace vkn
 {
    namespace detail
    {
+      auto get_graphics_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         for (uint32_t i = 0; i < families.size(); ++i)
+         {
+            if (families[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            {
+               return i;
+            }
+         }
+
+         return monad::none;
+      }
+
+      auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
+                                   std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         for (uint32_t i = 0; i < families.size(); ++i)
+         {
+            VkBool32 present_support = VK_FALSE;
+            if (surface)
+            {
+               if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
+                   vk::Result::eSuccess)
+               {
+                  return monad::none;
+               }
+            }
+
+            if (present_support == VK_TRUE)
+            {
+               return i;
+            }
+         }
+
+         return monad::none;
+      }
+
+      auto get_dedicated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eTransfer) == 0))
+            {
+               return i;
+            }
+
+            ++i;
+         }
+
+         return monad::none;
+      }
+
+      auto get_dedicated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0))
+            {
+               return i;
+            }
+
+            ++i;
+         }
+
+         return monad::none;
+      }
+
+      auto get_separated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         monad::maybe<uint32_t> compute{};
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eCompute) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+            {
+               if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) ==
+                   0)
+               {
+                  return i;
+               }
+
+               compute = i;
+            }
+
+            ++i;
+         }
+
+         return compute;
+      }
+
+      auto get_separated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+         -> monad::maybe<uint32_t>
+      {
+         monad::maybe<uint32_t> transfer{};
+         for (uint32_t i = 0; const auto& fam : families)
+         {
+            if ((fam.queueFlags & vk::QueueFlagBits::eTransfer) &&
+                (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+            {
+               if (static_cast<uint32_t>(fam.queueFlags & vk::QueueFlagBits::eCompute) == 0)
+               {
+                  return i;
+               }
+
+               transfer = i;
+            }
+
+            ++i;
+         }
+
+         return transfer;
+      }
+
       auto to_string(physical_device::error err) -> std::string
       {
          using error = physical_device::error;
@@ -116,7 +238,8 @@ namespace vkn
 
    using selector = physical_device::selector;
 
-   selector::selector(const instance& inst, util::logger* const plogger) : m_plogger{plogger}
+   selector::selector(const instance& inst, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
    {
       m_system_info.instance = inst.value();
       m_system_info.instance_extensions = inst.extensions();
@@ -176,9 +299,9 @@ namespace vkn
          // clang-format on
       }
 
-      log_info(m_plogger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
+      log_info(mp_logger, "[vkn] selected physical device: {0}", selected.properties.deviceName);
 
-      return monad::make_value(physical_device{
+      return physical_device{
          {.name = static_cast<const char*>(selected.properties.deviceName),
           .features = selected.features,
           .properties = selected.properties,
@@ -187,7 +310,7 @@ namespace vkn
           .device = selected.phys_device,
           .surface = m_system_info.surface,
           .queue_families = util::dynamic_array<vk::QueueFamilyProperties>{
-             std::begin(selected.queue_families), std::end(selected.queue_families)}}});
+             std::begin(selected.queue_families), std::end(selected.queue_families)}}};
    }
 
    auto selector::set_preferred_gpu_type(physical_device::type type) noexcept -> selector&
@@ -339,5 +462,26 @@ namespace vkn
             return suitable::no;
          }
       }
+   }
+
+   auto
+   selector::go_through_available_gpus(std::span<const physical_device_description> range) const
+      -> physical_device_description
+   {
+      physical_device_description selected;
+      for (const auto& desc : range)
+      {
+         const auto suitable = is_device_suitable(desc);
+         if (suitable == suitable::yes)
+         {
+            selected = desc;
+            break;
+         }
+         else if (suitable == suitable::partial)
+         {
+            selected = desc;
+         }
+      }
+      return selected;
    }
 } // namespace vkn

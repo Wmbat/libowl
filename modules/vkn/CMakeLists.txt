@@ -61,6 +61,7 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan-Headers
         glslang
         SPIRV
+        spirv-cross-core
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
@@ -104,6 +105,8 @@ target_sources(${PROJECT_NAME}
         source/vkn/buffer.cpp
         source/vkn/command_pool.cpp
         source/vkn/core.cpp
+        source/vkn/descriptor_pool.cpp
+        source/vkn/descriptor_set_layout.cpp
         source/vkn/device.cpp
         source/vkn/framebuffer.cpp
         source/vkn/instance.cpp

@@ -79,11 +79,6 @@ namespace util
       { a >= b } -> boolean;
    };
 
-   template <class range_, class type_>
-   concept range_over =
-      std::ranges::range<range_> && 
-      std::is_same_v<std::ranges::range_value_t<range_>, type_>;
-
    template <class allocator_>
    concept allocator = 
       std::default_initializable<allocator_> && 

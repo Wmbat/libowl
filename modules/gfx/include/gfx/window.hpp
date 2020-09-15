@@ -1,7 +1,5 @@
 #pragma once
 
-#include <core/graphics/gui/widget.hpp>
-
 #include <vkn/core.hpp>
 
 #include <GLFW/glfw3.h>
@@ -11,9 +9,9 @@
 #include <string>
 #include <string_view>
 
-namespace core::gfx
+namespace gfx
 {
-   class window : public widget
+   class window
    {
       using wnd_ptr = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 
@@ -34,4 +32,4 @@ namespace core::gfx
 
       wnd_ptr p_wnd;
    };
-} // namespace core::gfx
+} // namespace gfx

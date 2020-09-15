@@ -1,18 +1,18 @@
-#include <core/graphics/index_buffer.hpp>
+#include <gfx/memory/index_buffer.hpp>
 
-namespace core
+namespace gfx
 {
    auto to_string(index_buffer_error err) -> std::string
    {
       switch (err)
       {
-         case core::index_buffer_error::failed_to_create_staging_buffer:
+         case index_buffer_error::failed_to_create_staging_buffer:
             return "failed_to_create_staging_buffer";
-         case core::index_buffer_error::failed_to_create_index_buffer:
+         case index_buffer_error::failed_to_create_index_buffer:
             return "failed_to_create_index_buffer";
-         case core::index_buffer_error::failed_to_create_command_buffer:
+         case index_buffer_error::failed_to_create_command_buffer:
             return "failed_to_create_command_buffer";
-         case core::index_buffer_error::failed_to_find_a_suitable_queue:
+         case index_buffer_error::failed_to_find_a_suitable_queue:
             return "failed_to_find_a_suitable_queue";
          default:
             return "UNKNOWN";
@@ -37,7 +37,7 @@ namespace core
       return {{static_cast<int>(err), m_index_buffer_category}};
    }
 
-   auto index_buffer::make(create_info&& info) noexcept -> core::result<index_buffer>
+   auto index_buffer::make(create_info&& info) noexcept -> gfx::result<index_buffer>
    {
       const vkn::device& device = *info.p_device;
       const vkn::command_pool& command_pool = *info.p_command_pool;
@@ -104,10 +104,11 @@ namespace core
                queue.submit({{.commandBufferCount = 1, .pCommandBuffers = &buffer.get()}}, nullptr);
                queue.waitIdle();
 
-               util::log_info(info.p_logger, "[core] vertex buffer created");
+               util::log_info(info.p_logger, "[core] index buffer created");
 
                class index_buffer buf = {};
                buf.m_buffer = std::move(index_buffer);
+               buf.m_index_count = std::size(info.indices);
 
                return buf;
             });
@@ -132,4 +133,5 @@ namespace core
    auto index_buffer::value() noexcept -> vkn::buffer& { return m_buffer; }
    auto index_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
 
-} // namespace core
+   auto index_buffer::index_count() const noexcept -> std::size_t { return m_index_count; }
+} // namespace gfx

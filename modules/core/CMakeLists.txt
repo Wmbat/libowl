@@ -92,9 +92,6 @@ target_compile_options(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}
-    SYSTEM 
-        INTERFACE
-            glm::glm 
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -106,7 +103,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         melodie::util 
         melodie::vkn
-        glm::glm
         glfw
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
@@ -131,10 +127,7 @@ target_sources(${PROJECT_NAME}
         source/core/memory/stack_allocator.cpp
 
         source/core/graphics/gui/widget.cpp
-        source/core/graphics/gui/window.cpp
-        source/core/graphics/index_buffer.cpp
-        source/core/graphics/vertex_buffer.cpp
 
-        source/core/render_manager.cpp
+        #        source/core/render_manager.cpp
         source/core/shader_codex.cpp
 )

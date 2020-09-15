@@ -23,17 +23,17 @@
 
 namespace core
 {
-   inline void initialize(util::logger* const plogger)
+   inline void initialize(const std::shared_ptr<util::logger>& p_logger)
    {
       if (auto result = glfwInit(); result != GLFW_TRUE)
       {
-         log_error(plogger, "Failed to initialize glfw");
+         log_error(p_logger, "Failed to initialize glfw");
 
          abort();
          // error
       }
 
-      log_info(plogger, "[core] glfw initialized");
+      log_info(p_logger, "[core] glfw initialized");
    }
 
    using error_t = util::strong_type<std::error_code, struct error_code_tag>;
