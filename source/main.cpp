@@ -22,7 +22,7 @@ util::dynamic_array<std::uint32_t> m_triangle_indices{0, 1, 2, 2, 3, 0};
 
 auto main() -> int
 {
-   auto main_logger = std::make_shared<util::logger>("mélodie");
+   auto main_logger = std::make_shared<util::logger>("vermillon");
 
    core::initialize(main_logger);
 

@@ -1,8 +1,8 @@
-# mélodie
+# vermillon
 
-![Linux](https://github.com/Wmbat/melodie/workflows/Linux/badge.svg)
+![Linux](https://github.com/Wmbat/vermillon/workflows/Linux/badge.svg)
 
-[mélodie](https://github.com/Wmbat/melodie) is a small game engine project made using
+[vermillon](https://github.com/Wmbat/vermillon) is a small game engine project made using
 [Vulkan](https://www.khronos.org/vulkan/) and C++20
 
 ## Table of Content
@@ -13,14 +13,16 @@
 
 ## Requirements
 
-You need to use gcc-10.0 and above or clang-10.0 and above.
+You need to use clang-10.0 and above.
 
 ## Dependencies
 
 * [Vulkan Headers - 1.2.135](https://github.com/KhronosGroup/Vulkan-Headers)
 * [GLFW - 3.3.2](https://github.com/glfw/glfw)
+* [GLM - 0.9.9.8](https://github.com/g-truc/glm)
 * [spdlog - 1.6.1](https://github.com/gabime/spdlog)
 * [glslang - 8.13.3743](https://github.com/KhronosGroup/glslang)
+* [SPIRV-Cross - 2020-06-29](https://github.com/KhronosGroup/SPIRV-cross)
 * [monads - master](https://github.com/Wmbat/monads)
 * [patterns - master](https://github.com/mpark/patterns)
 
@@ -28,7 +30,7 @@ You need to use gcc-10.0 and above or clang-10.0 and above.
 
 To install mélodie, you can clone the project locally using 
 ```sh
-git clone https://github.com/Wmbat/melodie
+git clone https://github.com/Wmbat/vermillon
 ```
 
 To compile the project, you can run the local `build.py` script. For finding out the acceptable 
@@ -44,6 +46,6 @@ the project.
 
 ## License
 
-> You can find the project's license [here](https://github.com/Wmbat/melodie/blob/master/LICENSE)
+> You can find the project's license [here](https://github.com/Wmbat/vermillon/blob/master/LICENSE)
 
 This project is licensed under the terms of the **MIT** license.
