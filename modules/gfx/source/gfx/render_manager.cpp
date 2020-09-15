@@ -190,7 +190,6 @@ namespace gfx
 
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
                                    0, {m_camera_descriptor_pool.sets()[i]}, {});
-         // buffer.draw(3, 1, 0, 0);
          buffer.drawIndexed(m_index_buffers[0].index_count(), 1, 0, 0, 0);
 
          buffer.endRenderPass();

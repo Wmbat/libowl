@@ -12,11 +12,11 @@ project(core
 
 # User interface declarations
 
-option(MELODIE_CORE_STATIC "Build ${PROJECT_NAME} as a static library" ON)
-option(MELODIE_CORE_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
-option(MELODIE_CORE_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
-option(MELODIE_CORE_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
-option(MELODIE_CORE_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
+option(VERMILLON_CORE_STATIC "Build ${PROJECT_NAME} as a static library" ON)
+option(VERMILLON_CORE_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
+option(VERMILLON_CORE_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
+option(VERMILLON_CORE_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
+option(VERMILLON_CORE_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -30,17 +30,17 @@ else ()
     message(STATUS "[${PROJECT_NAME}] Build type: Debug")
 endif ()
 
-message(STATUS "[${PROJECT_NAME}] Building as a static library: ${MELODIE_CORE_STATIC}")
-message(STATUS "[${PROJECT_NAME}] Building unit tests: ${MELODIE_CORE_BUILD_TESTS}")
-message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${MELODIE_CORE_BUILD_BENCH}")
-message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${MELODIE_CORE_NO_EXCEPTIONS}")
-message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${MELODIE_CORE_NO_LOGGING}")
+message(STATUS "[${PROJECT_NAME}] Building as a static library: ${VERMILLON_CORE_STATIC}")
+message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_CORE_BUILD_TESTS}")
+message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${VERMILLON_CORE_BUILD_BENCH}")
+message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${VERMILLON_CORE_NO_EXCEPTIONS}")
+message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${VERMILLON_CORE_NO_LOGGING}")
 
 # Define imported targets
 
 include(CMakeLists.txt.in)
 
-if (MELODIE_CORE_BUILD_TESTS) 
+if (VERMILLON_CORE_BUILD_TESTS) 
     enable_testing( )
 
     #    add_subdirectory(tests)
@@ -49,17 +49,17 @@ endif ()
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(melodie::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(vermillon::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if (MELODIE_CORE_STATIC)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE MELODIE_STATIC) 
+if (VERMILLON_CORE_STATIC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VERMILLON_STATIC) 
 endif ()
 
-if (MELODIE_CORE_NO_EXCEPTIONS)
+if (VERMILLON_CORE_NO_EXCEPTIONS)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ESL_NO_EXCEPTIONS)
 endif ()
 
-if (MELODIE_CORE_NO_LOGGING) 
+if (VERMILLON_CORE_NO_LOGGING) 
     target_compile_definitions(${PROJECT_NAME} PRIVATE ESL_NO_LOGGING)
 endif ()
 
@@ -101,8 +101,8 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        melodie::util 
-        melodie::vkn
+        vermillon::util 
+        vermillon::vkn
         glfw
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>

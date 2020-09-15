@@ -32,7 +32,6 @@ auto main() -> int
 
    rendering_manager.add_vertex_buffer(m_triangle_vertices);
    rendering_manager.add_index_buffer(m_triangle_indices);
-
    rendering_manager.bake();
 
    while (rendering_wnd.is_open())
