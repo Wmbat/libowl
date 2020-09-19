@@ -89,6 +89,11 @@ namespace vkn
    {
       return m_set_layouts.at(name);
    }
+   auto graphics_pipeline::get_push_constant_ranges(const std::string& name) const
+      -> const vk::PushConstantRange&
+   {
+      return m_push_constants.at(name);
+   }
 
    graphics_pipeline::builder::builder(const vkn::device& device,
                                        const vkn::render_pass& render_pass,
@@ -105,6 +110,12 @@ namespace vkn
          .and_then([&](auto data) {
             util::log_info(mp_logger, "[vkn] {} descriptor set layouts created",
                            std::size(m_info.set_layouts));
+
+            return create_push_constant_ranges(std::move(data));
+         })
+         .and_then([&](auto data) {
+            util::log_info(mp_logger, "[vkn] {} push constant ranges created",
+                           std::size(m_info.push_constants));
 
             return create_pipeline_layout(std::move(data));
          })
@@ -149,6 +160,16 @@ namespace vkn
       return *this;
    }
 
+   auto graphics_pipeline::builder::add_push_constant(const std::string& name,
+                                                      vkn::shader_type shader_type,
+                                                      util::size_t offset, util::size_t size)
+      -> builder&
+   {
+      m_info.push_constants.emplace_back(
+         push_constant_info{.name = name, .type = shader_type, .offset = offset, .size = size});
+      return *this;
+   }
+
    auto graphics_pipeline::builder::create_descriptor_set_layouts() const
       -> vkn::result<graphics_pipeline>
    {
@@ -175,6 +196,23 @@ namespace vkn
       return pipeline;
    }
 
+   auto graphics_pipeline::builder::create_push_constant_ranges(graphics_pipeline&& pipeline) const
+      -> vkn::result<graphics_pipeline>
+   {
+      pipeline.m_push_constants.reserve(std::size(m_info.push_constants));
+
+      for (const auto& push : m_info.push_constants)
+      {
+         pipeline.m_push_constants.insert_or_assign(
+            push.name,
+            vk::PushConstantRange{.stageFlags = to_shader_flag(push.type),
+                                  .offset = static_cast<uint32_t>(push.offset.value()),
+                                  .size = static_cast<uint32_t>(push.size.value())});
+      }
+
+      return std::move(pipeline);
+   }
+
    auto graphics_pipeline::builder::create_pipeline_layout(graphics_pipeline&& pipeline) const
       -> vkn::result<graphics_pipeline>
    {
@@ -186,14 +224,22 @@ namespace vkn
          layouts.emplace_back(layout.value());
       }
 
+      util::dynamic_array<vk::PushConstantRange> push_constants;
+      push_constants.reserve(std::size(pipeline.m_push_constants));
+
+      for (const auto& [name, push] : pipeline.m_push_constants)
+      {
+         push_constants.emplace_back(push);
+      }
+
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createPipelineLayoutUnique(
                    {.pNext = nullptr,
                     .flags = {},
-                    .setLayoutCount = static_cast<uint32_t>(std::size(layouts)),
+                    .setLayoutCount = static_cast<std::uint32_t>(std::size(layouts)),
                     .pSetLayouts = std::data(layouts),
-                    .pushConstantRangeCount = 0u,
-                    .pPushConstantRanges = nullptr});
+                    .pushConstantRangeCount = static_cast<std::uint32_t>(std::size(push_constants)),
+                    .pPushConstantRanges = std::data(push_constants)});
              })
          .map([&](vk::UniquePipelineLayout&& layout) {
             pipeline.m_pipeline_layout = std::move(layout);

@@ -128,7 +128,7 @@ namespace util
          disable_move_constructor<pair_>,
          disable_move_assignment<pair_>
       {
-         using index_t = size_t;
+         using index_t = std::size_t;
 
          constexpr node(index_t next, auto&&... args) :
             next{next}, pair{std::forward<decltype(args)>(args)...}
@@ -171,9 +171,9 @@ namespace util
             "std::equal_to<Key>");
       };
 
-      static inline constexpr size_t min_bucket_container_size = 8u;
+      static inline constexpr std::size_t min_bucket_container_size = 8u;
 
-      consteval auto max_bucket_container_size(size_t size) noexcept -> size_t
+      consteval auto max_bucket_container_size(std::size_t size) noexcept -> std::size_t
       {
          return size >= min_bucket_container_size ? size : min_bucket_container_size;
       }
@@ -476,7 +476,7 @@ namespace util
 
    } // namespace detail
 
-   template <class key_, class any_, size_t buffer_size_, class hash_ = std::hash<key_>,
+   template <class key_, class any_, std::size_t buffer_size_, class hash_ = std::hash<key_>,
              class pred_ = std::equal_to<key_>,
              allocator allocator_ = std::allocator<std::pair<const key_, any_>>>
    class small_dense_hash_map
@@ -1292,7 +1292,7 @@ namespace util
       float m_max_load_factor = 0.875f; // NOLINT
    };
 
-   template <class key_, class any_, size_t buff_sz_lhs_, size_t buff_sz_rhs_, class hash_,
+   template <class key_, class any_, std::size_t buff_sz_lhs_, std::size_t buff_sz_rhs_, class hash_,
              class key_eq_, allocator allocator_>
    constexpr auto
    operator==(const small_dense_hash_map<key_, any_, buff_sz_lhs_, hash_, key_eq_, allocator_>& lhs,

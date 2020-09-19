@@ -59,6 +59,27 @@ namespace vkn
                         static_cast<vk::Result>(ec.value())};
    };
 
+   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags
+   {
+      switch (type)
+      {
+         case shader_type::vertex:
+            return vk::ShaderStageFlagBits::eVertex;
+         case shader_type::fragment:
+            return vk::ShaderStageFlagBits::eFragment;
+         case shader_type::compute:
+            return vk::ShaderStageFlagBits::eCompute;
+         case shader_type::geometry:
+            return vk::ShaderStageFlagBits::eGeometry;
+         case shader_type::tess_control:
+            return vk::ShaderStageFlagBits::eTessellationControl;
+         case shader_type::tess_eval:
+            return vk::ShaderStageFlagBits::eTessellationEvaluation;
+         default:
+            return vk::ShaderStageFlagBits::eAll;
+      }
+   }
+
    auto shader::name() const noexcept -> std::string_view { return m_name; }
    auto shader::stage() const noexcept -> shader_type { return m_type; }
 

@@ -191,8 +191,9 @@ namespace util
       }
 
       // clang-format off
-      void assign(std::initializer_list<value_type> initializer_list) 
-         requires std::copyable<value_type>
+      constexpr void assign(std::initializer_list<value_type> initializer_list) 
+      requires 
+         std::copyable<value_type>
       // clang-format on
       {
          assign(initializer_list.begin(), initializer_list.end());
@@ -892,7 +893,7 @@ namespace util
 
    namespace pmr
    {
-      template <class any_, size_t size_>
+      template <class any_, std::size_t size_>
       using small_dynamic_array =
          small_dynamic_array<any_, size_, std::pmr::polymorphic_allocator<any_>>;
 

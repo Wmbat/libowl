@@ -19,16 +19,61 @@ namespace gfx
       m_swapchain_render_pass = create_swapchain_render_pass();
       m_swapchain_framebuffers = create_swapchain_framebuffers();
 
+      // Sync variables
       m_image_available_semaphores = create_image_available_semaphores();
       m_render_finished_semaphores = create_render_finished_semaphores();
       m_in_flight_fences = create_in_flight_fences();
 
-      m_command_pool = create_command_pool();
-
-      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
-
       m_shader_codex = create_shader_codex();
 
+      m_gfx_command_pools = create_command_pool();
+
+      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
+   }
+
+   auto render_manager::subscribe_renderable(const std::string& name, const renderable_data& r)
+      -> bool
+   {
+      auto vertex = vertex_buffer::make({.vertices = r.vertices,
+                                         .p_device = &m_device,
+                                         .p_command_pool = &m_gfx_command_pools[0],
+                                         .p_logger = mp_logger});
+
+      auto index = index_buffer::make({.indices = r.indices,
+                                       .p_device = &m_device,
+                                       .p_command_pool = &m_gfx_command_pools[0],
+                                       .p_logger = mp_logger});
+
+      if (!(vertex && index))
+      {
+         return false;
+      }
+
+      m_renderables_to_index.insert_or_assign(name, std::size(m_renderables));
+      m_renderable_model_matrices.emplace_back(r.model);
+      m_renderables.emplace_back(renderable{.name = name,
+                                            .vertex_buffer = std::move(vertex).value().value(),
+                                            .index_buffer = std::move(index).value().value()});
+
+      return true;
+   }
+
+   void render_manager::update_model_matrix(const std::string& name, const glm::mat4& model)
+   {
+      auto it = m_renderables_to_index.find(name);
+      if (it != m_renderables_to_index.end())
+      {
+         m_renderable_model_matrices[it->second] = model;
+      }
+      else
+      {
+         util::log_warn(mp_logger, "[gfx] failed to update model matrix for renderable \"{}\"",
+                        name);
+      }
+   }
+
+   void render_manager::bake()
+   {
       m_graphics_pipeline =
          vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
             .add_shader(m_shader_codex.get_shader("test_shader.vert"))
@@ -49,6 +94,9 @@ namespace gfx
                               .descriptorType = vk::DescriptorType::eUniformBuffer,
                               .descriptorCount = 1,
                               .stageFlags = vk::ShaderStageFlagBits::eVertex}})
+            .add_push_constant(
+               "mesh_data", vkn::shader_type::vertex, util::size_t{0},
+               util::size_t{sizeof(glm::mat4) * std::size(m_renderable_model_matrices)})
             .add_viewport({.x = 0.0F,
                            .y = 0.0F,
                            .width = static_cast<float>(m_swapchain.extent().width),
@@ -86,119 +134,6 @@ namespace gfx
       }
    }
 
-   void render_manager::update_camera(uint32_t image_index)
-   {
-      static auto startTime = std::chrono::high_resolution_clock::now();
-
-      auto currentTime = std::chrono::high_resolution_clock::now();
-      float time =
-         std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
-            .count();
-
-      gfx::camera_matrices matrices{};
-      matrices.model =
-         glm::rotate(glm::mat4{1.0f}, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-      matrices.perspective = glm::perspective(
-         glm::radians(45.0F), m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F,
-         10.0F);
-      matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                                  glm::vec3(0.0F, 0.0F, 1.0F));
-      matrices.perspective[1][1] *= -1;
-
-      void* p_data =
-         m_device->mapMemory(m_camera_buffers[image_index]->memory(), 0, sizeof(matrices), {});
-      memcpy(p_data, &matrices, sizeof(matrices));
-      m_device->unmapMemory(m_camera_buffers[image_index]->memory());
-   }
-
-   auto render_manager::add_vertex_buffer(const util::dynamic_array<vertex>& vertices) -> bool
-   {
-      return vertex_buffer::make({.vertices = vertices,
-                                  .p_device = &m_device,
-                                  .p_command_pool = &m_command_pool,
-                                  .p_logger = mp_logger})
-         .join(
-            [&](vertex_buffer&& buffer) {
-               m_vertex_buffers.push_back(std::move(buffer));
-
-               return true;
-            },
-            [&](error_t err) {
-               util::log_error(mp_logger, "[gfx] failed to create vertex buffer {}",
-                               err.value().message());
-
-               return false;
-            });
-   }
-   auto render_manager::add_index_buffer(const util::dynamic_array<std::uint32_t>& indices) -> bool
-   {
-      return index_buffer::make({.indices = indices,
-                                 .p_device = &m_device,
-                                 .p_command_pool = &m_command_pool,
-                                 .p_logger = mp_logger})
-         .join(
-            [&](index_buffer&& buffer) {
-               m_index_buffers.push_back(std::move(buffer));
-
-               return true;
-            },
-            [&](error_t err) {
-               util::log_error(mp_logger, "[gfx] failed to create index buffer {}",
-                               err.value().message());
-
-               return false;
-            });
-   }
-
-   auto render_manager::add_pass(const std::string& name,
-                                 [[maybe_unused]] vkn::queue::type queue_type) -> render_pass&
-   {
-      auto it = m_render_pass_to_index.find(name);
-      if (it != std::end(m_render_pass_to_index))
-      {
-         return m_render_passes[it->second.value()];
-      }
-      else
-      {
-         const auto index = std::size(m_render_passes);
-         m_render_passes.emplace_back(render_pass{this});
-         m_render_pass_to_index[name] = index;
-         return m_render_passes.back();
-      }
-   }
-
-   void render_manager::bake()
-   {
-      util::log_info(mp_logger, "[core] recording main rendering command buffers");
-      for (std::size_t i = 0; const auto& buffer : m_command_pool.primary_cmd_buffers())
-      {
-         buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
-
-         const auto clear_colour = vk::ClearValue{std::array<float, 4>{0.0F, 0.0F, 0.0F, 0.0F}};
-         buffer.beginRenderPass({.pNext = nullptr,
-                                 .renderPass = m_swapchain_render_pass.value(),
-                                 .framebuffer = m_swapchain_framebuffers[i].value(),
-                                 .renderArea = {{0, 0}, m_swapchain.extent()},
-                                 .clearValueCount = 1,
-                                 .pClearValues = &clear_colour},
-                                vk::SubpassContents::eInline);
-
-         buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
-
-         buffer.bindVertexBuffers(0, {m_vertex_buffers[0]->value()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_index_buffers[0]->value(), 0, vk::IndexType::eUint32);
-
-         buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
-                                   0, {m_camera_descriptor_pool.sets()[i]}, {});
-         buffer.drawIndexed(m_index_buffers[0].index_count(), 1, 0, 0, 0);
-
-         buffer.endRenderPass();
-         buffer.end();
-
-         ++i;
-      }
-   }
-
    void render_manager::render_frame()
    {
       m_device->waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
@@ -212,6 +147,47 @@ namespace gfx
          abort();
       }
 
+      util::log_info(mp_logger, "[core] recording main rendering command buffers");
+
+      m_device->resetCommandPool(m_gfx_command_pools[m_current_frame].value(), {});
+      for (const auto& buffer : m_gfx_command_pools[m_current_frame].primary_cmd_buffers())
+      {
+         buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
+
+         const auto clear_colour = vk::ClearValue{std::array<float, 4>{0.0F, 0.0F, 0.0F, 0.0F}};
+         buffer.beginRenderPass({.pNext = nullptr,
+                                 .renderPass = m_swapchain_render_pass.value(),
+                                 .framebuffer = m_swapchain_framebuffers[image_index].value(),
+                                 .renderArea = {{0, 0}, m_swapchain.extent()},
+                                 .clearValueCount = 1,
+                                 .pClearValues = &clear_colour},
+                                vk::SubpassContents::eInline);
+
+         buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
+         buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
+                                   0, {m_camera_descriptor_pool.sets()[image_index]}, {});
+
+         for (const auto& [name, index] : m_renderables_to_index)
+         {
+            util::log_debug(mp_logger, R"([gfx] buffer calls for renderable "{}" at index "{}")",
+                            name, index);
+
+            buffer.pushConstants(
+               m_graphics_pipeline.layout(),
+               m_graphics_pipeline.get_push_constant_ranges("mesh_data").stageFlags,
+               sizeof(glm::mat4) * index, sizeof(glm::mat4) * 1,
+               &m_renderable_model_matrices[index]);
+            buffer.bindVertexBuffers(0, {m_renderables[index].vertex_buffer->value()},
+                                     {vk::DeviceSize{0}});
+            buffer.bindIndexBuffer(m_renderables[index].index_buffer->value(), 0,
+                                   vk::IndexType::eUint32);
+            buffer.drawIndexed(m_renderables[index].index_buffer.index_count(), 1, 0, 0, 0);
+         }
+
+         buffer.endRenderPass();
+         buffer.end();
+      }
+
       update_camera(image_index);
 
       if (m_images_in_flight[image_index])
@@ -223,9 +199,9 @@ namespace gfx
 
       const std::array wait_semaphores{
          vkn::value(m_image_available_semaphores.at(m_current_frame))};
-      const std::array signal_semaphores{
-         vkn::value(m_render_finished_semaphores.at(m_current_frame))};
-      const std::array command_buffers{m_command_pool.primary_cmd_buffers()[image_index]};
+      const std::array signal_semaphores{vkn::value(m_render_finished_semaphores.at(image_index))};
+      const std::array command_buffers{
+         m_gfx_command_pools[m_current_frame].primary_cmd_buffers()[0]};
       const std::array<vk::PipelineStageFlags, 1> wait_stages{
          vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -268,6 +244,39 @@ namespace gfx
    }
 
    void render_manager::wait() { m_device->waitIdle(); }
+
+   void render_manager::update_camera(uint32_t image_index)
+   {
+      gfx::camera_matrices matrices{};
+      matrices.perspective = glm::perspective(
+         glm::radians(45.0F), m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F,
+         10.0F);
+      matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                                  glm::vec3(0.0F, 0.0F, 1.0F));
+      matrices.perspective[1][1] *= -1;
+
+      void* p_data =
+         m_device->mapMemory(m_camera_buffers[image_index]->memory(), 0, sizeof(matrices), {});
+      memcpy(p_data, &matrices, sizeof(matrices));
+      m_device->unmapMemory(m_camera_buffers[image_index]->memory());
+   }
+
+   auto render_manager::add_pass(const std::string& name,
+                                 [[maybe_unused]] vkn::queue::type queue_type) -> render_pass&
+   {
+      auto it = m_render_pass_to_index.find(name);
+      if (it != std::end(m_render_pass_to_index))
+      {
+         return m_render_passes[it->second.value()];
+      }
+      else
+      {
+         const auto index = std::size(m_render_passes);
+         m_render_passes.emplace_back(render_pass{this});
+         m_render_pass_to_index[name] = index;
+         return m_render_passes.back();
+      }
+   }
 
    auto render_manager::create_physical_device() const noexcept -> vkn::physical_device
    {
@@ -364,31 +373,6 @@ namespace gfx
 
       return framebuffers;
    }
-   auto render_manager::create_command_pool() const noexcept -> vkn::command_pool
-   {
-      return vkn::command_pool::builder{m_device, mp_logger}
-         .set_queue_family_index(m_device.get_queue_index(vkn::queue::type::graphics)
-                                    .map_error([&](auto&& err) {
-                                       log_error(mp_logger,
-                                                 "[core] No usable graphics queues found: \"{0}\"",
-                                                 err.type.message());
-                                       std::terminate();
-
-                                       return 0u;
-                                    })
-                                    .join())
-         .set_primary_buffer_count(std::size(m_swapchain_framebuffers))
-         .build()
-         .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create command pool: \"{0}\"",
-                      err.type.message());
-
-            std::terminate();
-
-            return vkn::command_pool{};
-         })
-         .join();
-   }
    auto render_manager::create_camera_descriptor_pool() const noexcept -> vkn::descriptor_pool
    {
       return vkn::descriptor_pool::builder{m_device, mp_logger}
@@ -450,6 +434,39 @@ namespace gfx
          .join();
    }
 
+   auto render_manager::create_command_pool() const noexcept
+      -> std::array<vkn::command_pool, max_frames_in_flight>
+   {
+      std::array<vkn::command_pool, max_frames_in_flight> pools;
+
+      for (auto& pool : pools)
+      {
+         pool = vkn::command_pool::builder{m_device, mp_logger}
+                   .set_queue_family_index(
+                      m_device.get_queue_index(vkn::queue::type::graphics)
+                         .map_error([&](auto&& err) {
+                            log_error(mp_logger, "[core] No usable graphics queues found: \"{0}\"",
+                                      err.type.message());
+                            std::terminate();
+
+                            return 0u;
+                         })
+                         .join())
+                   .set_primary_buffer_count(1)
+                   .build()
+                   .map_error([&](auto&& err) {
+                      log_error(mp_logger, "[core] Failed to create command pool: \"{0}\"",
+                                err.type.message());
+
+                      std::terminate();
+
+                      return vkn::command_pool{};
+                   })
+                   .join();
+      }
+
+      return pools;
+   }
    auto render_manager::create_image_available_semaphores() const noexcept
       -> std::array<vkn::semaphore, max_frames_in_flight>
    {
@@ -471,22 +488,24 @@ namespace gfx
       return semaphores;
    }
    auto render_manager::create_render_finished_semaphores() const noexcept
-      -> std::array<vkn::semaphore, max_frames_in_flight>
+      -> util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>
    {
-      std::array<vkn::semaphore, max_frames_in_flight> semaphores;
-      for (auto& semaphore : semaphores)
+      util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()> semaphores;
+
+      for ([[maybe_unused]] const auto& _ : m_swapchain.image_views())
       {
-         semaphore = vkn::semaphore::builder{m_device, mp_logger}
-                        .build()
-                        .map_error([&](vkn::error&& err) {
-                           log_error(mp_logger, "[core] Failed to create semaphore: \"{0}\"",
-                                     err.type.message());
+         semaphores.emplace_back(vkn::semaphore::builder{m_device, mp_logger}
+                                    .build()
+                                    .map_error([&](vkn::error&& err) {
+                                       log_error(mp_logger,
+                                                 "[core] Failed to create semaphore: \"{0}\"",
+                                                 err.type.message());
 
-                           std::terminate();
+                                       std::terminate();
 
-                           return vkn::semaphore{};
-                        })
-                        .join();
+                                       return vkn::semaphore{};
+                                    })
+                                    .join());
       }
 
       return semaphores;
