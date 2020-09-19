@@ -142,6 +142,8 @@ namespace vkn
 
    auto to_string(shader_error err) -> std::string;
    auto make_error(shader_error err, std::error_code ec) noexcept -> vkn::error;
+
+   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags;
 } // namespace vkn
 
 namespace std

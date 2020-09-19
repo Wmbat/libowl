@@ -88,7 +88,6 @@ namespace vkn
       // clang-format off
       const auto create_info = vk::CommandPoolCreateInfo{}
          .setPNext(nullptr)
-         .setFlags({})
          .setQueueFamilyIndex(m_info.queue_family_index);
 
       return monad::try_wrap<vk::SystemError>([&] {
@@ -150,7 +149,6 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.allocateCommandBuffers(
                    vk::CommandBufferAllocateInfo{}
-                      .setPNext(nullptr)
                       .setCommandPool(handle)
                       .setLevel(vk::CommandBufferLevel::ePrimary)
                       .setCommandBufferCount(m_info.primary_buffer_count));

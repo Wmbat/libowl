@@ -12,9 +12,9 @@ project(vkn
 
 # User interface declarations
 
-option(MELODIE_VKN_STATIC "Build ${PROJECT_NAME} as a static library" ON)
-option(MELODIE_VKN_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
-option(MELODIE_VKN_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
+option(VERMILLON_VKN_STATIC "Build ${PROJECT_NAME} as a static library" ON)
+option(VERMILLON_VKN_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
+option(VERMILLON_VKN_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -28,9 +28,9 @@ else ()
     message(STATUS "[${PROJECT_NAME}] Build type: Debug")
 endif ()
 
-message(STATUS "[${PROJECT_NAME}] Building as a static library: ${MELODIE_UTIL_STATIC}")
-message(STATUS "[${PROJECT_NAME}] Building unit tests: ${MELODIE_UTIL_BUILD_TESTS}")
-message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${MELODIE_UTIL_BUILD_BENCH}")
+message(STATUS "[${PROJECT_NAME}] Building as a static library: ${VERMILLON_UTIL_STATIC}")
+message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_UTIL_BUILD_TESTS}")
+message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${VERMILLON_UTIL_BUILD_BENCH}")
 
 # Define imported targets
 
@@ -39,9 +39,9 @@ include(CMakeLists.txt.in)
 # Define exported targets
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(melodie::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(vermillon::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if (MELODIE_VKN_STATIC)
+if (VERMILLON_VKN_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE VKN_STATIC) 
 endif ()
 
@@ -57,7 +57,7 @@ target_compile_features(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        melodie::util
+        vermillon::util
         Vulkan-Headers
         glslang
         SPIRV

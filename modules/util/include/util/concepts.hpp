@@ -82,7 +82,7 @@ namespace util
    template <class allocator_>
    concept allocator = 
       std::default_initializable<allocator_> && 
-      requires(allocator_ a, typename allocator_::value_type* p, size_t n)
+      requires(allocator_ a, typename allocator_::value_type* p, std::size_t n)
       {
          { a.allocate(n) } -> std::same_as<typename allocator_::value_type*>;
          { a.deallocate(p, n)} -> std::same_as<void>;

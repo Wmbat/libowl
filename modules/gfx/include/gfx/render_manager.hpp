@@ -32,10 +32,8 @@ namespace gfx
    public:
       render_manager(const context& ctx, const window& wnd, std::shared_ptr<util::logger> p_logger);
 
-      auto add_vertex_buffer(const util::dynamic_array<vertex>& vertices) -> bool;
-      auto add_index_buffer(const util::dynamic_array<std::uint32_t>& indices) -> bool;
-
-      void update_camera(uint32_t image_index);
+      auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
+      void update_model_matrix(const std::string& name, const glm::mat4& model);
 
       void bake();
 
@@ -48,25 +46,34 @@ namespace gfx
 
    private:
       auto add_pass(const std::string& name, vkn::queue::type queue_type) -> render_pass&;
+      void update_camera(uint32_t image_index);
 
       auto create_physical_device() const noexcept -> vkn::physical_device;
       auto create_logical_device() const noexcept -> vkn::device;
       auto create_swapchain() const noexcept -> vkn::swapchain;
       auto create_swapchain_render_pass() const noexcept -> vkn::render_pass;
       auto create_swapchain_framebuffers() const noexcept -> framebuffer_array;
-      auto create_command_pool() const noexcept -> vkn::command_pool;
       auto create_shader_codex() const noexcept -> core::shader_codex;
 
       auto create_camera_descriptor_pool() const noexcept -> vkn::descriptor_pool;
       auto create_camera_buffers() const noexcept -> util::dynamic_array<gfx::camera_buffer>;
 
-      auto create_image_available_semaphores() const noexcept
-         -> std::array<vkn::semaphore, max_frames_in_flight>;
+      auto create_command_pool() const noexcept
+         -> std::array<vkn::command_pool, max_frames_in_flight>;
       auto create_render_finished_semaphores() const noexcept
+         -> util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>;
+      auto create_image_available_semaphores() const noexcept
          -> std::array<vkn::semaphore, max_frames_in_flight>;
       auto create_in_flight_fences() const noexcept -> std::array<vkn::fence, max_frames_in_flight>;
 
    private:
+      struct renderable
+      {
+         std::string name;
+         vertex_buffer vertex_buffer;
+         index_buffer index_buffer;
+      };
+
       std::shared_ptr<util::logger> mp_logger;
 
       const context& m_ctx;
@@ -81,10 +88,11 @@ namespace gfx
 
       vkn::descriptor_pool m_camera_descriptor_pool; // Should be recreated with swapchain
 
-      vkn::command_pool m_command_pool;
+      util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>
+         m_render_finished_semaphores;
 
+      std::array<vkn::command_pool, max_frames_in_flight> m_gfx_command_pools;
       std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
-      std::array<vkn::semaphore, max_frames_in_flight> m_render_finished_semaphores;
       std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
 
       util::dynamic_array<vkn::fence_observer> m_images_in_flight{};
@@ -96,8 +104,10 @@ namespace gfx
 
       std::size_t m_current_frame{0};
 
-      util::dynamic_array<gfx::vertex_buffer> m_vertex_buffers;
-      util::dynamic_array<gfx::index_buffer> m_index_buffers;
+      std::unordered_map<std::string, std::uint32_t> m_renderables_to_index;
+      util::dynamic_array<renderable> m_renderables;
+      util::dynamic_array<glm::mat4> m_renderable_model_matrices;
+
       util::dynamic_array<gfx::camera_buffer> m_camera_buffers;
    };
 } // namespace gfx

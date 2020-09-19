@@ -48,7 +48,7 @@ target_compile_options(util_test
 
 target_link_libraries(util_test
    PUBLIC
-      melodie::util 
+      vermillon::util 
       gtest
    PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
@@ -61,4 +61,4 @@ target_sources(util_test
       util/containers/dynamic_array_test.cpp
 )
 
-add_test( NAME melodie_util_test COMMAND melodie_util_test )
+add_test( NAME vermillon_util_test COMMAND melodie_util_test )

@@ -243,4 +243,5 @@ namespace util
    using count32_t = strong_type<std::uint32_t, struct count32, arithmetic>;
    using count64_t = strong_type<std::uint64_t, struct count64, arithmetic>;
    using index_t = strong_type<std::size_t, struct index, arithmetic>;
+   using size_t = strong_type<std::size_t, struct size, arithmetic>;
 } // namespace util

@@ -16,7 +16,7 @@ include(${CPM_DOWNLOAD_LOCATION})
 
 # Set the project language toolchain, version and description
 
-project(melodie
+project(vermillon
     VERSION 0.0.1
     DESCRIPTION "A Vulkan based rendering engine"
     LANGUAGES CXX
@@ -42,14 +42,14 @@ else ()
 endif ()
 
 if (BUILD_TESTS)
-   set(MELODIE_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
-   set(MELODIE_UTIL_BUILD_TESTS ON CACHE BOOL "" FORCE)
+   set(VERMILLON_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
+   set(VERMILLON_UTIL_BUILD_TESTS ON CACHE BOOL "" FORCE)
 endif ()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-set(MELODIE_CORE_STATIC ON CACHE BOOL "" FORCE)
+set(VERMILLON_CORE_STATIC ON CACHE BOOL "" FORCE)
 
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
@@ -67,9 +67,9 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
-        MELODIE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        MELODIE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        MELODIE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        VERMILLON_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        VERMILLON_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        VERMILLON_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 
@@ -88,10 +88,10 @@ target_compile_options(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        melodie::core
-        melodie::gfx
-        melodie::util
-        melodie::vkn
+        vermillon::core
+        vermillon::gfx
+        vermillon::util
+        vermillon::vkn
 
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
