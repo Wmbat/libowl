@@ -15,10 +15,15 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-util::dynamic_array<gfx::vertex> m_triangle_vertices{{{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}}};
+util::dynamic_array<gfx::vertex> m_triangle_0_vertices{{{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
+                                                       {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
+                                                       {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
+                                                       {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}}};
+
+util::dynamic_array<gfx::vertex> m_triangle_1_vertices{{{-0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
+                                                       {{0.5F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
+                                                       {{0.5F, 0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}},
+                                                       {{-0.5F, 0.5F, 0.0F}, {0.0F, 1.0F, 0.0F}}};
 
 util::dynamic_array<std::uint32_t> m_triangle_indices{0, 1, 2, 2, 3, 0};
 
@@ -34,11 +39,11 @@ auto main() -> int
 
    rendering_manager.subscribe_renderable(
       "triangle_0",
-      {.vertices = m_triangle_vertices, .indices = m_triangle_indices, .model = glm::mat4{1}});
+      {.vertices = m_triangle_0_vertices, .indices = m_triangle_indices, .model = glm::mat4{1}});
 
    rendering_manager.subscribe_renderable(
       "triangle_1",
-      {.vertices = m_triangle_vertices, .indices = m_triangle_indices, .model = glm::mat4{1}});
+      {.vertices = m_triangle_1_vertices, .indices = m_triangle_indices, .model = glm::mat4{1}});
 
    rendering_manager.bake();
 

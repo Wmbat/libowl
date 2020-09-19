@@ -94,9 +94,8 @@ namespace gfx
                               .descriptorType = vk::DescriptorType::eUniformBuffer,
                               .descriptorCount = 1,
                               .stageFlags = vk::ShaderStageFlagBits::eVertex}})
-            .add_push_constant(
-               "mesh_data", vkn::shader_type::vertex, util::size_t{0},
-               util::size_t{sizeof(glm::mat4) * std::size(m_renderable_model_matrices)})
+            .add_push_constant("mesh_data", vkn::shader_type::vertex, util::size_t{0},
+                               util::size_t{sizeof(glm::mat4)})
             .add_viewport({.x = 0.0F,
                            .y = 0.0F,
                            .width = static_cast<float>(m_swapchain.extent().width),
@@ -147,10 +146,16 @@ namespace gfx
          abort();
       }
 
-      util::log_info(mp_logger, "[core] recording main rendering command buffers");
+      util::log_debug(mp_logger, R"([gfx] swapchain image "{}" acquired)", image_index);
+      util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" resetting)", m_current_frame);
 
-      m_device->resetCommandPool(m_gfx_command_pools[m_current_frame].value(), {});
-      for (const auto& buffer : m_gfx_command_pools[m_current_frame].primary_cmd_buffers())
+      m_device->resetCommandPool(m_gfx_command_pools[m_current_frame].value(), {}); // NOLINT
+
+      util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" buffer recording)",
+                      m_current_frame);
+
+      for (const auto& buffer :
+           m_gfx_command_pools[m_current_frame].primary_cmd_buffers()) // NOLINT
       {
          buffer.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
 
@@ -174,9 +179,8 @@ namespace gfx
 
             buffer.pushConstants(
                m_graphics_pipeline.layout(),
-               m_graphics_pipeline.get_push_constant_ranges("mesh_data").stageFlags,
-               sizeof(glm::mat4) * index, sizeof(glm::mat4) * 1,
-               &m_renderable_model_matrices[index]);
+               m_graphics_pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+               sizeof(glm::mat4) * 1, &m_renderable_model_matrices[index]);
             buffer.bindVertexBuffers(0, {m_renderables[index].vertex_buffer->value()},
                                      {vk::DeviceSize{0}});
             buffer.bindIndexBuffer(m_renderables[index].index_buffer->value(), 0,
@@ -201,7 +205,7 @@ namespace gfx
          vkn::value(m_image_available_semaphores.at(m_current_frame))};
       const std::array signal_semaphores{vkn::value(m_render_finished_semaphores.at(image_index))};
       const std::array command_buffers{
-         m_gfx_command_pools[m_current_frame].primary_cmd_buffers()[0]};
+         m_gfx_command_pools[m_current_frame].primary_cmd_buffers()[0]}; // NOLINT
       const std::array<vk::PipelineStageFlags, 1> wait_stages{
          vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
