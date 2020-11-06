@@ -114,7 +114,8 @@ namespace vkn
       });
    }
 
-   auto builder::set_spirv_binary(const std::vector<std::uint32_t>& spirv_binary) -> builder&
+   auto builder::set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary)
+      -> builder&
    {
       m_info.spirv_binary = spirv_binary;
       return *this;

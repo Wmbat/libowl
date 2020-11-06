@@ -47,8 +47,6 @@ namespace gfx
       m_render_finished_semaphores = create_render_finished_semaphores();
       m_in_flight_fences = create_in_flight_fences();
 
-      m_shader_codex = create_shader_codex();
-
       m_gfx_command_pools = create_command_pool();
 
       m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
@@ -95,12 +93,12 @@ namespace gfx
       }
    }
 
-   void render_manager::bake()
+   void render_manager::bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader)
    {
       m_graphics_pipeline =
          vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
-            .add_shader(m_shader_codex.get_shader("test_shader.vert"))
-            .add_shader(m_shader_codex.get_shader("test_shader.frag"))
+            .add_shader(vert_shader)
+            .add_shader(frag_shader)
             .add_vertex_binding({.binding = 0,
                                  .stride = sizeof(gfx::vertex),
                                  .inputRate = vk::VertexInputRate::eVertex})
@@ -274,6 +272,8 @@ namespace gfx
 
    void render_manager::wait() { m_device.logical_device().waitIdle(); }
 
+   auto render_manager::device() -> vkn::device& { return m_device; }
+
    void render_manager::update_camera(uint32_t image_index)
    {
       gfx::camera_matrices matrices{};
@@ -406,23 +406,6 @@ namespace gfx
       }
 
       return buffers;
-   }
-
-   auto render_manager::create_shader_codex() const noexcept -> core::shader_codex
-   {
-      return core::shader_codex::builder{m_device, mp_logger}
-         .add_shader_filepath("resources/shaders/test_shader.vert")
-         .add_shader_filepath("resources/shaders/test_shader.frag")
-         .allow_caching(false)
-         .build()
-         .map_error([&](auto&& err) {
-            util::log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
-                            err.value().message());
-            std::terminate();
-
-            return core::shader_codex{};
-         })
-         .join();
    }
 
    auto render_manager::create_command_pool() const noexcept

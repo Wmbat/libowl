@@ -25,7 +25,7 @@ endif ()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-add_executable(${PROJECT_NAME} water_simulation/main.cpp)
+add_executable(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
@@ -54,6 +54,20 @@ target_link_libraries(${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>    
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/source
+)
+
+target_sources(${PROJECT_NAME}
+    PRIVATE
+        source/water_simulation/main.cpp
+        source/water_simulation/shader_codex.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

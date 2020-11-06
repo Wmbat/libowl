@@ -7,8 +7,6 @@
 #include <gfx/render_pass.hpp>
 #include <gfx/window.hpp>
 
-#include <core/shader_codex.hpp>
-
 #include <ui/window.hpp>
 
 #include <vkn/command_pool.hpp>
@@ -37,7 +35,7 @@ namespace gfx
       auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
       void update_model_matrix(const std::string& name, const glm::mat4& model);
 
-      void bake();
+      void bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader);
 
       void render_frame();
 
@@ -46,6 +44,8 @@ namespace gfx
        */
       void wait();
 
+      auto device() -> vkn::device&;
+
    private:
       auto add_pass(const std::string& name, vkn::queue_type queue_type) -> render_pass&;
       void update_camera(uint32_t image_index);
@@ -53,7 +53,6 @@ namespace gfx
       auto create_swapchain() const noexcept -> vkn::swapchain;
       auto create_swapchain_render_pass() const noexcept -> vkn::render_pass;
       auto create_swapchain_framebuffers() const noexcept -> framebuffer_array;
-      auto create_shader_codex() const noexcept -> core::shader_codex;
 
       auto create_camera_descriptor_pool() const noexcept -> vkn::descriptor_pool;
       auto create_camera_buffers() const noexcept -> util::dynamic_array<gfx::camera_buffer>;
@@ -97,8 +96,6 @@ namespace gfx
       std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
 
       util::dynamic_array<vkn::fence_observer> m_images_in_flight{};
-
-      core::shader_codex m_shader_codex;
 
       util::dynamic_array<render_pass> m_render_passes;
       std::unordered_map<std::string, util::index_t> m_render_pass_to_index;

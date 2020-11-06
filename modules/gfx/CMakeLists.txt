@@ -77,7 +77,7 @@ target_link_libraries(${PROJECT_NAME}
         vermillon::util 
         vermillon::ui
         vermillon::vkn
-        vermillon::core
+        #vermillon::core
         glm::glm
         glfw
     PRIVATE

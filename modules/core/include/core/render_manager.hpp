@@ -49,6 +49,8 @@ namespace core
        */
       void wait();
 
+      auto device() -> vkn::device&;
+
    private:
       void recreate_swapchain();
 

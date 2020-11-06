@@ -43,7 +43,7 @@ auto main() -> int
       "triangle_1",
       {.vertices = m_triangle_1_vertices, .indices = m_triangle_indices, .model = glm::mat4{1}});
 
-   rendering_manager.bake();
+   //rendering_manager.bake();
 
    while (rendering_wnd.is_open())
    {

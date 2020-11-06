@@ -101,7 +101,7 @@ namespace vkn
          /**
           * Set the compiled SPIRV shader bytecode for the shader module
           */
-         auto set_spirv_binary(const std::vector<std::uint32_t>& spirv_binary) -> builder&;
+         auto set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary) -> builder&;
          /**
           * Set the name of the shader
           */
@@ -132,7 +132,7 @@ namespace vkn
             vk::Device device{};
             uint32_t version{0U};
 
-            std::vector<std::uint32_t> spirv_binary{};
+            util::dynamic_array<std::uint32_t> spirv_binary{};
 
             shader_type type{shader_type::count};
             std::string name{};

@@ -191,6 +191,8 @@ namespace core
 
    void render_manager::wait() { m_device->waitIdle(); }
 
+   auto render_manager::device() -> vkn::device& { return m_device; }
+
    auto render_manager::create_instance() const noexcept -> vkn::instance
    {
       return vkn::instance::builder{m_loader, mp_logger}
