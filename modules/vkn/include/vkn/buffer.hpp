@@ -79,5 +79,4 @@ namespace vkn
     * Convert an buffer_error enum value and an error code from a vulkan error into
     * a vkn::error
     */
-   auto make_error(buffer_error err, std::error_code ec) -> vkn::error;
 } // namespace vkn

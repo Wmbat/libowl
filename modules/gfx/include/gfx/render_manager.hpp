@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gfx/context.hpp>
 #include <gfx/data_types.hpp>
 #include <gfx/memory/camera_buffer.hpp>
 #include <gfx/memory/index_buffer.hpp>
@@ -10,7 +9,10 @@
 
 #include <core/shader_codex.hpp>
 
+#include <ui/window.hpp>
+
 #include <vkn/command_pool.hpp>
+#include <vkn/context.hpp>
 #include <vkn/descriptor_pool.hpp>
 #include <vkn/device.hpp>
 #include <vkn/framebuffer.hpp>
@@ -30,7 +32,7 @@ namespace gfx
          util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>;
 
    public:
-      render_manager(const context& ctx, const window& wnd, std::shared_ptr<util::logger> p_logger);
+      render_manager(const ui::window& wnd, std::shared_ptr<util::logger> p_logger);
 
       auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
       void update_model_matrix(const std::string& name, const glm::mat4& model);
@@ -45,11 +47,9 @@ namespace gfx
       void wait();
 
    private:
-      auto add_pass(const std::string& name, vkn::queue::type queue_type) -> render_pass&;
+      auto add_pass(const std::string& name, vkn::queue_type queue_type) -> render_pass&;
       void update_camera(uint32_t image_index);
 
-      auto create_physical_device() const noexcept -> vkn::physical_device;
-      auto create_logical_device() const noexcept -> vkn::device;
       auto create_swapchain() const noexcept -> vkn::swapchain;
       auto create_swapchain_render_pass() const noexcept -> vkn::render_pass;
       auto create_swapchain_framebuffers() const noexcept -> framebuffer_array;
@@ -76,12 +76,13 @@ namespace gfx
 
       std::shared_ptr<util::logger> mp_logger;
 
-      const context& m_ctx;
-      const window& m_wnd;
+      const ui::window& m_wnd;
 
+      vkn::context m_ctx;
       vkn::device m_device;
       vkn::swapchain m_swapchain;
       vkn::render_pass m_swapchain_render_pass;
+
       framebuffer_array m_swapchain_framebuffers;
 
       vkn::graphics_pipeline m_graphics_pipeline;

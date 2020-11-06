@@ -18,11 +18,6 @@ namespace vkn
     * Convert an semaphore_error enum to a string
     */
    auto to_string(semaphore_error err) -> std::string;
-   /**
-    * Convert an semaphore_error enum value and an error code from a vulkan error into
-    * a vkn::error
-    */
-   auto make_error(semaphore_error err, std::error_code ec) -> vkn::error;
 
    /**
     * Wrapper class around the vulkan semaphore handle. May only

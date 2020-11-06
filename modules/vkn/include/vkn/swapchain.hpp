@@ -11,7 +11,7 @@ namespace vkn
     */
    class swapchain final
    {
-      static constexpr size_t expected_image_count = 3u;
+      static constexpr size_t expected_image_count = 3U;
 
       template <typename any_>
       using image_dynamic_array = util::small_dynamic_array<any_, expected_image_count>;
@@ -50,7 +50,7 @@ namespace vkn
        */
       auto operator*() const noexcept -> value_type;
 
-      operator bool() const noexcept;
+      operator bool() const noexcept; // NOLINT
 
       /**
        * Get the underlying handle
@@ -167,7 +167,7 @@ namespace vkn
          util::small_dynamic_array<vk::UniqueImageView, expected_image_count> image_views{};
       };
 
-      swapchain(create_info&& info) noexcept;
+      explicit swapchain(create_info&& info) noexcept;
 
       /**
        * A struct used for error handling and displaying error messages
@@ -186,16 +186,14 @@ namespace vkn
 
       inline static const error_category m_category{};
 
-      static auto make_error(swapchain::error_type flag, std::error_code ec) -> vkn::error
+      static auto make_error(swapchain::error_type flag) -> vkn::error_t
       {
-         return vkn::error{{static_cast<int>(flag), m_category},
-                           static_cast<vk::Result>(ec.value())};
+         return {{static_cast<int>(flag), m_category}};
       };
 
-      static auto make_error_res(swapchain::error_type flag, std::error_code ec)
-         -> monad::error_t<vkn::error>
+      static auto make_error_res(swapchain::error_type flag) -> monad::error_t<vkn::error_t>
       {
-         return {make_error(flag, ec)};
+         return {make_error(flag)};
       }
    };
 } // namespace vkn

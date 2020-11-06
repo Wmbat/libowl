@@ -75,6 +75,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         vermillon::util 
+        vermillon::ui
         vermillon::vkn
         vermillon::core
         glm::glm
@@ -88,10 +89,8 @@ target_link_libraries(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PRIVATE
         source/gfx/camera.cpp
-        source/gfx/context.cpp
         source/gfx/render_manager.cpp
         source/gfx/render_pass.cpp
-        source/gfx/window.cpp
         source/gfx/memory/camera_buffer.cpp
         source/gfx/memory/index_buffer.cpp
         source/gfx/memory/vertex_buffer.cpp

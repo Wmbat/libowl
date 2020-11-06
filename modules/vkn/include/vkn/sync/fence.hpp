@@ -18,11 +18,6 @@ namespace vkn
     * Convert an fence_error enum to a string
     */
    auto to_string(fence_error err) -> std::string;
-   /**
-    * Convert an fence error code and an error code from a vulkan error into
-    * a vkn::error
-    */
-   auto make_error(fence_error err, std::error_code ec) -> vkn::error;
 
    /**
     * A class to wrap around the vulkan fence handle. May only

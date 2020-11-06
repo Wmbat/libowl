@@ -19,7 +19,6 @@ namespace vkn
    };
 
    auto to_string(graphics_pipeline_error err) -> std::string;
-   auto make_error(graphics_pipeline_error err, std::error_code ec) -> vkn::error;
 
    class graphics_pipeline final : public owning_handle<vk::Pipeline>
    {
@@ -28,6 +27,7 @@ namespace vkn
    public:
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
       [[nodiscard]] auto device() const noexcept -> vk::Device;
+
       auto get_descriptor_set_layout(const std::string& name) const
          -> const vkn::descriptor_set_layout&;
       auto get_push_constant_ranges(const std::string& name) const -> const vk::PushConstantRange&;

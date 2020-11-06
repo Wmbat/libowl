@@ -1,344 +1,395 @@
-#include "mpark/patterns/match.hpp"
 #include <vkn/device.hpp>
 
 #include <monads/try.hpp>
 
-#include <functional>
+#include <range/v3/view.hpp>
+
+#include <map>
+#include <span>
 
 namespace vkn
 {
    namespace detail
    {
-      /** QUEUE ERROR CODE */
-
-      auto to_string(queue::error err) -> std::string
-      {
-         using error = queue::error;
-         switch (err)
-         {
-            case error::compute_unavailable:
-               return "compute_unavailable";
-            case error::graphics_unavailable:
-               return "graphics_unavailable";
-            case error::present_unavailable:
-               return "present_unavailable";
-            case error::transfer_unavailable:
-               return "present_unavailable";
-            case error::invalid_queue_family_index:
-               return "invalid_queue_family_index";
-            case error::queue_index_out_of_range:
-               return "queue_index_out_of_range";
-            default:
-               return "UNKNOWN";
-         }
-      };
-
-      struct queue_error_category : std::error_category
-      {
-         [[nodiscard]] auto name() const noexcept -> const char* override { return "vk_queue"; }
-         [[nodiscard]] auto message(int err) const -> std::string override
-         {
-            return to_string(static_cast<queue::error>(err));
-         }
-      };
-
-      static const queue_error_category queue_error_cat{};
-
-      auto make_error_code(queue::error err) -> std::error_code
-      {
-         return {static_cast<int>(err), queue_error_cat};
-      }
-
-      /** DEVICE ERROR CODE */
-
-      auto to_string(device::error err) -> std::string
-      {
-         using error = device::error;
-         switch (err)
-         {
-            case error::device_extension_not_supported:
-               return "device_extension_not_supported";
-            case error::failed_to_create_device:
-               return "failed_to_create_device";
-            default:
-               return "UNKNOWN";
-         }
-      };
-
       struct device_error_category : std::error_category
       {
-         [[nodiscard]] auto name() const noexcept -> const char* override { return "vk_device"; }
+         [[nodiscard]] auto name() const noexcept -> const char* override
+         {
+            return "vulkan_device";
+         }
          [[nodiscard]] auto message(int err) const -> std::string override
          {
-            return to_string(static_cast<device::error>(err));
+            return to_string(static_cast<device_error>(err));
          }
       };
 
-      const device_error_category device_error_cat;
+      static const device_error_category device_error_cat{};
 
-      auto make_error_code(device::error err) -> std::error_code
+      auto err_code(device_error err) -> error_t
       {
-         return {static_cast<int>(err), device_error_cat};
-      }
-
-      auto make_error(device::error flag, const std::error_code& ec) -> vkn::error
-      {
-         using namespace mpark::patterns;
-         // clang-format off
-         return match(ec.value())(
-            pattern(0) = [flag] {
-               return vkn::error{make_error_code(flag), {}};
-            },
-            pattern(_) = [flag, &ec] {
-               return vkn::error{make_error_code(flag), static_cast<vk::Result>(ec.value())};
-            }
-         );
-         // clang-format on
+         return {{static_cast<int>(err), device_error_cat}};
       }
    } // namespace detail
 
-   device::device(physical_device&& physical_device, const create_info& info) :
-      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
-      m_extensions{info.extensions}
-   {}
-   device::device(physical_device&& physical_device, create_info&& info) :
-      m_device{info.device}, m_physical_device{std::move(physical_device)}, m_version{info.version},
-      m_extensions{std::move(info.extensions)}
-   {}
-   device::device(device&& rhs) noexcept { *this = std::move(rhs); }
-   device::~device()
+   auto to_string(device_error err) -> std::string
    {
-      if (m_device)
+      if (err == device_error::no_suitable_physical_device)
       {
-         m_device.destroy();
+         return "no_suitable_physical_device";
+      }
+      else if (err == device_error::no_physical_device_found)
+      {
+         return "no_physical_device_found";
+      }
+      else if (err == device_error::failed_to_enumerate_queue_properties)
+      {
+         return "failed_to_enumerate_queue_properties";
+      }
+      else if (err == device_error::no_swapchain_support)
+      {
+         return "no_swapchain_support";
+      }
+      else if (err == device_error::failed_to_create_device)
+      {
+         return "failed_to_create_device";
+      }
+      else if (err == device_error::present_queue_unavailable)
+      {
+         return "present_queue_unavailable";
+      }
+      else if (err == device_error::compute_queue_unavailable)
+      {
+         return "compute_queue_unavailable";
+      }
+      else if (err == device_error::transfer_queue_unavailable)
+      {
+         return "transfer_queue_unavailable";
+      }
+      else if (err == device_error::graphics_queue_unavailable)
+      {
+         return "graphics_queue_unavailable";
+      }
+      else if (err == device_error::invalid_queue_index)
+      {
+         return "invalid_queue_index";
+      }
+      else
+      {
+         return "UNKNOWN";
       }
    }
 
-   auto device::operator=(device&& rhs) noexcept -> device&
+   struct queue_description
    {
-      if (this != &rhs)
-      {
-         m_physical_device = std::move(rhs.m_physical_device);
+      std::uint32_t index = 0;
+      std::uint32_t count = 0;
+      util::small_dynamic_array<float, 1> priorities;
+   };
 
-         std::swap(m_device, rhs.m_device);
+   struct device_data
+   {
+      vk::UniqueSurfaceKHR surface;
+      vk::PhysicalDevice physical_device;
+      vk::UniqueDevice logical_device;
 
-         m_version = rhs.m_version;
-         m_extensions = std::move(rhs.m_extensions);
-      }
+      std::uint32_t version;
 
-      return *this;
+      std::shared_ptr<util::logger> p_logger;
+   };
+
+   auto find_suitable_device(std::span<const vk::PhysicalDevice> devices, device_data&& data)
+      -> result<device_data>;
+   auto create_device(device_data&& data) -> result<device_data>;
+
+   auto device::select(selection_info&& info) -> result<device>
+   {
+      const auto finalize = [&](device_data&& data) {
+         device dev{};
+         dev.m_surface = std::move(data.surface);
+         dev.m_physical_device = data.physical_device;
+         dev.m_logical_device = std::move(data.logical_device);
+         dev.mp_logger = data.p_logger;
+
+         VULKAN_HPP_DEFAULT_DISPATCHER.init(dev.m_logical_device.get());
+
+         return dev;
+      };
+
+      return find_suitable_device(info.available_devices,
+                                  {.surface = std::move(info.surface),
+                                   .version = info.vulkan_version,
+                                   .p_logger = std::move(info.p_logger)})
+         .and_then(create_device)
+         .map(finalize);
    }
 
-   auto device::get_queue_index(queue::type type) const -> vkn::result<uint32_t>
+   auto device::surface() const -> vk::SurfaceKHR { return m_surface.get(); }
+   auto device::logical_device() const -> vk::Device { return m_logical_device.get(); }
+   auto device::physical_device() const -> vk::PhysicalDevice { return m_physical_device; }
+
+   auto device::vulkan_version() const -> std::uint32_t { return m_version; }
+
+   auto device::get_queue_index(queue_type type) const -> result<std::uint32_t>
    {
-      using err_t = vkn::error;
+      return monad::try_wrap<vk::SystemError>([&] {
+                return m_physical_device.getQueueFamilyProperties();
+             })
+         .map_error([]([[maybe_unused]] auto err) {
+            return detail::err_code(device_error::failed_to_enumerate_queue_properties);
+         })
+         .and_then([&](std::vector<vk::QueueFamilyProperties>&& families) -> result<std::uint32_t> {
+            if (type == queue_type::present)
+            {
+               const auto index =
+                  get_present_queue_index(m_physical_device, m_surface.get(), families);
 
-      const auto families = m_physical_device.queue_families();
+               if (!index)
+               {
+                  return monad::err(detail::err_code(device_error::present_queue_unavailable));
+               }
+               else
+               {
+                  return index.value_or(0u);
+               }
+            }
+            else if (type == queue_type::graphics)
+            {
+               if (auto i = get_graphics_queue_index(families))
+               {
+                  return i.value();
+               }
+               else
+               {
+                  return monad::err(detail::err_code(device_error::graphics_queue_unavailable));
+               }
+            }
+            else if (type == queue_type::compute)
+            {
+               if (const auto i = get_separated_compute_queue_index(families))
+               {
+                  return i.value();
+               }
+               else
+               {
+                  return monad::err(detail::err_code(device_error::compute_queue_unavailable));
+               }
+            }
+            else if (type == queue_type::transfer)
+            {
+               if (const auto i = get_separated_transfer_queue_index(families))
+               {
+                  return i.value();
+               }
+               else
+               {
+                  return monad::err(detail::err_code(device_error::transfer_queue_unavailable));
+               }
+            }
+            else
+            {
+               return monad::err(detail::err_code(device_error::invalid_queue_index));
+            }
+         });
+   }
 
-      if (type == queue::type::present)
+   auto device::get_dedicated_queue_index(queue_type type) const -> result<uint32_t>
+   {
+      return monad::try_wrap<vk::SystemError>([&] {
+                return m_physical_device.getQueueFamilyProperties();
+             })
+         .map_error([]([[maybe_unused]] auto err) {
+            return detail::err_code(device_error::failed_to_enumerate_queue_properties);
+         })
+         .and_then([&](std::vector<vk::QueueFamilyProperties>&& families) -> result<std::uint32_t> {
+            if (type == queue_type::compute)
+            {
+               if (auto i = get_dedicated_compute_queue_index(families))
+               {
+                  return i.value();
+               }
+               else
+               {
+                  return monad::err(detail::err_code(device_error::compute_queue_unavailable));
+               }
+            }
+            else if (type == queue_type::transfer)
+            {
+               if (auto i = get_dedicated_transfer_queue_index(families))
+               {
+                  return i.value();
+               }
+               else
+               {
+                  return monad::err(detail::err_code(device_error::transfer_queue_unavailable));
+               }
+            }
+            else
+            {
+               return monad::err(detail::err_code(device_error::invalid_queue_index));
+            }
+         });
+   }
+
+   auto device::get_queue(queue_type type) const -> result<vk::Queue>
+   {
+      return get_queue_index(type).map([&](std::uint32_t i) {
+         return m_logical_device->getQueue(i, 0);
+      });
+   }
+
+   auto device::get_dedicated_queue([[maybe_unused]] queue_type type) const -> result<vk::Queue>
+   {
+      return get_dedicated_queue_index(type).map([&](std::uint32_t i) {
+         return m_logical_device->getQueue(i, 0);
+      });
+   }
+
+   auto is_device_suitable(vk::PhysicalDevice device, vk::SurfaceKHR surface) -> bool
+   {
+      auto format_res = monad::try_wrap<vk::SystemError>([&] {
+                           return device.getSurfaceFormatsKHR(surface);
+                        }).map_error([]([[maybe_unused]] auto err) {
+         return false;
+      });
+
+      if (auto err = format_res.error())
       {
-         const auto index = detail::get_present_queue_index(m_physical_device.value(),
-                                                            m_physical_device.surface(), families);
-         if (!index)
-         {
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::present_unavailable), .result = {}});
-         }
-         else
-         {
-            return index.value_or(0u);
-         }
+         return err.value();
       }
-      else if (type == queue::type::graphics)
+
+      auto mode_res = monad::try_wrap<vk::SystemError>([&] {
+                         return device.getSurfacePresentModesKHR(surface);
+                      }).map_error([]([[maybe_unused]] auto err) {
+         return false;
+      });
+
+      if (auto err = mode_res.error())
       {
-         if (auto i = detail::get_graphics_queue_index(families))
-         {
-            return i.value();
-         }
-         else
-         {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::graphics_unavailable), 
-               .result = {}
-            });
-            // clang-format on
-         }
+         return err.value();
       }
-      else if (type == queue::type::compute)
+
+      const auto formats = format_res.value().value();
+      const auto present_modes = mode_res.value().value();
+
+      if (formats.empty() || present_modes.empty())
       {
-         if (const auto i = detail::get_separated_compute_queue_index(families))
-         {
-            return i.value();
-         }
-         else
-         {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::compute_unavailable), 
-               .result = {}
-            });
-            // clang-format on
-         }
+         return false;
       }
-      else if (type == queue::type::transfer)
+
+      return true;
+   }
+
+   auto rate_physical_device(vk::PhysicalDevice device, vk::SurfaceKHR surface) -> std::int32_t
+   {
+      if (is_device_suitable(device, surface))
       {
-         if (const auto i = detail::get_separated_transfer_queue_index(families))
+         const auto properties = device.getProperties();
+
+         if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
          {
-            return i.value();
+            return 1000; // NOLINT
+         }
+         else if (properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
+         {
+            return 500; // NOLINT
          }
          else
          {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::transfer_unavailable), 
-               .result = {}
-            });
-            // clang-format on
+            return -1;
          }
       }
       else
       {
-         // clang-format off
-         return monad::make_error(err_t{
-            .type = detail::make_error_code(queue::error::invalid_queue_family_index), 
-            .result = {}
+         return -1;
+      }
+   }
+
+   auto find_suitable_device(std::span<const vk::PhysicalDevice> devices, device_data&& data)
+      -> result<device_data>
+   {
+      std::multimap<std::int32_t, vk::PhysicalDevice> candidates;
+
+      for (vk::PhysicalDevice device : devices)
+      {
+         candidates.insert({rate_physical_device(device, data.surface.get()), device});
+      }
+
+      if (candidates.empty())
+      {
+         return monad::err(detail::err_code(device_error::no_physical_device_found));
+      }
+
+      if (candidates.rbegin()->first <= 0)
+      {
+         return monad::err(detail::err_code(device_error::no_suitable_physical_device));
+      }
+
+      data.physical_device = candidates.rbegin()->second;
+
+      auto properties = data.physical_device.getProperties();
+
+      util::log_info(data.p_logger, "[vulkan] physical device selected: {}", properties.deviceName);
+
+      return std::move(data);
+   }
+
+   auto get_queue_descriptions(vk::PhysicalDevice device)
+      -> result<util::dynamic_array<queue_description>>
+   {
+      // clang-format off
+      return monad::try_wrap<vk::SystemError>([&] {
+                return device.getQueueFamilyProperties();
+             })
+         .map([]([[maybe_unused]] auto&& properties) {
+            return ranges::views::iota(0U, std::size(properties)) 
+               | ranges::views::transform([](std::size_t i) {
+                      return queue_description{.index = static_cast<std::uint32_t>(i),
+                                               .count = 1U,
+                                               .priorities =
+                                                  util::small_dynamic_array<float, 1>{1.0f}};
+                   }) 
+               | ranges::to<util::dynamic_array>;
+         })
+         .map_error([]([[maybe_unused]] auto err) {
+            return detail::err_code(device_error::failed_to_enumerate_queue_properties);
          });
-         // clang-format on
-      }
+      // clang-format on
    }
 
-   auto device::get_dedicated_queue_index(queue::type type) const -> vkn::result<uint32_t>
+   auto generate_queue_infos(std::span<const queue_description> description)
+      -> util::dynamic_array<vk::DeviceQueueCreateInfo>
    {
-      using err_t = vkn::error;
-
-      if (type == queue::type::compute)
-      {
-         if (const auto i =
-                detail::get_dedicated_compute_queue_index(m_physical_device.queue_families()))
-         {
-            return i.value();
-         }
-         else
-         {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::compute_unavailable), 
-               .result = {}
-            });
-            // clang-format on
-         }
-      }
-      else if (type == queue::type::transfer)
-      {
-         if (const auto i =
-                detail::get_dedicated_transfer_queue_index(m_physical_device.queue_families()))
-         {
-            return i.value();
-         }
-         else
-         {
-            // clang-format off
-            return monad::make_error(err_t{
-               .type = detail::make_error_code(queue::error::transfer_unavailable), 
-               .result = {}
-            });
-            // clang-format on
-         }
-      }
-      else
-      {
-         // clang-format off
-         return monad::make_error(err_t{
-            .type = detail::make_error_code(queue::error::invalid_queue_family_index), 
-            .result = {}
-         });
-         // clang-format on
-      }
+      // clang-format off
+      return description 
+         | ranges::views::transform([](const queue_description& desc) {
+               return vk::DeviceQueueCreateInfo{.queueFamilyIndex = desc.index,
+                                                .queueCount = desc.count,
+                                                .pQueuePriorities = std::data(desc.priorities)};
+            }) 
+         | ranges::to<util::dynamic_array>;
+      // clang-format on
    }
 
-   auto device::get_queue(queue::type type) const -> vkn::result<vk::Queue>
+   auto create_device(device_data&& data) -> result<device_data>
    {
-      using err_t = vkn::error;
+      const auto description_res = get_queue_descriptions(data.physical_device);
+      const auto queue_create_info_res = description_res.map(generate_queue_infos);
 
-      return get_queue_index(type).join(
-         [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return m_device.getQueue(i, 0);
-         },
-         [](const err_t& err) -> vkn::result<vk::Queue> {
-            return monad::make_error(err_t{err});
-         });
-   }
-
-   auto device::get_dedicated_queue([[maybe_unused]] queue::type type) const -> result<vk::Queue>
-   {
-      using err_t = vkn::error;
-
-      return get_dedicated_queue_index(type).join(
-         [&](uint32_t i) -> vkn::result<vk::Queue> {
-            return m_device.getQueue(i, 0);
-         },
-         [](const err_t& err) -> vkn::result<vk::Queue> {
-            return monad::make_error(err_t{err});
-         });
-   }
-
-   auto device::operator->() -> vk::Device* { return &m_device; }
-   auto device::operator->() const noexcept -> const vk::Device* { return &m_device; }
-
-   auto device::value() const noexcept -> vk::Device { return m_device; }
-   auto device::physical() const noexcept -> const physical_device& { return m_physical_device; }
-   auto device::get_vulkan_version() const noexcept -> uint32_t { return m_version; }
-
-   device::builder::builder(const loader& vk_loader, physical_device&& phys_device,
-                            uint32_t version, std::shared_ptr<util::logger> p_logger) :
-      m_loader{vk_loader},
-      mp_logger{std::move(p_logger)}
-   {
-      m_info.phys_device = std::move(phys_device);
-      m_info.api_version = version;
-   }
-
-   auto device::builder::build() -> result<device>
-   {
-      util::dynamic_array<queue::description> descriptions;
-      descriptions.insert(descriptions.cend(), m_info.queue_descriptions);
-
-      if (descriptions.empty())
+      if (auto err = queue_create_info_res.error())
       {
-         descriptions.reserve(descriptions.size() + m_info.phys_device.queue_families().size());
-         for (uint32_t i = 0; i < m_info.phys_device.queue_families().size(); ++i)
-         {
-            descriptions.push_back({i, 1u, util::small_dynamic_array<float, 1>{1.0f}});
-         };
+         return monad::err(err.value());
       }
 
-      util::dynamic_array<vk::DeviceQueueCreateInfo> queue_create_infos;
-      queue_create_infos.reserve(descriptions.size());
-      for (const auto& desc : descriptions)
-      {
-         // clang-format off
-         queue_create_infos.push_back(vk::DeviceQueueCreateInfo{}
-            .setPNext(nullptr)
-            .setFlags({})
-            .setQueueFamilyIndex(desc.index)
-            .setQueueCount(desc.count)
-            .setPQueuePriorities(desc.priorities.data()));
-         // clang-format on    
-      }
-
-      util::dynamic_array<const char*> extensions{m_info.desired_extensions};
-      if(m_info.phys_device.surface())
+      util::dynamic_array<const char*> extensions{};
+      if (data.surface)
       {
          extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-      } 
-
-      vk::PhysicalDevice gpu = m_info.phys_device.value();
+      }
 
       for (const auto& desired : extensions)
       {
          bool is_present = false;
-         for (const auto& available : gpu.enumerateDeviceExtensionProperties())
+         for (const auto& available : data.physical_device.enumerateDeviceExtensionProperties())
          {
             if (strcmp(desired, static_cast<const char*>(available.extensionName)) == 0)
             {
@@ -348,47 +399,151 @@ namespace vkn
 
          if (!is_present)
          {
-            monad::make_error(detail::make_error(device::error::device_extension_not_supported, {}));
+            monad::err(detail::err_code(device_error::no_swapchain_support));
          }
       }
 
-      for(const char* name : extensions)
+      for (const char* name : extensions)
       {
-         log_info(mp_logger, "[vkn] device extension: {0} - ENABLED", name);
+         log_info(data.p_logger, "[vulkan] device extension: {0}", name);
       }
 
-      // clang-format off
-      const auto device_create_info = vk::DeviceCreateInfo{}
-         .setPNext(nullptr)
-         .setFlags({})
-         .setQueueCreateInfoCount(static_cast<uint32_t>(queue_create_infos.size()))
-         .setPQueueCreateInfos(queue_create_infos.data())
-         .setEnabledLayerCount(0u)
-         .setPpEnabledLayerNames(nullptr)
-         .setEnabledExtensionCount(static_cast<uint32_t>(extensions.size()))
-         .setPpEnabledExtensionNames(extensions.data())
-         .setPEnabledFeatures(&m_info.phys_device.features());
+      const auto queue_create_infos = queue_create_info_res.value().value();
+      const auto features = data.physical_device.getFeatures();
 
       return monad::try_wrap<vk::SystemError>([&] {
-         return gpu.createDevice(device_create_info);
-      }).map_error([](auto err){
-         return detail::make_error(device::error::failed_to_create_device, err.code());
-      }).map([&](vk::Device dev) {
-         log_info(mp_logger, "[vkn] device created");
+                return data.physical_device.createDeviceUnique(
+                   {.queueCreateInfoCount =
+                       static_cast<std::uint32_t>(std::size(queue_create_infos)),
+                    .pQueueCreateInfos = std::data(queue_create_infos),
+                    .enabledExtensionCount = static_cast<std::uint32_t>(std::size(extensions)),
+                    .ppEnabledExtensionNames = std::data(extensions),
+                    .pEnabledFeatures = &features});
+             })
+         .map_error([]([[maybe_unused]] auto err) {
+            return detail::err_code(device_error::failed_to_create_device);
+         })
+         .map([&](vk::UniqueDevice device) {
+            data.logical_device = std::move(device);
 
-         m_loader.load_device(dev);
+            util::log_info(data.p_logger, "[vulkan] logical device created");
 
-         return device{std::move(m_info.phys_device),
-                       {dev, m_info.api_version, std::move(extensions)}};
-      });
-      // clang-format on
-   } // namespace vkn
+            return std::move(data);
+         });
+   }
 
-   auto
-   device::builder::set_queue_setup(const util::dynamic_array<queue::description>& descriptions)
-      -> device::builder&
+   auto get_graphics_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
    {
-      m_info.queue_descriptions = descriptions;
-      return *this;
+      for (std::size_t i : ranges::views::iota(0U, families.size()))
+      {
+         if (families[i].queueFlags & vk::QueueFlagBits::eGraphics)
+         {
+            return i;
+         }
+      }
+
+      return monad::none;
+   }
+
+   auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
+                                std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
+   {
+      for (uint32_t i : ranges::views::iota(0U, families.size()))
+      {
+         VkBool32 present_support = VK_FALSE;
+         if (surface)
+         {
+            if (physical_device.getSurfaceSupportKHR(i, surface, &present_support) !=
+                vk::Result::eSuccess)
+            {
+               return monad::none;
+            }
+         }
+
+         if (present_support == VK_TRUE)
+         {
+            return i;
+         }
+      }
+
+      return monad::none;
+   }
+
+   auto get_dedicated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
+   {
+      for (uint32_t i : ranges::views::iota(0U, families.size()))
+      {
+         if ((families[i].queueFlags & vk::QueueFlagBits::eCompute) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) == 0))
+         {
+            return i;
+         }
+      }
+
+      return monad::none;
+   }
+
+   auto get_dedicated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
+   {
+      for (uint32_t i : ranges::views::iota(0U, families.size()))
+      {
+         if ((families[i].queueFlags & vk::QueueFlagBits::eTransfer) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eGraphics) == 0) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eCompute) == 0))
+         {
+            return i;
+         }
+      }
+
+      return monad::none;
+   }
+
+   auto get_separated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
+   {
+      monad::maybe<uint32_t> compute{};
+
+      for (uint32_t i : ranges::views::iota(0U, families.size()))
+      {
+         if ((families[i].queueFlags & vk::QueueFlagBits::eCompute) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+         {
+            if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eTransfer) == 0)
+            {
+               return i;
+            }
+
+            compute = i;
+         }
+      }
+
+      return compute;
+   }
+
+   auto get_separated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>
+   {
+      monad::maybe<uint32_t> transfer{};
+
+      for (uint32_t i : ranges::views::iota(0U, families.size()))
+      {
+         if ((families[i].queueFlags & vk::QueueFlagBits::eTransfer) &&
+             (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eGraphics) == 0))
+         {
+            if (static_cast<uint32_t>(families[i].queueFlags & vk::QueueFlagBits::eCompute) == 0)
+            {
+               return i;
+            }
+
+            transfer = i;
+         }
+      }
+
+      return transfer;
    }
 } // namespace vkn

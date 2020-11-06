@@ -53,10 +53,9 @@ namespace vkn
       }
    };
 
-   auto make_error(shader_error flag, std::error_code ec) noexcept -> vkn::error
+   auto make_error(shader_error flag) noexcept -> vkn::error_t
    {
-      return vkn::error{{static_cast<int>(flag), shader_category},
-                        static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(flag), shader_category}};
    };
 
    auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags
@@ -90,8 +89,8 @@ namespace vkn
    builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.value();
-      m_info.version = device.get_vulkan_version();
+      m_info.device = device.logical_device();
+      m_info.version = device.vulkan_version();
    }
 
    auto builder::build() -> result<shader>
@@ -102,7 +101,7 @@ namespace vkn
       const shader_data shader_data{.inputs = populate_shader_input(glsl, resources),
                                     .uniforms = populate_uniform_buffer(glsl, resources)};
 
-      return create_shader().map([&](auto&& handle) {
+      return create_shader().map([&](vk::UniqueShaderModule&& handle) {
          util::log_info(mp_logger, "[vkn] shader module created");
 
          shader s{};
@@ -115,8 +114,7 @@ namespace vkn
       });
    }
 
-   auto builder::set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary)
-      -> builder&
+   auto builder::set_spirv_binary(const std::vector<std::uint32_t>& spirv_binary) -> builder&
    {
       m_info.spirv_binary = spirv_binary;
       return *this;
@@ -139,8 +137,8 @@ namespace vkn
                    {.codeSize = std::size(m_info.spirv_binary) * 4,
                     .pCode = std::data(m_info.spirv_binary)});
              })
-         .map_error([](auto&& error) {
-            return make_error(shader_error::failed_to_create_shader_module, error.code());
+         .map_error([]([[maybe_unused]] const auto& error) {
+            return make_error(shader_error::failed_to_create_shader_module);
          });
    }
 

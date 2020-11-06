@@ -30,10 +30,18 @@ namespace core
          log_error(p_logger, "Failed to initialize glfw");
 
          abort();
-         // error
       }
 
       log_info(p_logger, "[core] glfw initialized");
+
+      if (auto result = glslang::InitializeProcess(); !result)
+      {
+         log_error(p_logger, "Failed to initialize glslang");
+
+         abort();
+      }
+
+      log_info(p_logger, "[core] glslang initialized");
    }
 
    using error_t = util::strong_type<std::error_code, struct error_code_tag>;

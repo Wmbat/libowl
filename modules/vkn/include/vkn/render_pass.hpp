@@ -46,7 +46,6 @@ namespace vkn
    /**
     * Turn an render_pass_error and a standard error code into a vkn::error
     */
-   auto make_error(render_pass_error err, std::error_code ec) -> vkn::error;
 } // namespace vkn
 
 namespace std

@@ -1,0 +1,5 @@
+CPMAddPackage(
+    NAME vulkan_headers
+    VERSION 1.2.148
+    GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
+) 

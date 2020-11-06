@@ -36,9 +36,10 @@ namespace vkn
             return "UNKNOWN";
       }
    };
-   auto make_error(framebuffer_error err, std::error_code ec) -> vkn::error
+
+   auto err_code(framebuffer_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), framebuffer_category}, static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), framebuffer_category}};
    }
 
    auto framebuffer::device() const noexcept -> vk::Device { return m_value.getOwner(); }
@@ -47,7 +48,7 @@ namespace vkn
 
    builder::builder(const vkn::device& device, const vkn::render_pass& render_pass,
                     std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.value()},
+      m_device{device.logical_device()},
       mp_logger{std::move(p_logger)}
    {
       m_info.render_pass = render_pass.value();
@@ -57,7 +58,7 @@ namespace vkn
    {
       if (!m_device)
       {
-         return monad::make_error(make_error(framebuffer_error::no_device_handle, {}));
+         return monad::err(err_code(framebuffer_error::no_device_handle));
       }
 
       const auto create_info = vk::FramebufferCreateInfo{}
@@ -73,8 +74,8 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createFramebufferUnique(create_info);
              })
-         .map_error([](vk::SystemError&& err) {
-            return make_error(framebuffer_error::failed_to_create_framebuffer, err.code());
+         .map_error([]([[maybe_unused]] auto err) {
+            return err_code(framebuffer_error::failed_to_create_framebuffer);
          })
          .map([&](vk::UniqueFramebuffer&& handle) {
             util::log_info(mp_logger, "[vkn] framebuffer created");

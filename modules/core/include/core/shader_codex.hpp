@@ -26,6 +26,8 @@ namespace core
 
    class shader_codex
    {
+      using spirv_binary = std::vector<std::uint32_t>;
+
    public:
       shader_codex() = default;
 
@@ -57,14 +59,11 @@ namespace core
 
       private:
          auto create_shader(const std::filesystem::path& path) -> core::result<vkn::shader>;
-         auto compile_shader(const std::filesystem::path& path)
-            -> core::result<util::dynamic_array<std::uint32_t>>;
-         auto load_shader(const std::filesystem::path& path)
-            -> core::result<util::dynamic_array<std::uint32_t>>;
+         auto compile_shader(const std::filesystem::path& path) -> core::result<spirv_binary>;
+         auto load_shader(const std::filesystem::path& path) -> core::result<spirv_binary>;
 
          [[nodiscard]] auto cache_shader(const std::filesystem::path& path,
-                                         const util::dynamic_array<std::uint32_t>& data) const
-            -> monad::maybe<error_t>;
+                                         const spirv_binary& data) const -> monad::maybe<error_t>;
 
          [[nodiscard]] auto get_shader_stage(std::string_view stage_name) const -> EShLanguage;
          [[nodiscard]] auto get_spirv_version(uint32_t version) const

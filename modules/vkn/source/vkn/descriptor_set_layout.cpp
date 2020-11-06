@@ -1,5 +1,6 @@
-#include <utility>
 #include <vkn/descriptor_set_layout.hpp>
+
+#include <utility>
 
 namespace vkn
 {
@@ -28,10 +29,9 @@ namespace vkn
             return "UNKNOWN";
       }
    }
-   auto make_error(descriptor_set_layout_error err, std::error_code ec) -> vkn::error
+   auto err_code(descriptor_set_layout_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), descriptor_set_layout_category},
-              static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), descriptor_set_layout_category}};
    }
 
    auto descriptor_set_layout::device() const -> vk::Device { return m_value.getOwner(); }
@@ -47,7 +47,7 @@ namespace vkn
       m_device{device}, mp_logger{std::move(p_logger)}
    {}
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.value()}, mp_logger{std::move(p_logger)}
+      m_device{device.logical_device()}, mp_logger{std::move(p_logger)}
    {}
 
    auto builder::build() const noexcept -> vkn::result<descriptor_set_layout>
@@ -57,9 +57,8 @@ namespace vkn
                    {.bindingCount = static_cast<uint32_t>(std::size(m_info.bindings)),
                     .pBindings = m_info.bindings.data()});
              })
-         .map_error([](const vk::SystemError& err) {
-            return make_error(descriptor_set_layout_error::failed_to_create_descriptor_set_layout,
-                              err.code());
+         .map_error([]([[maybe_unused]] const auto& err) {
+            return err_code(descriptor_set_layout_error::failed_to_create_descriptor_set_layout);
          })
          .map([&](auto handle) {
             util::log_info(mp_logger, "[vkn] descriptor set layout created");

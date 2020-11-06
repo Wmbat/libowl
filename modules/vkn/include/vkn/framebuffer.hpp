@@ -90,11 +90,6 @@ namespace vkn
     * Convert an framebuffer_error enum to a string
     */
    auto to_string(vkn::framebuffer_error err) -> std::string;
-   /**
-    * Convert an framebuffer_error enum value and an error code from a vulkan error into
-    * a vkn::error
-    */
-   auto make_error(framebuffer_error err, std::error_code ec) -> vkn::error;
 } // namespace vkn
 
 namespace std

@@ -1,189 +1,120 @@
-/**
- * @file device.hpp
- * @author wmbat wmbat@protonmail.com
- * @date Saturday, 23rd of June, 2020
- * @copyright MIT License
- */
-
 #pragma once
 
 #include <vkn/core.hpp>
-#include <vkn/physical_device.hpp>
 
 #include <util/containers/dynamic_array.hpp>
 
+#if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+#   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#endif
+
+#include <vulkan/vulkan.hpp>
+
+#include <span>
+
 namespace vkn
 {
-   namespace queue
+   enum struct device_error
    {
-      /**
-       * The different types of supported queue types.
-       */
-      enum class type
-      {
-         present,
-         graphics,
-         compute,
-         transfer
-      };
+      no_physical_device_found,
+      no_suitable_physical_device,
+      failed_to_enumerate_queue_properties,
+      no_swapchain_support,
+      failed_to_create_device,
+      present_queue_unavailable,
+      compute_queue_unavailable,
+      transfer_queue_unavailable,
+      graphics_queue_unavailable,
+      invalid_queue_index
+   };
 
-      /**
-       * The possible errors related to the creation of queues
-       */
-      enum class error
-      {
-         present_unavailable,
-         graphics_unavailable,
-         compute_unavailable,
-         transfer_unavailable,
-         queue_index_out_of_range,
-         invalid_queue_family_index
-      };
+   auto to_string(device_error err) -> std::string;
 
-      /**
-       * The information that describes a queue family.
-       */
-      struct description
-      {
-         uint32_t index = 0;
-         uint32_t count = 0;
-         util::small_dynamic_array<float, 1> priorities;
-      };
-   } // namespace queue
+   enum struct queue_type
+   {
+      present,
+      graphics,
+      compute,
+      transfer
+   };
 
-   /**
-    * Holds all functionality around the lifetime and use of a vulkan device, it hold the physical
-    * and logical representation of the graphics card.
-    */
-   class device final
+   class device
    {
    public:
-      /**
-       * The possible error types related to the creation of the device.
-       */
-      enum class error
+      struct selection_info
       {
-         device_extension_not_supported,
-         failed_to_create_device
+         vk::Instance instance{nullptr};
+         vk::UniqueSurfaceKHR surface{nullptr};
+
+         util::dynamic_array<vk::PhysicalDevice> available_devices{};
+
+         std::uint32_t vulkan_version;
+
+         std::shared_ptr<util::logger> p_logger;
       };
 
-      /**
-       * The information needed to construct a device instance
-       */
-      struct create_info
-      {
-         vk::Device device{};
-         uint32_t version{0u};
+      static auto select(selection_info&& info) -> result<device>;
 
-         util::dynamic_array<const char*> extensions{};
-      };
+   public:
+      [[nodiscard]] auto surface() const -> vk::SurfaceKHR;
+      [[nodiscard]] auto logical_device() const -> vk::Device;
+      [[nodiscard]] auto physical_device() const -> vk::PhysicalDevice;
 
-      device() = default;
-      device(physical_device&& physical_device, const create_info& info);
-      device(physical_device&& physical_device, create_info&& info);
-      device(const device&) = delete;
-      device(device&&) noexcept;
-      ~device();
-
-      auto operator=(const device&) -> device& = delete;
-      auto operator=(device&&) noexcept -> device&;
+      [[nodiscard]] auto vulkan_version() const -> std::uint32_t;
 
       /**
        * Get an index of a queue family that support operation related to the specified queue type.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_queue_index(queue::type type) const -> vkn::result<uint32_t>;
+      [[nodiscard]] auto get_queue_index(queue_type type) const -> result<std::uint32_t>;
       /**
        * Get the index of a queue family with support for the specified queue type operations only.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_dedicated_queue_index(queue::type type) const -> vkn::result<uint32_t>;
+      [[nodiscard]] auto get_dedicated_queue_index(queue_type type) const -> result<std::uint32_t>;
 
       /**
        * Get a queue handle that support operation related to the specified queue type.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_queue(queue::type) const -> vkn::result<vk::Queue>;
+      [[nodiscard]] auto get_queue(queue_type) const -> result<vk::Queue>;
       /**
        * Get a queue handle with support for the specified queue type operations only.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue::type type) const
-         -> vkn::result<vk::Queue>;
-
-      auto operator->() -> vk::Device*;
-      auto operator->() const noexcept -> const vk::Device*;
-
-      [[nodiscard]] auto value() const noexcept -> vk::Device;
-      /**
-       * Get a const reference to the physical representation of the device.
-       */
-      [[nodiscard]] auto physical() const noexcept -> const physical_device&;
-      /**
-       * Get the version of the current vulkan session.
-       */
-      [[nodiscard]] auto get_vulkan_version() const noexcept -> uint32_t;
+      [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue_type type) const
+         -> result<vk::Queue>;
 
    private:
-      vk::Device m_device{nullptr};
-      vkn::physical_device m_physical_device;
+      vk::UniqueSurfaceKHR m_surface;
+      vk::PhysicalDevice m_physical_device;
+      vk::UniqueDevice m_logical_device;
 
-      uint32_t m_version{0};
+      std::uint32_t m_version;
 
-      util::dynamic_array<const char*> m_extensions;
-
-   public:
-      /**
-       * A class used to facilitate the building of a device instance.
-       */
-      class builder
-      {
-      public:
-         builder(const loader& vk_loader, physical_device&& phys_device, uint32_t version,
-                 std::shared_ptr<util::logger> p_logger = nullptr);
-
-         /**
-          * Finalize the construction of a device object. If the construction results in a failure,
-          * an error will be returned
-          */
-         [[nodiscard]] auto build() -> vkn::result<device>;
-
-         /**
-          * Set the descriptions of all queue families.
-          */
-         auto set_queue_setup(const util::dynamic_array<queue::description>& descriptions)
-            -> builder&;
-         /**
-          * Add a device extension that should be enabled with the device construction
-          */
-         auto add_desired_extension(const std::string& extension_name) -> builder&;
-
-      private:
-         const loader& m_loader;
-
-         std::shared_ptr<util::logger> mp_logger;
-
-         struct info
-         {
-            physical_device phys_device;
-
-            uint32_t api_version{};
-
-            util::dynamic_array<queue::description> queue_descriptions;
-            util::dynamic_array<const char*> desired_extensions;
-         } m_info;
-      };
+      std::shared_ptr<util::logger> mp_logger;
    };
+
+   auto get_graphics_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
+
+   auto get_present_queue_index(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface,
+                                std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
+
+   auto get_dedicated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
+
+   auto get_dedicated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
+
+   auto get_separated_compute_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
+
+   auto get_separated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
+      -> monad::maybe<uint32_t>;
 } // namespace vkn
-
-namespace std
-{
-   template <>
-   struct is_error_code_enum<vkn::device::error> : true_type
-   {
-   };
-} // namespace std

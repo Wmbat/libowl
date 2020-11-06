@@ -4,7 +4,6 @@
 
 #include <core/core.hpp>
 
-#include <gfx/context.hpp>
 #include <gfx/data_types.hpp>
 #include <gfx/render_manager.hpp>
 #include <gfx/window.hpp>
@@ -33,9 +32,8 @@ auto main() -> int
 
    core::initialize(main_logger);
 
-   gfx::context rendering_ctx{main_logger};
-   gfx::window rendering_wnd{"Engine", 1080, 720}; // NOLINT
-   gfx::render_manager rendering_manager{rendering_ctx, rendering_wnd, main_logger};
+   ui::window rendering_wnd{"Engine", 1080, 720}; // NOLINT
+   gfx::render_manager rendering_manager{rendering_wnd, main_logger};
 
    rendering_manager.subscribe_renderable(
       "triangle_0",

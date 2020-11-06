@@ -10,7 +10,6 @@ namespace vkn
    };
 
    auto to_string(descriptor_set_layout_error err) -> std::string;
-   auto make_error(descriptor_set_layout_error err, std::error_code ec) -> vkn::error;
 
    class descriptor_set_layout : public owning_handle<vk::DescriptorSetLayout>
    {

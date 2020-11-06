@@ -30,9 +30,9 @@ namespace vkn
       }
    }
 
-   auto make_error(semaphore_error err, std::error_code ec) -> vkn::error
+   auto err_code(semaphore_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), semaphore_category}, static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), semaphore_category}};
    }
 
    auto semaphore::device() const noexcept -> vk::Device { return m_value.getOwner(); }
@@ -42,7 +42,7 @@ namespace vkn
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.value();
+      m_info.device = device.logical_device();
    }
 
    auto builder::build() const noexcept -> vkn::result<semaphore>
@@ -50,8 +50,8 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createSemaphoreUnique({});
              })
-         .map_error([](vk::SystemError&& err) {
-            return make_error(semaphore_error::failed_to_create_semaphore, err.code());
+         .map_error([]([[maybe_unused]] auto err) {
+            return err_code(semaphore_error::failed_to_create_semaphore);
          })
          .map([&](vk::UniqueSemaphore&& handle) {
             util::log_info(mp_logger, "[vkn] semaphore created");

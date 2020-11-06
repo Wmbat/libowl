@@ -31,20 +31,10 @@ namespace vkn
 #endif
    } // namespace detail
 
-   /**
-    * The default error type within the vkn namespace.
-    */
-   struct error final
-   {
-      std::error_code type;
-      vk::Result result{};
-   };
+   using error_t = util::strong_type<std::error_code, struct error_code_tag>;
 
-   /**
-    * An alias for an either monad using an error as the left type.
-    */
-   template <typename any_>
-   using result = monad::result<any_, vkn::error>;
+   template <class Any>
+   using result = monad::result<Any, error_t>;
 
    template <typename... args_>
    auto try_wrap(std::invocable<args_...> auto&& fun, args_&&... args)
@@ -53,31 +43,6 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>(std::forward<decltype(fun)>(fun),
                                               std::forward<args_>(args)...);
    }
-
-   /**
-    * Class used for the dynamic loading of the Vulkan API functions.
-    */
-   class loader final
-   {
-   public:
-      explicit loader(const std::shared_ptr<util::logger>& p_logger = nullptr);
-
-      /**
-       * Load all vulkan functions based on the Vulkan instance.
-       */
-      void load_instance(const vk::Instance& instance) const;
-      /**
-       * Load all vulkan functions based on the Vulkan device.
-       */
-      void load_device(const vk::Device& device) const;
-
-   private:
-      std::shared_ptr<util::logger> mp_logger;
-
-      vk::DynamicLoader m_dynamic_loader;
-
-      inline static bool IS_GLSLANG_INIT = false;
-   };
 
    template <typename any_>
    class owning_handle

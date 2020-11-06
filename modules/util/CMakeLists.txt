@@ -103,7 +103,9 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         spdlog::spdlog
         monads::monads
+        range-v3::range-v3
         mpark_patterns
+
     PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>

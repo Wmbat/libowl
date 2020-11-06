@@ -24,9 +24,9 @@ namespace vkn
 
    inline static const render_pass_error_category render_pass_category{};
 
-   auto make_error(render_pass_error err, std::error_code ec) -> vkn::error
+   auto make_error(render_pass_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), render_pass_category}, static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), render_pass_category}};
    }
    auto to_string(render_pass_error err) -> std::string
    {
@@ -47,7 +47,7 @@ namespace vkn
 
    builder::builder(const vkn::device& device, const vkn::swapchain& swapchain,
                     std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.value()},
+      m_device{device.logical_device()},
       m_swapchain_format{swapchain.format()},
       m_swapchain_extent{swapchain.extent()}, mp_logger{std::move(p_logger)}
    {}
@@ -56,7 +56,7 @@ namespace vkn
    {
       if (!m_device)
       {
-         return monad::make_error(make_error(render_pass_error::no_device_provided, {}));
+         return monad::err(make_error(render_pass_error::no_device_provided));
       }
 
       const std::array attachment_descriptions{
@@ -75,13 +75,13 @@ namespace vkn
       const std::array subpass_descriptions{
          vk::SubpassDescription{.flags = {},
                                 .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
-                                .inputAttachmentCount = 0u,
+                                .inputAttachmentCount = 0U,
                                 .pInputAttachments = nullptr,
                                 .colorAttachmentCount = attachment_references.size(),
                                 .pColorAttachments = attachment_references.data(),
                                 .pResolveAttachments = nullptr,
                                 .pDepthStencilAttachment = nullptr,
-                                .preserveAttachmentCount = 0u,
+                                .preserveAttachmentCount = 0U,
                                 .pPreserveAttachments = nullptr}};
 
       const std::array subpass_dependencies{
@@ -106,10 +106,10 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createRenderPassUnique(pass_info);
              })
-         .map_error([](auto&& err) {
-            return make_error(render_pass_error::failed_to_create_render_pass, err.code());
+         .map_error([]([[maybe_unused]] auto&& err) {
+            return make_error(render_pass_error::failed_to_create_render_pass);
          })
-         .map([&](auto&& handle) {
+         .map([&](vk::UniqueRenderPass&& handle) {
             util::log_info(mp_logger, "[vkn] render pass created");
 
             render_pass pass{};

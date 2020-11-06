@@ -7,14 +7,37 @@
 
 #include <chrono>
 
+auto to_vkn_error(ui::error_t&& err) -> vkn::error_t
+{
+   return {err.value()};
+}
+
 namespace gfx
 {
-   render_manager::render_manager(const context& ctx, const window& wnd,
-                                  std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)},
-      m_ctx{ctx}, m_wnd{wnd}
+   render_manager::render_manager(const ui::window& wnd, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}, m_wnd{wnd}
    {
-      m_device = create_logical_device();
+      auto device_res = vkn::context::make({.p_logger = mp_logger})
+                           .and_then([&](vkn::context&& ctx) {
+                              m_ctx = std::move(ctx);
+
+                              return m_wnd.get_surface(m_ctx.instance()).map_error(to_vkn_error);
+                           })
+                           .and_then([&](vk::UniqueSurfaceKHR&& surface) {
+                              return m_ctx.select_device(std::move(surface));
+                           });
+
+      if (auto err = device_res.error())
+      {
+         util::log_error(mp_logger, "[gfx] {}", err->value().message());
+
+         std::terminate();
+      }
+      else
+      {
+         m_device = std::move(device_res).value().value();
+      }
+
       m_swapchain = create_swapchain();
       m_swapchain_render_pass = create_swapchain_render_pass();
       m_swapchain_framebuffers = create_swapchain_framebuffers();
@@ -104,9 +127,9 @@ namespace gfx
                            .maxDepth = 1.0F},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
             .build()
-            .map_error([&](vkn::error&& err) {
+            .map_error([&](vkn::error_t&& err) {
                log_error(mp_logger, "[core] Failed to create graphics pipeline: \"{0}\"",
-                         err.type.message());
+                         err.value().message());
 
                abort();
 
@@ -129,16 +152,16 @@ namespace gfx
                                       .descriptorType = vk::DescriptorType::eUniformBuffer,
                                       .pBufferInfo = std::data(buf_info)};
 
-         m_device->updateDescriptorSets({write}, {});
+         m_device.logical_device().updateDescriptorSets({write}, {});
       }
    }
 
    void render_manager::render_frame()
    {
-      m_device->waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
-                              std::numeric_limits<std::uint64_t>::max());
+      m_device.logical_device().waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))},
+                                              true, std::numeric_limits<std::uint64_t>::max());
 
-      auto [image_res, image_index] = m_device->acquireNextImageKHR(
+      auto [image_res, image_index] = m_device.logical_device().acquireNextImageKHR(
          vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
          vkn::value(m_image_available_semaphores.at(m_current_frame)), nullptr);
       if (image_res != vk::Result::eSuccess)
@@ -149,7 +172,8 @@ namespace gfx
       util::log_debug(mp_logger, R"([gfx] swapchain image "{}" acquired)", image_index);
       util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" resetting)", m_current_frame);
 
-      m_device->resetCommandPool(m_gfx_command_pools[m_current_frame].value(), {}); // NOLINT
+      m_device.logical_device().resetCommandPool(m_gfx_command_pools[m_current_frame].value(),
+                                                 {}); // NOLINT
 
       util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" buffer recording)",
                       m_current_frame);
@@ -196,8 +220,9 @@ namespace gfx
 
       if (m_images_in_flight[image_index])
       {
-         m_device->waitForFences({vkn::value(m_images_in_flight.at(m_current_frame))}, true,
-                                 std::numeric_limits<std::uint64_t>::max());
+         m_device.logical_device().waitForFences(
+            {vkn::value(m_images_in_flight.at(m_current_frame))}, true,
+            std::numeric_limits<std::uint64_t>::max());
       }
       m_images_in_flight[image_index] = vkn::value(m_in_flight_fences.at(m_current_frame));
 
@@ -209,7 +234,7 @@ namespace gfx
       const std::array<vk::PipelineStageFlags, 1> wait_stages{
          vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-      m_device->resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
+      m_device.logical_device().resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
 
       const std::array submit_infos{
          vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
@@ -222,7 +247,7 @@ namespace gfx
 
       try
       {
-         const auto gfx_queue = *m_device.get_queue(vkn::queue::type::graphics).value();
+         const auto gfx_queue = *m_device.get_queue(vkn::queue_type::graphics).value();
          gfx_queue.submit(submit_infos, vkn::value(m_in_flight_fences.at(m_current_frame)));
       }
       catch (const vk::SystemError& err)
@@ -233,7 +258,7 @@ namespace gfx
 
       const std::array swapchains{vkn::value(m_swapchain)};
 
-      const auto present_queue = *m_device.get_queue(vkn::queue::type::present).value();
+      const auto present_queue = *m_device.get_queue(vkn::queue_type::present).value();
       if (present_queue.presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
                                     .pWaitSemaphores = std::data(signal_semaphores),
                                     .swapchainCount = std::size(swapchains),
@@ -247,7 +272,7 @@ namespace gfx
       m_current_frame = (m_current_frame + 1) % max_frames_in_flight;
    }
 
-   void render_manager::wait() { m_device->waitIdle(); }
+   void render_manager::wait() { m_device.logical_device().waitIdle(); }
 
    void render_manager::update_camera(uint32_t image_index)
    {
@@ -255,18 +280,18 @@ namespace gfx
       matrices.perspective = glm::perspective(
          glm::radians(45.0F), m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F,
          10.0F);
-      matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+      matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
                                   glm::vec3(0.0F, 0.0F, 1.0F));
       matrices.perspective[1][1] *= -1;
 
-      void* p_data =
-         m_device->mapMemory(m_camera_buffers[image_index]->memory(), 0, sizeof(matrices), {});
+      void* p_data = m_device.logical_device().mapMemory(m_camera_buffers[image_index]->memory(), 0,
+                                                         sizeof(matrices), {});
       memcpy(p_data, &matrices, sizeof(matrices));
-      m_device->unmapMemory(m_camera_buffers[image_index]->memory());
+      m_device.logical_device().unmapMemory(m_camera_buffers[image_index]->memory());
    }
 
    auto render_manager::add_pass(const std::string& name,
-                                 [[maybe_unused]] vkn::queue::type queue_type) -> render_pass&
+                                 [[maybe_unused]] vkn::queue_type queue_type) -> render_pass&
    {
       auto it = m_render_pass_to_index.find(name);
       if (it != std::end(m_render_pass_to_index))
@@ -282,44 +307,6 @@ namespace gfx
       }
    }
 
-   auto render_manager::create_physical_device() const noexcept -> vkn::physical_device
-   {
-      return vkn::physical_device::selector{m_ctx.vulkan_instance(), mp_logger}
-         .set_surface(m_wnd.get_surface(m_ctx.vulkan_instance().value())
-                         .map_error([&](auto&& err) {
-                            log_error(mp_logger, "[core] Failed to create surface: {0}",
-                                      err.type.message());
-                            std::terminate();
-
-                            return vk::SurfaceKHR{};
-                         })
-                         .join())
-         .set_preferred_gpu_type(vkn::physical_device::type::discrete)
-         .allow_any_gpu_type()
-         .require_present()
-         .select()
-         .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create physical device: {0}",
-                      err.type.message());
-            std::terminate();
-
-            return vkn::physical_device{};
-         })
-         .join();
-   }
-   auto render_manager::create_logical_device() const noexcept -> vkn::device
-   {
-      return vkn::device::builder{m_ctx.vulkan_loader(), create_physical_device(),
-                                  m_ctx.vulkan_instance().version(), mp_logger}
-         .build()
-         .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create device: {0}", err.type.message());
-            std::terminate();
-
-            return vkn::device{};
-         })
-         .join();
-   }
    auto render_manager::create_swapchain() const noexcept -> vkn::swapchain
    {
       return vkn::swapchain::builder{m_device, mp_logger}
@@ -329,8 +316,8 @@ namespace gfx
          .set_clipped(true)
          .set_composite_alpha_flags(vk::CompositeAlphaFlagBitsKHR::eOpaque)
          .build()
-         .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create swapchain: {0}", err.type.message());
+         .map_error([&](vkn::error_t&& err) {
+            log_error(mp_logger, "[core] Failed to create swapchain: {0}", err.value().message());
             std::terminate();
 
             return vkn::swapchain{};
@@ -341,9 +328,9 @@ namespace gfx
    {
       return vkn::render_pass::builder{m_device, m_swapchain, mp_logger}
          .build()
-         .map_error([&](auto&& err) {
+         .map_error([&](vkn::error_t&& err) {
             log_error(mp_logger, "[core] Failed to create render pass: \"{0}\"",
-                      err.type.message());
+                      err.value().message());
             abort();
 
             return vkn::render_pass{};
@@ -365,9 +352,9 @@ namespace gfx
                .set_buffer_height(m_swapchain.extent().height)
                .set_layer_count(1U)
                .build()
-               .map_error([&](vkn::error&& err) {
+               .map_error([&](vkn::error_t&& err) {
                   log_error(mp_logger, "[core] Failed to create framebuffer: \"{0}\"",
-                            err.type.message());
+                            err.value().message());
                   abort();
 
                   return vkn::framebuffer{};
@@ -386,9 +373,9 @@ namespace gfx
             vkn::value(m_graphics_pipeline.get_descriptor_set_layout("camera_layout")))
          .set_max_sets(util::count32_t{std::size(m_swapchain.image_views())})
          .build()
-         .map_error([&](vkn::error&& err) {
+         .map_error([&](vkn::error_t&& err) {
             log_error(mp_logger, "[core] Failed to camera descriptor pool: \"{0}\"",
-                      err.type.message());
+                      err.value().message());
             std::terminate();
 
             return vkn::descriptor_pool{};
@@ -429,8 +416,8 @@ namespace gfx
          .allow_caching(false)
          .build()
          .map_error([&](auto&& err) {
-            log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
-                      err.value().message());
+            util::log_error(mp_logger, "[core] Failed to create shader codex: \"{0}\"",
+                            err.value().message());
             std::terminate();
 
             return core::shader_codex{};
@@ -447,10 +434,10 @@ namespace gfx
       {
          pool = vkn::command_pool::builder{m_device, mp_logger}
                    .set_queue_family_index(
-                      m_device.get_queue_index(vkn::queue::type::graphics)
+                      m_device.get_queue_index(vkn::queue_type::graphics)
                          .map_error([&](auto&& err) {
                             log_error(mp_logger, "[core] No usable graphics queues found: \"{0}\"",
-                                      err.type.message());
+                                      err.value().message());
                             std::terminate();
 
                             return 0u;
@@ -460,7 +447,7 @@ namespace gfx
                    .build()
                    .map_error([&](auto&& err) {
                       log_error(mp_logger, "[core] Failed to create command pool: \"{0}\"",
-                                err.type.message());
+                                err.value().message());
 
                       std::terminate();
 
@@ -479,9 +466,9 @@ namespace gfx
       {
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
-                        .map_error([&](vkn::error&& err) {
+                        .map_error([&](vkn::error_t&& err) {
                            log_error(mp_logger, "[core] Failed to create semaphore: \"{0}\"",
-                                     err.type.message());
+                                     err.value().message());
                            abort();
 
                            return vkn::semaphore{};
@@ -500,10 +487,10 @@ namespace gfx
       {
          semaphores.emplace_back(vkn::semaphore::builder{m_device, mp_logger}
                                     .build()
-                                    .map_error([&](vkn::error&& err) {
+                                    .map_error([&](vkn::error_t&& err) {
                                        log_error(mp_logger,
                                                  "[core] Failed to create semaphore: \"{0}\"",
-                                                 err.type.message());
+                                                 err.value().message());
 
                                        std::terminate();
 
@@ -523,9 +510,9 @@ namespace gfx
          fence = vkn::fence::builder{m_device, mp_logger}
                     .set_signaled()
                     .build()
-                    .map_error([&](vkn::error&& err) {
+                    .map_error([&](vkn::error_t&& err) {
                        log_error(mp_logger, "[core] Failed to create in flight fence: \"{0}\"",
-                                 err.type.message());
+                                 err.value().message());
 
                        std::terminate();
 

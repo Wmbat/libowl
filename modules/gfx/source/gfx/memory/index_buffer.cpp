@@ -44,15 +44,15 @@ namespace gfx
 
       const std::size_t size = sizeof(info.indices[0]) * std::size(info.indices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
-         void* p_data = device->mapMemory(buffer.memory(), 0, size, {});
+         void* p_data = device.logical_device().mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.indices.data(), size);
-         device->unmapMemory(buffer.memory());
+         device.logical_device().unmapMemory(buffer.memory());
 
          return std::move(buffer);
       };
-      const auto buffer_error = [&](vkn::error&& err) noexcept {
+      const auto buffer_error = [&](vkn::error_t&& err) noexcept {
          util::log_error(info.p_logger, "[core] staging buffer error: {}-{}",
-                         err.type.category().name(), err.type.message());
+                         err.value().category().name(), err.value().message());
 
          return make_error(index_buffer_error::failed_to_create_staging_buffer);
       };
@@ -69,7 +69,7 @@ namespace gfx
 
       if (!staging_buffer_res)
       {
-         return monad::make_error(*staging_buffer_res.error());
+         return monad::err(*staging_buffer_res.error());
       }
 
       auto index_buffer_res = vkn::buffer::builder{device, info.p_logger}
@@ -82,7 +82,7 @@ namespace gfx
 
       if (!index_buffer_res)
       {
-         return monad::make_error(*index_buffer_res.error());
+         return monad::err(*index_buffer_res.error());
       }
 
       auto staging_buffer = *std::move(staging_buffer_res).value();
@@ -93,10 +93,10 @@ namespace gfx
          buffer->copyBuffer(vkn::value(staging_buffer), vkn::value(index_buffer), {{.size = size}});
          buffer->end();
 
-         return device.get_queue(vkn::queue::type::graphics)
-            .map_error([&](vkn::error&& err) {
+         return device.get_queue(vkn::queue_type::graphics)
+            .map_error([&](vkn::error_t&& err) {
                util::log_error(info.p_logger, "[core] no queue found for transfer : {}-{}",
-                               err.type.category().name(), err.type.message());
+                               err.value().category().name(), err.value().message());
 
                return make_error(index_buffer_error::failed_to_find_a_suitable_queue);
             })
@@ -115,9 +115,9 @@ namespace gfx
       };
 
       return command_pool.create_primary_buffer()
-         .map_error([&](vkn::error&& err) {
+         .map_error([&](vkn::error_t&& err) {
             util::log_error(info.p_logger, "[core] transfer cmd buffer error: {}-{}",
-                            err.type.category().name(), err.type.message());
+                            err.value().category().name(), err.value().message());
 
             return make_error(index_buffer_error::failed_to_create_command_buffer);
          })

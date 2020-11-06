@@ -16,6 +16,11 @@ namespace vkn
    };
 
    /**
+    * Convert an command_pool_error enum to a string
+    */
+   auto to_string(command_pool_error err) -> std::string;
+
+   /**
     * A class that wraps around the functionality of a vulkan command pool
     * and maintains command buffers associated with the pool. May only be
     * built using the inner builder class.
@@ -96,15 +101,6 @@ namespace vkn
       };
    };
 
-   /**
-    * Convert an command_pool_error enum value and an error code from a vulkan error into
-    * a vkn::error
-    */
-   auto make_error(command_pool_error err, std::error_code ec) -> vkn::error;
-   /**
-    * Convert an command_pool_error enum to a string
-    */
-   auto to_string(command_pool_error err) -> std::string;
 } // namespace vkn
 
 namespace std

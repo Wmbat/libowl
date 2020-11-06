@@ -25,9 +25,10 @@ namespace vkn
             return "UNKNOWN";
       }
    }
-   auto make_error(fence_error err, std::error_code ec) -> vkn::error
+
+   auto err_code(fence_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), fence_category}, static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), fence_category}};
    }
 
    auto fence::device() const noexcept -> vk::Device { return m_value.getOwner(); }
@@ -37,7 +38,7 @@ namespace vkn
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.value();
+      m_info.device = device.logical_device();
    }
 
    auto builder::build() const noexcept -> vkn::result<fence>
@@ -48,8 +49,8 @@ namespace vkn
                                                            ? vk::FenceCreateFlagBits::eSignaled
                                                            : vk::FenceCreateFlagBits{}});
              })
-         .map_error([](vk::SystemError&& err) {
-            return make_error(fence_error::failed_to_create_fence, err.code());
+         .map_error([]([[maybe_unused]] auto err) {
+            return err_code(fence_error::failed_to_create_fence);
          })
          .map([&](vk::UniqueFence&& handle) {
             util::log_info(mp_logger, "[vkn] {} fence created",

@@ -73,10 +73,9 @@ namespace vkn
             return "UNKNOWN";
       }
    }
-   auto make_error(graphics_pipeline_error err, std::error_code ec) -> vkn::error
+   auto make_error(graphics_pipeline_error err) -> vkn::error_t
    {
-      return {{static_cast<int>(err), graphics_pipeline_category},
-              static_cast<vk::Result>(ec.value())};
+      return {{static_cast<int>(err), graphics_pipeline_category}};
    }
 
    auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
@@ -100,7 +99,7 @@ namespace vkn
                                        std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.value();
+      m_info.device = device.logical_device();
       m_info.render_pass = render_pass.value();
    }
 
@@ -189,7 +188,7 @@ namespace vkn
          }
          else
          {
-            return monad::make_error(result.error().value());
+            return monad::err(result.error().value());
          }
       }
 
@@ -246,9 +245,8 @@ namespace vkn
 
             return std::move(pipeline);
          })
-         .map_error([](vk::SystemError&& err) {
-            return make_error(graphics_pipeline_error::failed_to_create_pipeline_layout,
-                              err.code());
+         .map_error([]([[maybe_unused]] const auto& err) {
+            return make_error(graphics_pipeline_error::failed_to_create_pipeline_layout);
          });
    }
 
@@ -284,8 +282,7 @@ namespace vkn
       const auto* p_vertex_shader = m_info.shaders[vertex_shader_index.value()];
       if (!check_vertex_attribute_support(p_vertex_shader))
       {
-         return monad::make_error(
-            make_error(graphics_pipeline_error::invalid_vertex_shader_bindings, {}));
+         return monad::err(make_error(graphics_pipeline_error::invalid_vertex_shader_bindings));
       }
 
       const auto vertex_input_state_create_info =
@@ -354,8 +351,8 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createGraphicsPipelineUnique(nullptr, create_info);
              })
-         .map_error([](auto&& err) {
-            return make_error(graphics_pipeline_error::failed_to_create_pipeline, err.code());
+         .map_error([]([[maybe_unused]] auto&& err) {
+            return make_error(graphics_pipeline_error::failed_to_create_pipeline);
          })
          .map([&](vk::UniquePipeline&& handle) {
             util::log_info(mp_logger, R"([vkn] graphics pipeline created)");

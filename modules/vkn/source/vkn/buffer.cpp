@@ -36,10 +36,10 @@ namespace vkn
             return "UNKNOWN";
       }
    };
-   auto make_error(buffer_error err, std::error_code ec) -> vkn::error
+
+   auto err_code(buffer_error err) -> vkn::error_t
    {
-      return vkn::error{{static_cast<int>(err), buffer_category},
-                        static_cast<vk::Result>(ec.value())};
+      return vkn::error_t{{static_cast<int>(err), buffer_category}};
    }
 
    auto buffer::memory() const noexcept -> vk::DeviceMemory { return m_memory.get(); }
@@ -50,8 +50,8 @@ namespace vkn
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.value();
-      m_info.physical_device = device.physical().value();
+      m_info.device = device.logical_device();
+      m_info.physical_device = device.physical_device();
    }
 
    auto builder::build() const noexcept -> vkn::result<buffer>
@@ -105,8 +105,8 @@ namespace vkn
                 return m_info.device.createBufferUnique(
                    {.size = m_info.size, .usage = m_info.flags, .sharingMode = m_info.mode});
              })
-         .map_error([](const vk::SystemError& err) {
-            return make_error(buffer_error::failed_to_create_buffer, err.code());
+         .map_error([]([[maybe_unused]] auto err) {
+            return err_code(buffer_error::failed_to_create_buffer);
          });
    }
 
@@ -114,15 +114,15 @@ namespace vkn
    {
       const auto requirements = m_info.device.getBufferMemoryRequirements(buffer);
       auto error_res = vkn::result<vk::UniqueDeviceMemory>{
-         monad::make_error(make_error(buffer_error::failed_to_find_desired_memory_type, {}))};
+         monad::err(err_code(buffer_error::failed_to_find_desired_memory_type))};
 
       const auto alloc_memory = [&](uint32_t index) noexcept {
          return monad::try_wrap<vk::SystemError>([&] {
                    return m_info.device.allocateMemoryUnique(
                       {.allocationSize = requirements.size, .memoryTypeIndex = index});
                 })
-            .map_error([](const vk::SystemError& err) {
-               return make_error(buffer_error::failed_to_allocate_memory, err.code());
+            .map_error([]([[maybe_unused]] auto err) {
+               return err_code(buffer_error::failed_to_allocate_memory);
             });
       };
 
@@ -139,7 +139,7 @@ namespace vkn
 
       for (std::uint32_t i = 0; const auto& heap_type : mem_properties.memoryTypes)
       {
-         if ((type_filter & (1 << i)) && (heap_type.propertyFlags == properties))
+         if ((type_filter & (1U << i)) && (heap_type.propertyFlags == properties))
          {
             return i;
          }
