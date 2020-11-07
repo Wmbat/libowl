@@ -68,6 +68,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
         source/water_simulation/shader_codex.cpp
+        source/water_simulation/particle_system.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
