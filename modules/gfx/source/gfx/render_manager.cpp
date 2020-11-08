@@ -109,6 +109,10 @@ namespace gfx
             .add_vertex_attribute({.location = 1,
                                    .binding = 0,
                                    .format = vk::Format::eR32G32B32Sfloat,
+                                   .offset = offsetof(gfx::vertex, normal)})
+            .add_vertex_attribute({.location = 2,
+                                   .binding = 0,
+                                   .format = vk::Format::eR32G32B32Sfloat,
                                    .offset = offsetof(gfx::vertex, colour)})
             .add_set_layout("camera_layout",
                             {{.binding = 0,

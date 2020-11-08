@@ -13,7 +13,6 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 message(STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}")
-
 message(STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}")
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
@@ -25,6 +24,8 @@ endif ()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
+include(CMakeLists.txt.in)
+
 add_executable(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
@@ -35,8 +36,7 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
         $<$<PLATFORM_ID:UNIX>:-pthread>
 
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer 
-        -fsanitize=address>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
@@ -50,8 +50,10 @@ target_link_libraries(${PROJECT_NAME}
         vermillon::ui
         vermillon::gfx
 
+        tinyobjloader
+
     PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
+    #$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )

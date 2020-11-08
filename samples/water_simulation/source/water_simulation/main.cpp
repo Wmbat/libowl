@@ -9,8 +9,56 @@
 
 #include <glm/ext/matrix_transform.hpp>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 static constexpr float time_step = 0.0001F;
-static constexpr float gravity = -9.81F;
+[[maybe_unused]] static constexpr float gravity = -9.81F;
+
+auto load_obj(const filepath& path) -> gfx::renderable_data
+{
+   tinyobj::attrib_t attrib;
+
+   std::vector<tinyobj::shape_t> shapes;
+   std::vector<tinyobj::material_t> materials;
+
+   std::string warn;
+   std::string err;
+
+   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
+   {
+      throw std::runtime_error(warn + err);
+   }
+
+   std::unordered_map<gfx::vertex, std::uint32_t> unique_vertices{};
+
+   util::dynamic_array<gfx::vertex> vertices;
+   util::dynamic_array<std::uint32_t> indices;
+
+   for (const auto& shape : shapes)
+   {
+      for (const auto& index : shape.mesh.indices)
+      {
+         gfx::vertex vertex{.position = {attrib.vertices[3 * index.vertex_index + 0],
+                                         attrib.vertices[3 * index.vertex_index + 1],
+                                         attrib.vertices[3 * index.vertex_index + 2]},
+                            .normal = {attrib.normals[3 * index.normal_index + 0],
+                                       attrib.normals[3 * index.normal_index + 1],
+                                       attrib.normals[3 * index.normal_index + 2]},
+                            .colour = {1.0F, 1.0F, 1.0F}};
+
+         if (unique_vertices.count(vertex) == 0)
+         {
+            unique_vertices[vertex] = static_cast<uint32_t>(vertices.size());
+            vertices.push_back(vertex);
+         }
+
+         indices.push_back(unique_vertices[vertex]);
+      }
+   }
+
+   return {.vertices = vertices, .indices = indices, .model = glm::mat4{1}};
+}
 
 void integrate([[maybe_unused]] particle& p)
 {
@@ -46,16 +94,13 @@ auto main() -> int
 
    rendering_manager.bake(vert_shader_info.value(), frag_shader_info.value());
 
-   particle_engine particle_engine{rendering_manager, 100};
+   rendering_manager.subscribe_renderable("sphere", load_obj("resources/meshes/sphere.obj"));
 
-   particle_engine.emit(
-      {.position = {0.0F, 0.0F, 0.0F}, .force = {0.0F, gravity, 0.0F}, .is_active = true});
+   rendering_manager.update_model_matrix("sphere", glm::scale(glm::mat4{1}, {0.5F, 0.5F, 0.5F}));
 
    while (window.is_open())
    {
       window.poll_events();
-
-      particle_engine.update(integrate);
 
       rendering_manager.render_frame();
    }

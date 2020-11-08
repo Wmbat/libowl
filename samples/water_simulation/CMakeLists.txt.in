@@ -1,0 +1,5 @@
+CPMAddPackage(
+    NAME tinyobjloader
+    VERSION 1.0.7
+    GITHUB_REPOSITORY tinyobjloader/tinyobjloader
+) 

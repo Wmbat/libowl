@@ -9,13 +9,6 @@
 
 #include <utility>
 
-util::dynamic_array<gfx::vertex> m_particle_vertices{{{-0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{0.5F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}},
-                                                     {{-0.5F, 0.5F, 0.0F}, {1.0F, 0.0F, 0.0F}}};
-
-util::dynamic_array<std::uint32_t> m_particle_indices{0, 1, 2, 2, 3, 0};
-
 auto is_active(ranges::common_pair<std::size_t, particle&> pair) -> bool
 {
    return pair.second.is_active;
@@ -24,10 +17,11 @@ auto is_active(ranges::common_pair<std::size_t, particle&> pair) -> bool
 namespace vi = ranges::views;
 
 particle_engine::particle_engine(gfx::render_manager& render_manager, std::size_t particle_count) :
-   m_render_manager{render_manager}, m_particle_index{particle_count - 1}
+   m_render_manager{render_manager}
 {
    m_particles.resize(particle_count);
 
+   /*
    for (std::size_t i : vi::iota(0U, particle_count))
    {
       std::string name = "particle_" + std::to_string(i);
@@ -40,6 +34,7 @@ particle_engine::particle_engine(gfx::render_manager& render_manager, std::size_
 
       m_names.push_back(name);
    }
+   */
 }
 
 void particle_engine::update(const std::function<void(particle&)>& fun)
@@ -54,7 +49,7 @@ void particle_engine::update(const std::function<void(particle&)>& fun)
    }
 }
 
-void particle_engine::emit(const particle& particle)
+void particle_engine::emit([[maybe_unused]] const particle& particle)
 {
    // m_particles[m_particle_index] = particle;
    // m_particles[m_particle_index].is_active = true;
