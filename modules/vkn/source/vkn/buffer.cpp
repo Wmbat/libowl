@@ -1,4 +1,3 @@
-#include "util/logger.hpp"
 #include <vkn/buffer.hpp>
 
 #include <vkn/core.hpp>
@@ -37,9 +36,9 @@ namespace vkn
       }
    };
 
-   auto err_code(buffer_error err) -> vkn::error_t
+   auto to_err_code(buffer_error err) -> util::error_t
    {
-      return vkn::error_t{{static_cast<int>(err), buffer_category}};
+      return {{static_cast<int>(err), buffer_category}};
    }
 
    auto buffer::memory() const noexcept -> vk::DeviceMemory { return m_memory.get(); }
@@ -54,7 +53,7 @@ namespace vkn
       m_info.physical_device = device.physical_device();
    }
 
-   auto builder::build() const noexcept -> vkn::result<buffer>
+   auto builder::build() const noexcept -> util::result<buffer>
    {
       const auto allocate_n_construct = [&](vk::UniqueBuffer buffer) noexcept {
          return allocate_memory(buffer.get()).map([&](vk::UniqueDeviceMemory memory) noexcept {
@@ -99,22 +98,22 @@ namespace vkn
       return *this;
    }
 
-   auto builder::create_buffer() const -> vkn::result<vk::UniqueBuffer>
+   auto builder::create_buffer() const -> util::result<vk::UniqueBuffer>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createBufferUnique(
                    {.size = m_info.size, .usage = m_info.flags, .sharingMode = m_info.mode});
              })
          .map_error([]([[maybe_unused]] auto err) {
-            return err_code(buffer_error::failed_to_create_buffer);
+            return to_err_code(buffer_error::failed_to_create_buffer);
          });
    }
 
-   auto builder::allocate_memory(vk::Buffer buffer) const -> vkn::result<vk::UniqueDeviceMemory>
+   auto builder::allocate_memory(vk::Buffer buffer) const -> util::result<vk::UniqueDeviceMemory>
    {
       const auto requirements = m_info.device.getBufferMemoryRequirements(buffer);
-      auto error_res = vkn::result<vk::UniqueDeviceMemory>{
-         monad::err(err_code(buffer_error::failed_to_find_desired_memory_type))};
+      auto error_res = util::result<vk::UniqueDeviceMemory>{
+         monad::err(to_err_code(buffer_error::failed_to_find_desired_memory_type))};
 
       const auto alloc_memory = [&](uint32_t index) noexcept {
          return monad::try_wrap<vk::SystemError>([&] {
@@ -122,7 +121,7 @@ namespace vkn
                       {.allocationSize = requirements.size, .memoryTypeIndex = index});
                 })
             .map_error([]([[maybe_unused]] auto err) {
-               return err_code(buffer_error::failed_to_allocate_memory);
+               return to_err_code(buffer_error::failed_to_allocate_memory);
             });
       };
 

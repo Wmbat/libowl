@@ -93,14 +93,14 @@ namespace vkn
     */
 
    auto load_core(const std::shared_ptr<util::logger>& p_logger) -> context_data;
-   auto query_vulkan_version(context_data&& data) -> result<context_data>;
-   auto create_instance(context_data&& data) -> result<context_data>;
-   auto create_debug_utils(context_data&& data) -> result<context_data>;
+   auto query_vulkan_version(context_data&& data) -> util::result<context_data>;
+   auto create_instance(context_data&& data) -> util::result<context_data>;
+   auto create_debug_utils(context_data&& data) -> util::result<context_data>;
 
    /**
     * MAIN CONSTRUCTION FUNCTION
     */
-   auto context::make(const create_info& info) -> result<context>
+   auto context::make(const create_info& info) -> util::result<context>
    {
       return query_vulkan_version(load_core(info.p_logger))
          .and_then(create_instance)
@@ -120,7 +120,7 @@ namespace vkn
    auto context::instance() const noexcept -> vk::Instance { return m_instance.get(); }
    auto context::version() const noexcept -> std::uint32_t { return m_api_version; }
 
-   auto context::select_device(vk::UniqueSurfaceKHR surface) const -> result<device>
+   auto context::select_device(vk::UniqueSurfaceKHR surface) const -> util::result<device>
    {
       return enumerate_physical_devices().and_then([&](auto devices) {
          return device::select({.instance = m_instance.get(),
@@ -132,13 +132,13 @@ namespace vkn
    }
 
    auto context::enumerate_physical_devices() const
-      -> result<util::dynamic_array<vk::PhysicalDevice>>
+      -> util::result<util::dynamic_array<vk::PhysicalDevice>>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_instance->enumeratePhysicalDevices() | ranges::to<util::dynamic_array>;
              })
          .map_error([]([[maybe_unused]] auto err) {
-            return to_error_t(context_error::failed_to_enumerate_physical_devices);
+            return to_err_code(context_error::failed_to_enumerate_physical_devices);
          });
    }
 
@@ -228,7 +228,7 @@ namespace vkn
       return context_data{.dynamic_loader = std::move(loader), .p_logger = p_logger};
    }
 
-   auto query_vulkan_version(context_data&& data) -> result<context_data>
+   auto query_vulkan_version(context_data&& data) -> util::result<context_data>
    {
       return monad::try_wrap<vk::SystemError>([] {
                 return vk::enumerateInstanceVersion(); // may throw
@@ -236,9 +236,9 @@ namespace vkn
          .map_error([&](vk::SystemError&& e) {
             util::log_error(data.p_logger, "[vkn] {}", e.what());
 
-            return to_error_t(context_error::failed_to_query_vulkan_version);
+            return to_err_code(context_error::failed_to_query_vulkan_version);
          })
-         .and_then([&](std::uint32_t v) -> result<context_data> {
+         .and_then([&](std::uint32_t v) -> util::result<context_data> {
             util::log_info(data.p_logger, "[vkn] vulkan version {}.{}.{} found",
                            VK_VERSION_MAJOR(v), VK_VERSION_MINOR(v), VK_VERSION_PATCH(v));
 
@@ -250,19 +250,19 @@ namespace vkn
             }
             else
             {
-               return monad::err(to_error_t(context_error::vulkan_version_1_2_unavailable));
+               return monad::err(to_err_code(context_error::vulkan_version_1_2_unavailable));
             }
          });
    }
 
-   auto create_instance(context_data&& data) -> result<context_data>
+   auto create_instance(context_data&& data) -> util::result<context_data>
    {
       const auto layers = query_instance_layers(data.p_logger);
       auto extensions = query_instance_extensions(data.p_logger);
 
       if (!has_windowing_extensions(extensions))
       {
-         return monad::err(to_error_t(context_error::window_extensions_not_present));
+         return monad::err(to_err_code(context_error::window_extensions_not_present));
       }
 
       util::dynamic_array<const char*> layer_names;
@@ -318,7 +318,7 @@ namespace vkn
          .map_error([&](vk::SystemError&& e) {
             util::log_error(data.p_logger, "[vulkan] instance error: {}", e.what());
 
-            return to_error_t(context_error::failed_to_create_instance);
+            return to_err_code(context_error::failed_to_create_instance);
          })
          .map([&](vk::UniqueInstance instance) {
             VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
@@ -333,7 +333,7 @@ namespace vkn
          });
    }
 
-   auto create_debug_utils(context_data&& data) -> result<context_data>
+   auto create_debug_utils(context_data&& data) -> util::result<context_data>
    {
       if constexpr (enable_validation_layers)
       {
@@ -350,8 +350,8 @@ namespace vkn
                        .pfnUserCallback = debug_callback,
                        .pUserData = static_cast<void*>(data.p_logger.get())});
                 })
-            .map_error([]([[maybe_unused]] const auto& err) -> error_t {
-               return to_error_t(context_error::failed_to_create_debug_utils);
+            .map_error([]([[maybe_unused]] const auto& err) -> util::error_t {
+               return to_err_code(context_error::failed_to_create_debug_utils);
             })
             .map([&](vk::UniqueDebugUtilsMessengerEXT handle) {
                log_info(data.p_logger, "[vulkan] debug utils created");
@@ -419,7 +419,7 @@ namespace vkn
          return "UNKNOWN";
       }
    }
-   auto to_error_t(context_error err) -> error_t
+   auto to_err_code(context_error err) -> util::error_t
    {
       return {{static_cast<int>(err), detail::context_error_cat}};
    }

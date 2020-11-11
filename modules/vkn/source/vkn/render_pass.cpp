@@ -4,43 +4,6 @@
 
 namespace vkn
 {
-   /**
-    * A struct used for error handling and displaying error messages
-    */
-   struct render_pass_error_category : std::error_category
-   {
-      /**
-       * The name of the vkn object the error appeared from.
-       */
-      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_render_pass"; }
-      /**
-       * Get the message associated with a specific error code.
-       */
-      [[nodiscard]] auto message(int err) const -> std::string override
-      {
-         return to_string(static_cast<render_pass_error>(err));
-      }
-   };
-
-   inline static const render_pass_error_category render_pass_category{};
-
-   auto make_error(render_pass_error err) -> vkn::error_t
-   {
-      return {{static_cast<int>(err), render_pass_category}};
-   }
-   auto to_string(render_pass_error err) -> std::string
-   {
-      switch (err)
-      {
-         case render_pass_error::no_device_provided:
-            return "no_device_provided";
-         case render_pass_error::failed_to_create_render_pass:
-            return "failed_to_create_render_pass";
-         default:
-            return "UNKNOWN";
-      }
-   };
-
    auto render_pass::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    using builder = render_pass::builder;
@@ -52,11 +15,11 @@ namespace vkn
       m_swapchain_extent{swapchain.extent()}, mp_logger{std::move(p_logger)}
    {}
 
-   auto builder::build() -> vkn::result<render_pass>
+   auto builder::build() -> util::result<render_pass>
    {
       if (!m_device)
       {
-         return monad::err(make_error(render_pass_error::no_device_provided));
+         return monad::err(to_err_code(render_pass_error::no_device_provided));
       }
 
       const std::array attachment_descriptions{
@@ -107,7 +70,7 @@ namespace vkn
                 return m_device.createRenderPassUnique(pass_info);
              })
          .map_error([]([[maybe_unused]] auto&& err) {
-            return make_error(render_pass_error::failed_to_create_render_pass);
+            return to_err_code(render_pass_error::failed_to_create_render_pass);
          })
          .map([&](vk::UniqueRenderPass&& handle) {
             util::log_info(mp_logger, "[vkn] render pass created");
@@ -119,4 +82,42 @@ namespace vkn
             return pass;
          });
    } // namespace vkn
+
+   /**
+    * A struct used for error handling and displaying error messages
+    */
+   struct render_pass_error_category : std::error_category
+   {
+      /**
+       * The name of the vkn object the error appeared from.
+       */
+      [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_render_pass"; }
+      /**
+       * Get the message associated with a specific error code.
+       */
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return to_string(static_cast<render_pass_error>(err));
+      }
+   };
+
+   inline static const render_pass_error_category render_pass_category{};
+
+   auto to_err_code(render_pass_error err) -> util::error_t
+   {
+      return {{static_cast<int>(err), render_pass_category}};
+   }
+   auto to_string(render_pass_error err) -> std::string
+   {
+      switch (err)
+      {
+         case render_pass_error::no_device_provided:
+            return "no_device_provided";
+         case render_pass_error::failed_to_create_render_pass:
+            return "failed_to_create_render_pass";
+         default:
+            return "UNKNOWN";
+      }
+   };
+
 } // namespace vkn

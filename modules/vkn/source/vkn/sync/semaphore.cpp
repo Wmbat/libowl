@@ -30,7 +30,7 @@ namespace vkn
       }
    }
 
-   auto err_code(semaphore_error err) -> vkn::error_t
+   auto to_err_code(semaphore_error err) -> util::error_t
    {
       return {{static_cast<int>(err), semaphore_category}};
    }
@@ -45,13 +45,13 @@ namespace vkn
       m_info.device = device.logical_device();
    }
 
-   auto builder::build() const noexcept -> vkn::result<semaphore>
+   auto builder::build() const noexcept -> util::result<semaphore>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createSemaphoreUnique({});
              })
          .map_error([]([[maybe_unused]] auto err) {
-            return err_code(semaphore_error::failed_to_create_semaphore);
+            return to_err_code(semaphore_error::failed_to_create_semaphore);
          })
          .map([&](vk::UniqueSemaphore&& handle) {
             util::log_info(mp_logger, "[vkn] semaphore created");

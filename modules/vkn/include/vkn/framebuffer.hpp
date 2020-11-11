@@ -46,7 +46,7 @@ namespace vkn
           * Attemp to create the framebuffer object with the given information. If something
           * unexpected happens, an error will be returned instead
           */
-         auto build() -> vkn::result<framebuffer>;
+         auto build() -> util::result<framebuffer>;
 
          /**
           * Add a view attachment to the framebuffer
@@ -89,7 +89,8 @@ namespace vkn
    /**
     * Convert an framebuffer_error enum to a string
     */
-   auto to_string(vkn::framebuffer_error err) -> std::string;
+   auto to_string(framebuffer_error err) -> std::string;
+   auto to_err_code(framebuffer_error err) -> util::error_t;
 } // namespace vkn
 
 namespace std

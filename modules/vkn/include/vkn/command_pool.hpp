@@ -19,6 +19,7 @@ namespace vkn
     * Convert an command_pool_error enum to a string
     */
    auto to_string(command_pool_error err) -> std::string;
+   auto to_err_code(command_pool_error err) -> util::error_t;
 
    /**
     * A class that wraps around the functionality of a vulkan command pool
@@ -38,7 +39,7 @@ namespace vkn
          -> const util::dynamic_array<vk::CommandBuffer>&;
 
       [[nodiscard]] auto create_primary_buffer() const noexcept
-         -> vkn::result<vk::UniqueCommandBuffer>;
+         -> util::result<vk::UniqueCommandBuffer>;
 
    private:
       std::shared_ptr<util::logger> mp_logger;
@@ -60,7 +61,7 @@ namespace vkn
          /**
           * Attempt to build a command_pool object. May return an error
           */
-         auto build() noexcept -> vkn::result<command_pool>;
+         auto build() noexcept -> util::result<command_pool>;
 
          /**
           * Set the queue family index for the command pool. All associated command buffers
@@ -80,11 +81,11 @@ namespace vkn
          auto set_secondary_buffer_count(uint32_t count) noexcept -> builder&;
 
       private:
-         auto create_command_pool(vk::UniqueCommandPool handle) -> vkn::result<command_pool>;
+         auto create_command_pool(vk::UniqueCommandPool handle) -> util::result<command_pool>;
          auto create_primary_buffers(vk::CommandPool pool)
-            -> vkn::result<util::dynamic_array<vk::CommandBuffer>>;
+            -> util::result<util::dynamic_array<vk::CommandBuffer>>;
          auto create_secondary_buffers(vk::CommandPool handle)
-            -> vkn::result<util::dynamic_array<vk::CommandBuffer>>;
+            -> util::result<util::dynamic_array<vk::CommandBuffer>>;
 
       private:
          std::shared_ptr<util::logger> mp_logger;

@@ -6,10 +6,17 @@
 #include <vkn/render_pass.hpp>
 #include <vkn/shader.hpp>
 
+#include <util/error.hpp>
 #include <util/strong_type.hpp>
 
 namespace vkn
 {
+   enum struct pipeline_type
+   {
+      graphics,
+      compute
+   };
+
    enum struct graphics_pipeline_error
    {
       failed_to_create_descriptor_set_layout,
@@ -23,6 +30,10 @@ namespace vkn
    class graphics_pipeline final : public owning_handle<vk::Pipeline>
    {
       static constexpr std::size_t expected_shader_count{2U};
+
+      struct create_info
+      {
+      };
 
    public:
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
@@ -50,7 +61,7 @@ namespace vkn
          builder(const vkn::device& device, const vkn::render_pass& render_pass,
                  std::shared_ptr<util::logger> p_logger);
 
-         [[nodiscard]] auto build() const -> vkn::result<graphics_pipeline>;
+         [[nodiscard]] auto build() const -> util::result<graphics_pipeline>;
 
          auto add_shader(const vkn::shader& shader) noexcept -> builder&;
          auto add_viewport(const vk::Viewport& viewport, const vk::Rect2D& scissor) noexcept
@@ -65,13 +76,14 @@ namespace vkn
                                 util::size_t offset, util::size_t size) -> builder&;
 
       private:
-         [[nodiscard]] auto create_descriptor_set_layouts() const -> vkn::result<graphics_pipeline>;
+         [[nodiscard]] auto create_descriptor_set_layouts() const
+            -> util::result<graphics_pipeline>;
          [[nodiscard]] auto create_push_constant_ranges(graphics_pipeline&& pipeline) const
-            -> vkn::result<graphics_pipeline>;
+            -> util::result<graphics_pipeline>;
          [[nodiscard]] auto create_pipeline_layout(graphics_pipeline&& pipeline) const
-            -> vkn::result<graphics_pipeline>;
+            -> util::result<graphics_pipeline>;
          [[nodiscard]] auto create_pipeline(graphics_pipeline&& pipeline) const
-            -> vkn::result<graphics_pipeline>;
+            -> util::result<graphics_pipeline>;
 
          [[nodiscard]] auto
          check_vertex_attribute_support(const vkn::shader* p_shader) const noexcept -> bool;

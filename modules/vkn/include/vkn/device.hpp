@@ -29,6 +29,7 @@ namespace vkn
    };
 
    auto to_string(device_error err) -> std::string;
+   auto to_err_code(device_error err) -> util::error_t;
 
    enum struct queue_type
    {
@@ -53,7 +54,7 @@ namespace vkn
          std::shared_ptr<util::logger> p_logger;
       };
 
-      static auto select(selection_info&& info) -> result<device>;
+      static auto select(selection_info&& info) -> util::result<device>;
 
    public:
       [[nodiscard]] auto surface() const -> vk::SurfaceKHR;
@@ -67,27 +68,28 @@ namespace vkn
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_queue_index(queue_type type) const -> result<std::uint32_t>;
+      [[nodiscard]] auto get_queue_index(queue_type type) const -> util::result<std::uint32_t>;
       /**
        * Get the index of a queue family with support for the specified queue type operations only.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_dedicated_queue_index(queue_type type) const -> result<std::uint32_t>;
+      [[nodiscard]] auto get_dedicated_queue_index(queue_type type) const
+         -> util::result<std::uint32_t>;
 
       /**
        * Get a queue handle that support operation related to the specified queue type.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
-      [[nodiscard]] auto get_queue(queue_type) const -> result<vk::Queue>;
+      [[nodiscard]] auto get_queue(queue_type) const -> util::result<vk::Queue>;
       /**
        * Get a queue handle with support for the specified queue type operations only.
        * If the device doesn't have any queue with the specified queue type, an error will be
        * returned.
        */
       [[nodiscard]] [[nodiscard]] auto get_dedicated_queue(queue_type type) const
-         -> result<vk::Queue>;
+         -> util::result<vk::Queue>;
 
    private:
       vk::UniqueSurfaceKHR m_surface;
@@ -118,3 +120,11 @@ namespace vkn
    auto get_separated_transfer_queue_index(std::span<const vk::QueueFamilyProperties> families)
       -> monad::maybe<uint32_t>;
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::device_error> : true_type
+   {
+   };
+} // namespace std

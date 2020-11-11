@@ -18,6 +18,7 @@ namespace vkn
     * Convert an semaphore_error enum to a string
     */
    auto to_string(semaphore_error err) -> std::string;
+   auto to_err_code(semaphore_error err) -> util::error_t;
 
    /**
     * Wrapper class around the vulkan semaphore handle. May only
@@ -44,7 +45,7 @@ namespace vkn
           * Attempt to create the semaphore object. Returns an error
           * otherwise
           */
-         [[nodiscard]] auto build() const noexcept -> vkn::result<semaphore>;
+         [[nodiscard]] auto build() const noexcept -> util::result<semaphore>;
 
       private:
          std::shared_ptr<util::logger> mp_logger;

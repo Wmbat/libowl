@@ -50,7 +50,7 @@ namespace gfx
 
          return std::move(buffer);
       };
-      const auto buffer_error = [&](vkn::error_t&& err) noexcept {
+      const auto buffer_error = [&](util::error_t&& err) noexcept {
          util::log_error(info.p_logger, "[core] staging buffer error: {}-{}",
                          err.value().category().name(), err.value().message());
 
@@ -94,7 +94,7 @@ namespace gfx
          buffer->end();
 
          return device.get_queue(vkn::queue_type::graphics)
-            .map_error([&](vkn::error_t&& err) {
+            .map_error([&](util::error_t&& err) {
                util::log_error(info.p_logger, "[core] no queue found for transfer : {}-{}",
                                err.value().category().name(), err.value().message());
 
@@ -115,7 +115,7 @@ namespace gfx
       };
 
       return command_pool.create_primary_buffer()
-         .map_error([&](vkn::error_t&& err) {
+         .map_error([&](util::error_t&& err) {
             util::log_error(info.p_logger, "[core] transfer cmd buffer error: {}-{}",
                             err.value().category().name(), err.value().message());
 

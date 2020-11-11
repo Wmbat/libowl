@@ -35,7 +35,7 @@ namespace gfx
    {
       const vkn::device& device = *info.p_device;
 
-      const auto buffer_error = [&](vkn::error_t&& err) noexcept {
+      const auto buffer_error = [&](util::error_t&& err) noexcept {
          util::log_error(info.p_logger, "[core] uniform buffer error: {}-{}",
                          err.value().category().name(), err.value().message());
 

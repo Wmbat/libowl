@@ -31,7 +31,7 @@ namespace vkn
           * Construct a render_pass object. If construction fails, an error will be
           * returned instead
           */
-         auto build() -> vkn::result<render_pass>;
+         auto build() -> util::result<render_pass>;
 
       private:
          vk::Device m_device;
@@ -43,9 +43,7 @@ namespace vkn
    };
 
    auto to_string(render_pass_error err) -> std::string;
-   /**
-    * Turn an render_pass_error and a standard error code into a vkn::error
-    */
+   auto to_err_code(render_pass_error err) -> util::error_t;
 } // namespace vkn
 
 namespace std

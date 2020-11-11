@@ -23,7 +23,7 @@ namespace gfx
 
       auto is_open() -> bool;
 
-      [[nodiscard]] auto get_surface(vk::Instance instance) const -> vkn::result<vk::SurfaceKHR>;
+      [[nodiscard]] auto get_surface(vk::Instance instance) const -> util::result<vk::SurfaceKHR>;
 
    private:
       std::string title{"EGL standard window"};

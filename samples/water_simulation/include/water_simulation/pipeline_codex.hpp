@@ -3,33 +3,25 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/render_system.hpp>
 
-#include <util/containers/dynamic_array.hpp>
-#include <util/error.hpp>
+#include <gfx/render_pass.hpp>
 
-#include <gfx/render_manager.hpp>
+#include <vkn/pipeline.hpp>
 
-#include <filesystem>
-#include <string>
-
-enum struct shader_codex_error
+enum struct pipeline_codex_error
 {
-   failed_to_open_file,
-   failed_to_insert_shader,
-   shader_not_found
+
 };
 
-auto to_string(shader_codex_error err) -> std::string;
-auto to_err_code(shader_codex_error err) -> util::error_t;
+auto to_string(pipeline_codex_error err) -> std::string;
+auto to_err_code(pipeline_codex_error err) -> util::error_t;
 
-using spirv_binary = util::dynamic_array<std::uint32_t>;
-
-class shader_codex
+class pipeline_codex
 {
-   using shader_map = std::unordered_map<std::string, vkn::shader>;
+   using graphics_map = std::unordered_map<std::string, vkn::graphics_pipeline>;
 
 public:
    using key_type = std::string;
-   using value_type = vkn::shader;
+   using value_type = vkn::graphics_pipeline;
 
    class lookup_v
    {
@@ -69,14 +61,14 @@ public:
    };
 
 public:
-   shader_codex(render_system& renderer, std::shared_ptr<util::logger> p_logger);
+   pipeline_codex(render_system& renderer, std::shared_ptr<util::logger> p_logger);
 
-   auto insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>;
+   auto insert(const filepath& path, vkn::pipeline_type type) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
    auto remove(const key_type& key) -> result<remove_v>;
 
 private:
-   shader_map m_shaders;
+   graphics_map m_graphics_pipeline;
 
    render_system& m_renderer;
 

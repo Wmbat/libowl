@@ -61,12 +61,12 @@ namespace vkn
       }
 
       auto query_surface_support(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface)
-         -> vkn::result<surface_support>
+         -> util::result<surface_support>
       {
          if (!surface)
          {
             return monad::err(
-               error_t{make_error_code(surface_support::error::surface_handle_not_provided)});
+               util::error_t{make_error_code(surface_support::error::surface_handle_not_provided)});
          }
 
          const auto capabilities_res = monad::try_wrap<vk::SystemError>([=] {
@@ -75,7 +75,7 @@ namespace vkn
 
          if (!capabilities_res)
          {
-            return monad::err(error_t{
+            return monad::err(util::error_t{
                make_error_code(surface_support::error::failed_to_get_surface_capabilities)});
          }
 
@@ -86,7 +86,7 @@ namespace vkn
          if (!format_res)
          {
             return monad::err(
-               error_t{make_error_code(surface_support::error::failed_to_enumerate_formats)});
+               util::error_t{make_error_code(surface_support::error::failed_to_enumerate_formats)});
          }
 
          const auto present_mode_res = monad::try_wrap<std::system_error>([=] {
@@ -96,7 +96,7 @@ namespace vkn
          if (!present_mode_res)
          {
             // clang-format off
-            return monad::err(error_t{
+            return monad::err(util::error_t{
                make_error_code(surface_support::error::failed_to_enumerate_formats)
             });
             // clang-format on
@@ -155,16 +155,12 @@ namespace vkn
          {
             return capabilities.currentExtent;
          }
-         else
-         {
-            // clang-format off
-            return vk::Extent2D{}
-               .setWidth(std::clamp(desired_width, capabilities.minImageExtent.width,
-                  capabilities.maxImageExtent.width))
-               .setHeight(std::clamp(desired_height, capabilities.minImageExtent.height, 
-                  capabilities.maxImageExtent.height));
-            // clang-format on
-         }
+
+         return vk::Extent2D{.width = std::clamp(desired_width, capabilities.minImageExtent.width,
+                                                 capabilities.maxImageExtent.width),
+                             .height =
+                                std::clamp(desired_height, capabilities.minImageExtent.height,
+                                           capabilities.maxImageExtent.height)};
       }
 
       auto to_string(swapchain::error_type err) -> std::string
@@ -237,7 +233,7 @@ namespace vkn
       }
    }
 
-   auto builder::build() -> vkn::result<swapchain>
+   auto builder::build() -> util::result<swapchain>
    {
       using err_t = swapchain::error_type;
       if (!m_info.surface)
@@ -422,7 +418,7 @@ namespace vkn
    }
 
    auto builder::create_swapchain(vk::SwapchainCreateInfoKHR&& info) const
-      -> vkn::result<vk::UniqueSwapchainKHR>
+      -> util::result<vk::UniqueSwapchainKHR>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createSwapchainKHRUnique(info);
@@ -432,7 +428,7 @@ namespace vkn
          });
    }
    auto builder::create_images(vk::SwapchainKHR swapchain) const
-      -> vkn::result<image_dynamic_array<vk::Image>>
+      -> util::result<image_dynamic_array<vk::Image>>
    {
       return monad::try_wrap<std::system_error>([&] {
                 return m_info.device.getSwapchainImagesKHR(swapchain);
@@ -447,7 +443,7 @@ namespace vkn
 
    auto builder::create_image_views(const image_dynamic_array<vk::Image>& images,
                                     vk::SurfaceFormatKHR format) const
-      -> vkn::result<image_dynamic_array<vk::UniqueImageView>>
+      -> util::result<image_dynamic_array<vk::UniqueImageView>>
    {
       util::small_dynamic_array<vk::UniqueImageView, 3> views{};
 

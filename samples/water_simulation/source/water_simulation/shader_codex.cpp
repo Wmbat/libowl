@@ -4,12 +4,7 @@
 
 #include <fstream>
 
-auto to_util_err(vkn::error_t&& err) -> util::error_t
-{
-   return {err.value()};
-};
-
-shader_codex::shader_codex(gfx::render_manager& renderer, std::shared_ptr<util::logger> p_logger) :
+shader_codex::shader_codex(render_system& renderer, std::shared_ptr<util::logger> p_logger) :
    m_renderer{renderer}, mp_logger{std::move(p_logger)}
 {}
 
@@ -35,7 +30,6 @@ auto shader_codex::insert(const filepath& path, vkn::shader_type type) -> result
       .set_spirv_binary(data)
       .set_type(type)
       .build()
-      .map_error(to_util_err)
       .and_then([&](vkn::shader&& shader) -> result<insert_kv> {
          const auto key = path.string();
 

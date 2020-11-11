@@ -1,4 +1,6 @@
 #include <water_simulation/particle_system.hpp>
+#include <water_simulation/pipeline_codex.hpp>
+#include <water_simulation/render_system.hpp>
 #include <water_simulation/shader_codex.hpp>
 
 #include <gfx/data_types.hpp>
@@ -66,6 +68,19 @@ void integrate([[maybe_unused]] particle& p)
    p.position = p.position + time_step * p.velocity;
 };
 
+template <typename Any>
+auto handle_error(Any&& result, const std::shared_ptr<util::logger>& p_logger)
+{
+   if (auto err = result.error())
+   {
+      util::log_error(p_logger, "error: {}", err->value().message());
+
+      std::exit(EXIT_FAILURE);
+   }
+
+   return std::forward<Any>(result).value().value();
+}
+
 auto main() -> int
 {
    auto main_logger = std::make_shared<util::logger>("water_simulation");
@@ -73,39 +88,71 @@ auto main() -> int
    glfwInit();
 
    ui::window window{"Water Simulation", 1080, 720};
-   gfx::render_manager rendering_manager{window, main_logger};
 
-   shader_codex codex{rendering_manager, main_logger};
-   auto vert_res = codex.insert("resources/shaders/test_vert.spv", vkn::shader_type::vertex);
-   auto frag_res = codex.insert("resources/shaders/test_frag.spv", vkn::shader_type::fragment);
+   render_system renderer = handle_error(
+      render_system::make({.p_logger = main_logger, .p_window = &window}), main_logger);
 
-   if (auto err = vert_res.error())
-   {
-      util::log_error(main_logger, "error: {}", err->value().message());
-   }
+   shader_codex shader_codex{renderer, main_logger};
+   pipeline_codex pipeline_codex{renderer, main_logger};
 
-   if (auto err = frag_res.error())
-   {
-      util::log_error(main_logger, "error: {}", err->value().message());
-   }
-
-   const auto vert_shader_info = vert_res.value().value();
-   const auto frag_shader_info = frag_res.value().value();
-
-   rendering_manager.bake(vert_shader_info.value(), frag_shader_info.value());
-
-   rendering_manager.subscribe_renderable("sphere", load_obj("resources/meshes/sphere.obj"));
-
-   rendering_manager.update_model_matrix("sphere", glm::scale(glm::mat4{1}, {0.5F, 0.5F, 0.5F}));
+   const auto vert_shader_info =
+      handle_error(shader_codex.insert("resources/shaders/test_vert.spv", vkn::shader_type::vertex),
+                   main_logger);
+   const auto frag_shader_info = handle_error(
+      shader_codex.insert("resources/shaders/test_frag.spv", vkn::shader_type::fragment),
+      main_logger);
 
    while (window.is_open())
    {
       window.poll_events();
 
-      rendering_manager.render_frame();
+      renderer.begin_frame();
+
+      renderer.record_draw_calls([&](vk::CommandBuffer /*buffer*/) {
+         /*
+      buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
+      buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
+                                0, {m_camera_descriptor_pool.sets()[image_index]}, {});
+
+      for (const auto& [name, index] : m_renderables_to_index)
+      {
+         util::log_debug(mp_logger, R"([gfx] buffer calls for renderable "{}" at index "{}")",
+                         name, index);
+
+         buffer.pushConstants(
+            m_graphics_pipeline.layout(),
+            m_graphics_pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+            sizeof(glm::mat4) * 1, &m_renderable_model_matrices[index]);
+         buffer.bindVertexBuffers(0, {m_renderables[index].vertex_buffer->value()},
+                                  {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_renderables[index].index_buffer->value(), 0,
+                                vk::IndexType::eUint32);
+         buffer.drawIndexed(m_renderables[index].index_buffer.index_count(), 1, 0, 0, 0);
+      }
+      */
+      });
+
+      renderer.end_frame();
    }
 
-   rendering_manager.wait();
+   renderer.wait();
 
    return 0;
 }
+
+/*
+rendering_manager.bake(vert_shader_info.value(), frag_shader_info.value());
+
+rendering_manager.subscribe_renderable("sphere", load_obj("resources/meshes/sphere.obj"));
+
+rendering_manager.update_model_matrix("sphere", glm::scale(glm::mat4{1}, {0.5F, 0.5F, 0.5F}));
+
+while (window.is_open())
+{
+   window.poll_events();
+
+   rendering_manager.render_frame([](auto) {});
+}
+
+rendering_manager.wait();
+*/

@@ -35,7 +35,7 @@ namespace vkn
       public:
          builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
-         [[nodiscard]] auto build() const noexcept -> vkn::result<buffer>;
+         [[nodiscard]] auto build() const noexcept -> util::result<buffer>;
 
          auto set_size(std::size_t size) noexcept -> builder&;
          auto set_usage(const vk::BufferUsageFlags& flags) noexcept -> builder&;
@@ -44,9 +44,9 @@ namespace vkn
          auto add_fallback_memory_type(const vk::MemoryPropertyFlags& flags) noexcept -> builder&;
 
       private:
-         [[nodiscard]] auto create_buffer() const -> vkn::result<vk::UniqueBuffer>;
+         [[nodiscard]] auto create_buffer() const -> util::result<vk::UniqueBuffer>;
          [[nodiscard]] auto allocate_memory(vk::Buffer buffer) const
-            -> vkn::result<vk::UniqueDeviceMemory>;
+            -> util::result<vk::UniqueDeviceMemory>;
 
          [[nodiscard]] auto
          find_memory_requirements(std::uint32_t type_filter,
@@ -75,8 +75,13 @@ namespace vkn
     * Convert an buffer_error enum to a string
     */
    auto to_string(buffer_error err) -> std::string;
-   /**
-    * Convert an buffer_error enum value and an error code from a vulkan error into
-    * a vkn::error
-    */
+   auto to_err_code(buffer_error err) -> util::error_t;
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::buffer_error> : true_type
+   {
+   };
+} // namespace std

@@ -18,6 +18,7 @@ namespace vkn
     * Convert an fence_error enum to a string
     */
    auto to_string(fence_error err) -> std::string;
+   auto to_err_code(fence_error err) -> util::error_t;
 
    /**
     * A class to wrap around the vulkan fence handle. May only
@@ -44,7 +45,7 @@ namespace vkn
           * Attempt to create the fence object. Returns an error
           * otherwise
           */
-         [[nodiscard]] auto build() const noexcept -> vkn::result<fence>;
+         [[nodiscard]] auto build() const noexcept -> util::result<fence>;
 
          auto set_signaled(bool signaled = true) noexcept -> builder&;
 

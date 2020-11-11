@@ -96,7 +96,7 @@ namespace vkn
           * Attempt to construct a shader object using the provided data. If unable to create
           * the shader module, an error will be returned
           */
-         auto build() -> result<shader>;
+         auto build() -> util::result<shader>;
 
          /**
           * Set the compiled SPIRV shader bytecode for the shader module
@@ -112,7 +112,7 @@ namespace vkn
          auto set_type(shader_type shader_type) -> builder&;
 
       private:
-         [[nodiscard]] auto create_shader() const noexcept -> vkn::result<vk::UniqueShaderModule>;
+         [[nodiscard]] auto create_shader() const noexcept -> util::result<vk::UniqueShaderModule>;
 
          [[nodiscard]] auto
          populate_shader_input(const spirv_cross::Compiler& compiler,
@@ -141,6 +141,7 @@ namespace vkn
    };
 
    auto to_string(shader_error err) -> std::string;
+   auto to_err_code(shader_error err) noexcept -> util::error_t;
 
    auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags;
 } // namespace vkn

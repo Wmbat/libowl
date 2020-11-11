@@ -5,40 +5,6 @@
 
 namespace vkn
 {
-   struct descriptor_pool_error_category : std::error_category
-   {
-      [[nodiscard]] auto name() const noexcept -> const char* override
-      {
-         return "vkn_descriptor_pool";
-      }
-
-      [[nodiscard]] auto message(int err) const -> std::string override
-      {
-         return to_string(static_cast<descriptor_pool_error>(err));
-      }
-   };
-
-   inline static const descriptor_pool_error_category descriptor_pool_error_category{};
-
-   auto to_string(descriptor_pool_error err) -> std::string
-   {
-      switch (err)
-      {
-         case descriptor_pool_error::failed_to_create_descriptor_pool:
-            return "failed_to_create_descriptor_pool";
-         case descriptor_pool_error::failed_to_allocate_descriptor_sets:
-            return "failed_to_allocate_descriptor_sets";
-         case descriptor_pool_error::invalid_number_of_descriptor_set_layouts_provided:
-            return "invalid_number_of_descriptor_set_layouts_provided";
-         default:
-            return "UNKNOWN";
-      }
-   }
-   auto err_code(descriptor_pool_error err) -> vkn::error_t
-   {
-      return {{static_cast<int>(err), descriptor_pool_error_category}};
-   }
-
    auto descriptor_pool::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
    auto descriptor_pool::sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>
@@ -52,7 +18,7 @@ namespace vkn
       m_device{device.logical_device()}, mp_logger{std::move(p_logger)}
    {}
 
-   auto builder::build() -> vkn::result<descriptor_pool>
+   auto builder::build() -> util::result<descriptor_pool>
    {
       return create_descriptor_pool()
          .and_then([&](auto handle) {
@@ -94,7 +60,7 @@ namespace vkn
       return *this;
    }
 
-   auto builder::create_descriptor_pool() const noexcept -> vkn::result<vk::UniqueDescriptorPool>
+   auto builder::create_descriptor_pool() const noexcept -> util::result<vk::UniqueDescriptorPool>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createDescriptorPoolUnique(
@@ -103,7 +69,7 @@ namespace vkn
                     .pPoolSizes = std::data(m_info.pool_sizes)});
              })
          .map_error([]([[maybe_unused]] auto err) {
-            return err_code(descriptor_pool_error::failed_to_create_descriptor_pool);
+            return to_err_code(descriptor_pool_error::failed_to_create_descriptor_pool);
          })
          .map([&](vk::UniqueDescriptorPool&& handle) {
             util::log_info(mp_logger, "[vkn] descriptor pool created");
@@ -112,7 +78,7 @@ namespace vkn
          });
    }
    auto builder::allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle) const
-      -> vkn::result<creation_info>
+      -> util::result<creation_info>
    {
       util::dynamic_array<vk::DescriptorSetLayout> layouts{};
       if (m_info.singular_layout)
@@ -129,8 +95,8 @@ namespace vkn
       {
          if (std::size(m_info.unique_layouts) != m_info.max_set_count.value())
          {
-            monad::err(
-               err_code(descriptor_pool_error::invalid_number_of_descriptor_set_layouts_provided));
+            monad::err(to_err_code(
+               descriptor_pool_error::invalid_number_of_descriptor_set_layouts_provided));
          }
       }
 
@@ -146,7 +112,42 @@ namespace vkn
             return creation_info{.pool = std::move(handle), .sets = {data.begin(), data.end()}};
          })
          .map_error([]([[maybe_unused]] auto err) {
-            return err_code(descriptor_pool_error::failed_to_allocate_descriptor_sets);
+            return to_err_code(descriptor_pool_error::failed_to_allocate_descriptor_sets);
          });
    }
+
+   struct descriptor_pool_error_category : std::error_category
+   {
+      [[nodiscard]] auto name() const noexcept -> const char* override
+      {
+         return "vkn_descriptor_pool";
+      }
+
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return to_string(static_cast<descriptor_pool_error>(err));
+      }
+   };
+
+   inline static const descriptor_pool_error_category descriptor_pool_error_category{};
+
+   auto to_string(descriptor_pool_error err) -> std::string
+   {
+      switch (err)
+      {
+         case descriptor_pool_error::failed_to_create_descriptor_pool:
+            return "failed_to_create_descriptor_pool";
+         case descriptor_pool_error::failed_to_allocate_descriptor_sets:
+            return "failed_to_allocate_descriptor_sets";
+         case descriptor_pool_error::invalid_number_of_descriptor_set_layouts_provided:
+            return "invalid_number_of_descriptor_set_layouts_provided";
+         default:
+            return "UNKNOWN";
+      }
+   }
+   auto to_err_code(descriptor_pool_error err) -> util::error_t
+   {
+      return {{static_cast<int>(err), descriptor_pool_error_category}};
+   }
+
 } // namespace vkn

@@ -27,7 +27,7 @@ namespace vkn
    };
 
    auto to_string(context_error err) -> std::string;
-   auto to_error_t(context_error err) -> error_t;
+   auto to_err_code(context_error err) -> util::error_t;
 
    class context
    {
@@ -37,17 +37,17 @@ namespace vkn
          std::shared_ptr<util::logger> p_logger{nullptr};
       };
 
-      static auto make(const create_info& info) -> result<context>;
+      static auto make(const create_info& info) -> util::result<context>;
 
    public:
       [[nodiscard]] auto instance() const noexcept -> vk::Instance;
       [[nodiscard]] auto version() const noexcept -> std::uint32_t;
 
-      [[nodiscard]] auto select_device(vk::UniqueSurfaceKHR surface) const -> result<device>;
+      [[nodiscard]] auto select_device(vk::UniqueSurfaceKHR surface) const -> util::result<device>;
 
    private:
       [[nodiscard]] auto enumerate_physical_devices() const
-         -> result<util::dynamic_array<vk::PhysicalDevice>>;
+         -> util::result<util::dynamic_array<vk::PhysicalDevice>>;
 
    private:
       vk::DynamicLoader m_loader{};
@@ -64,3 +64,11 @@ namespace vkn
       static inline bool is_glslang_init = false;
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::context_error> : true_type
+   {
+   };
+} // namespace std

@@ -4,6 +4,7 @@
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 
+#include <util/error.hpp>
 #include <util/logger.hpp>
 #include <util/strong_type.hpp>
 
@@ -30,11 +31,6 @@ namespace vkn
       static constexpr bool ENABLE_VALIDATION_LAYERS = true;
 #endif
    } // namespace detail
-
-   using error_t = util::strong_type<std::error_code, struct error_code_tag>;
-
-   template <class Any>
-   using result = monad::result<Any, error_t>;
 
    template <typename... args_>
    auto try_wrap(std::invocable<args_...> auto&& fun, args_&&... args)

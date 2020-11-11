@@ -39,7 +39,7 @@ namespace vkn
       public:
          builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
-         auto build() -> vkn::result<descriptor_pool>;
+         auto build() -> util::result<descriptor_pool>;
 
          auto set_max_sets(util::count32_t count) noexcept -> builder&;
 
@@ -52,9 +52,9 @@ namespace vkn
 
       private:
          [[nodiscard]] auto create_descriptor_pool() const noexcept
-            -> vkn::result<vk::UniqueDescriptorPool>;
+            -> util::result<vk::UniqueDescriptorPool>;
          auto allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle) const
-            -> vkn::result<creation_info>;
+            -> util::result<creation_info>;
 
       private:
          vk::Device m_device;
@@ -83,6 +83,7 @@ namespace vkn
     * Convert an command_pool_error enum to a string
     */
    auto to_string(descriptor_pool_error err) -> std::string;
+   auto to_err_code(descriptor_pool_error err) -> util::error_t;
 } // namespace vkn
 
 namespace std

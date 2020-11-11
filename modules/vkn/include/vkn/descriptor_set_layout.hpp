@@ -10,6 +10,7 @@ namespace vkn
    };
 
    auto to_string(descriptor_set_layout_error err) -> std::string;
+   auto to_err_code(descriptor_set_layout_error err) -> util::error_t;
 
    class descriptor_set_layout : public owning_handle<vk::DescriptorSetLayout>
    {
@@ -28,7 +29,7 @@ namespace vkn
          builder(vk::Device device, std::shared_ptr<util::logger> p_logger) noexcept;
          builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
 
-         [[nodiscard]] auto build() const noexcept -> vkn::result<descriptor_set_layout>;
+         [[nodiscard]] auto build() const noexcept -> util::result<descriptor_set_layout>;
 
          auto add_binding(const vk::DescriptorSetLayoutBinding& binding) noexcept -> builder&;
 
@@ -48,3 +49,11 @@ namespace vkn
       };
    };
 } // namespace vkn
+
+namespace std
+{
+   template <>
+   struct is_error_code_enum<vkn::descriptor_set_layout_error> : true_type
+   {
+   };
+} // namespace std

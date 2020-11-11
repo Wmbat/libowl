@@ -2,8 +2,11 @@
 
 #include <monads/try.hpp>
 
+#include <range/v3/to_container.hpp>
+#include <range/v3/view/transform.hpp>
+
 #include <cassert>
-#include <ranges>
+#include <span>
 #include <utility>
 
 namespace vkn
@@ -43,7 +46,7 @@ namespace vkn
       [[nodiscard]] auto name() const noexcept -> const char* override
       {
          return "vkn_graphics_pipeline";
-      }
+      } // namespace vkn
       /**
        * Get the message associated with a specific error code.
        */
@@ -73,7 +76,7 @@ namespace vkn
             return "UNKNOWN";
       }
    }
-   auto make_error(graphics_pipeline_error err) -> vkn::error_t
+   auto make_error(graphics_pipeline_error err) -> util::error_t
    {
       return {{static_cast<int>(err), graphics_pipeline_category}};
    }
@@ -103,7 +106,7 @@ namespace vkn
       m_info.render_pass = render_pass.value();
    }
 
-   auto graphics_pipeline::builder::build() const -> vkn::result<graphics_pipeline>
+   auto graphics_pipeline::builder::build() const -> util::result<graphics_pipeline>
    {
       return create_descriptor_set_layouts()
          .and_then([&](auto data) {
@@ -170,7 +173,7 @@ namespace vkn
    }
 
    auto graphics_pipeline::builder::create_descriptor_set_layouts() const
-      -> vkn::result<graphics_pipeline>
+      -> util::result<graphics_pipeline>
    {
       graphics_pipeline pipeline;
       pipeline.m_set_layouts.reserve(std::size(m_info.set_layouts));
@@ -196,7 +199,7 @@ namespace vkn
    }
 
    auto graphics_pipeline::builder::create_push_constant_ranges(graphics_pipeline&& pipeline) const
-      -> vkn::result<graphics_pipeline>
+      -> util::result<graphics_pipeline>
    {
       pipeline.m_push_constants.reserve(std::size(m_info.push_constants));
 
@@ -213,7 +216,7 @@ namespace vkn
    }
 
    auto graphics_pipeline::builder::create_pipeline_layout(graphics_pipeline&& pipeline) const
-      -> vkn::result<graphics_pipeline>
+      -> util::result<graphics_pipeline>
    {
       util::dynamic_array<vk::DescriptorSetLayout> layouts;
       layouts.reserve(std::size(pipeline.m_set_layouts));
@@ -251,7 +254,7 @@ namespace vkn
    }
 
    auto graphics_pipeline::builder::create_pipeline(graphics_pipeline&& pipeline) const
-      -> vkn::result<graphics_pipeline>
+      -> util::result<graphics_pipeline>
    {
       shader_dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
       shader_stage_info.reserve(std::size(m_info.shaders));

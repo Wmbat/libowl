@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <gfx/data_types.hpp>
 #include <gfx/memory/camera_buffer.hpp>
 #include <gfx/memory/index_buffer.hpp>
@@ -22,6 +23,9 @@
 
 namespace gfx
 {
+   using vertex_bindings_array = util::dynamic_array<vk::VertexInputBindingDescription>;
+   using vertex_attributes_array = util::dynamic_array<vk::VertexInputAttributeDescription>;
+
    class render_manager
    {
       static constexpr std::size_t max_frames_in_flight = 2;
@@ -35,9 +39,14 @@ namespace gfx
       auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
       void update_model_matrix(const std::string& name, const glm::mat4& model);
 
+      auto build_pipeline() -> vkn::graphics_pipeline::builder;
+
       void bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader);
 
-      void render_frame();
+      auto get_pipeline() -> vkn::graphics_pipeline&;
+
+      auto start_frame() -> util::index_t;
+      void render_frame(const std::function<void(vk::CommandBuffer)> buffer_calls);
 
       /**
        * Wait for all resources to stop being used
@@ -45,6 +54,9 @@ namespace gfx
       void wait();
 
       auto device() -> vkn::device&;
+
+      auto vertex_bindings() -> vertex_bindings_array;
+      auto vertex_attributes() -> vertex_attributes_array;
 
    private:
       auto add_pass(const std::string& name, vkn::queue_type queue_type) -> render_pass&;

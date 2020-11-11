@@ -7,7 +7,7 @@
 
 #include <chrono>
 
-auto to_vkn_error(ui::error_t&& err) -> vkn::error_t
+auto to_vkn_error(ui::error_t&& err) -> util::error_t
 {
    return {err.value()};
 }
@@ -46,10 +46,9 @@ namespace gfx
       m_image_available_semaphores = create_image_available_semaphores();
       m_render_finished_semaphores = create_render_finished_semaphores();
       m_in_flight_fences = create_in_flight_fences();
+      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
 
       m_gfx_command_pools = create_command_pool();
-
-      m_images_in_flight.resize(std::size(m_swapchain.image_views()), {nullptr});
    }
 
    auto render_manager::subscribe_renderable(const std::string& name, const renderable_data& r)
@@ -93,6 +92,33 @@ namespace gfx
       }
    }
 
+   auto render_manager::build_pipeline() -> vkn::graphics_pipeline::builder
+   {
+      return vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
+         .add_vertex_binding({.binding = 0,
+                              .stride = sizeof(gfx::vertex),
+                              .inputRate = vk::VertexInputRate::eVertex})
+         .add_vertex_attribute({.location = 0,
+                                .binding = 0,
+                                .format = vk::Format::eR32G32B32Sfloat,
+                                .offset = offsetof(gfx::vertex, position)})
+         .add_vertex_attribute({.location = 1,
+                                .binding = 0,
+                                .format = vk::Format::eR32G32B32Sfloat,
+                                .offset = offsetof(gfx::vertex, normal)})
+         .add_vertex_attribute({.location = 2,
+                                .binding = 0,
+                                .format = vk::Format::eR32G32B32Sfloat,
+                                .offset = offsetof(gfx::vertex, colour)})
+         .add_viewport({.x = 0.0F,
+                        .y = 0.0F,
+                        .width = static_cast<float>(m_swapchain.extent().width),
+                        .height = static_cast<float>(m_swapchain.extent().height),
+                        .minDepth = 0.0F,
+                        .maxDepth = 1.0F},
+                       {.offset = {0, 0}, .extent = m_swapchain.extent()});
+   }
+
    void render_manager::bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader)
    {
       m_graphics_pipeline =
@@ -129,7 +155,7 @@ namespace gfx
                            .maxDepth = 1.0F},
                           {.offset = {0, 0}, .extent = m_swapchain.extent()})
             .build()
-            .map_error([&](vkn::error_t&& err) {
+            .map_error([&](util::error_t&& err) {
                log_error(mp_logger, "[core] Failed to create graphics pipeline: \"{0}\"",
                          err.value().message());
 
@@ -158,7 +184,9 @@ namespace gfx
       }
    }
 
-   void render_manager::render_frame()
+   auto render_manager::get_pipeline() -> vkn::graphics_pipeline& { return m_graphics_pipeline; }
+
+   void render_manager::render_frame(const std::function<void(vk::CommandBuffer)> buffer_calls)
    {
       m_device.logical_device().waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))},
                                               true, std::numeric_limits<std::uint64_t>::max());
@@ -193,6 +221,8 @@ namespace gfx
                                  .clearValueCount = 1,
                                  .pClearValues = &clear_colour},
                                 vk::SubpassContents::eInline);
+
+         std::invoke(buffer_calls, buffer);
 
          buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.value());
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_graphics_pipeline.layout(),
@@ -278,6 +308,27 @@ namespace gfx
 
    auto render_manager::device() -> vkn::device& { return m_device; }
 
+   auto render_manager::vertex_bindings() -> vertex_bindings_array
+   {
+      return {
+         {.binding = 0, .stride = sizeof(gfx::vertex), .inputRate = vk::VertexInputRate::eVertex}};
+   }
+   auto render_manager::vertex_attributes() -> vertex_attributes_array
+   {
+      return {{.location = 0,
+               .binding = 0,
+               .format = vk::Format::eR32G32B32Sfloat,
+               .offset = offsetof(gfx::vertex, position)},
+              {.location = 1,
+               .binding = 0,
+               .format = vk::Format::eR32G32B32Sfloat,
+               .offset = offsetof(gfx::vertex, normal)},
+              {.location = 2,
+               .binding = 0,
+               .format = vk::Format::eR32G32B32Sfloat,
+               .offset = offsetof(gfx::vertex, colour)}};
+   }
+
    void render_manager::update_camera(uint32_t image_index)
    {
       gfx::camera_matrices matrices{};
@@ -320,7 +371,7 @@ namespace gfx
          .set_clipped(true)
          .set_composite_alpha_flags(vk::CompositeAlphaFlagBitsKHR::eOpaque)
          .build()
-         .map_error([&](vkn::error_t&& err) {
+         .map_error([&](util::error_t&& err) {
             log_error(mp_logger, "[core] Failed to create swapchain: {0}", err.value().message());
             std::terminate();
 
@@ -332,7 +383,7 @@ namespace gfx
    {
       return vkn::render_pass::builder{m_device, m_swapchain, mp_logger}
          .build()
-         .map_error([&](vkn::error_t&& err) {
+         .map_error([&](util::error_t&& err) {
             log_error(mp_logger, "[core] Failed to create render pass: \"{0}\"",
                       err.value().message());
             abort();
@@ -356,7 +407,7 @@ namespace gfx
                .set_buffer_height(m_swapchain.extent().height)
                .set_layer_count(1U)
                .build()
-               .map_error([&](vkn::error_t&& err) {
+               .map_error([&](util::error_t&& err) {
                   log_error(mp_logger, "[core] Failed to create framebuffer: \"{0}\"",
                             err.value().message());
                   abort();
@@ -368,6 +419,7 @@ namespace gfx
 
       return framebuffers;
    }
+
    auto render_manager::create_camera_descriptor_pool() const noexcept -> vkn::descriptor_pool
    {
       return vkn::descriptor_pool::builder{m_device, mp_logger}
@@ -377,7 +429,7 @@ namespace gfx
             vkn::value(m_graphics_pipeline.get_descriptor_set_layout("camera_layout")))
          .set_max_sets(util::count32_t{std::size(m_swapchain.image_views())})
          .build()
-         .map_error([&](vkn::error_t&& err) {
+         .map_error([&](util::error_t&& err) {
             log_error(mp_logger, "[core] Failed to camera descriptor pool: \"{0}\"",
                       err.value().message());
             std::terminate();
@@ -453,7 +505,7 @@ namespace gfx
       {
          semaphore = vkn::semaphore::builder{m_device, mp_logger}
                         .build()
-                        .map_error([&](vkn::error_t&& err) {
+                        .map_error([&](util::error_t&& err) {
                            log_error(mp_logger, "[core] Failed to create semaphore: \"{0}\"",
                                      err.value().message());
                            abort();
@@ -474,7 +526,7 @@ namespace gfx
       {
          semaphores.emplace_back(vkn::semaphore::builder{m_device, mp_logger}
                                     .build()
-                                    .map_error([&](vkn::error_t&& err) {
+                                    .map_error([&](util::error_t&& err) {
                                        log_error(mp_logger,
                                                  "[core] Failed to create semaphore: \"{0}\"",
                                                  err.value().message());
@@ -497,7 +549,7 @@ namespace gfx
          fence = vkn::fence::builder{m_device, mp_logger}
                     .set_signaled()
                     .build()
-                    .map_error([&](vkn::error_t&& err) {
+                    .map_error([&](util::error_t&& err) {
                        log_error(mp_logger, "[core] Failed to create in flight fence: \"{0}\"",
                                  err.value().message());
 

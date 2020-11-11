@@ -54,12 +54,10 @@ set(VERMILLON_CORE_STATIC ON CACHE BOOL "" FORCE)
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 
-#add_subdirectory(modules/core)
 add_subdirectory(modules/gfx)
 add_subdirectory(modules/ui)
 add_subdirectory(modules/util)
 add_subdirectory(modules/vkn)
-#add_subdirectory(modules/vulkan)
 
 #add_subdirectory(samples/playground)
 add_subdirectory(samples/water_simulation)

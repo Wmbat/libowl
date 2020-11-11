@@ -87,7 +87,7 @@ namespace vkn
          /**
           * Attempt to build a swapchain object. May return an error
           */
-         [[nodiscard]] auto build() -> vkn::result<swapchain>;
+         [[nodiscard]] auto build() -> util::result<swapchain>;
 
          auto set_old_swapchain(const swapchain& swap) noexcept -> builder&;
 
@@ -117,12 +117,12 @@ namespace vkn
             -> util::small_dynamic_array<vk::PresentModeKHR, 2>;
 
          [[nodiscard]] auto create_swapchain(vk::SwapchainCreateInfoKHR&& info) const
-            -> vkn::result<vk::UniqueSwapchainKHR>;
+            -> util::result<vk::UniqueSwapchainKHR>;
          [[nodiscard]] auto create_images(vk::SwapchainKHR swapchain) const
-            -> vkn::result<image_dynamic_array<vk::Image>>;
+            -> util::result<image_dynamic_array<vk::Image>>;
          [[nodiscard]] auto create_image_views(const image_dynamic_array<vk::Image>& images,
                                                vk::SurfaceFormatKHR format) const
-            -> vkn::result<image_dynamic_array<vk::UniqueImageView>>;
+            -> util::result<image_dynamic_array<vk::UniqueImageView>>;
 
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
@@ -186,12 +186,12 @@ namespace vkn
 
       inline static const error_category m_category{};
 
-      static auto make_error(swapchain::error_type flag) -> vkn::error_t
+      static auto make_error(swapchain::error_type flag) -> util::error_t
       {
          return {{static_cast<int>(flag), m_category}};
       };
 
-      static auto make_error_res(swapchain::error_type flag) -> monad::error_t<vkn::error_t>
+      static auto make_error_res(swapchain::error_type flag) -> monad::error_t<util::error_t>
       {
          return {make_error(flag)};
       }

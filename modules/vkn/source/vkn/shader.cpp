@@ -8,6 +8,129 @@
 
 namespace vkn
 {
+   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags
+   {
+      switch (type)
+      {
+         case shader_type::vertex:
+            return vk::ShaderStageFlagBits::eVertex;
+         case shader_type::fragment:
+            return vk::ShaderStageFlagBits::eFragment;
+         case shader_type::compute:
+            return vk::ShaderStageFlagBits::eCompute;
+         case shader_type::geometry:
+            return vk::ShaderStageFlagBits::eGeometry;
+         case shader_type::tess_control:
+            return vk::ShaderStageFlagBits::eTessellationControl;
+         case shader_type::tess_eval:
+            return vk::ShaderStageFlagBits::eTessellationEvaluation;
+         default:
+            return vk::ShaderStageFlagBits::eAll;
+      }
+   }
+
+   auto shader::name() const noexcept -> std::string_view { return m_name; }
+   auto shader::stage() const noexcept -> shader_type { return m_type; }
+
+   auto shader::get_data() const noexcept -> const shader_data& { return m_data; }
+
+   using builder = shader::builder;
+
+   builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
+      mp_logger{std::move(p_logger)}
+   {
+      m_info.device = device.logical_device();
+      m_info.version = device.vulkan_version();
+   }
+
+   auto builder::build() -> util::result<shader>
+   {
+      spirv_cross::Compiler glsl{{std::begin(m_info.spirv_binary), std::end(m_info.spirv_binary)}};
+      const auto resources = glsl.get_shader_resources();
+
+      const shader_data shader_data{.inputs = populate_shader_input(glsl, resources),
+                                    .uniforms = populate_uniform_buffer(glsl, resources)};
+
+      return create_shader().map([&](vk::UniqueShaderModule&& handle) {
+         util::log_info(mp_logger, "[vkn] shader module created");
+
+         shader s{};
+         s.m_value = std::move(handle);
+         s.m_name = m_info.name;
+         s.m_data = shader_data;
+         s.m_type = m_info.type;
+
+         return s;
+      });
+   }
+
+   auto builder::set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary)
+      -> builder&
+   {
+      m_info.spirv_binary = spirv_binary;
+      return *this;
+   }
+   auto builder::set_name(const std::string& name) -> builder&
+   {
+      m_info.name = name;
+      return *this;
+   }
+   auto builder::set_type(shader_type type) -> builder&
+   {
+      m_info.type = type;
+      return *this;
+   }
+
+   auto builder::create_shader() const noexcept -> util::result<vk::UniqueShaderModule>
+   {
+      return monad::try_wrap<vk::SystemError>([&] {
+                return m_info.device.createShaderModuleUnique(
+                   {.codeSize = std::size(m_info.spirv_binary) * 4,
+                    .pCode = std::data(m_info.spirv_binary)});
+             })
+         .map_error([]([[maybe_unused]] const auto& error) {
+            return to_err_code(shader_error::failed_to_create_shader_module);
+         });
+   }
+
+   auto shader::builder::populate_shader_input(const spirv_cross::Compiler& compiler,
+                                               const spirv_cross::ShaderResources& resources) const
+      -> util::dynamic_array<shader_input_location_t>
+   {
+      util::dynamic_array<shader_input_location_t> res;
+      res.reserve(resources.stage_inputs.size());
+
+      for (const auto& input : resources.stage_inputs)
+      {
+         std::uint32_t location = compiler.get_decoration(input.id, spv::DecorationLocation);
+
+         util::log_debug(mp_logger, R"([vkn] input "{}" with location {})", input.name, location);
+
+         res.emplace_back(shader_input_location_t{location});
+      }
+
+      return res;
+   }
+
+   auto builder::populate_uniform_buffer([[maybe_unused]] const spirv_cross::Compiler& compiler,
+                                         const spirv_cross::ShaderResources& resources) const
+      -> util::dynamic_array<shader_uniform_binding_t>
+   {
+      util::dynamic_array<shader_uniform_binding_t> data{};
+
+      for (const auto& uniform : resources.uniform_buffers)
+      {
+         std::uint32_t binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
+
+         util::log_debug(mp_logger, R"([vkn] uniform buffer "{}" with location {})", uniform.name,
+                         binding);
+
+         data.emplace_back(shader_uniform_binding_t{binding});
+      }
+
+      return data;
+   }
+
    /**
     * A struct used for error handling and displaying error messages
     */
@@ -53,131 +176,8 @@ namespace vkn
       }
    };
 
-   auto make_error(shader_error flag) noexcept -> vkn::error_t
+   auto to_err_code(shader_error flag) noexcept -> util::error_t
    {
       return {{static_cast<int>(flag), shader_category}};
    };
-
-   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags
-   {
-      switch (type)
-      {
-         case shader_type::vertex:
-            return vk::ShaderStageFlagBits::eVertex;
-         case shader_type::fragment:
-            return vk::ShaderStageFlagBits::eFragment;
-         case shader_type::compute:
-            return vk::ShaderStageFlagBits::eCompute;
-         case shader_type::geometry:
-            return vk::ShaderStageFlagBits::eGeometry;
-         case shader_type::tess_control:
-            return vk::ShaderStageFlagBits::eTessellationControl;
-         case shader_type::tess_eval:
-            return vk::ShaderStageFlagBits::eTessellationEvaluation;
-         default:
-            return vk::ShaderStageFlagBits::eAll;
-      }
-   }
-
-   auto shader::name() const noexcept -> std::string_view { return m_name; }
-   auto shader::stage() const noexcept -> shader_type { return m_type; }
-
-   auto shader::get_data() const noexcept -> const shader_data& { return m_data; }
-
-   using builder = shader::builder;
-
-   builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)}
-   {
-      m_info.device = device.logical_device();
-      m_info.version = device.vulkan_version();
-   }
-
-   auto builder::build() -> result<shader>
-   {
-      spirv_cross::Compiler glsl{{std::begin(m_info.spirv_binary), std::end(m_info.spirv_binary)}};
-      const auto resources = glsl.get_shader_resources();
-
-      const shader_data shader_data{.inputs = populate_shader_input(glsl, resources),
-                                    .uniforms = populate_uniform_buffer(glsl, resources)};
-
-      return create_shader().map([&](vk::UniqueShaderModule&& handle) {
-         util::log_info(mp_logger, "[vkn] shader module created");
-
-         shader s{};
-         s.m_value = std::move(handle);
-         s.m_name = m_info.name;
-         s.m_data = shader_data;
-         s.m_type = m_info.type;
-
-         return s;
-      });
-   }
-
-   auto builder::set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary)
-      -> builder&
-   {
-      m_info.spirv_binary = spirv_binary;
-      return *this;
-   }
-   auto builder::set_name(const std::string& name) -> builder&
-   {
-      m_info.name = name;
-      return *this;
-   }
-   auto builder::set_type(shader_type type) -> builder&
-   {
-      m_info.type = type;
-      return *this;
-   }
-
-   auto builder::create_shader() const noexcept -> vkn::result<vk::UniqueShaderModule>
-   {
-      return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createShaderModuleUnique(
-                   {.codeSize = std::size(m_info.spirv_binary) * 4,
-                    .pCode = std::data(m_info.spirv_binary)});
-             })
-         .map_error([]([[maybe_unused]] const auto& error) {
-            return make_error(shader_error::failed_to_create_shader_module);
-         });
-   }
-
-   auto shader::builder::populate_shader_input(const spirv_cross::Compiler& compiler,
-                                               const spirv_cross::ShaderResources& resources) const
-      -> util::dynamic_array<shader_input_location_t>
-   {
-      util::dynamic_array<shader_input_location_t> res;
-      res.reserve(resources.stage_inputs.size());
-
-      for (const auto& input : resources.stage_inputs)
-      {
-         std::uint32_t location = compiler.get_decoration(input.id, spv::DecorationLocation);
-
-         util::log_debug(mp_logger, R"([vkn] input "{}" with location {})", input.name, location);
-
-         res.emplace_back(shader_input_location_t{location});
-      }
-
-      return res;
-   }
-
-   auto builder::populate_uniform_buffer([[maybe_unused]] const spirv_cross::Compiler& compiler,
-                                         const spirv_cross::ShaderResources& resources) const
-      -> util::dynamic_array<shader_uniform_binding_t>
-   {
-      util::dynamic_array<shader_uniform_binding_t> data{};
-
-      for (const auto& uniform : resources.uniform_buffers)
-      {
-         std::uint32_t binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
-
-         util::log_debug(mp_logger, R"([vkn] uniform buffer "{}" with location {})", uniform.name,
-                         binding);
-
-         data.emplace_back(shader_uniform_binding_t{binding});
-      }
-
-      return data;
-   }
 } // namespace vkn
