@@ -15,6 +15,7 @@ project(util
 option(VERMILLON_UTIL_STATIC "Build ${PROJECT_NAME} as a static library" ON)
 option(VERMILLON_UTIL_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
 option(VERMILLON_UTIL_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
+option(VERMILLON_UTIL_SANITIZE_ADDRESS "Build ${PROJECT_NAME} with sanitizers" OFF)
 option(VERMILLON_UTIL_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
 option(VERMILLON_UTIL_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
 
@@ -35,6 +36,7 @@ message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_UTIL_BUILD_TE
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${VERMILLON_UTIL_BUILD_BENCH}")
 message(STATUS "[${PROJECT_NAME}] Building without exceptions: ${VERMILLON_UTIL_NO_EXCEPTIONS}")
 message(STATUS "[${PROJECT_NAME}] Building without internal logging: ${VERMILLON_UTIL_NO_LOGGING}")
+message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_UTIL_SANITIZE_ADDRESS}")
 
 # Define imported targets
 
@@ -82,35 +84,40 @@ target_compile_features(${PROJECT_NAME}
 
 target_compile_options(${PROJECT_NAME}
    PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer 
-        -fsanitize=address>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
-        -Wconversion -fsanitize=address -fsanitize=undefined>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
+
+if (VERMILLON_UTIL_SANITIZE_ADDRESS)
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+            $<$<CXX_COMPILER_ID:Clang>>:-sanitize=address>
+            $<$<CXX_COMPILER_ID:GNU>>:-sanitize=address>)
+endif()
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         spdlog::spdlog
         monads::monads
         range-v3::range-v3
-        mpark_patterns
+        mpark_patterns)
 
-    PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
-)
+if (VERMILLON_UTIL_SANITIZE_ADDRESS)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            $<$<CXX_COMPILER_ID:Clang>>:-lasan>
+            $<$<CXX_COMPILER_ID:GNU>>:-lasan>)
+endif()
 
 target_sources(${PROJECT_NAME}
     PRIVATE

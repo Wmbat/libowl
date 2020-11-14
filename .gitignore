@@ -5,6 +5,7 @@
 /build_release_clang
 /compile_commands.json
 /out
+/resources
 .gdb_history
 .clangd
 .cache

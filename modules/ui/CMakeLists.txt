@@ -14,6 +14,7 @@ project(ui
 option(VERMILLON_UI_STATIC "Build ${PROJECT_NAME} as a static library" ON)
 option(VERMILLON_UI_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
 option(VERMILLON_UI_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
+option(VERMILLON_UI_SANITIZE_ADDRESS "Build ${PROJECT_NAME} with sanitizers" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -28,6 +29,7 @@ else ()
 endif ()
 
 message(STATUS "[${PROJECT_NAME}] Building as a static library: ${VERMILLON_UI_STATIC}")
+message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_UI_SANITIZE_ADDRESS}")
 
 # Define imported targets
 
@@ -57,12 +59,14 @@ target_link_libraries(${PROJECT_NAME}
         vermillon::util
         vermillon::vkn
         glfw
-
-    PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-lasan>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lasan>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-lubsan>
 )
+
+if (VERMILLON_UI_SANITIZE_ADDRESS)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            $<$<CXX_COMPILER_ID:Clang>>:-lasan>
+            $<$<CXX_COMPILER_ID:GNU>>:-lasan>)
+endif()
 
 target_compile_definitions(${PROJECT_NAME}
     PUBLIC
@@ -71,14 +75,19 @@ target_compile_definitions(${PROJECT_NAME}
 
 target_compile_options(${PROJECT_NAME}
    PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer 
-        -fsanitize=address>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
-        -Wconversion -fsanitize=address -fsanitize=undefined>
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
+
+if (VERMILLON_UI_SANITIZE_ADDRESS)
+   target_compile_options(${PROJECT_NAME}
+      PRIVATE
+           $<$<CXX_COMPILER_ID:Clang>>:-fsanitize=address>
+           $<$<CXX_COMPILER_ID:GNU>>:-fsanitize=address>) 
+endif()
 
 target_include_directories(${PROJECT_NAME}
     SYSTEM 

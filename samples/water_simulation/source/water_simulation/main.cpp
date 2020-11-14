@@ -23,13 +23,13 @@
 
 static constexpr float pi = std::numbers::pi_v<float>;
 static constexpr float time_step = 0.0008F;
-static constexpr float rest_density = 1.0F;
-static constexpr float gas_constant = 2.0F;
-static constexpr float viscosity_constant = 25.0F;
+static constexpr float rest_density = 1000.0F;
+static constexpr float gas_constant = 2000.0F;
+static constexpr float viscosity_constant = 250.0F;
 static constexpr float gravity = -9.81F;
 static constexpr float gravity_multiplier = 1000.0F;
-static constexpr float scale_factor = 0.1F;
-static constexpr float water_mass = 1.0F;
+static constexpr float scale_factor = 0.05F;
+static constexpr float water_mass = 65.0F;
 static constexpr float kernel_radius = 5.0F;
 
 template <typename Any>
@@ -55,7 +55,7 @@ auto compute_matrices(const render_system& system) -> camera::matrices
    camera::matrices matrices{};
    matrices.projection = glm::perspective(glm::radians(90.0F),
                                           dimensions.width / (float)dimensions.height, 0.1F, 10.0F);
-   matrices.view = glm::lookAt(glm::vec3(0.0F, 0.0F, -7.0F), glm::vec3(0.0F, 0.0F, 0.0F),
+   matrices.view = glm::lookAt(glm::vec3(0.0F, 0.0F, -5.0F), glm::vec3(0.0F, 0.0F, 0.0F),
                                glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 
@@ -68,7 +68,8 @@ auto viscosity_kernel(float r, float kernel_radius) -> float;
 
 void compute_density(std::span<particle_engine::particle> particle);
 void compute_forces(std::span<particle_engine::particle> particles);
-void integrate(std::span<particle_engine::particle> particles);
+void integrate(std::span<particle_engine::particle> particles,
+               const std::shared_ptr<util::logger>& p_logger);
 
 auto main() -> int
 {
@@ -127,8 +128,8 @@ auto main() -> int
 
    particle_engine particle_engine{main_logger};
 
-   const float distance_x = 3.0F;
-   const float distance_y = 3.0F;
+   const float distance_x = kernel_radius;
+   const float distance_y = kernel_radius;
    for (auto i : ranges::views::iota(0U, 15U))
    {
       const float x = -distance_x * (15.0F / distance_x) + distance_x * i;
@@ -159,7 +160,7 @@ auto main() -> int
       {
          compute_density(active_particles);
          compute_forces(active_particles);
-         integrate(active_particles);
+         integrate(active_particles, main_logger);
 
          time_spent = {};
       }
@@ -208,7 +209,7 @@ auto poly6_kernel(float r_squared, float kernel_radius) -> float
    if (r_squared < kernel_squared)
    {
       const float predicate = 315.0F / (65.0F * pi * std::pow(kernel_radius, 9.0F));
-      return predicate * std::pow(kernel_squared - r_squared, 3.0F);
+      return predicate * std::pow(kernel_squared - r_squared, 3.0F); // NOLINT
    }
 
    return 0;
@@ -218,7 +219,7 @@ auto spiky_kernel(float r, float kernel_radius) -> float
    if (r < kernel_radius)
    {
       const float predicate = 15.0F / pi * std::pow(kernel_radius, 6.0F);
-      return predicate * std::pow(kernel_radius - r, 2.0F);
+      return predicate * std::pow(kernel_radius - r, 2.0F); // NOLINT
    }
 
    return 0;
@@ -265,9 +266,11 @@ void compute_forces(std::span<particle_engine::particle> particles)
             const auto r_ij = particle_j.position - particle_i.position;
             const auto r = glm::length(r_ij);
 
-            pressure_force += -glm::normalize(r_ij) * particle_j.mass *
-               (particle_i.position + particle_j.position) / (2.0f * particle_j.density) *
-               spiky_kernel(r, kernel_radius);
+            const auto spiky = spiky_kernel(r, kernel_radius);
+            const auto inter =
+               (particle_i.position + particle_j.position) / (2.0f * particle_j.density);
+
+            pressure_force += -glm::normalize(r_ij) * particle_j.mass * inter * spiky;
 
             viscosity_force += viscosity_constant * particle_j.mass *
                (particle_j.velocity - particle_i.velocity) / particle_j.density *
@@ -277,11 +280,12 @@ void compute_forces(std::span<particle_engine::particle> particles)
 
       const auto gravity_force = gravity_vector * particle_i.density;
 
-      particle_i.force = viscosity_force + gravity_force;
+      particle_i.force = viscosity_force + pressure_force + gravity_force;
    }
 }
 
-void integrate(std::span<particle_engine::particle> particles)
+void integrate(std::span<particle_engine::particle> particles,
+               const std::shared_ptr<util::logger>& p_logger)
 {
    for (auto& particle : particles)
    {
@@ -294,14 +298,12 @@ void integrate(std::span<particle_engine::particle> particles)
          particle.position.y = -20.0F;
       }
 
-      /*
       util::log_debug(p_logger,
                       "particle\n\t-> position = ({}, {})\n\t-> velocity = ({}, {})\n\t-> force = "
                       "({}, {})\n\t-> density = {}\n\t-> pressure = {}",
                       particle.position.x, particle.position.y, particle.velocity.x,
                       particle.velocity.y, particle.force.x, particle.force.y, particle.density,
                       particle.pressure);
-                      */
    }
 };
 
