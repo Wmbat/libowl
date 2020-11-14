@@ -1,3 +1,4 @@
+#include <cmath>
 #include <water_simulation/camera.hpp>
 #include <water_simulation/particle_system.hpp>
 #include <water_simulation/pipeline_codex.hpp>
@@ -22,15 +23,16 @@
 #include <tiny_obj_loader.h>
 
 static constexpr float pi = std::numbers::pi_v<float>;
-static constexpr float time_step = 0.0008F;
-static constexpr float rest_density = 1000.0F;
-static constexpr float gas_constant = 2000.0F;
-static constexpr float viscosity_constant = 250.0F;
+static constexpr float time_step = 0.05F;
+static constexpr float rest_density = 1.0F;
+static constexpr float gas_constant = 2.0F;
+static constexpr float viscosity_constant = 0.25F;
 static constexpr float gravity = -9.81F;
-static constexpr float gravity_multiplier = 1000.0F;
-static constexpr float scale_factor = 0.05F;
-static constexpr float water_mass = 65.0F;
-static constexpr float kernel_radius = 5.0F;
+static constexpr float gravity_multiplier = 0.2f;
+static constexpr float scale_factor = 0.1f;
+static constexpr float water_mass = 65.0f;
+static constexpr float kernel_radius = 5.0f;
+static constexpr float bound_damping = 0.25f;
 
 template <typename Any>
 auto handle_err(Any&& result, const std::shared_ptr<util::logger>& p_logger)
@@ -53,8 +55,8 @@ auto compute_matrices(const render_system& system) -> camera::matrices
    auto dimensions = system.scissor().extent;
 
    camera::matrices matrices{};
-   matrices.projection = glm::perspective(glm::radians(90.0F),
-                                          dimensions.width / (float)dimensions.height, 0.1F, 10.0F);
+   matrices.projection = glm::perspective(
+      glm::radians(90.0F), dimensions.width / (float)dimensions.height, 0.1F, 100.0F);
    matrices.view = glm::lookAt(glm::vec3(0.0F, 0.0F, -5.0F), glm::vec3(0.0F, 0.0F, 0.0F),
                                glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
@@ -128,17 +130,17 @@ auto main() -> int
 
    particle_engine particle_engine{main_logger};
 
-   const float distance_x = kernel_radius;
-   const float distance_y = kernel_radius;
-   for (auto i : ranges::views::iota(0U, 15U))
+   const float distance_x = 3.0f;
+   const float distance_y = 3.0f;
+   for (auto i : ranges::views::iota(0U, 10u))
    {
-      const float x = -distance_x * (15.0F / distance_x) + distance_x * i;
+      const float x = 3.0f + distance_x * i;
 
-      for (auto j : ranges::views::iota(0U, 15U))
+      for (auto j : ranges::views::iota(0U, 10u))
       {
-         const float y = -distance_y * (15.0F / distance_x) + distance_y * j;
+         const float y = 10.0f + distance_y * j;
 
-         particle_engine.emit({.position = {x, y, 0.0F}, .mass = water_mass});
+         particle_engine.emit({.position = {x, y, 0.0f}, .mass = water_mass});
       }
    }
 
@@ -156,7 +158,7 @@ auto main() -> int
 
       auto active_particles = particle_engine.particles();
 
-      if (time_spent.count() >= 100.0f)
+      if (time_spent.count() >= 0.0f)
       {
          compute_density(active_particles);
          compute_forces(active_particles);
@@ -202,31 +204,32 @@ auto main() -> int
    return 0;
 }
 
-auto poly6_kernel(float r_squared, float kernel_radius) -> float
+auto poly6_kernel(float r, float kernel_radius) -> float
 {
-   const float kernel_squared = std::pow(kernel_radius, 2.0F);
-
-   if (r_squared < kernel_squared)
+   if (r <= kernel_radius)
    {
+      const float r_squared = std::pow(r, 2.0f);
+      const float k_squared = std::pow(kernel_radius, 2.0f);
       const float predicate = 315.0F / (65.0F * pi * std::pow(kernel_radius, 9.0F));
-      return predicate * std::pow(kernel_squared - r_squared, 3.0F); // NOLINT
+
+      return predicate * std::pow(k_squared - r_squared, 3.0F); // NOLINT
    }
 
    return 0;
 }
 auto spiky_kernel(float r, float kernel_radius) -> float
 {
-   if (r < kernel_radius)
+   if (r <= kernel_radius)
    {
-      const float predicate = 15.0F / pi * std::pow(kernel_radius, 6.0F);
-      return predicate * std::pow(kernel_radius - r, 2.0F); // NOLINT
+      const float predicate = 15.0F / (pi * std::pow(kernel_radius, 6.0F));
+      return predicate * std::pow(kernel_radius - r, 3.0F); // NOLINT
    }
 
    return 0;
 }
 auto viscosity_kernel(float r, float kernel_radius) -> float
 {
-   if (r < kernel_radius)
+   if (r <= kernel_radius)
    {
       const float predicate = 45.0F / (pi * std::pow(kernel_radius, 6.0f));
       return predicate * (kernel_radius - r);
@@ -243,9 +246,10 @@ void compute_density(std::span<particle_engine::particle> particles)
 
       for (auto& particle_j : particles)
       {
-         const auto r_squared = std::pow(glm::length(particle_j.position - particle_i.position), 2);
+         const auto r_ij = particle_j.position - particle_i.position;
+         const auto r = glm::length(r_ij);
 
-         particle_i.density += particle_j.mass * poly6_kernel(r_squared, kernel_radius);
+         particle_i.density += particle_j.mass * poly6_kernel(r, kernel_radius);
       }
    }
 }
@@ -266,11 +270,9 @@ void compute_forces(std::span<particle_engine::particle> particles)
             const auto r_ij = particle_j.position - particle_i.position;
             const auto r = glm::length(r_ij);
 
-            const auto spiky = spiky_kernel(r, kernel_radius);
-            const auto inter =
-               (particle_i.position + particle_j.position) / (2.0f * particle_j.density);
-
-            pressure_force += -glm::normalize(r_ij) * particle_j.mass * inter * spiky;
+            pressure_force += -glm::normalize(r_ij) * particle_j.mass *
+               (particle_i.position + particle_j.position) / (2.0f * particle_j.density) *
+               spiky_kernel(r, kernel_radius);
 
             viscosity_force += viscosity_constant * particle_j.mass *
                (particle_j.velocity - particle_i.velocity) / particle_j.density *
@@ -289,13 +291,25 @@ void integrate(std::span<particle_engine::particle> particles,
 {
    for (auto& particle : particles)
    {
-      particle.velocity += time_step * particle.force / particle.density;
+      auto t = particle.force / particle.density;
+      particle.velocity += time_step * t;
       particle.position += time_step * particle.velocity;
 
-      if (particle.position.y < -20.0F)
+      if (std::isnan(particle.position.x))
       {
-         particle.velocity.y *= -0.5F;
-         particle.position.y = -20.0F;
+         util::log_error(p_logger, "test");
+      }
+
+      if (particle.position.y - kernel_radius < 0.0F) // NOLINT
+      {
+         particle.velocity.y *= -bound_damping; // NOLINT
+         particle.position.y = kernel_radius;   // NOLINT
+      }
+
+      if (particle.position.x - kernel_radius < 0.0f) // NOLINT
+      {
+         particle.velocity.x *= -bound_damping; // NOLINT
+         particle.position.x = kernel_radius;   // NOLINT
       }
 
       util::log_debug(p_logger,
