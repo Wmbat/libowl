@@ -32,21 +32,18 @@ namespace gfx
    };
    inline static const index_buffer_error_category m_index_buffer_category{};
 
-   auto make_error(index_buffer_error err) noexcept -> error_t
+   auto to_err_code(index_buffer_error err) noexcept -> util::error_t
    {
       return {{static_cast<int>(err), m_index_buffer_category}};
    }
 
-   auto index_buffer::make(create_info&& info) noexcept -> gfx::result<index_buffer>
+   auto index_buffer::make(create_info&& info) noexcept -> util::result<index_buffer>
    {
-      const vkn::device& device = *info.p_device;
-      const vkn::command_pool& command_pool = *info.p_command_pool;
-
       const std::size_t size = sizeof(info.indices[0]) * std::size(info.indices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
-         void* p_data = device.logical_device().mapMemory(buffer.memory(), 0, size, {});
+         void* p_data = info.device.logical_device().mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.indices.data(), size);
-         device.logical_device().unmapMemory(buffer.memory());
+         info.device.logical_device().unmapMemory(buffer.memory());
 
          return std::move(buffer);
       };
@@ -54,11 +51,11 @@ namespace gfx
          util::log_error(info.p_logger, "[core] staging buffer error: {}-{}",
                          err.value().category().name(), err.value().message());
 
-         return make_error(index_buffer_error::failed_to_create_staging_buffer);
+         return to_err_code(index_buffer_error::failed_to_create_staging_buffer);
       };
 
       auto staging_buffer_res =
-         vkn::buffer::builder{device, info.p_logger}
+         vkn::buffer::builder{info.device, info.p_logger}
             .set_size(size)
             .set_usage(vk::BufferUsageFlagBits::eTransferSrc)
             .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
@@ -72,7 +69,7 @@ namespace gfx
          return monad::err(*staging_buffer_res.error());
       }
 
-      auto index_buffer_res = vkn::buffer::builder{device, info.p_logger}
+      auto index_buffer_res = vkn::buffer::builder{info.device, info.p_logger}
                                  .set_size(size)
                                  .set_usage(vk::BufferUsageFlagBits::eTransferDst |
                                             vk::BufferUsageFlagBits::eIndexBuffer)
@@ -93,12 +90,12 @@ namespace gfx
          buffer->copyBuffer(vkn::value(staging_buffer), vkn::value(index_buffer), {{.size = size}});
          buffer->end();
 
-         return device.get_queue(vkn::queue_type::graphics)
+         return info.device.get_queue(vkn::queue_type::graphics)
             .map_error([&](util::error_t&& err) {
                util::log_error(info.p_logger, "[core] no queue found for transfer : {}-{}",
                                err.value().category().name(), err.value().message());
 
-               return make_error(index_buffer_error::failed_to_find_a_suitable_queue);
+               return to_err_code(index_buffer_error::failed_to_find_a_suitable_queue);
             })
             .map([&](vk::Queue queue) noexcept -> class index_buffer {
                queue.submit({{.commandBufferCount = 1, .pCommandBuffers = &buffer.get()}}, nullptr);
@@ -114,12 +111,12 @@ namespace gfx
             });
       };
 
-      return command_pool.create_primary_buffer()
+      return info.command_pool.create_primary_buffer()
          .map_error([&](util::error_t&& err) {
             util::log_error(info.p_logger, "[core] transfer cmd buffer error: {}-{}",
                             err.value().category().name(), err.value().message());
 
-            return make_error(index_buffer_error::failed_to_create_command_buffer);
+            return to_err_code(index_buffer_error::failed_to_create_command_buffer);
          })
          .and_then(copy_n_create);
    }

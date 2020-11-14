@@ -55,13 +55,13 @@ namespace gfx
       -> bool
    {
       auto vertex = vertex_buffer::make({.vertices = r.vertices,
-                                         .p_device = &m_device,
-                                         .p_command_pool = &m_gfx_command_pools[0],
+                                         .device = m_device,
+                                         .command_pool = m_gfx_command_pools[0],
                                          .p_logger = mp_logger});
 
       auto index = index_buffer::make({.indices = r.indices,
-                                       .p_device = &m_device,
-                                       .p_command_pool = &m_gfx_command_pools[0],
+                                       .device = m_device,
+                                       .command_pool = m_gfx_command_pools[0],
                                        .p_logger = mp_logger});
 
       if (!(vertex && index))
@@ -92,35 +92,9 @@ namespace gfx
       }
    }
 
-   auto render_manager::build_pipeline() -> vkn::graphics_pipeline::builder
+   void render_manager::bake(const vkn::shader& /*vert_shader*/, const vkn::shader& /*frag_shader*/)
    {
-      return vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
-         .add_vertex_binding({.binding = 0,
-                              .stride = sizeof(gfx::vertex),
-                              .inputRate = vk::VertexInputRate::eVertex})
-         .add_vertex_attribute({.location = 0,
-                                .binding = 0,
-                                .format = vk::Format::eR32G32B32Sfloat,
-                                .offset = offsetof(gfx::vertex, position)})
-         .add_vertex_attribute({.location = 1,
-                                .binding = 0,
-                                .format = vk::Format::eR32G32B32Sfloat,
-                                .offset = offsetof(gfx::vertex, normal)})
-         .add_vertex_attribute({.location = 2,
-                                .binding = 0,
-                                .format = vk::Format::eR32G32B32Sfloat,
-                                .offset = offsetof(gfx::vertex, colour)})
-         .add_viewport({.x = 0.0F,
-                        .y = 0.0F,
-                        .width = static_cast<float>(m_swapchain.extent().width),
-                        .height = static_cast<float>(m_swapchain.extent().height),
-                        .minDepth = 0.0F,
-                        .maxDepth = 1.0F},
-                       {.offset = {0, 0}, .extent = m_swapchain.extent()});
-   }
-
-   void render_manager::bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader)
-   {
+      /*
       m_graphics_pipeline =
          vkn::graphics_pipeline::builder{m_device, m_swapchain_render_pass, mp_logger}
             .add_shader(vert_shader)
@@ -164,6 +138,8 @@ namespace gfx
                return vkn::graphics_pipeline{};
             })
             .join();
+
+      */
 
       m_camera_descriptor_pool = create_camera_descriptor_pool();
       m_camera_buffers = create_camera_buffers();
@@ -308,12 +284,12 @@ namespace gfx
 
    auto render_manager::device() -> vkn::device& { return m_device; }
 
-   auto render_manager::vertex_bindings() -> vertex_bindings_array
+   auto render_manager::vertex_bindings() -> vkn::vertex_bindings_array
    {
       return {
          {.binding = 0, .stride = sizeof(gfx::vertex), .inputRate = vk::VertexInputRate::eVertex}};
    }
-   auto render_manager::vertex_attributes() -> vertex_attributes_array
+   auto render_manager::vertex_attributes() -> vkn::vertex_attributes_array
    {
       return {{.location = 0,
                .binding = 0,

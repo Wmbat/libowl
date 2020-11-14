@@ -23,9 +23,6 @@
 
 namespace gfx
 {
-   using vertex_bindings_array = util::dynamic_array<vk::VertexInputBindingDescription>;
-   using vertex_attributes_array = util::dynamic_array<vk::VertexInputAttributeDescription>;
-
    class render_manager
    {
       static constexpr std::size_t max_frames_in_flight = 2;
@@ -38,8 +35,6 @@ namespace gfx
 
       auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
       void update_model_matrix(const std::string& name, const glm::mat4& model);
-
-      auto build_pipeline() -> vkn::graphics_pipeline::builder;
 
       void bake(const vkn::shader& vert_shader, const vkn::shader& frag_shader);
 
@@ -55,8 +50,8 @@ namespace gfx
 
       auto device() -> vkn::device&;
 
-      auto vertex_bindings() -> vertex_bindings_array;
-      auto vertex_attributes() -> vertex_attributes_array;
+      auto vertex_bindings() -> vkn::vertex_bindings_array;
+      auto vertex_attributes() -> vkn::vertex_attributes_array;
 
    private:
       auto add_pass(const std::string& name, vkn::queue_type queue_type) -> render_pass&;

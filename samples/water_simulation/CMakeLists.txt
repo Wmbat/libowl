@@ -69,9 +69,11 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
-        source/water_simulation/shader_codex.cpp
-        source/water_simulation/render_system.cpp
+        source/water_simulation/camera.cpp
         source/water_simulation/particle_system.cpp
+        source/water_simulation/pipeline_codex.cpp
+        source/water_simulation/render_system.cpp
+        source/water_simulation/shader_codex.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

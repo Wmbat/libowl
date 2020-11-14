@@ -1,40 +1,69 @@
 #pragma once
 
-#include <gfx/render_manager.hpp>
+#include <water_simulation/render_system.hpp>
+#include <water_simulation/renderable.hpp>
 
 #include <util/containers/dynamic_array.hpp>
 
 #include <glm/vec3.hpp>
 
+#include <range/v3/view/filter.hpp>
+#include <range/v3/view/transform.hpp>
+
 static constexpr std::size_t default_particle_count = 1000U;
 
-struct particle
+struct particle_prop
 {
    glm::vec3 position{};
    glm::vec3 velocity{};
    glm::vec3 force{};
 
-   float scale{1.0F};
+   float density{0.0F};
+   float pressure{0.0F};
    float mass{1.0F};
-   float lifetime{1.0F};
-   float life_remaining{0.0F};
-
-   bool is_active{false};
 };
 
 class particle_engine
 {
 public:
-   particle_engine(gfx::render_manager& render_manager,
-                   std::size_t particle_count = default_particle_count);
+   struct particle
+   {
+      glm::vec3 position{};
+      glm::vec3 velocity{};
+      glm::vec3 force{};
 
-   void update(const std::function<void(particle&)>& fun);
+      float mass{1.0F};
+      float density{0.0F};
+      float pressure{0.0F};
 
-   void emit(const particle& particle);
+      bool is_active{false};
+
+      glm::mat4 model;
+   };
+
+public:
+   particle_engine(std::shared_ptr<util::logger> p_logger);
+
+   void emit(const particle_prop& particle);
+
+   [[nodiscard]] inline auto particles() -> std::span<particle>
+   {
+      // clang-format off
+      return m_particles;
+      // clang-format on
+   }
+
+   [[nodiscard]] inline auto particle_models() const
+   {
+      // clang-format off
+      return m_particles 
+         | ranges::views::filter([](auto p) { return p.is_active; }) 
+         | ranges::views::transform([](particle p) { return p.model; });
+      // clang-format on
+   }
 
 private:
-   [[maybe_unused]] gfx::render_manager& m_render_manager;
-
    util::dynamic_array<particle> m_particles;
-   util::dynamic_array<std::string> m_names;
+
+   std::shared_ptr<util::logger> mp_logger;
 };

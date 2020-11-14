@@ -9,18 +9,22 @@
 
 enum struct pipeline_codex_error
 {
-
+   failed_to_insert_pipeline,
+   pipeline_not_found
 };
 
 auto to_string(pipeline_codex_error err) -> std::string;
 auto to_err_code(pipeline_codex_error err) -> util::error_t;
 
+using pipeline_index_t =
+   util::strong_type<std::size_t, struct pipeline_index_tag, util::arithmetic>;
+
 class pipeline_codex
 {
-   using graphics_map = std::unordered_map<std::string, vkn::graphics_pipeline>;
+   using graphics_map = std::unordered_map<std::size_t, vkn::graphics_pipeline>;
 
 public:
-   using key_type = std::string;
+   using key_type = pipeline_index_t;
    using value_type = vkn::graphics_pipeline;
 
    class lookup_v
@@ -61,16 +65,16 @@ public:
    };
 
 public:
-   pipeline_codex(render_system& renderer, std::shared_ptr<util::logger> p_logger);
+   pipeline_codex(std::shared_ptr<util::logger> p_logger);
 
-   auto insert(const filepath& path, vkn::pipeline_type type) -> result<insert_kv>;
+   auto insert(vkn::graphics_pipeline::create_info&& info) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
    auto remove(const key_type& key) -> result<remove_v>;
 
 private:
-   graphics_map m_graphics_pipeline;
-
-   render_system& m_renderer;
+   graphics_map m_graphics_pipelines;
 
    std::shared_ptr<util::logger> mp_logger;
+
+   std::size_t id_counter{0};
 };

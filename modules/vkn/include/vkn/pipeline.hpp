@@ -11,6 +11,9 @@
 
 namespace vkn
 {
+   using vertex_bindings_array = util::dynamic_array<vk::VertexInputBindingDescription>;
+   using vertex_attributes_array = util::dynamic_array<vk::VertexInputAttributeDescription>;
+
    enum struct pipeline_type
    {
       graphics,
@@ -25,112 +28,74 @@ namespace vkn
       failed_to_create_pipeline
    };
 
-   auto to_string(graphics_pipeline_error err) -> std::string;
+   struct set_layout_binding
+   {
+      util::index_t binding{};
+      vk::DescriptorType descriptor_type{};
+      util::count32_t descriptor_count{};
+   };
 
-   class graphics_pipeline final : public owning_handle<vk::Pipeline>
+   struct set_layout_data
+   {
+      std::string name{};
+      util::dynamic_array<set_layout_binding> bindings{};
+   };
+
+   struct push_constant_data
+   {
+      std::string name{};
+      util::size_t size{};
+      util::size_t offset{};
+   };
+
+   struct pipeline_shader_data
+   {
+      vkn::shader* p_shader{nullptr};
+      util::dynamic_array<set_layout_data> set_layouts{};
+      util::dynamic_array<push_constant_data> push_constants{};
+   };
+
+   class graphics_pipeline final
    {
       static constexpr std::size_t expected_shader_count{2U};
 
+   public:
       struct create_info
       {
+         const vkn::device& device;
+         const vkn::render_pass& render_pass;
+
+         std::shared_ptr<util::logger> p_logger{nullptr};
+
+         vertex_bindings_array bindings{};
+         vertex_attributes_array attributes{};
+
+         util::dynamic_array<vk::Viewport> viewports{};
+         util::dynamic_array<vk::Rect2D> scissors{};
+
+         util::dynamic_array<pipeline_shader_data> shader_infos{};
       };
 
+      static auto make(create_info&& info) -> util::result<graphics_pipeline>;
+
    public:
+      [[nodiscard]] auto value() const noexcept -> vk::Pipeline;
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
-      [[nodiscard]] auto device() const noexcept -> vk::Device;
 
       auto get_descriptor_set_layout(const std::string& name) const
          -> const vkn::descriptor_set_layout&;
       auto get_push_constant_ranges(const std::string& name) const -> const vk::PushConstantRange&;
 
    private:
+      vk::UniquePipeline m_pipeline{nullptr};
       vk::UniquePipelineLayout m_pipeline_layout{nullptr};
 
       std::unordered_map<std::string, vkn::descriptor_set_layout> m_set_layouts{};
       std::unordered_map<std::string, vk::PushConstantRange> m_push_constants{};
-
-   public:
-      class builder final
-      {
-         template <typename any_>
-         using shader_dynamic_array = util::small_dynamic_array<any_, expected_shader_count>;
-
-         struct layout_info;
-
-      public:
-         builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                 std::shared_ptr<util::logger> p_logger);
-
-         [[nodiscard]] auto build() const -> util::result<graphics_pipeline>;
-
-         auto add_shader(const vkn::shader& shader) noexcept -> builder&;
-         auto add_viewport(const vk::Viewport& viewport, const vk::Rect2D& scissor) noexcept
-            -> builder&;
-         auto add_vertex_binding(vk::VertexInputBindingDescription&& binding) noexcept -> builder&;
-         auto add_vertex_attribute(vk::VertexInputAttributeDescription&& attribute) noexcept
-            -> builder&;
-         auto add_set_layout(const std::string& name,
-                             const util::dynamic_array<vk::DescriptorSetLayoutBinding>& binding)
-            -> builder&;
-         auto add_push_constant(const std::string& name, vkn::shader_type shader_type,
-                                util::size_t offset, util::size_t size) -> builder&;
-
-      private:
-         [[nodiscard]] auto create_descriptor_set_layouts() const
-            -> util::result<graphics_pipeline>;
-         [[nodiscard]] auto create_push_constant_ranges(graphics_pipeline&& pipeline) const
-            -> util::result<graphics_pipeline>;
-         [[nodiscard]] auto create_pipeline_layout(graphics_pipeline&& pipeline) const
-            -> util::result<graphics_pipeline>;
-         [[nodiscard]] auto create_pipeline(graphics_pipeline&& pipeline) const
-            -> util::result<graphics_pipeline>;
-
-         [[nodiscard]] auto
-         check_vertex_attribute_support(const vkn::shader* p_shader) const noexcept -> bool;
-
-      private:
-         std::shared_ptr<util::logger> mp_logger;
-
-         struct descriptor_set_layout_info
-         {
-            std::string name;
-            util::dynamic_array<vk::DescriptorSetLayoutBinding> binding;
-         };
-
-         struct push_constant_info
-         {
-            std::string name;
-            vkn::shader_type type;
-            util::size_t offset;
-            util::size_t size;
-         };
-
-         struct layout_info
-         {
-            vk::UniqueDescriptorSetLayout camera_layout;
-            util::dynamic_array<vk::UniqueDescriptorSetLayout> set_layouts;
-
-            vk::UniquePipelineLayout pipeline_layout;
-         };
-
-         struct info
-         {
-            vk::Device device;
-            vk::RenderPass render_pass;
-
-            shader_dynamic_array<const vkn::shader*> shaders;
-
-            util::small_dynamic_array<vk::Viewport, 1> viewports;
-            util::small_dynamic_array<vk::Rect2D, 1> scissors;
-
-            util::dynamic_array<vk::VertexInputBindingDescription> binding_descriptions;
-            util::dynamic_array<vk::VertexInputAttributeDescription> attribute_descriptions;
-
-            util::dynamic_array<descriptor_set_layout_info> set_layouts;
-            util::dynamic_array<push_constant_info> push_constants;
-         } m_info;
-      };
    };
+
+   auto to_string(graphics_pipeline_error err) -> std::string;
+   auto to_err_code(graphics_pipeline_error err) -> util::error_t;
 } // namespace vkn
 
 namespace std

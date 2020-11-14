@@ -2,6 +2,9 @@
 
 #include <ui/window.hpp>
 
+#include <gfx/memory/index_buffer.hpp>
+#include <gfx/memory/vertex_buffer.hpp>
+
 #include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 #include <util/strong_type.hpp>
@@ -48,10 +51,19 @@ public:
 
    void wait();
 
-   auto device() -> vkn::device&; // NOLINT
+   auto device() -> vkn::device&;           // NOLINT
+   auto render_pass() -> vkn::render_pass&; // NOLINT
 
    auto vertex_bindings() -> vertex_bindings_array;
    auto vertex_attributes() -> vertex_attributes_array;
+
+   auto viewport() const -> vk::Viewport; // NOLINT
+   auto scissor() const -> vk::Rect2D;    // NOLINT
+
+   [[nodiscard]] auto create_vertex_buffer(const util::dynamic_array<gfx::vertex>& vertices) const
+      -> util::result<gfx::vertex_buffer>;
+   [[nodiscard]] auto create_index_buffer(const util::dynamic_array<std::uint32_t>& indices) const
+      -> util::result<gfx::index_buffer>;
 
    auto lookup_configuration() const -> const config&; // NOLINT
 

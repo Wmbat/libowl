@@ -63,10 +63,8 @@ auto shader_codex::remove(const key_type& key) -> result<remove_v>
 
       return res;
    }
-   else // NOLINT
-   {
-      return monad::err(to_err_code(shader_codex_error::shader_not_found));
-   }
+
+   return monad::err(to_err_code(shader_codex_error::shader_not_found));
 }
 
 // LOOKUP_V

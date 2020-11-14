@@ -1,3 +1,4 @@
+#include <utility>
 #include <water_simulation/particle_system.hpp>
 
 #include <range/v3/view/enumerate.hpp>
@@ -9,48 +10,18 @@
 
 #include <utility>
 
-auto is_active(ranges::common_pair<std::size_t, particle&> pair) -> bool
+particle_engine::particle_engine(std::shared_ptr<util::logger> p_logger) :
+   mp_logger{std::move(p_logger)}
+{}
+
+void particle_engine::emit(const particle_prop& prop)
 {
-   return pair.second.is_active;
-}
-
-namespace vi = ranges::views;
-
-particle_engine::particle_engine(gfx::render_manager& render_manager, std::size_t particle_count) :
-   m_render_manager{render_manager}
-{
-   m_particles.resize(particle_count);
-
-   /*
-   for (std::size_t i : vi::iota(0U, particle_count))
-   {
-      std::string name = "particle_" + std::to_string(i);
-
-      m_render_manager.subscribe_renderable(
-         name,
-         {.vertices = m_particle_vertices,
-          .indices = m_particle_indices,
-          .model = glm::translate(glm::mat4{1}, {1000.0F, 0.0f, 0.0f})});
-
-      m_names.push_back(name);
-   }
-   */
-}
-
-void particle_engine::update(const std::function<void(particle&)>& fun)
-{
-   for (auto [index, particle] : m_particles | vi::enumerate | vi::filter(is_active))
-   {
-      std::invoke(fun, particle);
-
-      const auto model =
-         glm::translate(glm::scale(glm::mat4{1.0F}, {1 / 5.0F, 1 / 5.0F, 0.0F}), particle.position);
-      m_render_manager.update_model_matrix(m_names[index], model);
-   }
-}
-
-void particle_engine::emit([[maybe_unused]] const particle& particle)
-{
-   // m_particles[m_particle_index] = particle;
-   // m_particles[m_particle_index].is_active = true;
+   m_particles.emplace_back(particle{.position = prop.position,
+                                     .velocity = prop.velocity,
+                                     .force = prop.force,
+                                     .mass = prop.mass,
+                                     .density = prop.density,
+                                     .pressure = prop.pressure,
+                                     .is_active = true,
+                                     .model = glm::mat4{1}});
 }

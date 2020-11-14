@@ -20,7 +20,7 @@ namespace gfx
    };
 
    auto to_string(index_buffer_error err) -> std::string;
-   auto make_error(index_buffer_error err) noexcept -> error_t;
+   auto to_err_code(index_buffer_error err) noexcept -> util::error_t;
 
    class index_buffer
    {
@@ -29,12 +29,13 @@ namespace gfx
       {
          util::dynamic_array<uint32_t> indices;
 
-         vkn::device* p_device;
-         vkn::command_pool* p_command_pool;
+         const vkn::device& device;
+         const vkn::command_pool& command_pool;
+
          std::shared_ptr<util::logger> p_logger;
       };
 
-      static auto make(create_info&& info) noexcept -> gfx::result<index_buffer>;
+      static auto make(create_info&& info) noexcept -> util::result<index_buffer>;
 
       auto operator->() noexcept -> vkn::buffer*;
       auto operator->() const noexcept -> const vkn::buffer*;

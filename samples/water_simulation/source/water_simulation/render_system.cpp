@@ -198,6 +198,8 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
                sys.m_swapchain_render_pass = std::move(data.render_pass);
                sys.m_swapchain_framebuffers = std::move(data.framebuffers);
                sys.m_images_in_flight.resize(std::size(sys.m_swapchain.image_views()));
+               sys.m_configuration =
+                  config{.swapchain_image_count = std::size(sys.m_swapchain.image_views())};
 
                return std::move(sys);
             });
@@ -343,6 +345,10 @@ auto render_system::device() -> vkn::device&
 {
    return m_device;
 }
+auto render_system::render_pass() -> vkn::render_pass&
+{
+   return m_swapchain_render_pass;
+}
 
 auto render_system::vertex_bindings() -> vertex_bindings_array
 {
@@ -363,6 +369,37 @@ auto render_system::vertex_attributes() -> vertex_attributes_array
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
             .offset = offsetof(gfx::vertex, colour)}};
+}
+
+auto render_system::viewport() const -> vk::Viewport
+{
+   return {.x = 0.0F,
+           .y = 0.0F,
+           .width = static_cast<float>(m_swapchain.extent().width),
+           .height = static_cast<float>(m_swapchain.extent().height),
+           .minDepth = 0.0F,
+           .maxDepth = 1.0F};
+}
+auto render_system::scissor() const -> vk::Rect2D
+{
+   return {.offset = {0, 0}, .extent = m_swapchain.extent()};
+}
+
+auto render_system::create_vertex_buffer(const util::dynamic_array<gfx::vertex>& vertices) const
+   -> util::result<gfx::vertex_buffer>
+{
+   return gfx::vertex_buffer::make({.vertices = vertices,
+                                    .device = m_device,
+                                    .command_pool = m_render_command_pools[0],
+                                    .p_logger = mp_logger});
+}
+auto render_system::create_index_buffer(const util::dynamic_array<std::uint32_t>& indices) const
+   -> util::result<gfx::index_buffer>
+{
+   return gfx::index_buffer::make({.indices = indices,
+                                   .device = m_device,
+                                   .command_pool = m_render_command_pools[0],
+                                   .p_logger = mp_logger});
 }
 
 auto render_system::lookup_configuration() const -> const config&
