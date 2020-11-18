@@ -17,7 +17,7 @@ namespace vkn
       m_device{device}, mp_logger{std::move(p_logger)}
    {}
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical_device()}, mp_logger{std::move(p_logger)}
+      m_device{device.logical()}, mp_logger{std::move(p_logger)}
    {}
 
    auto builder::build() const noexcept -> util::result<descriptor_set_layout>

@@ -54,10 +54,10 @@ namespace vkn
    }
 
    auto device::surface() const -> vk::SurfaceKHR { return m_surface.get(); }
-   auto device::logical_device() const -> vk::Device { return m_logical_device.get(); }
-   auto device::physical_device() const -> vk::PhysicalDevice { return m_physical_device; }
+   auto device::logical() const -> vk::Device { return m_logical_device.get(); }
+   auto device::physical() const -> vk::PhysicalDevice { return m_physical_device; }
 
-   auto device::vulkan_version() const -> std::uint32_t { return m_version; }
+   auto device::vk_version() const -> std::uint32_t { return m_version; }
 
    auto device::get_queue_index(queue_type type) const -> util::result<std::uint32_t>
    {

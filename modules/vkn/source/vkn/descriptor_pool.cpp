@@ -15,7 +15,7 @@ namespace vkn
    using builder = descriptor_pool::builder;
 
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical_device()}, mp_logger{std::move(p_logger)}
+      m_device{device.logical()}, mp_logger{std::move(p_logger)}
    {}
 
    auto builder::build() -> util::result<descriptor_pool>

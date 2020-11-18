@@ -1,11 +1,8 @@
 #pragma once
 
 #include <water_simulation/core.hpp>
+#include <water_simulation/pipeline.hpp>
 #include <water_simulation/render_system.hpp>
-
-#include <gfx/render_pass.hpp>
-
-#include <vkn/pipeline.hpp>
 
 enum struct pipeline_codex_error
 {
@@ -21,11 +18,11 @@ using pipeline_index_t =
 
 class pipeline_codex
 {
-   using graphics_map = std::unordered_map<std::size_t, vkn::graphics_pipeline>;
+   using graphics_map = std::unordered_map<std::size_t, graphics_pipeline>;
 
 public:
    using key_type = pipeline_index_t;
-   using value_type = vkn::graphics_pipeline;
+   using value_type = graphics_pipeline;
 
    class lookup_v
    {
@@ -67,7 +64,7 @@ public:
 public:
    pipeline_codex(std::shared_ptr<util::logger> p_logger);
 
-   auto insert(vkn::graphics_pipeline::create_info&& info) -> result<insert_kv>;
+   auto insert(graphics_pipeline::create_info&& info) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
    auto remove(const key_type& key) -> result<remove_v>;
 

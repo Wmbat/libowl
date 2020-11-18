@@ -39,8 +39,8 @@ namespace vkn
    builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.logical_device();
-      m_info.version = device.vulkan_version();
+      m_info.device = device.logical();
+      m_info.version = device.vk_version();
    }
 
    auto builder::build() -> util::result<shader>

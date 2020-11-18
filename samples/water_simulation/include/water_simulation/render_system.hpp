@@ -1,5 +1,8 @@
 #pragma once
 
+#include <water_simulation/depth_buffer.hpp>
+#include <water_simulation/render_pass.hpp>
+
 #include <ui/window.hpp>
 
 #include <gfx/memory/index_buffer.hpp>
@@ -19,7 +22,6 @@
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
 
-using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
 using frame_index_t = util::strong_type<std::uint32_t, struct frame_index_tag, util::arithmetic>;
 
 using framebuffer_array = util::small_dynamic_array<vkn::framebuffer, expected_image_count>;
@@ -46,13 +48,17 @@ public:
 
 public:
    auto begin_frame() -> image_index_t;
-   void record_draw_calls(const std::function<void(vk::CommandBuffer)>& buffer_calls);
+   void render(std::span<render_pass> passes);
    void end_frame();
 
    void wait();
 
-   auto device() -> vkn::device&;           // NOLINT
-   auto render_pass() -> vkn::render_pass&; // NOLINT
+   auto device() const -> const vkn::device&;       // NOLINT
+   auto device() -> vkn::device&;                   // NOLINT
+   auto swapchain() const -> const vkn::swapchain&; // NOLINT
+   auto swapchain() -> vkn::swapchain&;             // NOLINT
+
+   auto get_depth_attachment() const -> vk::ImageView; // NOLINT
 
    auto vertex_bindings() -> vertex_bindings_array;
    auto vertex_attributes() -> vertex_attributes_array;
@@ -74,10 +80,9 @@ private:
 
    vkn::context m_context;
    vkn::device m_device;
-
    vkn::swapchain m_swapchain;
-   vkn::render_pass m_swapchain_render_pass;
-   framebuffer_array m_swapchain_framebuffers;
+
+   depth_buffer m_depth_buffer;
 
    semaphore_array m_render_finished_semaphores;
 

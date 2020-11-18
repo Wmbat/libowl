@@ -176,7 +176,7 @@ namespace vkn
                            .setSubpass(0)
                            .setBasePipelineHandle(nullptr);
 
-      auto logical_device = create_info.device.logical_device();
+      auto logical_device = create_info.device.logical();
       return monad::try_wrap<vk::SystemError>([&] {
                 return logical_device.createGraphicsPipelineUnique(nullptr, info);
              })
@@ -233,7 +233,7 @@ namespace vkn
       }
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return device.logical_device().createPipelineLayoutUnique(
+                return device.logical().createPipelineLayoutUnique(
                    {.pNext = nullptr,
                     .flags = {},
                     .setLayoutCount = static_cast<std::uint32_t>(std::size(layouts)),

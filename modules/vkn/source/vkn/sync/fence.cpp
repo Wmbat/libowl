@@ -11,7 +11,7 @@ namespace vkn
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.logical_device();
+      m_info.device = device.logical();
    }
 
    auto builder::build() const noexcept -> util::result<fence>

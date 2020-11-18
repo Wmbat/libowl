@@ -8,10 +8,10 @@ pipeline_codex::pipeline_codex(std::shared_ptr<util::logger> p_logger) :
    mp_logger{std::move(p_logger)}
 {}
 
-auto pipeline_codex::insert(vkn::graphics_pipeline::create_info&& info) -> result<insert_kv>
+auto pipeline_codex::insert(graphics_pipeline::create_info&& info) -> result<insert_kv>
 {
-   return vkn::graphics_pipeline::make(std::move(info))
-      .and_then([&](vkn::graphics_pipeline&& pipeline) -> result<insert_kv> {
+   return graphics_pipeline::make(std::move(info))
+      .and_then([&](graphics_pipeline&& pipeline) -> result<insert_kv> {
          const std::size_t key = id_counter++;
 
          if (auto [it, res] = m_graphics_pipelines.try_emplace(key, std::move(pipeline)); !res)

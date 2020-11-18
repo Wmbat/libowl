@@ -38,7 +38,7 @@ namespace vkn
    builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
       mp_logger{std::move(p_logger)}
    {
-      m_info.device = device.logical_device();
+      m_info.device = device.logical();
       m_info.queue_family_index = device.get_queue_index(queue_type::graphics);
    }
 

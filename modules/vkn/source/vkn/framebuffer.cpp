@@ -10,7 +10,7 @@ namespace vkn
 
    builder::builder(const vkn::device& device, const vkn::render_pass& render_pass,
                     std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical_device()},
+      m_device{device.logical()},
       mp_logger{std::move(p_logger)}
    {
       m_info.render_pass = render_pass.value();

@@ -24,8 +24,7 @@ project(vermillon
 
 # User interface declarations
 
-option(BUILD_TESTS "Build unit tests" OFF)
-option(BUILD_BENCH "Build benchmarks" OFF)
+option(VERMILLON_BUILD_TESTS "Build unit tests" OFF)
 option(VERMILLON_SANITIZE_ADDRESS "Sanitize address" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -33,7 +32,6 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 message(STATUS "[${PROJECT_NAME}] Compiling with ${CMAKE_CXX_COMPILER_ID}")
-
 message(STATUS "[${PROJECT_NAME}] ${PROJECT_VERSION}")
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
@@ -42,7 +40,7 @@ else ()
     message(STATUS "[${PROJECT_NAME}] Build type: Debug")
 endif ()
 
-if (BUILD_TESTS)
+if (VERMILLON_BUILD_TESTS)
    set(VERMILLON_CORE_BUILD_TESTS ON CACHE BOOL "" FORCE)
    set(VERMILLON_GFX_BUILD_TESTS ON CACHE BOOL "" FORCE)
    set(VERMILLON_UTIL_BUILD_TESTS ON CACHE BOOL "" FORCE)
@@ -53,6 +51,7 @@ if (VERMILLON_SANITIZE_ADDRESS)
    set(VERMILLON_UI_SANITIZE_ADDRESS ON CACHE BOOL "" FORCE)
    set(VERMILLON_UTIL_SANITIZE_ADDRESS ON CACHE BOOL "" FORCE)
    set(VERMILLON_VKN_SANITIZE_ADDRESS ON CACHE BOOL "" FORCE)
+
    set(WATER_SIM_SANITIZE_ADDRESS ON CACHE BOOL "" FORCE)
 endif()
 
@@ -61,7 +60,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 set(VERMILLON_CORE_STATIC ON CACHE BOOL "" FORCE)
 
-message(STATUS "[${PROJECT_NAME}] Building unit tests: ${BUILD_TESTS}")
+message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${BUILD_BENCH}")
 message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_SANITIZE_ADDRESS}")
 

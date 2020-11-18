@@ -41,9 +41,9 @@ namespace gfx
    {
       const std::size_t size = sizeof(info.indices[0]) * std::size(info.indices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
-         void* p_data = info.device.logical_device().mapMemory(buffer.memory(), 0, size, {});
+         void* p_data = info.device.logical().mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.indices.data(), size);
-         info.device.logical_device().unmapMemory(buffer.memory());
+         info.device.logical().unmapMemory(buffer.memory());
 
          return std::move(buffer);
       };

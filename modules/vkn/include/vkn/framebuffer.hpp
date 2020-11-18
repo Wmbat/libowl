@@ -24,6 +24,7 @@ namespace vkn
 
    class framebuffer final : public owning_handle<vk::Framebuffer>
    {
+   public:
       /**
        * Get the device used for the creation of the framebuffer handle
        */

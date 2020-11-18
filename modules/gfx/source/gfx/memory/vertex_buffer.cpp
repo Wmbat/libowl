@@ -44,9 +44,9 @@ namespace gfx
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
          util::log_debug(info.p_logger, "[gfx] mapping vertex data into staging buffer");
 
-         void* p_data = info.device.logical_device().mapMemory(buffer.memory(), 0, size, {});
+         void* p_data = info.device.logical().mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.vertices.data(), size);
-         info.device.logical_device().unmapMemory(buffer.memory());
+         info.device.logical().unmapMemory(buffer.memory());
 
          return std::move(buffer);
       };

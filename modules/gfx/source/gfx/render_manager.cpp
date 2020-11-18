@@ -156,7 +156,7 @@ namespace gfx
                                       .descriptorType = vk::DescriptorType::eUniformBuffer,
                                       .pBufferInfo = std::data(buf_info)};
 
-         m_device.logical_device().updateDescriptorSets({write}, {});
+         m_device.logical().updateDescriptorSets({write}, {});
       }
    }
 
@@ -164,10 +164,10 @@ namespace gfx
 
    void render_manager::render_frame(const std::function<void(vk::CommandBuffer)> buffer_calls)
    {
-      m_device.logical_device().waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))},
-                                              true, std::numeric_limits<std::uint64_t>::max());
+      m_device.logical().waitForFences({vkn::value(m_in_flight_fences.at(m_current_frame))}, true,
+                                       std::numeric_limits<std::uint64_t>::max());
 
-      auto [image_res, image_index] = m_device.logical_device().acquireNextImageKHR(
+      auto [image_res, image_index] = m_device.logical().acquireNextImageKHR(
          vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
          vkn::value(m_image_available_semaphores.at(m_current_frame)), nullptr);
       if (image_res != vk::Result::eSuccess)
@@ -178,8 +178,8 @@ namespace gfx
       util::log_debug(mp_logger, R"([gfx] swapchain image "{}" acquired)", image_index);
       util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" resetting)", m_current_frame);
 
-      m_device.logical_device().resetCommandPool(m_gfx_command_pools[m_current_frame].value(),
-                                                 {}); // NOLINT
+      m_device.logical().resetCommandPool(m_gfx_command_pools[m_current_frame].value(),
+                                          {}); // NOLINT
 
       util::log_debug(mp_logger, R"([gfx] graphics command pool "{}" buffer recording)",
                       m_current_frame);
@@ -228,9 +228,8 @@ namespace gfx
 
       if (m_images_in_flight[image_index])
       {
-         m_device.logical_device().waitForFences(
-            {vkn::value(m_images_in_flight.at(m_current_frame))}, true,
-            std::numeric_limits<std::uint64_t>::max());
+         m_device.logical().waitForFences({vkn::value(m_images_in_flight.at(m_current_frame))},
+                                          true, std::numeric_limits<std::uint64_t>::max());
       }
       m_images_in_flight[image_index] = vkn::value(m_in_flight_fences.at(m_current_frame));
 
@@ -242,7 +241,7 @@ namespace gfx
       const std::array<vk::PipelineStageFlags, 1> wait_stages{
          vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-      m_device.logical_device().resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
+      m_device.logical().resetFences({vkn::value(m_in_flight_fences.at(m_current_frame))});
 
       const std::array submit_infos{
          vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
@@ -280,7 +279,7 @@ namespace gfx
       m_current_frame = (m_current_frame + 1) % max_frames_in_flight;
    }
 
-   void render_manager::wait() { m_device.logical_device().waitIdle(); }
+   void render_manager::wait() { m_device.logical().waitIdle(); }
 
    auto render_manager::device() -> vkn::device& { return m_device; }
 
@@ -315,10 +314,10 @@ namespace gfx
                                   glm::vec3(0.0F, 0.0F, 1.0F));
       matrices.perspective[1][1] *= -1;
 
-      void* p_data = m_device.logical_device().mapMemory(m_camera_buffers[image_index]->memory(), 0,
-                                                         sizeof(matrices), {});
+      void* p_data = m_device.logical().mapMemory(m_camera_buffers[image_index]->memory(), 0,
+                                                  sizeof(matrices), {});
       memcpy(p_data, &matrices, sizeof(matrices));
-      m_device.logical_device().unmapMemory(m_camera_buffers[image_index]->memory());
+      m_device.logical().unmapMemory(m_camera_buffers[image_index]->memory());
    }
 
    auto render_manager::add_pass(const std::string& name,

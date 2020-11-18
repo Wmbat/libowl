@@ -10,7 +10,7 @@ namespace vkn
 
    builder::builder(const vkn::device& device, const vkn::swapchain& swapchain,
                     std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical_device()},
+      m_device{device.logical()},
       m_swapchain_format{swapchain.format()},
       m_swapchain_extent{swapchain.extent()}, mp_logger{std::move(p_logger)}
    {}
@@ -30,10 +30,14 @@ namespace vkn
                                    .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
                                    .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
                                    .initialLayout = vk::ImageLayout::eUndefined,
-                                   .finalLayout = vk::ImageLayout::ePresentSrcKHR}};
+                                   .finalLayout = vk::ImageLayout::ePresentSrcKHR},
+         vk::AttachmentDescription{}};
 
-      const std::array attachment_references{vk::AttachmentReference{
-         .attachment = 0, .layout = vk::ImageLayout::eColorAttachmentOptimal}};
+      const std::array attachment_references{
+         vk::AttachmentReference{.attachment = 0,
+                                 .layout = vk::ImageLayout::eColorAttachmentOptimal},
+         vk::AttachmentReference{.attachment = 1,
+                                 .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal}};
 
       const std::array subpass_descriptions{
          vk::SubpassDescription{.flags = {},

@@ -58,10 +58,10 @@ namespace vkn
 
    public:
       [[nodiscard]] auto surface() const -> vk::SurfaceKHR;
-      [[nodiscard]] auto logical_device() const -> vk::Device;
-      [[nodiscard]] auto physical_device() const -> vk::PhysicalDevice;
+      [[nodiscard]] auto logical() const -> vk::Device;
+      [[nodiscard]] auto physical() const -> vk::PhysicalDevice;
 
-      [[nodiscard]] auto vulkan_version() const -> std::uint32_t;
+      [[nodiscard]] auto vk_version() const -> std::uint32_t;
 
       /**
        * Get an index of a queue family that support operation related to the specified queue type.

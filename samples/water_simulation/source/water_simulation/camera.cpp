@@ -1,5 +1,7 @@
 #include <water_simulation/camera.hpp>
 
+#include <water_simulation/core.hpp>
+
 #include <range/v3/view/iota.hpp>
 
 namespace vi = ranges::views;
@@ -60,7 +62,7 @@ auto create_descriptor_pool(camera_data&& data) -> util::result<camera_data>
                                          .descriptorType = vk::DescriptorType::eUniformBuffer,
                                          .pBufferInfo = std::data(buf_info)};
 
-            info.renderer.device().logical_device().updateDescriptorSets({write}, {});
+            info.renderer.device().logical().updateDescriptorSets({write}, {});
          }
 
          return std::move(data);
@@ -94,4 +96,16 @@ void camera::update(util::index_t image_index, const matrices& matrices)
    void* p_data = device.mapMemory(m_uniform_buffers[image_index.value()].memory(), 0, size, {});
    memcpy(p_data, &matrices, size);
    device.unmapMemory(m_uniform_buffers[image_index.value()].memory());
+}
+
+auto create_camera(render_system& system, graphics_pipeline& pipeline,
+                   const std::shared_ptr<util::logger>& p_logger) -> camera
+{
+   auto& config = system.lookup_configuration();
+
+   return handle_err(camera::make({.renderer = system,
+                                   .pipeline = pipeline,
+                                   .image_count = config.swapchain_image_count,
+                                   .p_logger = p_logger}),
+                     p_logger);
 }

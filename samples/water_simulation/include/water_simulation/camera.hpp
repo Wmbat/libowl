@@ -1,9 +1,9 @@
 #pragma once
 
+#include <water_simulation/pipeline.hpp>
 #include <water_simulation/render_system.hpp>
 
 #include <vkn/descriptor_pool.hpp>
-#include <vkn/pipeline.hpp>
 
 enum struct camera_error
 {
@@ -25,7 +25,7 @@ public:
    struct create_info
    {
       render_system& renderer;
-      vkn::graphics_pipeline& pipeline;
+      graphics_pipeline& pipeline;
 
       util::count32_t image_count;
 
@@ -44,3 +44,6 @@ private:
 
    util::dynamic_array<vkn::buffer> m_uniform_buffers;
 };
+
+auto create_camera(render_system& system, graphics_pipeline& pipeline,
+                   const std::shared_ptr<util::logger>& p_logger) -> camera;
