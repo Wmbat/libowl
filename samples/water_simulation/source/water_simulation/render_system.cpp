@@ -23,6 +23,8 @@ struct render_system_data
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
 
+   depth_buffer buffer;
+
    ui::window* p_window;
 
    std::shared_ptr<util::logger> logger;
@@ -152,15 +154,27 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
    return std::move(data);
 }
 
+auto create_depth_buffer(render_system_data&& data) -> result<render_system_data>
+{
+   auto& extent = data.swapchain.extent();
+   return depth_buffer::make(
+             {.device = data.device, .width = extent.width, .height = extent.height})
+      .map([&](depth_buffer&& b) {
+         data.buffer = std::move(b);
+         return std::move(data);
+      });
+}
+
 auto render_system::make(create_info&& info) -> util::result<render_system>
 {
-   return create_context({.info = info, .logger = info.p_logger})
+   return create_context({.info = info, .p_window = info.p_window, .logger = info.p_logger})
       .and_then(create_device)
       .and_then(create_swapchain)
       .and_then(create_render_command_pools)
       .and_then(create_in_flight_fences)
       .and_then(create_image_available_semaphores)
       .and_then(create_render_finished_semaphores)
+      .and_then(create_depth_buffer)
       .map([](render_system_data&& data) {
          render_system rs{};
          rs.mp_logger = data.logger;
@@ -172,6 +186,8 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_image_available_semaphores = std::move(data.image_available_semaphores);
          rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
          rs.m_render_command_pools = std::move(data.render_command_pools);
+         rs.m_depth_buffer = std::move(data.buffer);
+         rs.m_configuration = {.swapchain_image_count = std::size(rs.m_swapchain.image_views())};
 
          rs.m_images_in_flight.resize(std::size(rs.m_swapchain.image_views()));
 

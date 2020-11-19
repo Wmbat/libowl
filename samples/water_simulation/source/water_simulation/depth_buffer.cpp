@@ -6,9 +6,6 @@ struct depth_buffer_data
 {
    depth_buffer::create_info& info;
 
-   std::uint32_t width;
-   std::uint32_t height;
-
    vk::Format format;
    vk::ImageTiling tiling;
    vk::ImageUsageFlags usage;
@@ -34,7 +31,7 @@ auto find_supported_formats(const util::dynamic_array<vk::Format>& candidates,
       }
 
       if (tiling == vk::ImageTiling::eOptimal &&
-          (properties.linearTilingFeatures & features) == features)
+          (properties.optimalTilingFeatures & features) == features)
       {
          return format;
       }
@@ -65,7 +62,7 @@ auto create_image(depth_buffer_data&& data) -> result<depth_buffer_data>
       .arrayLayers = 1,
       .samples = vk::SampleCountFlagBits::e1,
       .tiling = data.tiling,
-      .usage = data.usage,
+      .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
       .sharingMode = vk::SharingMode::eExclusive,
       .initialLayout = vk::ImageLayout::eUndefined};
 
@@ -156,8 +153,8 @@ auto depth_buffer::make(create_info&& info) -> result<depth_buffer>
       buffer.m_image = std::move(data.image);
       buffer.m_memory = std::move(data.memory);
       buffer.m_view = std::move(data.view);
-      buffer.m_width = data.width;
-      buffer.m_height = data.height;
+      buffer.m_width = data.info.width;
+      buffer.m_height = data.info.height;
       buffer.m_format = data.format;
 
       return buffer;

@@ -53,10 +53,8 @@ namespace ui
       {
          return monad::err(to_error_t(window_error::failed_to_create_surface));
       }
-      else
-      {
-         return vk::UniqueSurfaceKHR{surface, instance};
-      }
+
+      return vk::UniqueSurfaceKHR{surface, instance};
    }
 
    struct window_error_category : std::error_category
