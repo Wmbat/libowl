@@ -391,16 +391,15 @@ void compute_forces(std::span<particle> particles)
          }
 
          gravity_force += gravity_vector * particle_i.density;
-         pressure_force *= water_mass;
-         viscosity_force *= viscosity_constant * water_mass;
-         cohesion_force *= -surface_tension_coefficient * water_mass * water_mass;
-         curvature_force *= -surface_tension_coefficient * water_mass;
+         viscosity_force *= viscosity_constant;
+         cohesion_force *= -surface_tension_coefficient * water_mass;
+         curvature_force *= -surface_tension_coefficient;
 
-         const auto total_force =
-            viscosity_force + pressure_force + cohesion_force + curvature_force + gravity_force;
+         const auto main_forces =
+            (viscosity_force + pressure_force + cohesion_force + curvature_force) * water_mass;
 
          particle r{particle_i};
-         r.force = total_force;
+         r.force = main_forces + gravity_force;
 
          return r;
       });

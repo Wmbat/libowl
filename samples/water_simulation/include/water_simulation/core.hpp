@@ -60,7 +60,7 @@ static constexpr float half_kernel_radius = kernel_radius / 2.0f;
 static constexpr float rest_density = 25.0f; // higher means denser
 static constexpr float viscosity_constant = 0.225f;
 static constexpr float surface_tension_coefficient = 0.5f;
-static constexpr float gravity_multiplier = 1.0f;
+static constexpr float gravity_multiplier = 0.5f;
 
 static constexpr float gravity = -9.81f;
 static constexpr float scale_factor = 1.0f;
