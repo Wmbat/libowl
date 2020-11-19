@@ -83,6 +83,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
         source/water_simulation/camera.cpp
+        source/water_simulation/kernel.cpp
         source/water_simulation/depth_buffer.cpp
         source/water_simulation/framebuffer.cpp
         source/water_simulation/pipeline.cpp

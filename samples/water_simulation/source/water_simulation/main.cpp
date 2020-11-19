@@ -1,4 +1,5 @@
 #include <water_simulation/camera.hpp>
+#include <water_simulation/kernel.hpp>
 #include <water_simulation/particle.hpp>
 #include <water_simulation/pipeline_codex.hpp>
 #include <water_simulation/render_pass.hpp>
@@ -90,15 +91,17 @@ auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-void compute_density(std::span<particle> particle);
-void compute_normals(std::span<particle> particles);
-void compute_forces(std::span<particle> particles);
-void integrate(std::span<particle> particles);
+void compute_density(std::span<particle> particle, const settings& settings);
+void compute_normals(std::span<particle> particles, const settings& settings);
+void compute_forces(std::span<particle> particles, const settings& settings);
+void integrate(std::span<particle> particles, const settings& settings);
 
 auto main_logger = std::make_shared<util::logger>("water_simulation"); // NOLINT
 
 auto main() -> int
 {
+   settings settings;
+
    glfwInit();
 
    ui::window window{"Water Simulation", 1920, 1080}; // NOLINT
@@ -170,9 +173,9 @@ auto main() -> int
    util::dynamic_array<particle> particles;
    particles.reserve(x_count * y_count * z_count);
 
-   constexpr float distance_x = water_radius;
-   constexpr float distance_y = water_radius;
-   constexpr float distance_z = water_radius;
+   float distance_x = settings.water_radius;
+   float distance_y = settings.water_radius;
+   float distance_z = settings.water_radius;
 
    for (auto i : ranges::views::iota(0U, x_count))
    {
@@ -186,7 +189,7 @@ auto main() -> int
          {
             const float z = (-distance_z * z_count / 2.0f) + distance_z * k;
 
-            particles.emplace_back(particle{.position = {x, y, z}, .mass = water_mass});
+            particles.emplace_back(particle{.position = {x, y, z}, .mass = settings.water_mass});
          }
       }
    }
@@ -200,12 +203,12 @@ auto main() -> int
    {
       window.poll_events();
 
-      if (time_spent.count() >= time_step)
+      if (time_spent.count() >= settings.time_step)
       {
-         compute_density(particles);
-         compute_normals(particles);
-         compute_forces(particles);
-         integrate(particles);
+         compute_density(particles, settings);
+         compute_normals(particles, settings);
+         compute_forces(particles, settings);
+         integrate(particles, settings);
 
          time_spent = {};
 
@@ -226,6 +229,7 @@ auto main() -> int
 
             for (const auto& particle : particles)
             {
+               const auto scale_factor = settings.scale_factor;
                const auto scale_vector = glm::vec3{scale_factor, scale_factor, scale_factor};
                const auto trans = glm::translate(glm::mat4{1}, particle.position);
                const auto model = glm::scale(trans, scale_vector);
@@ -255,101 +259,62 @@ auto main() -> int
    return 0;
 }
 
-auto poly6_kernel(float r) -> float
-{
-   constexpr float k_squared = my_pow(kernel_radius, 2.0f);
-
-   return cube(k_squared - square(r));
-}
-auto poly6_grad_kernel(const glm::vec3& vec, float r) -> glm::vec3
-{
-   constexpr float k_squared = my_pow(kernel_radius, 2.0f);
-
-   return square(k_squared - square(r)) * vec;
-}
-auto spiky_kernel(float r) -> float
-{
-   return cube(kernel_radius - r);
-}
-auto spiky_grad_kernel(const glm::vec3& vec, float r) -> glm::vec3
-{
-   return vec * (square(kernel_radius - r) * (1.0f / r));
-}
-auto viscosity_kernel(float r) -> float
-{
-   if (r <= kernel_radius)
-   {
-      constexpr float predicate = 45.0F / (pi * my_pow(kernel_radius, 6.0f));
-
-      return predicate * (kernel_radius - r);
-   }
-
-   return 0;
-}
-auto cohesion_kernel(float r) -> float
-{
-   static constexpr float predicate = 32.0f / (pi * my_pow(kernel_radius, 9));
-   static constexpr float offset = my_pow(kernel_radius, 6) / 64;
-
-   if (r <= half_kernel_radius)
-   {
-      return predicate * (2.0f * cube(kernel_radius - r) * cube(r) - offset);
-   }
-
-   return predicate * cube(kernel_radius - r) * cube(r);
-}
-
-void compute_density(std::span<particle> particles)
+void compute_density(std::span<particle> particles, const settings& settings)
 {
    std::transform(std::execution::par, std::begin(particles), std::end(particles),
                   std::begin(particles), [&](const auto& particle_i) {
                      float density = 0.0F;
+
+                     const auto h = settings.kernel_radius();
 
                      for (auto& particle_j : particles)
                      {
                         const auto r_ij = particle_j.position - particle_i.position;
                         const auto r = glm::length(r_ij);
 
-                        if (r <= kernel_radius)
+                        if (r <= h)
                         {
-                           density += poly6_kernel(r) * water_mass * poly6_constant;
+                           density += kernel::poly6(h, r);
                         }
                      }
-                     float density_ratio = particle_i.density / rest_density;
+
+                     float density_ratio = particle_i.density / settings.rest_density;
 
                      particle r{particle_i};
-                     r.density = density;
+                     r.density = density * settings.water_mass * kernel::poly6_constant(h);
                      r.pressure = density_ratio < 1.0f ? 0 : std::pow(density_ratio, 7.0f) - 1.0f;
 
                      return r;
                   });
 }
-void compute_normals(std::span<particle> particles)
+void compute_normals(std::span<particle> particles, const settings& settings)
 {
    std::transform(std::execution::par, std::begin(particles), std::end(particles),
                   std::begin(particles), [&](const auto& particle_i) {
                      glm::vec3 normal{0.0f, 0.0f, 0.0f};
+
+                     const auto h = settings.kernel_radius();
 
                      for (const auto& particle_j : particles)
                      {
                         const auto r_ij = particle_j.position - particle_i.position;
                         const auto r = glm::length(r_ij);
 
-                        if (r <= kernel_radius)
+                        if (r <= h)
                         {
-                           normal += poly6_grad_kernel(r_ij, r) / particle_j.density;
+                           normal += kernel::poly6_grad(r_ij, h, r) / particle_j.density;
                         }
                      }
 
                      particle r = particle_i;
-                     r.normal = normal * kernel_radius * water_radius * poly6_grad_constant;
+                     r.normal = normal * h * settings.water_radius * kernel::poly6_grad_constant(h);
 
                      return r;
                   });
 }
-void compute_forces(std::span<particle> particles)
+void compute_forces(std::span<particle> particles, const settings& settings)
 {
-   const glm::vec3 gravity_vector{0.0f, gravity * gravity_multiplier, 0.0f};
+   const glm::vec3 gravity_vector{0.0f, gravity * settings.gravity_multiplier, 0.0f};
 
    std::transform(
       std::execution::par, std::begin(particles), std::end(particles), std::begin(particles),
@@ -359,6 +324,8 @@ void compute_forces(std::span<particle> particles)
          glm::vec3 cohesion_force{0.0f, 0.0f, 0.0f};
          glm::vec3 curvature_force{0.0f, 0.0f, 0.0f};
          glm::vec3 gravity_force{0.0f, 0.0f, 0.0f};
+
+         const float h = settings.kernel_radius();
 
          for (const auto& particle_j : particles)
          {
@@ -373,30 +340,33 @@ void compute_forces(std::span<particle> particles)
 
                const auto r = glm::length(r_ij);
 
-               if (r < kernel_radius)
+               if (r < h)
                {
                   pressure_force -= (particle_i.pressure + particle_j.pressure) /
-                     (2.0f * particle_j.density) * spiky_grad_kernel(r_ij, r) * spiky_grad_constant;
+                     (2.0f * particle_j.density) * kernel::spiky_grad(r_ij, h, r);
 
                   viscosity_force -= (particle_j.velocity - particle_i.velocity) /
-                     particle_j.density * viscosity_kernel(r);
+                     particle_j.density * kernel::viscosity(h, r);
 
                   const float correction_factor =
-                     2.0f * rest_density / (particle_i.density + particle_j.density);
+                     2.0f * settings.rest_density / (particle_i.density + particle_j.density);
 
-                  cohesion_force += correction_factor * (r_ij / r) * cohesion_kernel(r);
+                  cohesion_force += correction_factor * (r_ij / r) * kernel::cohesion(h, r);
                   curvature_force += correction_factor * (particle_i.normal - particle_j.normal);
                }
             }
          }
 
          gravity_force += gravity_vector * particle_i.density;
-         viscosity_force *= viscosity_constant;
-         cohesion_force *= -surface_tension_coefficient * water_mass;
-         curvature_force *= -surface_tension_coefficient;
+         pressure_force *= kernel::spiky_grad_constant(h);
+         viscosity_force *= settings.viscosity_constant * kernel::viscosity_constant(h);
+         cohesion_force *= -settings.surface_tension_coefficient * settings.water_mass *
+            kernel::cohesion_constant(h);
+         curvature_force *= -settings.surface_tension_coefficient;
 
          const auto main_forces =
-            (viscosity_force + pressure_force + cohesion_force + curvature_force) * water_mass;
+            (viscosity_force + pressure_force + cohesion_force + curvature_force) *
+            settings.water_mass;
 
          particle r{particle_i};
          r.force = main_forces + gravity_force;
@@ -404,41 +374,43 @@ void compute_forces(std::span<particle> particles)
          return r;
       });
 }
-void integrate(std::span<particle> particles)
+void integrate(std::span<particle> particles, const settings& settings)
 {
    std::for_each(std::execution::par_unseq, std::begin(particles), std::end(particles),
                  [&](auto& particle) {
-                    particle.velocity += time_step * particle.force / particle.density;
-                    particle.position += time_step * particle.velocity;
+                    particle.velocity += settings.time_step * particle.force / particle.density;
+                    particle.position += settings.time_step * particle.velocity;
 
-                    if (particle.position.x - kernel_radius < -edge) // NOLINT
+                    const float h = settings.kernel_radius();
+
+                    if (particle.position.x - h < -edge) // NOLINT
                     {
-                       particle.velocity.x *= -bound_damping;      // NOLINT
-                       particle.position.x = kernel_radius - edge; // NOLINT
+                       particle.velocity.x *= -bound_damping; // NOLINT
+                       particle.position.x = h - edge;        // NOLINT
                     }
 
-                    if (particle.position.x + kernel_radius > edge) // NOLINT
+                    if (particle.position.x + h > edge) // NOLINT
                     {
-                       particle.velocity.x *= -bound_damping;      // NOLINT
-                       particle.position.x = edge - kernel_radius; // NOLINT
+                       particle.velocity.x *= -bound_damping; // NOLINT
+                       particle.position.x = edge - h;        // NOLINT
                     }
 
-                    if (particle.position.z - kernel_radius < -edge) // NOLINT
+                    if (particle.position.z - h < -edge) // NOLINT
                     {
-                       particle.velocity.z *= -bound_damping;      // NOLINT
-                       particle.position.z = kernel_radius - edge; // NOLINT
+                       particle.velocity.z *= -bound_damping; // NOLINT
+                       particle.position.z = h - edge;        // NOLINT
                     }
 
-                    if (particle.position.z + kernel_radius > edge) // NOLINT
+                    if (particle.position.z + h > edge) // NOLINT
                     {
-                       particle.velocity.z *= -bound_damping;      // NOLINT
-                       particle.position.z = edge - kernel_radius; // NOLINT
+                       particle.velocity.z *= -bound_damping; // NOLINT
+                       particle.position.z = edge - h;        // NOLINT
                     }
 
-                    if (particle.position.y - kernel_radius < 0.0f) // NOLINT
+                    if (particle.position.y - h < 0.0f) // NOLINT
                     {
                        particle.velocity.y *= -bound_damping; // NOLINT
-                       particle.position.y = kernel_radius;   // NOLINT
+                       particle.position.y = h;               // NOLINT
                     }
                  });
 };

@@ -52,26 +52,38 @@ constexpr auto cube(Any num) -> Any
 };
 
 static constexpr float pi = std::numbers::pi_v<float>;
-static constexpr float time_step = 0.016f;
-static constexpr float water_radius = 1.0f;
-static constexpr float kernel_radius = 3.0f * water_radius;
-static constexpr float half_kernel_radius = kernel_radius / 2.0f;
-
-static constexpr float rest_density = 25.0f; // higher means denser
-static constexpr float viscosity_constant = 0.225f;
-static constexpr float surface_tension_coefficient = 0.5f;
-static constexpr float gravity_multiplier = 0.5f;
-
 static constexpr float gravity = -9.81f;
-static constexpr float scale_factor = 1.0f;
-static constexpr float water_mass = 65.0f;
 
 static constexpr float bound_damping = 0.5f;
 static constexpr float edge = 15.0f;
 
-static constexpr float poly6_constant = 315.0F / (65.0F * pi * my_pow(kernel_radius, 9.0F));
-static constexpr float poly6_grad_constant = -945.f / (32.f * pi * my_pow(kernel_radius, 9.f));
-static constexpr float spiky_constant = 15.0f / (pi * my_pow(kernel_radius, 6u));
-static constexpr float spiky_grad_constant = -45.0f / (pi * my_pow(kernel_radius, 6u));
-
 using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
+
+/*
+static constexpr float default_rest_density = 25.0f; // higher means denser
+static constexpr float default_viscosity_constant = 0.225f;
+static constexpr float default_surface_tension_coefficient = 0.5f;
+static constexpr float default_gravity_multiplier = 0.5f;
+
+   float time_step = 0.016f;
+   float water_radius = 1.0f;
+
+   float scale_factor = 1.0f;
+   float water_mass = 65.0f;
+*/
+
+struct settings
+{
+   float time_step = 0.016f;
+   float water_radius = 1.0f;
+
+   float scale_factor = 1.0f;
+   float water_mass = 65.0f;
+
+   float rest_density = 25.0f; // higher means denser
+   float viscosity_constant = 0.225f;
+   float surface_tension_coefficient = 0.5f;
+   float gravity_multiplier = 0.5f;
+
+   [[nodiscard]] inline auto kernel_radius() const -> float { return water_radius * 3.0f; }
+};
