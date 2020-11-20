@@ -1,4 +1,4 @@
-#include <water_simulation/render_system.hpp>
+#include <water_simulation/render/render_system.hpp>
 
 #include <gfx/data_types.hpp>
 

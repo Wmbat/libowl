@@ -82,15 +82,15 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
-        source/water_simulation/camera.cpp
-        source/water_simulation/kernel.cpp
-        source/water_simulation/depth_buffer.cpp
-        source/water_simulation/framebuffer.cpp
-        source/water_simulation/pipeline.cpp
-        source/water_simulation/pipeline_codex.cpp
-        source/water_simulation/render_pass.cpp
-        source/water_simulation/render_system.cpp
-        source/water_simulation/shader_codex.cpp
+        source/water_simulation/physics/kernel.cpp
+        source/water_simulation/render/camera.cpp
+        source/water_simulation/render/depth_buffer.cpp
+        source/water_simulation/render/framebuffer.cpp
+        source/water_simulation/render/pipeline.cpp
+        source/water_simulation/render/pipeline_codex.cpp
+        source/water_simulation/render/render_pass.cpp
+        source/water_simulation/render/render_system.cpp
+        source/water_simulation/render/shader_codex.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

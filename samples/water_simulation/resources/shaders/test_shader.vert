@@ -6,12 +6,15 @@ layout(binding = 0) uniform camera_buffer_object
 {
    mat4 proj;
    mat4 view;
-} cbo;
+}
+cbo;
 
 layout(push_constant) uniform mesh_data
 {
    mat4 model;
-} mesh;
+   vec3 colour;
+}
+mesh;
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
@@ -26,5 +29,5 @@ void main()
    gl_Position = cbo.proj * cbo.view * mesh.model * vec4(in_position, 1.0);
    frag_position = vec3(mesh.model * vec4(in_position, 1.0));
    frag_normal = in_normal;
-   frag_colour = in_colour;
+   frag_colour = mesh.colour;
 }

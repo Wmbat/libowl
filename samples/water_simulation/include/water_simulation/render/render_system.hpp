@@ -1,7 +1,7 @@
 #pragma once
 
-#include <water_simulation/depth_buffer.hpp>
-#include <water_simulation/render_pass.hpp>
+#include <water_simulation/render/depth_buffer.hpp>
+#include <water_simulation/render/render_pass.hpp>
 
 #include <ui/window.hpp>
 

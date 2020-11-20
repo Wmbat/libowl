@@ -1,6 +1,6 @@
 #pragma once
 
-#include <water_simulation/render_system.hpp>
+#include <water_simulation/render/render_system.hpp>
 
 #include <util/containers/dynamic_array.hpp>
 

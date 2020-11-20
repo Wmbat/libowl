@@ -1,11 +1,11 @@
-#include <water_simulation/camera.hpp>
-#include <water_simulation/kernel.hpp>
 #include <water_simulation/particle.hpp>
-#include <water_simulation/pipeline_codex.hpp>
-#include <water_simulation/render_pass.hpp>
-#include <water_simulation/render_system.hpp>
-#include <water_simulation/renderable.hpp>
-#include <water_simulation/shader_codex.hpp>
+#include <water_simulation/physics/kernel.hpp>
+#include <water_simulation/render/camera.hpp>
+#include <water_simulation/render/pipeline_codex.hpp>
+#include <water_simulation/render/render_pass.hpp>
+#include <water_simulation/render/render_system.hpp>
+#include <water_simulation/render/renderable.hpp>
+#include <water_simulation/render/shader_codex.hpp>
 
 #include <gfx/data_types.hpp>
 #include <gfx/render_manager.hpp>
@@ -26,6 +26,12 @@
 
 namespace chrono = std::chrono;
 
+struct mesh_data
+{
+   glm::mat4 model;
+   glm::vec3 colour;
+};
+
 auto compute_matrices(const render_system& system) -> camera::matrices
 {
    auto dimensions = system.scissor().extent;
@@ -34,7 +40,7 @@ auto compute_matrices(const render_system& system) -> camera::matrices
    matrices.projection = glm::perspective(
       glm::radians(90.0F), dimensions.width / (float)dimensions.height, 0.1F, 1000.0F); // NOLINT
    matrices.view =
-      glm::lookAt(glm::vec3(20.0f, 20.0f, 30.0f), glm::vec3(-5.0f, 10.0f, -10.0f), // NOLINT
+      glm::lookAt(glm::vec3(10.0f, 30.0f, 40.0f), glm::vec3(-5.0f, 15.0f, -20.0f), // NOLINT
                   glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 
@@ -138,7 +144,7 @@ auto main() -> int
                        .bindings = {{.binding = 0,
                                      .descriptor_type = vk::DescriptorType::eUniformBuffer,
                                      .descriptor_count = 1}}}},
-      .push_constants = {{.name = "mesh_data", .size = sizeof(glm::mat4), .offset = 0}}};
+      .push_constants = {{.name = "mesh_data", .size = sizeof(mesh_data), .offset = 0}}};
 
    const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
 
@@ -167,7 +173,7 @@ auto main() -> int
    auto sphere = create_renderable(renderer, load_obj("resources/meshes/sphere.obj"));
 
    constexpr std::size_t x_count = 12u;
-   constexpr std::size_t y_count = 30u;
+   constexpr std::size_t y_count = 60u;
    constexpr std::size_t z_count = 12u;
 
    util::dynamic_array<particle> particles;
@@ -183,7 +189,7 @@ auto main() -> int
 
       for (auto j : ranges::views::iota(0U, y_count))
       {
-         const float y = 30.0f + distance_y * j;
+         const float y = 5.0f + distance_y * j;
 
          for (auto k : ranges::views::iota(0U, z_count))
          {
@@ -205,12 +211,12 @@ auto main() -> int
 
       if (time_spent.count() >= settings.time_step)
       {
+         time_spent = {};
+
          compute_density(particles, settings);
          compute_normals(particles, settings);
          compute_forces(particles, settings);
          integrate(particles, settings);
-
-         time_spent = {};
 
          const auto image_index = renderer.begin_frame();
 
@@ -232,11 +238,12 @@ auto main() -> int
                const auto scale_factor = settings.scale_factor;
                const auto scale_vector = glm::vec3{scale_factor, scale_factor, scale_factor};
                const auto trans = glm::translate(glm::mat4{1}, particle.position);
-               const auto model = glm::scale(trans, scale_vector);
+               mesh_data md{.model = glm::scale(trans, scale_vector),
+                            .colour = glm::normalize(particle.normal)};
 
                buffer.pushConstants(pipeline.layout(),
                                     pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
-                                    sizeof(glm::mat4) * 1, &model);
+                                    sizeof(mesh_data) * 1, &md);
 
                buffer.drawIndexed(sphere.m_index_buffer.index_count(), 1, 0, 0, 0);
             }
@@ -342,11 +349,16 @@ void compute_forces(std::span<particle> particles, const settings& settings)
 
                if (r < h)
                {
-                  pressure_force -= (particle_i.pressure + particle_j.pressure) /
-                     (2.0f * particle_j.density) * kernel::spiky_grad(r_ij, h, r);
+                  pressure_force -=
+                     ((particle_i.pressure + particle_j.pressure) / (2.0f * particle_j.density)) *
+                     kernel::spiky_grad(r_ij, h, r);
 
-                  viscosity_force -= (particle_j.velocity - particle_i.velocity) /
-                     particle_j.density * kernel::viscosity(h, r);
+                  if (particle_j.density > 0.00001f)
+                  {
+                     viscosity_force -=
+                        ((particle_j.velocity - particle_i.velocity) / particle_j.density) *
+                        kernel::viscosity(h, r);
+                  }
 
                   const float correction_factor =
                      2.0f * settings.rest_density / (particle_i.density + particle_j.density);
@@ -377,40 +389,39 @@ void compute_forces(std::span<particle> particles, const settings& settings)
 void integrate(std::span<particle> particles, const settings& settings)
 {
    std::for_each(std::execution::par_unseq, std::begin(particles), std::end(particles),
-                 [&](auto& particle) {
-                    particle.velocity += settings.time_step * particle.force / particle.density;
-                    particle.position += settings.time_step * particle.velocity;
+                 [&](auto& i) {
+                    i.velocity += settings.time_step * i.force / i.density;
+                    i.position += settings.time_step * i.velocity;
 
                     const float h = settings.kernel_radius();
-
-                    if (particle.position.x - h < -edge) // NOLINT
+                    if (i.position.x - h < -edge) // NOLINT
                     {
-                       particle.velocity.x *= -bound_damping; // NOLINT
-                       particle.position.x = h - edge;        // NOLINT
+                       i.velocity.x *= -bound_damping; // NOLINT
+                       i.position.x = h - edge;        // NOLINT
                     }
 
-                    if (particle.position.x + h > edge) // NOLINT
+                    if (i.position.x + h > edge) // NOLINT
                     {
-                       particle.velocity.x *= -bound_damping; // NOLINT
-                       particle.position.x = edge - h;        // NOLINT
+                       i.velocity.x *= -bound_damping; // NOLINT
+                       i.position.x = edge - h;        // NOLINT
                     }
 
-                    if (particle.position.z - h < -edge) // NOLINT
+                    if (i.position.z - h < -edge) // NOLINT
                     {
-                       particle.velocity.z *= -bound_damping; // NOLINT
-                       particle.position.z = h - edge;        // NOLINT
+                       i.velocity.z *= -bound_damping; // NOLINT
+                       i.position.z = h - edge;        // NOLINT
                     }
 
-                    if (particle.position.z + h > edge) // NOLINT
+                    if (i.position.z + h > edge + 5) // NOLINT
                     {
-                       particle.velocity.z *= -bound_damping; // NOLINT
-                       particle.position.z = edge - h;        // NOLINT
+                       i.velocity.z *= -bound_damping; // NOLINT
+                       i.position.z = edge - h + 5;    // NOLINT
                     }
 
-                    if (particle.position.y - h < 0.0f) // NOLINT
+                    if (i.position.y - h < 0.0f) // NOLINT
                     {
-                       particle.velocity.y *= -bound_damping; // NOLINT
-                       particle.position.y = h;               // NOLINT
+                       i.velocity.y *= -bound_damping; // NOLINT
+                       i.position.y = h;               // NOLINT
                     }
                  });
-};
+}

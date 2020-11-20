@@ -1,7 +1,7 @@
 #pragma once
 
 #include <water_simulation/core.hpp>
-#include <water_simulation/framebuffer.hpp>
+#include <water_simulation/render/framebuffer.hpp>
 
 #include <vkn/core.hpp>
 

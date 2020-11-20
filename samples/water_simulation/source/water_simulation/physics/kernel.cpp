@@ -1,4 +1,4 @@
-#include <water_simulation/kernel.hpp>
+#include <water_simulation/physics/kernel.hpp>
 
 namespace kernel
 {

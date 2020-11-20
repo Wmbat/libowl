@@ -1,8 +1,8 @@
 #pragma once
 
 #include <water_simulation/core.hpp>
-#include <water_simulation/pipeline.hpp>
-#include <water_simulation/render_system.hpp>
+#include <water_simulation/render/pipeline.hpp>
+#include <water_simulation/render/render_system.hpp>
 
 enum struct pipeline_codex_error
 {

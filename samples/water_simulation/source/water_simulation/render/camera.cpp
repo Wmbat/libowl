@@ -1,4 +1,4 @@
-#include <water_simulation/camera.hpp>
+#include <water_simulation/render/camera.hpp>
 
 #include <water_simulation/core.hpp>
 

@@ -1,4 +1,4 @@
-#include <water_simulation/depth_buffer.hpp>
+#include <water_simulation/render/depth_buffer.hpp>
 
 #include <monads/try.hpp>
 

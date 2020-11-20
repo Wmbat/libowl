@@ -1,4 +1,4 @@
-#include <water_simulation/shader_codex.hpp>
+#include <water_simulation/render/shader_codex.hpp>
 
 #include <monads/try.hpp>
 

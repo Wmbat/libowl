@@ -1,4 +1,4 @@
-#include <water_simulation/framebuffer.hpp>
+#include <water_simulation/render/framebuffer.hpp>
 
 auto framebuffer::make(create_info&& info) -> result<framebuffer>
 {

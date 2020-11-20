@@ -1,4 +1,4 @@
-#include <water_simulation/pipeline.hpp>
+#include <water_simulation/render/pipeline.hpp>
 
 #include <monads/try.hpp>
 
