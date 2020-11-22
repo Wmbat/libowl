@@ -12,4 +12,5 @@ struct particle
    float mass{1.0F};
    float density{0.0F};
    float pressure{0.0F};
+   float restitution{0.5f};
 };

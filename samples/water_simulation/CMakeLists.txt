@@ -82,6 +82,7 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
+        source/water_simulation/simulation.cpp
         source/water_simulation/physics/kernel.cpp
         source/water_simulation/render/camera.cpp
         source/water_simulation/render/depth_buffer.cpp

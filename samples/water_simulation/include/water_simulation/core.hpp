@@ -5,6 +5,10 @@
 
 #include <monads/result.hpp>
 
+#include <glm/vec3.hpp>
+
+#include <spdlog/fmt/bundled/core.h>
+
 #include <filesystem>
 #include <numbers>
 
@@ -14,7 +18,7 @@ using result = monad::result<Any, util::error_t>;
 using filepath = std::filesystem::path;
 
 template <typename Any>
-auto handle_err(Any&& result, const std::shared_ptr<util::logger>& p_logger)
+auto handle_err(Any&& result, const util::logger_ptr& p_logger)
 {
    if (auto err = result.error())
    {
@@ -74,7 +78,7 @@ static constexpr float default_gravity_multiplier = 0.5f;
 
 struct settings
 {
-   float time_step = 0.016f;
+   float time_step = 0.0083f;
    float water_radius = 1.0f;
 
    float scale_factor = 1.0f;
@@ -82,12 +86,39 @@ struct settings
 
    float rest_density = 25.0f; // higher means denser
    float viscosity_constant = 0.225f;
-   float surface_tension_coefficient = 0.5f;
-   float gravity_multiplier = 0.5f;
-   float kernel_multiplier = 3.0f;
+   float surface_tension_coefficient = 0.15f;
+   float gravity_multiplier = 0.56f;
+   float kernel_multiplier = 3.5f;
 
    [[nodiscard]] inline auto kernel_radius() const -> float
    {
       return water_radius * kernel_multiplier;
+   }
+};
+
+template <>
+struct fmt::formatter<glm::vec3>
+{
+   char presentation = 'f';
+
+   constexpr auto parse(format_parse_context& ctx)
+   {
+      auto it = ctx.begin(), end = ctx.end();
+      if (it != end && (*it == 'f' || *it == 'e'))
+         presentation = *it++;
+
+      // Check if reached the end of the range:
+      if (it != end && *it != '}')
+         throw format_error("invalid format");
+
+      // Return an iterator past the end of the parsed range:
+      return it;
+   }
+
+   template <typename FormatContext>
+   auto format(const glm::vec3& v, FormatContext& ctx)
+   {
+      return format_to(ctx.out(), presentation == 'f' ? "({:f}, {:f}, {:f})" : "({:e}, {:e}, {:e})",
+                       v.x, v.y, v.z); // NOLINT
    }
 };

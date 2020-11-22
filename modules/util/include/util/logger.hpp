@@ -155,4 +155,6 @@ namespace util
          p_logger->error(message, args...);
       }
    }
+
+   using logger_ptr = std::shared_ptr<util::logger>;
 } // namespace util
