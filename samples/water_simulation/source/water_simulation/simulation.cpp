@@ -1,9 +1,11 @@
 #include <water_simulation/simulation.hpp>
 
 #include <water_simulation/collision/primitive.hpp>
+#include <water_simulation/components.hpp>
 #include <water_simulation/physics/kernel.hpp>
 
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/filter.hpp>
 #include <range/v3/view/iota.hpp>
 
 #include <glm/ext/matrix_transform.hpp>
@@ -240,13 +242,35 @@ simulation::simulation(const settings& settings) :
       }
    }
 
-   m_boxes.push_back({.center = {0.0, -0.5f, 0.0f}, .half_size = {100.0f, 0.5f, 100.0f}});
-   m_boxes.push_back(
-      {.center = {-50.5f, 0.0f, 0.0f}, .half_size = {0.5f, 100.0f, 100.0f}}); // NOLINT
-   m_boxes.push_back(
-      {.center = {50.5f, 0.0f, 0.0f}, .half_size = {0.5f, 100.0f, 100.0f}}); // NOLINT
-   m_boxes.push_back({.center = {0.0, 0.0f, -10.5f}, .half_size = {100.0f, 100.0f, 0.5f}});
-   m_boxes.push_back({.center = {0.0, 0.0f, 10.5f}, .half_size = {100.0f, 100.0f, 0.5f}});
+   {
+      const glm::vec3 position{0.0f, -0.5f, 0.0f};                      // NOLINT
+      const glm::vec3 dimensions{100.0f, 0.5f, 100.0f};                 // NOLINT
+      const glm::vec3 colour{192 / 255.0f, 192 / 255.0f, 192 / 255.0f}; // NOLINT
+
+      auto entity = m_registry.create();
+      m_registry.emplace<component::render>(entity,
+                                            component::render{.p_mesh = &m_box, .colour = colour});
+      m_registry.emplace<component::box_collider>(
+         entity, component::box_collider{.center = position, .half_size = dimensions});
+      m_registry.emplace<component::transform>(
+         entity,
+         component::transform{.translate = glm::translate(glm::mat4{1}, position),
+                              .scale = glm::scale(glm::mat4{1}, dimensions)});
+   }
+
+   {
+      const glm::vec3 position{50.5f, 0.0f, 0.0f};      // NOLINT
+      const glm::vec3 dimensions{0.5f, 100.0f, 100.0f}; // NOLINT
+
+      auto entity = m_registry.create();
+      m_registry.emplace<component::box_collider>(
+         entity, component::box_collider{.center = position, .half_size = dimensions});
+   }
+
+   add_invisible_wall({50.5f, 0.0f, 0.0f}, {0.5f, 100.0f, 100.0f});  // NOLINT
+   add_invisible_wall({-50.5f, 0.0f, 0.0f}, {0.5f, 100.0f, 100.0f}); // NOLINT
+   add_invisible_wall({0.0, 0.0f, -10.5f}, {100.0f, 100.0f, 0.5f});  // NOLINT
+   add_invisible_wall({0.0, 0.0f, 10.5f}, {100.0f, 100.0f, 0.5f});   // NOLINT
 
    util::log_info(m_logger, "particle count = {}", x_count * y_count * z_count);
 }
@@ -295,20 +319,27 @@ void simulation::render()
       buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                 {m_camera.lookup_set(image_index.value())}, {});
 
+      auto view = m_registry.view<component::render, component::transform>();
+
       buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_box.m_index_buffer->value(), 0, vk::IndexType::eUint32);
 
-      const auto size = m_boxes[0].half_size;
-      const auto scale_vector = size;
-      const auto trans = glm::translate(glm::mat4{1}, m_boxes[0].center);
-      mesh_data md{.model = glm::scale(trans, scale_vector),
-                   .colour = {192 / 255.0f, 192 / 255.0f, 192 / 255.0f}}; // NOLINT
+      for (auto entity : view | vi::filter([&](auto e) {
+                            return view.get<component::render>(e).p_mesh == &m_box;
+                         }))
+      {
+         const auto& render = view.get<component::render>(entity);
+         const auto& transform = view.get<component::transform>(entity);
 
-      buffer.pushConstants(pipeline.layout(),
-                           pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
-                           sizeof(mesh_data) * 1, &md);
+         mesh_data md{.model = transform.scale * transform.translate,
+                      .colour = render.colour}; // NOLINT
 
-      buffer.drawIndexed(m_sphere.m_index_buffer.index_count(), 1, 0, 0, 0);
+         buffer.pushConstants(pipeline.layout(),
+                              pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+                              sizeof(mesh_data) * 1, &md);
+
+         buffer.drawIndexed(m_box.m_index_buffer.index_count(), 1, 0, 0, 0);
+      }
 
       buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
@@ -341,7 +372,8 @@ void simulation::integrate(std::span<particle> particles)
    });
 }
 
-auto get_closest_point(const collision::sphere& sphere, const collision::box& box) -> glm::vec3
+auto get_closest_point(const collision::sphere& sphere, const component::box_collider& box)
+   -> glm::vec3
 {
    const auto x = std::clamp(sphere.center.x, box.center.x - box.half_size.x, // NOLINT
                              box.center.x + box.half_size.x);                 // NOLINT
@@ -353,7 +385,7 @@ auto get_closest_point(const collision::sphere& sphere, const collision::box& bo
    return {x, y, z};
 }
 
-auto get_distance(const collision::sphere& sphere, const collision::box& box) -> float
+auto get_distance(const collision::sphere& sphere, const component::box_collider& box) -> float
 {
    return glm::length(get_closest_point(sphere, box) - sphere.center);
 }
@@ -371,30 +403,35 @@ void simulation::resolve_collisions(std::span<particle> particles)
          collision::sphere sphere_t0{p0, m_settings.water_radius};
          collision::sphere sphere_t1{p1, m_settings.water_radius};
 
-         for (const auto& box : m_boxes)
+         auto view = m_registry.view<component::box_collider>();
+
+         for (auto entity : view)
          {
-            const auto distance0 = get_distance(sphere_t0, box);
-            const auto distance = get_distance(sphere_t1, box);
+            const auto& collider = view.get<component::box_collider>(entity);
+
+            const auto distance0 = get_distance(sphere_t0, collider);
+            const auto distance = get_distance(sphere_t1, collider);
 
             if (distance - m_settings.water_radius < collision::epsilon) // Handle collision
             {
                glm::vec3 p;
                if (distance0 > distance)
                {
-                  const auto collision_point = get_closest_point(sphere_t0, box);
+                  const auto collision_point = get_closest_point(sphere_t0, collider);
                   const auto normal = glm::normalize(sphere_t0.center - collision_point);
 
                   p = sphere_t0.center + normal * (distance0 - m_settings.water_radius);
                }
                else
                {
-                  const auto collision_point = get_closest_point(sphere_t1, box);
+                  const auto collision_point = get_closest_point(sphere_t1, collider);
                   const auto normal = glm::normalize(sphere_t1.center - collision_point);
 
                   p = sphere_t0.center + normal * (distance - m_settings.water_radius);
                }
 
-               const auto collision_point = get_closest_point({p, m_settings.water_radius}, box);
+               const auto collision_point =
+                  get_closest_point({p, m_settings.water_radius}, collider);
                const auto normal = glm::normalize(p - collision_point);
                const auto closing_velocity = glm::dot(normal, particle.velocity);
 
@@ -435,6 +472,13 @@ auto simulation::compare_distance(float d0, float d1) -> bool
    }
 
    return false;
+}
+
+void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
+{
+   auto entity = m_registry.create();
+   m_registry.emplace<component::box_collider>(
+      entity, component::box_collider{.center = position, .half_size = dimensions});
 }
 
 auto simulation::create_main_pipeline() -> pipeline_index_t
@@ -487,7 +531,7 @@ auto simulation::compute_matrices(const render_system& system) -> camera::matric
    matrices.projection = glm::perspective(
       glm::radians(90.0F), dimensions.width / (float)dimensions.height, 0.1F, 1000.0F); // NOLINT
    matrices.view =
-      glm::lookAt(glm::vec3(10.0f, 40.0f, 100.0f), glm::vec3(0.0f, -5.0f, -10.0f), // NOLINT
+      glm::lookAt(glm::vec3(20.0f, 20.0f, 70.0f), glm::vec3(0.0f, 5.0f, -10.0f), // NOLINT
                   glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 

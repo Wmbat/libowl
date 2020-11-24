@@ -6,12 +6,14 @@
 #include <water_simulation/particle.hpp>
 #include <water_simulation/render/camera.hpp>
 #include <water_simulation/render/pipeline.hpp>
-#include <water_simulation/render/pipeline_codex.hpp>
+#include <water_simulation/render/pipeline_registry.hpp>
 #include <water_simulation/render/render_system.hpp>
 #include <water_simulation/render/renderable.hpp>
-#include <water_simulation/render/shader_codex.hpp>
+#include <water_simulation/render/shader_registry.hpp>
 
 #include <ui/window.hpp>
+
+#include <entt/entt.hpp>
 
 class simulation
 {
@@ -30,6 +32,8 @@ private:
 
    void integrate(std::span<particle> particles);
    void resolve_collisions(std::span<particle> particles);
+
+   void add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions);
 
    auto compare_distance(float d0, float d1) -> bool;
 
@@ -50,12 +54,14 @@ private:
 
    camera m_camera;
 
-   shader_codex m_shaders;
-   pipeline_codex m_pipelines;
+   shader_registry m_shaders;
+   pipeline_registry m_pipelines;
 
    util::dynamic_array<render_pass> m_render_passes;
 
    pipeline_index_t m_main_pipeline_key;
+
+   entt::registry m_registry;
 
    renderable m_sphere;
    renderable m_box;

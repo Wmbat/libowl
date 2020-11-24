@@ -1,21 +1,21 @@
-#include <water_simulation/render/shader_codex.hpp>
+#include <water_simulation/render/shader_registry.hpp>
 
 #include <monads/try.hpp>
 
 #include <fstream>
 
-shader_codex::shader_codex(render_system& renderer, std::shared_ptr<util::logger> p_logger) :
+shader_registry::shader_registry(render_system& renderer, std::shared_ptr<util::logger> p_logger) :
    m_renderer{renderer}, mp_logger{std::move(p_logger)}
 {}
 
-auto shader_codex::insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>
+auto shader_registry::insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>
 {
    using file_it = std::istreambuf_iterator<char>;
 
    std::ifstream file{path, std::ios::binary};
    if (!file.is_open())
    {
-      return monad::err(to_err_code(shader_codex_error::failed_to_open_file));
+      return monad::err(to_err_code(shader_registry_error::failed_to_open_file));
    }
 
    const std::vector<uint8_t> raw_shader_data{file_it{file}, file_it{}};
@@ -35,24 +35,24 @@ auto shader_codex::insert(const filepath& path, vkn::shader_type type) -> result
 
          if (auto [it, res] = m_shaders.try_emplace(key, std::move(shader)); !res)
          {
-            return monad::err(to_err_code(shader_codex_error::failed_to_insert_shader));
+            return monad::err(to_err_code(shader_registry_error::failed_to_insert_shader));
          }
 
          return insert_kv{key, &m_shaders.at(key)};
       });
 }
 
-auto shader_codex::lookup(const key_type& key) -> result<lookup_v>
+auto shader_registry::lookup(const key_type& key) -> result<lookup_v>
 {
    return monad::try_wrap<std::exception>([&] {
              return lookup_v{&m_shaders.at(key)};
           })
       .map_error([](const std::exception& /*err*/) {
-         return to_err_code(shader_codex_error::shader_not_found);
+         return to_err_code(shader_registry_error::shader_not_found);
       });
 }
 
-auto shader_codex::remove(const key_type& key) -> result<remove_v>
+auto shader_registry::remove(const key_type& key) -> result<remove_v>
 {
    auto it = m_shaders.find(key);
    if (it != std::end(m_shaders))
@@ -64,77 +64,77 @@ auto shader_codex::remove(const key_type& key) -> result<remove_v>
       return res;
    }
 
-   return monad::err(to_err_code(shader_codex_error::shader_not_found));
+   return monad::err(to_err_code(shader_registry_error::shader_not_found));
 }
 
 // LOOKUP_V
 
-shader_codex::lookup_v::lookup_v(value_type* p_value) : mp_value{p_value} {}
+shader_registry::lookup_v::lookup_v(value_type* p_value) : mp_value{p_value} {}
 
-auto shader_codex::lookup_v::value() const -> value_type&
+auto shader_registry::lookup_v::value() const -> value_type&
 {
    return *mp_value;
 }
 
-shader_codex::insert_kv::insert_kv(key_type key, value_type* p_value) :
+shader_registry::insert_kv::insert_kv(key_type key, value_type* p_value) :
    m_key{std::move(key)}, mp_value{p_value}
 {}
 
-auto shader_codex::insert_kv::key() const -> const key_type&
+auto shader_registry::insert_kv::key() const -> const key_type&
 {
    return m_key;
 }
 
-auto shader_codex::insert_kv::value() const -> value_type&
+auto shader_registry::insert_kv::value() const -> value_type&
 {
    return *mp_value;
 }
 
 // REMOVE_V
 
-shader_codex::remove_v::remove_v(value_type&& value) : m_value{std::move(value)} {}
+shader_registry::remove_v::remove_v(value_type&& value) : m_value{std::move(value)} {}
 
-auto shader_codex::remove_v::value() -> value_type&
+auto shader_registry::remove_v::value() -> value_type&
 {
    return m_value;
 }
 
-auto shader_codex::remove_v::take() -> value_type
+auto shader_registry::remove_v::take() -> value_type
 {
    return std::move(m_value);
 }
 
-struct shader_codex_error_category : std::error_category
+struct shader_registry_error_category : std::error_category
 {
-   [[nodiscard]] auto name() const noexcept -> const char* override { return "shader_codex"; }
+   [[nodiscard]] auto name() const noexcept -> const char* override { return "shader_registry"; }
    [[nodiscard]] auto message(int err) const -> std::string override
    {
-      return to_string(static_cast<shader_codex_error>(err));
+      return to_string(static_cast<shader_registry_error>(err));
    }
 };
 
-static const shader_codex_error_category shader_codex_error_cat{};
+static const shader_registry_error_category shader_codex_error_cat{};
 
-auto to_string(shader_codex_error err) -> std::string
+auto to_string(shader_registry_error err) -> std::string
 {
-   if (err == shader_codex_error::shader_not_found)
+   if (err == shader_registry_error::shader_not_found)
    {
       return "shader_not_found";
    }
 
-   if (err == shader_codex_error::failed_to_open_file)
+   if (err == shader_registry_error::failed_to_open_file)
    {
       return "failed_to_open_file";
    }
 
-   if (err == shader_codex_error::failed_to_insert_shader)
+   if (err == shader_registry_error::failed_to_insert_shader)
    {
       return "failed_to_insert_shader";
    }
 
    return "UNKNOWN";
 }
-auto to_err_code(shader_codex_error err) -> util::error_t
+auto to_err_code(shader_registry_error err) -> util::error_t
 {
    return {{static_cast<int>(err), shader_codex_error_cat}};
 }

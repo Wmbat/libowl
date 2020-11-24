@@ -1,28 +1,35 @@
 #pragma once
 
 #include <water_simulation/core.hpp>
-#include <water_simulation/render/pipeline.hpp>
 #include <water_simulation/render/render_system.hpp>
 
-enum struct pipeline_codex_error
+#include <util/containers/dynamic_array.hpp>
+#include <util/error.hpp>
+
+#include <gfx/render_manager.hpp>
+
+#include <filesystem>
+#include <string>
+
+enum struct shader_registry_error
 {
-   failed_to_insert_pipeline,
-   pipeline_not_found
+   failed_to_open_file,
+   failed_to_insert_shader,
+   shader_not_found
 };
 
-auto to_string(pipeline_codex_error err) -> std::string;
-auto to_err_code(pipeline_codex_error err) -> util::error_t;
+auto to_string(shader_registry_error err) -> std::string;
+auto to_err_code(shader_registry_error err) -> util::error_t;
 
-using pipeline_index_t =
-   util::strong_type<std::size_t, struct pipeline_index_tag, util::arithmetic>;
+using spirv_binary = util::dynamic_array<std::uint32_t>;
 
-class pipeline_codex
+class shader_registry
 {
-   using graphics_map = std::unordered_map<std::size_t, graphics_pipeline>;
+   using shader_map = std::unordered_map<std::string, vkn::shader>;
 
 public:
-   using key_type = pipeline_index_t;
-   using value_type = graphics_pipeline;
+   using key_type = std::string;
+   using value_type = vkn::shader;
 
    class lookup_v
    {
@@ -62,16 +69,16 @@ public:
    };
 
 public:
-   pipeline_codex(std::shared_ptr<util::logger> p_logger);
+   shader_registry(render_system& renderer, std::shared_ptr<util::logger> p_logger);
 
-   auto insert(graphics_pipeline::create_info&& info) -> result<insert_kv>;
+   auto insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
    auto remove(const key_type& key) -> result<remove_v>;
 
 private:
-   graphics_map m_graphics_pipelines;
+   shader_map m_shaders;
+
+   render_system& m_renderer;
 
    std::shared_ptr<util::logger> mp_logger;
-
-   std::size_t id_counter{0};
 };

@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <cstdint>
+#include <functional>
 #include <type_traits>
 #include <utility>
 
@@ -200,48 +201,71 @@ namespace util
       }
    };
 
-   template <typename any_>
-   struct divisible : detail::crtp<any_, divisible>
+   template <typename Any>
+   struct divisible : detail::crtp<Any, divisible>
    {
-      auto operator/(const any_& other) const -> any_
+      auto operator/(const Any& other) const -> Any
       {
-         return any_{this->underlying().value() / other.value()};
+         return Any{this->underlying().value() / other.value()};
       }
-      auto operator/=(const any_& rhs) -> any_&
+      auto operator/=(const Any& rhs) -> Any&
       {
          this->underlying().value() /= rhs.value();
          return this->underlying();
       }
    };
 
-   template <typename any_>
-   struct modulable : detail::crtp<any_, modulable>
+   template <typename Any>
+   struct modulable : detail::crtp<Any, modulable>
    {
-      auto operator%(const any_& rhs) const -> any_
+      auto operator%(const Any& rhs) const -> Any
       {
-         return any_{this->underlying().value() % rhs.value()};
+         return Any{this->underlying().value() % rhs.value()};
       }
-      auto operator%=(const any_& other) -> any_&
+      auto operator%=(const Any& other) -> Any&
       {
          this->underlying().value() %= other.value();
          return this->underlying();
       }
    };
 
-   template <typename any_>
+   template <typename Any>
    struct arithmetic :
-      incrementable<any_>,
-      decrementable<any_>,
-      subtractable<any_>,
-      addable<any_>,
-      multiplicable<any_>,
-      divisible<any_>,
-      modulable<any_>
+      incrementable<Any>,
+      decrementable<Any>,
+      subtractable<Any>,
+      addable<Any>,
+      multiplicable<Any>,
+      divisible<Any>,
+      modulable<Any>
    {
    };
 
-   using count32_t = strong_type<std::uint32_t, struct count32, arithmetic>;
-   using count64_t = strong_type<std::uint64_t, struct count64, arithmetic>;
-   using index_t = strong_type<std::size_t, struct index, arithmetic>;
-   using size_t = strong_type<std::size_t, struct size, arithmetic>;
+   template <typename Any>
+   struct hashable
+   {
+      static constexpr bool is_hashable = true;
+   };
+
+   using count32_t = strong_type<std::uint32_t, struct count32, arithmetic, hashable>;
+   using count64_t = strong_type<std::uint64_t, struct count64, arithmetic, hashable>;
+   using index_t = strong_type<std::size_t, struct index, arithmetic, hashable>;
+   using size_t = strong_type<std::size_t, struct size, arithmetic, hashable>;
 } // namespace util
+
+namespace std
+{
+   template <typename Any, typename Parameter, template <typename> class... Skills>
+   struct hash<util::strong_type<Any, Parameter, Skills...>>
+   {
+      using strong_type = util::strong_type<Any, Parameter, Skills...>;
+      using check_hashable = typename std::enable_if_t<strong_type::is_hashable, void>;
+
+      auto operator()(const strong_type& x) const noexcept -> size_t
+      {
+         static_assert(noexcept(std::hash<Any>()(x.get())), "hash fuction should not throw");
+
+         return std::hash<Any>{}(x.value());
+      }
+   };
+} // namespace std

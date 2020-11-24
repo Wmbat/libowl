@@ -60,6 +60,7 @@ target_link_libraries(${PROJECT_NAME}
         vermillon::ui
         vermillon::gfx
 
+        EnTT::EnTT 
         tinyobjloader
         tbb
 )
@@ -88,10 +89,10 @@ target_sources(${PROJECT_NAME}
         source/water_simulation/render/depth_buffer.cpp
         source/water_simulation/render/framebuffer.cpp
         source/water_simulation/render/pipeline.cpp
-        source/water_simulation/render/pipeline_codex.cpp
+        source/water_simulation/render/pipeline_registry.cpp
         source/water_simulation/render/render_pass.cpp
         source/water_simulation/render/render_system.cpp
-        source/water_simulation/render/shader_codex.cpp
+        source/water_simulation/render/shader_registry.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

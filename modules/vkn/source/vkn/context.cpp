@@ -159,7 +159,7 @@ namespace vkn
             [&](const auto& err) {
                if constexpr (enable_validation_layers)
                {
-                  log_warn(p_logger, "[vkn] instance layer enumeration error: {0}", err.what());
+                  log_warn(p_logger, "[vulkan] instance layer enumeration error: {0}", err.what());
                }
                return util::dynamic_array<vk::LayerProperties>{};
             });
@@ -177,7 +177,7 @@ namespace vkn
                                                                    std::end(data)};
             },
             [&](const auto& err) {
-               log_warn(p_logger, "[vkn] instance layer enumeration error: {1}", err.what());
+               log_warn(p_logger, "[vulkan] instance layer enumeration error: {1}", err.what());
                return util::dynamic_array<vk::ExtensionProperties>{};
             });
    }
@@ -223,7 +223,7 @@ namespace vkn
       VULKAN_HPP_DEFAULT_DISPATCHER.init(
          loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
 
-      util::log_info(p_logger, "[vkn] core functionalities loaded");
+      util::log_info(p_logger, "[vulkan] core functionalities loaded");
 
       return context_data{.dynamic_loader = std::move(loader), .p_logger = p_logger};
    }
@@ -234,12 +234,12 @@ namespace vkn
                 return vk::enumerateInstanceVersion(); // may throw
              })
          .map_error([&](vk::SystemError&& e) {
-            util::log_error(data.p_logger, "[vkn] {}", e.what());
+            util::log_error(data.p_logger, "[vulkan] {}", e.what());
 
             return to_err_code(context_error::failed_to_query_vulkan_version);
          })
          .and_then([&](std::uint32_t v) -> util::result<context_data> {
-            util::log_info(data.p_logger, "[vkn] vulkan version {}.{}.{} found",
+            util::log_info(data.p_logger, "[vulkan] vulkan version {}.{}.{} found",
                            VK_VERSION_MAJOR(v), VK_VERSION_MINOR(v), VK_VERSION_PATCH(v));
 
             if (VK_VERSION_MINOR(v) >= 2)
@@ -248,10 +248,8 @@ namespace vkn
 
                return std::move(data);
             }
-            else
-            {
-               return monad::err(to_err_code(context_error::vulkan_version_1_2_unavailable));
-            }
+
+            return monad::err(to_err_code(context_error::vulkan_version_1_2_unavailable));
          });
    }
 
@@ -390,34 +388,32 @@ namespace vkn
       {
          return "failed_to_initialize_glslang";
       }
-      else if (err == context_error::failed_to_query_vulkan_version)
+      if (err == context_error::failed_to_query_vulkan_version)
       {
          return "failed_to_query_vulkan_version";
       }
-      else if (err == context_error::vulkan_version_1_2_unavailable)
+      if (err == context_error::vulkan_version_1_2_unavailable)
       {
          return "vulkan_version_1_2_unavailable";
       }
-      else if (err == context_error::window_extensions_not_present)
+      if (err == context_error::window_extensions_not_present)
       {
          return "window_extensions_not_present";
       }
-      else if (err == context_error::failed_to_create_instance)
+      if (err == context_error::failed_to_create_instance)
       {
          return "failed_to_create_instance";
       }
-      else if (err == context_error::failed_to_create_debug_utils)
+      if (err == context_error::failed_to_create_debug_utils)
       {
          return "failed_to_create_debug_utils";
       }
-      else if (err == context_error::failed_to_enumerate_physical_devices)
+      if (err == context_error::failed_to_enumerate_physical_devices)
       {
          return "failed_to_enumerate_physical_devices";
       }
-      else
-      {
-         return "UNKNOWN";
-      }
+
+      return "UNKNOWN";
    }
    auto to_err_code(context_error err) -> util::error_t
    {
