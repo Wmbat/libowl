@@ -68,18 +68,18 @@ namespace vkn
       using pointer = vk::Fence*;
       using const_pointer = const vk::Fence*;
 
-      constexpr fence_observer() = default;
-      constexpr fence_observer(value_type value) noexcept : m_value{value} {}
-      constexpr fence_observer(const fence& fence) noexcept : m_value{fence.value()} {}
+      fence_observer() = default;
+      fence_observer(value_type value) noexcept : m_value{value} {}
+      fence_observer(const fence& fence) noexcept : m_value{fence.value()} {}
 
-      constexpr auto operator->() noexcept -> pointer { return &m_value; }
-      constexpr auto operator->() const noexcept -> const_pointer { return &m_value; }
+      auto operator->() noexcept -> pointer { return &m_value; }
+      auto operator->() const noexcept -> const_pointer { return &m_value; }
 
-      constexpr auto operator*() const noexcept -> value_type { return value(); }
+      auto operator*() const noexcept -> value_type { return value(); }
 
-      constexpr operator bool() const noexcept { return m_value; }
+      operator bool() const noexcept { return m_value; }
 
-      [[nodiscard]] constexpr auto value() const noexcept -> value_type { return m_value; }
+      [[nodiscard]] auto value() const noexcept -> value_type { return m_value; }
 
    private:
       value_type m_value{nullptr};

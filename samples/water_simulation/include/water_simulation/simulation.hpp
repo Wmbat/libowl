@@ -1,7 +1,7 @@
 #pragma once
 
-#include <water_simulation/collision/contact.hpp>
 #include <water_simulation/collision/primitive.hpp>
+#include <water_simulation/collision/system.hpp>
 #include <water_simulation/core.hpp>
 #include <water_simulation/particle.hpp>
 #include <water_simulation/render/camera.hpp>
@@ -10,6 +10,7 @@
 #include <water_simulation/render/render_system.hpp>
 #include <water_simulation/render/renderable.hpp>
 #include <water_simulation/render/shader_registry.hpp>
+#include <water_simulation/sph/system.hpp>
 
 #include <ui/window.hpp>
 
@@ -66,9 +67,10 @@ private:
    renderable m_sphere;
    renderable m_box;
 
-   util::dynamic_array<particle> m_particles;
+   sph::system m_sph_system{};
+   collision::system m_collision_system{};
 
-   util::dynamic_array<collision::box> m_boxes;
+   util::dynamic_array<particle> m_particles;
 
    std::string m_vert_shader_key{"resources/shaders/test_vert.spv"};
    std::string m_frag_shader_key{"resources/shaders/test_frag.spv"};

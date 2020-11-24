@@ -250,8 +250,8 @@ simulation::simulation(const settings& settings) :
       auto entity = m_registry.create();
       m_registry.emplace<component::render>(entity,
                                             component::render{.p_mesh = &m_box, .colour = colour});
-      m_registry.emplace<component::box_collider>(
-         entity, component::box_collider{.center = position, .half_size = dimensions});
+      m_registry.emplace<collision::component::box_collider>(
+         entity, collision::component::box_collider{.center = position, .half_size = dimensions});
       m_registry.emplace<component::transform>(
          entity,
          component::transform{.translate = glm::translate(glm::mat4{1}, position),
@@ -263,8 +263,8 @@ simulation::simulation(const settings& settings) :
       const glm::vec3 dimensions{0.5f, 100.0f, 100.0f}; // NOLINT
 
       auto entity = m_registry.create();
-      m_registry.emplace<component::box_collider>(
-         entity, component::box_collider{.center = position, .half_size = dimensions});
+      m_registry.emplace<collision::component::box_collider>(
+         entity, collision::component::box_collider{.center = position, .half_size = dimensions});
    }
 
    add_invisible_wall({50.5f, 0.0f, 0.0f}, {0.5f, 100.0f, 100.0f});  // NOLINT
@@ -304,6 +304,9 @@ void simulation::update()
    compute_forces(m_particles, m_settings);
    integrate(m_particles);
    resolve_collisions(m_particles);
+
+   m_sph_system.update(m_settings.time_step);
+   m_collision_system.update(m_settings.time_step);
 }
 void simulation::render()
 {
@@ -372,8 +375,8 @@ void simulation::integrate(std::span<particle> particles)
    });
 }
 
-auto get_closest_point(const collision::sphere& sphere, const component::box_collider& box)
-   -> glm::vec3
+auto get_closest_point(const collision::sphere& sphere,
+                       const collision::component::box_collider& box) -> glm::vec3
 {
    const auto x = std::clamp(sphere.center.x, box.center.x - box.half_size.x, // NOLINT
                              box.center.x + box.half_size.x);                 // NOLINT
@@ -385,7 +388,8 @@ auto get_closest_point(const collision::sphere& sphere, const component::box_col
    return {x, y, z};
 }
 
-auto get_distance(const collision::sphere& sphere, const component::box_collider& box) -> float
+auto get_distance(const collision::sphere& sphere, const collision::component::box_collider& box)
+   -> float
 {
    return glm::length(get_closest_point(sphere, box) - sphere.center);
 }
@@ -403,11 +407,11 @@ void simulation::resolve_collisions(std::span<particle> particles)
          collision::sphere sphere_t0{p0, m_settings.water_radius};
          collision::sphere sphere_t1{p1, m_settings.water_radius};
 
-         auto view = m_registry.view<component::box_collider>();
+         auto view = m_registry.view<collision::component::box_collider>();
 
          for (auto entity : view)
          {
-            const auto& collider = view.get<component::box_collider>(entity);
+            const auto& collider = view.get<collision::component::box_collider>(entity);
 
             const auto distance0 = get_distance(sphere_t0, collider);
             const auto distance = get_distance(sphere_t1, collider);
@@ -477,8 +481,8 @@ auto simulation::compare_distance(float d0, float d1) -> bool
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
 {
    auto entity = m_registry.create();
-   m_registry.emplace<component::box_collider>(
-      entity, component::box_collider{.center = position, .half_size = dimensions});
+   m_registry.emplace<collision::component::box_collider>(
+      entity, collision::component::box_collider{.center = position, .half_size = dimensions});
 }
 
 auto simulation::create_main_pipeline() -> pipeline_index_t

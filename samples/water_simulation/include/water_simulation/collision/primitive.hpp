@@ -5,8 +5,6 @@
 
 namespace collision
 {
-   constexpr float epsilon = 0.0001f;
-
    struct plane
    {
       glm::vec3 normal;

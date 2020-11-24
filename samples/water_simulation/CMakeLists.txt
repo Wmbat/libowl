@@ -84,6 +84,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         source/water_simulation/main.cpp
         source/water_simulation/simulation.cpp
+        source/water_simulation/collision/system.cpp
         source/water_simulation/physics/kernel.cpp
         source/water_simulation/render/camera.cpp
         source/water_simulation/render/depth_buffer.cpp
@@ -93,6 +94,8 @@ target_sources(${PROJECT_NAME}
         source/water_simulation/render/render_pass.cpp
         source/water_simulation/render/render_system.cpp
         source/water_simulation/render/shader_registry.cpp
+        source/water_simulation/sph/grid.cpp
+        source/water_simulation/sph/system.cpp
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

@@ -20,9 +20,3 @@ CPMAddPackage(
    OPTIONS
       "RANGES_BUILD_CALENDAR_EXAMPLE OFF"
 )
-
-CPMAddPackage(
-    NAME patterns
-    GITHUB_REPOSITORY mpark/patterns
-    GIT_TAG master
-)
