@@ -4,6 +4,9 @@
 
 namespace sph
 {
+   /**
+    * @brief encapsulate all components within the `sph` submodule
+    */
    namespace component
    {
       /**
@@ -40,6 +43,8 @@ namespace sph
 
          float kernel_radius;
          float rest_density;
+
+         util::logger_ptr logger;
       };
 
    public:
@@ -47,24 +52,42 @@ namespace sph
       system(const create_info& info);
 
       /**
-       * @brief Update whole the system by the specified `time_step`
+       * @brief performs computations on all entities with the `component::particle` component using
+       * a grid space partitioning system and updates the grid once all the computation is done.
        *
        * @param time_step The value of time to update the system by.
        */
       void update(float time_step);
 
    private:
-      void compute_density();
+      /**
+       * @brief Compute all the density and pressure forces of particles within the system.
+       */
+      void compute_density_pressure();
+      /**
+       * @brief Compute all the surface normals of particles within the system for later surface
+       * tension computations.
+       */
       void compute_normals();
+      /**
+       * @brief Compute the forces acting on particles such as pressure forces, viscosity forces
+       * gravity forces, and surface tension forces (cohesion force & curvature force).
+       */
       void compute_forces();
+      /**
+       * @brief Update the velocity and position of the particles using an backward (implicit) euler
+       * method
+       */
       void integrate();
 
    private:
       [[maybe_unused]] entt::registry* mp_registry{nullptr};
 
-      [[maybe_unused]] grid m_grid{0, {}, {}};
+      [[maybe_unused]] grid m_grid{};
 
       [[maybe_unused]] float m_kernel_radius{};
       [[maybe_unused]] float m_rest_density{};
+
+      [[maybe_unused]] util::logger_ptr m_logger;
    };
 } // namespace sph

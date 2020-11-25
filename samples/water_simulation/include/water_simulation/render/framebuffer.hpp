@@ -12,7 +12,11 @@ enum struct framebuffer_error
 };
 
 /**
- * Convert a framebuffer_error enum value to string.
+ * @brief Convert a `framebuffer_error` enum value to `std::string`.
+ *
+ * @param err The error to convert
+ *
+ * @return The string representation of the `framebuffer_error` passed as parameter
  */
 auto to_string(framebuffer_error err) -> std::string;
 /**
@@ -24,7 +28,7 @@ class framebuffer
 {
 public:
    /**
-    * Data used for the creation of a framebuffer object.
+    * @brief Data used for the creation of a framebuffer object.
     */
    struct create_info
    {
@@ -41,12 +45,23 @@ public:
    };
 
    /**
-    * Attempt to create a framebuffer object from user provided information. If the creation fails,
-    * return a util::error_t
+    * @brief Construct a `framebuffer` object using data provided through the `create_info` struct.
+    *
+    * @param info The information needed for the creation of a `framebuffer` object.
+    *
+    * @return A `result` holding one of two things:
+    * * A `util::error_t` holding relevant information about reason behind the failure to construct
+    * the framebuffer object
+    * * A fully constructed `framebuffer` object
     */
    static auto make(create_info&& info) -> result<framebuffer>;
 
 public:
+   /**
+    * @brief access the underlying vulkan handle
+    *
+    * @return The vulkan `vk::framebuffer` handle.
+    */
    auto value() const -> vk::Framebuffer; // NOLINT
 
 private:

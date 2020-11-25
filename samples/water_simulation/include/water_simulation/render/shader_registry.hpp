@@ -18,7 +18,19 @@ enum struct shader_registry_error
    shader_not_found
 };
 
+/**
+ * @brief Convert a `shader_registry_error` error value into a string
+ *
+ * @param err The error to convert
+ *
+ * @return The string representation of the `shader_registry_error` passed as parameter
+ */
 auto to_string(shader_registry_error err) -> std::string;
+/**
+ * @brief Convert a `shader_registry_error` error value a `util::error_t`
+ *
+ * @param err The error to convert
+ */
 auto to_err_code(shader_registry_error err) -> util::error_t;
 
 using spirv_binary = util::dynamic_array<std::uint32_t>;
@@ -71,8 +83,37 @@ public:
 public:
    shader_registry(render_system& renderer, std::shared_ptr<util::logger> p_logger);
 
+   /**
+    * @brief Insert and construct a `vkn::shader` into the registry.
+    *
+    * @param path The path to the spirv shader binary
+    * @param type The type of shader to insert
+    *
+    * @return A `result` holding one of two things:
+    * * A `util::error_t` holding relevant information about the error that happened during insert.
+    * * A struct giving access to the `key_type` & `value_type` that have been inserted into the
+    * registry.
+    */
    auto insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>;
+   /**
+    * @brief Finds a `value_type` from it's associated `key_type`
+    *
+    * @param key The key used for finding the associated `value_type`
+    *
+    * @return A `result` holding one of two things:
+    * * A `util::error_t` holding relevant information about the error that happened during lookup.
+    * * A struct giving access to `value_type` object stored within the registry.
+    */
    auto lookup(const key_type& key) -> result<lookup_v>;
+   /**
+    * @brief Remove a `value_type` from the registry using it's associated `key_type`
+    *
+    * @param key The key used for finding the associated `value_type`
+    *
+    * @return A `result` holding one of two things:
+    * * A `util::error_t` holding relevant information about the error that happened during removal.
+    * * A struct giving ownership of the `value_type` object stored within the registry.
+    */
    auto remove(const key_type& key) -> result<remove_v>;
 
 private:

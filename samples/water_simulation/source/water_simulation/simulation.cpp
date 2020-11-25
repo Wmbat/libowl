@@ -236,8 +236,9 @@ simulation::simulation(const settings& settings) :
          {
             const float z = (-distance_z * z_count / 2.0f) + distance_z * k;
 
-            m_particles.emplace_back(
-               particle{.position = {x, y, z}, .mass = m_settings.water_mass, .restitution = 0.5f});
+            m_particles.push_back({.position = {x, y, z},
+                                   .mass = m_settings.water_mass,
+                                   .restitution = 0.75f}); // NOLINT
          }
       }
    }

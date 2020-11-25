@@ -8,26 +8,50 @@
 
 #include <glm/vec3.hpp>
 
+#include <span>
+
 namespace sph
 {
    class grid
    {
+   public:
       struct cell
       {
-         util::dynamic_array<entt::entity> m_entities;
+         glm::u64vec3 grid_pos{};
+         glm::vec3 center{};
+         glm::vec3 dimensions{};
+
+         util::dynamic_array<entt::entity> m_entities{};
       };
 
    public:
-      grid(float cell_size, const glm::vec3& center, const glm::vec3& dimensions);
+      grid() = default;
+      grid(float cell_size, const glm::vec3& dimensions, util::logger_ptr logger);
+
+      /**
+       * @brief Give access to all cells within the grid
+       *
+       * @return a view into all the cells within the grid
+       */
+      [[nodiscard]] auto cells() -> std::span<cell>;
+
+      /**
+       * @brief find and retrieve all entities from neighbouring cells from the passed cell
+       *
+       * @param cell The cell to use a center of neighbouroud search.
+       *
+       * @return A list of neighbouring entities.
+       */
+      auto lookup_neighbours(const cell& cell) -> util::dynamic_array<entt::entity>;
 
    private:
-      [[maybe_unused]] float m_cell_size;
+      const float m_cell_size{};
+      const glm::vec3 m_dimensions{};
 
-      [[maybe_unused]] const glm::vec3 m_center;
-      [[maybe_unused]] const glm::vec3 m_dimensions;
+      glm::u64vec3 m_cell_count{};
 
-      [[maybe_unused]] util::dynamic_array<cell> m_cells;
+      util::dynamic_array<cell> m_cells{};
 
-      [[maybe_unused]] util::logger_ptr m_logger;
+      util::logger_ptr m_logger;
    };
 } // namespace sph
