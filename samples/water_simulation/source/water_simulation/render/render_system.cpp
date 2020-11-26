@@ -187,7 +187,8 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
          rs.m_render_command_pools = std::move(data.render_command_pools);
          rs.m_depth_buffer = std::move(data.buffer);
-         rs.m_configuration = {.swapchain_image_count = std::size(rs.m_swapchain.image_views())};
+         rs.m_configuration = {.swapchain_image_count = static_cast<std::uint32_t>(
+                                  std::size(rs.m_swapchain.image_views()))};
 
          rs.m_images_in_flight.resize(std::size(rs.m_swapchain.image_views()));
 

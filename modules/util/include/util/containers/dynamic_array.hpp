@@ -53,10 +53,9 @@ namespace util
       explicit constexpr small_dynamic_array(const allocator_type& alloc) noexcept :
          m_allocator{alloc}
       {}
-      explicit constexpr small_dynamic_array(
-         size_type count,
-         const allocator_type& alloc =
-            allocator_type{}) requires std::default_initializable<value_type> : m_allocator{alloc}
+      explicit constexpr small_dynamic_array(size_type count,
+                                             const allocator_type& alloc = allocator_type{}) :
+         m_allocator{alloc}
       {
          assign(count, value_type{});
       }
@@ -157,7 +156,6 @@ namespace util
       }
 
       constexpr void assign(size_type count, const_reference value) noexcept
-         requires std::copyable<value_type>
       {
          clear();
 
@@ -176,7 +174,7 @@ namespace util
       {
          clear();
 
-         const size_type new_count = std::distance(first, last);
+         const auto new_count = static_cast<size_type>(std::distance(first, last));
          if (new_count > capacity())
          {
             grow(new_count);

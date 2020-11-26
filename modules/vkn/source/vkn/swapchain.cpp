@@ -488,6 +488,6 @@ namespace vkn
          }
       }
 
-      return std::move(views);
+      return views;
    }
 } // namespace vkn

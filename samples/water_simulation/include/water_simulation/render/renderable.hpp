@@ -65,13 +65,14 @@ inline auto load_obj(const std::filesystem::path& path) -> gfx::renderable_data
    {
       for (const auto& index : shape.mesh.indices)
       {
-         gfx::vertex vertex{.position = {attrib.vertices[3 * index.vertex_index + 0],
-                                         attrib.vertices[3 * index.vertex_index + 1],
-                                         attrib.vertices[3 * index.vertex_index + 2]},
-                            .normal = {attrib.normals[3 * index.normal_index + 0],
-                                       attrib.normals[3 * index.normal_index + 1],
-                                       attrib.normals[3 * index.normal_index + 2]},
-                            .colour = {1.0F, 1.0F, 1.0F}};
+         gfx::vertex vertex{
+            .position = {attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 0u],
+                         attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 1u],
+                         attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 2u]},
+            .normal = {attrib.normals[3u * static_cast<std::size_t>(index.normal_index) + 0u],
+                       attrib.normals[3u * static_cast<std::size_t>(index.normal_index) + 1u],
+                       attrib.normals[3u * static_cast<std::size_t>(index.normal_index) + 2u]},
+            .colour = {1.0F, 1.0F, 1.0F}};
 
          if (unique_vertices.count(vertex) == 0)
          {

@@ -26,8 +26,9 @@ namespace sph
          {
             for (std::size_t z : vi::iota(0u, m_cell_count.z)) // NOLINT
             {
-               glm::vec3 center{cell_size / 2.0f + x * cell_size, cell_size / 2.0f + y * cell_size,
-                                cell_size / 2.0f + z * cell_size};
+               glm::vec3 center{cell_size / 2.0f + static_cast<float>(x) * cell_size,
+                                cell_size / 2.0f + static_cast<float>(y) * cell_size,
+                                cell_size / 2.0f + static_cast<float>(z) * cell_size};
                glm::vec3 dims{cell_size / 2.0f, cell_size / 2.0f, cell_size / 2.0f};
 
                m_cells.push_back({.grid_pos = {x, y, z}, .center = center, .dimensions = dims});

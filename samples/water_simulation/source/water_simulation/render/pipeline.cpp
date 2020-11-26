@@ -110,9 +110,11 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
 
    const auto vertex_input_state_create_info =
       vk::PipelineVertexInputStateCreateInfo{}
-         .setVertexBindingDescriptionCount(std::size(create_info.bindings))
+         .setVertexBindingDescriptionCount(
+            static_cast<std::uint32_t>(std::size(create_info.bindings)))
          .setPVertexBindingDescriptions(std::data(create_info.bindings))
-         .setVertexAttributeDescriptionCount(std::size(create_info.attributes))
+         .setVertexAttributeDescriptionCount(
+            static_cast<std::uint32_t>(std::size(create_info.attributes)))
          .setPVertexAttributeDescriptions(std::data(create_info.attributes));
 
    const auto input_assembly_state_create_info =
@@ -120,11 +122,12 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
          .setTopology(vk::PrimitiveTopology::eTriangleList)
          .setPrimitiveRestartEnable(false);
 
-   const auto viewport_state_create_info = vk::PipelineViewportStateCreateInfo{}
-                                              .setViewportCount(std::size(create_info.viewports))
-                                              .setPViewports(create_info.viewports.data())
-                                              .setScissorCount(std::size(create_info.scissors))
-                                              .setPScissors(create_info.scissors.data());
+   const auto viewport_state_create_info =
+      vk::PipelineViewportStateCreateInfo{}
+         .setViewportCount(static_cast<std::uint32_t>(std::size(create_info.viewports)))
+         .setPViewports(create_info.viewports.data())
+         .setScissorCount(static_cast<std::uint32_t>(std::size(create_info.scissors)))
+         .setPScissors(create_info.scissors.data());
 
    const auto rasterization_state_create_info = vk::PipelineRasterizationStateCreateInfo{}
                                                    .setDepthClampEnable(false)
@@ -163,7 +166,7 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
    const auto info = vk::GraphicsPipelineCreateInfo{}
                         .setPNext(nullptr)
                         .setFlags({})
-                        .setStageCount(std::size(shader_stage_info))
+                        .setStageCount(static_cast<std::uint32_t>(std::size(shader_stage_info)))
                         .setPStages(shader_stage_info.data())
                         .setPVertexInputState(&vertex_input_state_create_info)
                         .setPInputAssemblyState(&input_assembly_state_create_info)
@@ -268,7 +271,7 @@ auto create_descriptor_set_layouts(const vkn::device& device,
          auto bindings =
             set_info.bindings | ranges::views::transform([&](set_layout_binding binding) {
                vk::DescriptorSetLayoutBinding result;
-               result.binding = binding.binding.value();
+               result.binding = static_cast<std::uint32_t>(binding.binding.value());
                result.descriptorType = binding.descriptor_type;
                result.descriptorCount = binding.descriptor_count.value();
                result.stageFlags = detail::to_shader_stage_flag(shader_info.p_shader->stage());

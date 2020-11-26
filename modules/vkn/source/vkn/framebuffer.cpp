@@ -23,15 +23,16 @@ namespace vkn
          return monad::err(to_err_code(framebuffer_error::no_device_handle));
       }
 
-      const auto create_info = vk::FramebufferCreateInfo{}
-                                  .setPNext(nullptr)
-                                  .setFlags({})
-                                  .setRenderPass(m_info.render_pass)
-                                  .setAttachmentCount(m_info.attachments.size())
-                                  .setPAttachments(m_info.attachments.data())
-                                  .setWidth(m_info.width)
-                                  .setHeight(m_info.height)
-                                  .setLayers(m_info.layer_count);
+      const auto create_info =
+         vk::FramebufferCreateInfo{}
+            .setPNext(nullptr)
+            .setFlags({})
+            .setRenderPass(m_info.render_pass)
+            .setAttachmentCount(static_cast<std::uint32_t>(m_info.attachments.size()))
+            .setPAttachments(m_info.attachments.data())
+            .setWidth(m_info.width)
+            .setHeight(m_info.height)
+            .setLayers(m_info.layer_count);
 
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createFramebufferUnique(create_info);
@@ -44,7 +45,7 @@ namespace vkn
 
             framebuffer f{};
             f.m_value = std::move(handle);
-            f.m_dimensions = {m_info.width, m_info.height};
+            f.m_dimensions = vk::Extent2D{m_info.width, m_info.height};
 
             return f;
          });

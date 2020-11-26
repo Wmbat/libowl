@@ -225,15 +225,15 @@ simulation::simulation(const settings& settings) :
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = 40.0f + (-distance_x * x_count / 2.0f) + distance_x * i;
+      const float x = 40.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
 
       for (auto j : vi::iota(0U, y_count))
       {
-         const float y = 5.0f + distance_y * j;
+         const float y = 5.0f + distance_y * static_cast<float>(j);
 
          for (auto k : vi::iota(0U, z_count))
          {
-            const float z = (-distance_z * z_count / 2.0f) + distance_z * k;
+            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
             m_particles.push_back({.position = {x, y, z},
                                    .mass = m_settings.water_mass,
@@ -341,7 +341,8 @@ void simulation::render()
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
                               sizeof(mesh_data) * 1, &md);
 
-         buffer.drawIndexed(m_box.m_index_buffer.index_count(), 1, 0, 0, 0);
+         buffer.drawIndexed(static_cast<std::uint32_t>(m_box.m_index_buffer.index_count()), 1, 0, 0,
+                            0);
       }
 
       buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
@@ -359,7 +360,8 @@ void simulation::render()
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
                               sizeof(mesh_data) * 1, &md);
 
-         buffer.drawIndexed(m_sphere.m_index_buffer.index_count(), 1, 0, 0, 0);
+         buffer.drawIndexed(static_cast<std::uint32_t>(m_sphere.m_index_buffer.index_count()), 1, 0,
+                            0, 0);
       }
    });
 
@@ -532,8 +534,9 @@ auto simulation::compute_matrices(const render_system& system) -> camera::matric
    auto dimensions = system.scissor().extent;
 
    camera::matrices matrices{};
-   matrices.projection = glm::perspective(
-      glm::radians(90.0F), dimensions.width / (float)dimensions.height, 0.1F, 1000.0F); // NOLINT
+   matrices.projection =
+      glm::perspective(glm::radians(90.0F), (float)dimensions.width / (float)dimensions.height,
+                       0.1F, 1000.0F); // NOLINT
    matrices.view =
       glm::lookAt(glm::vec3(20.0f, 20.0f, 70.0f), glm::vec3(0.0f, 5.0f, -10.0f), // NOLINT
                   glm::vec3(0.0F, 1.0F, 0.0F));

@@ -40,7 +40,8 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
         $<$<PLATFORM_ID:UNIX>:-pthread>
 
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer
+        -Wconversion>
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o2 -g -fno-omit-frame-pointer>
 
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
@@ -73,6 +74,9 @@ if (WATER_SIM_SANITIZE_ADDRESS)
 endif()
 
 target_include_directories(${PROJECT_NAME}
+    SYSTEM 
+        PUBLIC
+            EnTT::EnTT 
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

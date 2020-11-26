@@ -2,15 +2,16 @@
 
 auto framebuffer::make(create_info&& info) -> result<framebuffer>
 {
-   const auto create_info = vk::FramebufferCreateInfo{}
-                               .setPNext(nullptr)
-                               .setFlags({})
-                               .setRenderPass(info.pass)
-                               .setAttachmentCount(info.attachments.size())
-                               .setPAttachments(info.attachments.data())
-                               .setWidth(info.width)
-                               .setHeight(info.height)
-                               .setLayers(info.layers);
+   const auto create_info =
+      vk::FramebufferCreateInfo{}
+         .setPNext(nullptr)
+         .setFlags({})
+         .setRenderPass(info.pass)
+         .setAttachmentCount(static_cast<std::uint32_t>(info.attachments.size()))
+         .setPAttachments(info.attachments.data())
+         .setWidth(info.width)
+         .setHeight(info.height)
+         .setLayers(info.layers);
 
    return monad::try_wrap<vk::SystemError>([&] {
              return info.device.createFramebufferUnique(create_info);
