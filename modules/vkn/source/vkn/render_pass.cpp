@@ -9,10 +9,10 @@ namespace vkn
    using builder = render_pass::builder;
 
    builder::builder(const vkn::device& device, const vkn::swapchain& swapchain,
-                    std::shared_ptr<util::logger> p_logger) noexcept :
+                    util::logger_wrapper logger) noexcept :
       m_device{device.logical()},
-      m_swapchain_format{swapchain.format()},
-      m_swapchain_extent{swapchain.extent()}, mp_logger{std::move(p_logger)}
+      m_swapchain_format{swapchain.format()}, m_swapchain_extent{swapchain.extent()}, m_logger{
+                                                                                         logger}
    {}
 
    auto builder::build() -> util::result<render_pass>
@@ -77,7 +77,7 @@ namespace vkn
             return to_err_code(render_pass_error::failed_to_create_render_pass);
          })
          .map([&](vk::UniqueRenderPass&& handle) {
-            util::log_info(mp_logger, "[vkn] render pass created");
+            m_logger.info("[vulkan] render pass created");
 
             render_pass pass{};
             pass.m_value = std::move(handle);

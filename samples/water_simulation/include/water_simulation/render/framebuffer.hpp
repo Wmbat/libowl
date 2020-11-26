@@ -41,7 +41,7 @@ public:
       std::uint32_t height;
       std::uint32_t layers;
 
-      std::shared_ptr<util::logger> logger;
+      util::logger_wrapper logger;
    };
 
    /**

@@ -65,7 +65,7 @@ namespace vkn
          const vkn::device& device;
          const vkn::render_pass& render_pass;
 
-         std::shared_ptr<util::logger> p_logger{nullptr};
+         util::logger_wrapper logger{};
 
          vertex_bindings_array bindings{};
          vertex_attributes_array attributes{};

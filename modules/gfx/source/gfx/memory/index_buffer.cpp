@@ -48,14 +48,14 @@ namespace gfx
          return std::move(buffer);
       };
       const auto buffer_error = [&](util::error_t&& err) noexcept {
-         util::log_error(info.p_logger, "[core] staging buffer error: {}-{}",
-                         err.value().category().name(), err.value().message());
+         info.logger.error("[core] staging buffer error: {}-{}", err.value().category().name(),
+                           err.value().message());
 
          return to_err_code(index_buffer_error::failed_to_create_staging_buffer);
       };
 
       auto staging_buffer_res =
-         vkn::buffer::builder{info.device, info.p_logger}
+         vkn::buffer::builder{info.device, info.logger}
             .set_size(size)
             .set_usage(vk::BufferUsageFlagBits::eTransferSrc)
             .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
@@ -69,7 +69,7 @@ namespace gfx
          return monad::err(*staging_buffer_res.error());
       }
 
-      auto index_buffer_res = vkn::buffer::builder{info.device, info.p_logger}
+      auto index_buffer_res = vkn::buffer::builder{info.device, info.logger}
                                  .set_size(size)
                                  .set_usage(vk::BufferUsageFlagBits::eTransferDst |
                                             vk::BufferUsageFlagBits::eIndexBuffer)
@@ -92,8 +92,8 @@ namespace gfx
 
          return info.device.get_queue(vkn::queue_type::graphics)
             .map_error([&](util::error_t&& err) {
-               util::log_error(info.p_logger, "[core] no queue found for transfer : {}-{}",
-                               err.value().category().name(), err.value().message());
+               info.logger.error("[core] no queue found for transfer : {}-{}",
+                                 err.value().category().name(), err.value().message());
 
                return to_err_code(index_buffer_error::failed_to_find_a_suitable_queue);
             })
@@ -101,7 +101,7 @@ namespace gfx
                queue.submit({{.commandBufferCount = 1, .pCommandBuffers = &buffer.get()}}, nullptr);
                queue.waitIdle();
 
-               util::log_info(info.p_logger, "[core] index buffer created");
+               info.logger.info("[core] index buffer created");
 
                class index_buffer buf = {};
                buf.m_buffer = std::move(index_buffer);
@@ -113,8 +113,8 @@ namespace gfx
 
       return info.command_pool.create_primary_buffer()
          .map_error([&](util::error_t&& err) {
-            util::log_error(info.p_logger, "[core] transfer cmd buffer error: {}-{}",
-                            err.value().category().name(), err.value().message());
+            info.logger.error("[core] transfer cmd buffer error: {}-{}",
+                              err.value().category().name(), err.value().message());
 
             return to_err_code(index_buffer_error::failed_to_create_command_buffer);
          })

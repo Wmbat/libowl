@@ -24,7 +24,7 @@ namespace vkn
 
       std::uint32_t version;
 
-      std::shared_ptr<util::logger> p_logger;
+      util::logger_wrapper logger;
    };
 
    auto find_suitable_device(std::span<const vk::PhysicalDevice> devices, device_data&& data)
@@ -38,7 +38,7 @@ namespace vkn
          dev.m_surface = std::move(data.surface);
          dev.m_physical_device = data.physical_device;
          dev.m_logical_device = std::move(data.logical_device);
-         dev.mp_logger = data.p_logger;
+         dev.m_logger = data.logger;
 
          VULKAN_HPP_DEFAULT_DISPATCHER.init(dev.m_logical_device.get());
 
@@ -48,7 +48,7 @@ namespace vkn
       return find_suitable_device(info.available_devices,
                                   {.surface = std::move(info.surface),
                                    .version = info.vulkan_version,
-                                   .p_logger = std::move(info.p_logger)})
+                                   .logger = info.logger})
          .and_then(create_device)
          .map(finalize);
    }
@@ -241,7 +241,7 @@ namespace vkn
 
       auto properties = data.physical_device.getProperties();
 
-      util::log_info(data.p_logger, "[vulkan] physical device selected: {}", properties.deviceName);
+      data.logger.info("[vulkan] physical device selected: {}", properties.deviceName);
 
       return std::move(data);
    }
@@ -318,7 +318,7 @@ namespace vkn
 
       for (const char* name : extensions)
       {
-         log_info(data.p_logger, "[vulkan] device extension: {0}", name);
+         data.logger.info("[vulkan] device extension: {0}", name);
       }
 
       const auto queue_create_infos = queue_create_info_res.value().value();
@@ -339,7 +339,7 @@ namespace vkn
          .map([&](vk::UniqueDevice device) {
             data.logical_device = std::move(device);
 
-            util::log_info(data.p_logger, "[vulkan] logical device created");
+            data.logger.info("[vulkan] logical device created");
 
             return std::move(data);
          });

@@ -3,8 +3,9 @@
 namespace sph
 {
    system::system(const create_info& info) :
-      mp_registry{info.p_registry}, m_grid{info.kernel_radius, info.dimensions, info.logger},
-      m_kernel_radius{info.kernel_radius}, m_rest_density{info.rest_density}, m_logger{info.logger}
+      mp_registry{info.p_registry}, m_grid{info.kernel_radius, info.dimensions, info.p_logger},
+      m_kernel_radius{info.kernel_radius}, m_rest_density{info.rest_density}, m_logger{
+                                                                                 info.p_logger}
    {}
 
    void system::update([[maybe_unused]] float time_step)

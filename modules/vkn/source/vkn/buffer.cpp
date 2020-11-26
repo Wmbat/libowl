@@ -46,18 +46,18 @@ namespace vkn
 
    using builder = buffer::builder;
 
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+      m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.physical_device = device.physical();
    }
 
-   auto builder::build() const noexcept -> util::result<buffer>
+   auto builder::build() noexcept -> util::result<buffer>
    {
       const auto allocate_n_construct = [&](vk::UniqueBuffer buffer) noexcept {
          return allocate_memory(buffer.get()).map([&](vk::UniqueDeviceMemory memory) noexcept {
-            util::log_info(mp_logger, "[vkn] buffer of size {} created", m_info.size);
+            m_logger.info("[vulkan] buffer of size {} created", m_info.size);
 
             m_info.device.bindBufferMemory(buffer.get(), memory.get(), 0);
 

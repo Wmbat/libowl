@@ -9,9 +9,9 @@ namespace vkn
    using builder = framebuffer::builder;
 
    builder::builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                    std::shared_ptr<util::logger> p_logger) noexcept :
+                    util::logger_wrapper logger) noexcept :
       m_device{device.logical()},
-      mp_logger{std::move(p_logger)}
+      m_logger{logger}
    {
       m_info.render_pass = render_pass.value();
    }
@@ -40,7 +40,7 @@ namespace vkn
             return to_err_code(framebuffer_error::failed_to_create_framebuffer);
          })
          .map([&](vk::UniqueFramebuffer&& handle) {
-            util::log_info(mp_logger, "[vkn] framebuffer created");
+            m_logger.info("[vulkan] framebuffer created");
 
             framebuffer f{};
             f.m_value = std::move(handle);

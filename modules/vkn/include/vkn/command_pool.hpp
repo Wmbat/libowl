@@ -42,7 +42,7 @@ namespace vkn
          -> util::result<vk::UniqueCommandBuffer>;
 
    private:
-      std::shared_ptr<util::logger> mp_logger;
+      util::logger_wrapper m_logger;
 
       uint32_t m_queue_index{0};
 
@@ -56,7 +56,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, std::shared_ptr<util::logger> plogger);
+         builder(const vkn::device& device, util::logger_wrapper logger);
 
          /**
           * Attempt to build a command_pool object. May return an error
@@ -88,7 +88,7 @@ namespace vkn
             -> util::result<util::dynamic_array<vk::CommandBuffer>>;
 
       private:
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
 
          struct info
          {

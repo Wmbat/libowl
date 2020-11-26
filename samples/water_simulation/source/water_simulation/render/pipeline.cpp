@@ -34,7 +34,7 @@ namespace detail
    auto
    check_vertex_attribute_support(const vkn::shader* p_shader,
                                   std::span<const vk::VertexInputAttributeDescription> attributes,
-                                  const std::shared_ptr<util::logger>& p_logger) -> bool
+                                  util::logger_wrapper logger) -> bool
    {
       const auto& data = p_shader->get_data();
       for (const auto& attrib : attributes)
@@ -50,10 +50,9 @@ namespace detail
 
          if (!is_attrib_supported)
          {
-            util::log_error(p_logger,
-                            "[vkn] vertex shader attribute at location {} and binding {} is not "
-                            "supported by the shader",
-                            attrib.location, attrib.binding);
+            logger.error("[vulkan] vertex shader attribute at location {} and binding {} is not "
+                         "supported by the shader",
+                         attrib.location, attrib.binding);
 
             return false;
          }
@@ -74,7 +73,7 @@ struct graphics_pipeline_data
 };
 
 auto create_pipeline(const graphics_pipeline::create_info& create_info,
-                     graphics_pipeline_data&& data, const std::shared_ptr<util::logger>& p_logger)
+                     graphics_pipeline_data&& data, util::logger_wrapper logger)
    -> util::result<graphics_pipeline_data>
 {
    util::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
@@ -83,8 +82,7 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
    util::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
    for (std::uint32_t index = 0; const auto& info : create_info.shader_infos)
    {
-      util::log_info(p_logger, R"([vkn] using shader "{0}" for graphics pipeline)",
-                     info.p_shader->name());
+      logger.info(R"([vulkan] using shader "{0}" for graphics pipeline)", info.p_shader->name());
 
       shader_stage_info.emplace_back(
          vk::PipelineShaderStageCreateInfo{}
@@ -105,7 +103,7 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
 
    const auto* p_vertex_shader = create_info.shader_infos[vertex_shader_index.value()].p_shader;
    if (!detail::check_vertex_attribute_support(p_vertex_shader, create_info.attributes,
-                                               create_info.p_logger))
+                                               create_info.logger))
    {
       return monad::err(to_err_code(graphics_pipeline_error::invalid_vertex_shader_bindings));
    }
@@ -187,7 +185,7 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
          return to_err_code(graphics_pipeline_error::failed_to_create_pipeline);
       })
       .map([&](vk::UniquePipeline&& handle) {
-         util::log_info(p_logger, R"([vkn] graphics pipeline created)");
+         logger.info(R"([vulkan] graphics pipeline created)");
 
          data.pipeline = std::move(handle);
 
@@ -216,8 +214,7 @@ auto populate_push_constants(std::span<const pipeline_shader_data> shader_infos)
 }
 
 auto create_pipeline_layout(const vkn::device& device, graphics_pipeline_data&& pipeline,
-                            const std::shared_ptr<util::logger>& p_logger)
-   -> util::result<graphics_pipeline_data>
+                            util::logger_wrapper logger) -> util::result<graphics_pipeline_data>
 {
    util::dynamic_array<vk::DescriptorSetLayout> layouts;
    layouts.reserve(std::size(pipeline.set_layouts));
@@ -247,7 +244,7 @@ auto create_pipeline_layout(const vkn::device& device, graphics_pipeline_data&& 
       .map([&](vk::UniquePipelineLayout&& layout) {
          pipeline.pipeline_layout = std::move(layout);
 
-         util::log_debug(p_logger, "[vkn] graphics pipeline layout created");
+         logger.debug("[vulkan] graphics pipeline layout created");
 
          return std::move(pipeline);
       })
@@ -258,7 +255,7 @@ auto create_pipeline_layout(const vkn::device& device, graphics_pipeline_data&& 
 
 auto create_descriptor_set_layouts(const vkn::device& device,
                                    std::span<const pipeline_shader_data> shader_infos,
-                                   const std::shared_ptr<util::logger>& p_logger)
+                                   util::logger_wrapper logger)
    -> util::result<graphics_pipeline_data>
 {
    graphics_pipeline_data data;
@@ -279,7 +276,7 @@ auto create_descriptor_set_layouts(const vkn::device& device,
                return result;
             });
 
-         auto result = vkn::descriptor_set_layout::builder{device, p_logger}
+         auto result = vkn::descriptor_set_layout::builder{device, logger}
                           .set_bindings(bindings | ranges::to<util::dynamic_array>)
                           .build();
 
@@ -309,12 +306,12 @@ auto graphics_pipeline::make(create_info&& info) -> util::result<graphics_pipeli
       return pipeline;
    };
 
-   return create_descriptor_set_layouts(info.device, info.shader_infos, info.p_logger)
+   return create_descriptor_set_layouts(info.device, info.shader_infos, info.logger)
       .and_then([&](graphics_pipeline_data&& data) {
-         return create_pipeline_layout(info.device, std::move(data), info.p_logger);
+         return create_pipeline_layout(info.device, std::move(data), info.logger);
       })
       .and_then([&](graphics_pipeline_data&& data) {
-         return create_pipeline(info, std::move(data), info.p_logger);
+         return create_pipeline(info, std::move(data), info.logger);
       })
       .map(finalize);
 }

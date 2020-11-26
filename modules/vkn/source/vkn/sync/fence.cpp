@@ -8,13 +8,12 @@ namespace vkn
 
    using builder = fence::builder;
 
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
    }
 
-   auto builder::build() const noexcept -> util::result<fence>
+   auto builder::build() noexcept -> util::result<fence>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createFenceUnique({.pNext = nullptr,
@@ -26,8 +25,7 @@ namespace vkn
             return to_err_code(fence_error::failed_to_create_fence);
          })
          .map([&](vk::UniqueFence&& handle) {
-            util::log_info(mp_logger, "[vkn] {} fence created",
-                           m_info.signaled ? "signaled" : "unsignaled");
+            m_logger.info("[vkn] {} fence created", m_info.signaled ? "signaled" : "unsignaled");
 
             fence f{};
             f.m_value = std::move(handle);

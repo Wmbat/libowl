@@ -27,12 +27,12 @@ struct render_system_data
 
    ui::window* p_window;
 
-   std::shared_ptr<util::logger> logger;
+   util::logger_wrapper logger;
 };
 
 auto create_context(render_system_data&& data) -> result<render_system_data>
 {
-   return vkn::context::make({.p_logger = data.logger}).map([&](vkn::context&& ctx) {
+   return vkn::context::make({.logger = data.logger}).map([&](vkn::context&& ctx) {
       data.context = std::move(ctx);
       return std::move(data);
    });
@@ -98,7 +98,7 @@ auto create_in_flight_fences(render_system_data&& data) -> result<render_system_
    std::array<vkn::fence, max_frames_in_flight> fences;
    for (auto& fence : fences)
    {
-      if (auto res = vkn::fence::builder{data.device, data.info.p_logger}.set_signaled().build())
+      if (auto res = vkn::fence::builder{data.device, data.info.logger}.set_signaled().build())
       {
          fence = std::move(res).value().value();
       }
@@ -118,7 +118,7 @@ auto create_image_available_semaphores(render_system_data&& data) -> result<rend
    std::array<vkn::semaphore, max_frames_in_flight> semaphores;
    for (auto& semaphore : semaphores)
    {
-      if (auto res = vkn::semaphore::builder{data.device, data.info.p_logger}.build())
+      if (auto res = vkn::semaphore::builder{data.device, data.info.logger}.build())
       {
          semaphore = std::move(res).value().value();
       }
@@ -139,7 +139,7 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
 
    for ([[maybe_unused]] const auto& _ : data.swapchain.image_views())
    {
-      if (auto res = vkn::semaphore::builder{data.device, data.info.p_logger}.build())
+      if (auto res = vkn::semaphore::builder{data.device, data.info.logger}.build())
       {
          semaphores.emplace_back(std::move(res).value().value());
       }
@@ -167,7 +167,7 @@ auto create_depth_buffer(render_system_data&& data) -> result<render_system_data
 
 auto render_system::make(create_info&& info) -> util::result<render_system>
 {
-   return create_context({.info = info, .p_window = info.p_window, .logger = info.p_logger})
+   return create_context({.info = info, .p_window = info.p_window, .logger = info.logger})
       .and_then(create_device)
       .and_then(create_swapchain)
       .and_then(create_render_command_pools)
@@ -177,7 +177,7 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
       .and_then(create_depth_buffer)
       .map([](render_system_data&& data) {
          render_system rs{};
-         rs.mp_logger = data.logger;
+         rs.m_logger = data.logger;
          rs.mp_window = data.p_window;
          rs.m_context = std::move(data.context);
          rs.m_device = std::move(data.device);
@@ -223,7 +223,7 @@ auto render_system::begin_frame() -> image_index_t
       abort();
    }
 
-   util::log_debug(mp_logger, R"([gfx] swapchain image "{}" acquired)", image_index);
+   m_logger.debug(R"([gfx] swapchain image "{}" acquired)", image_index);
 
    m_device.logical().resetCommandPool(
       m_render_command_pools[m_current_frame_index.value()].value(), {}); // NOLINT
@@ -235,8 +235,8 @@ auto render_system::begin_frame() -> image_index_t
 
 void render_system::render(std::span<render_pass> passes)
 {
-   util::log_debug(mp_logger, R"([gfx] render command pool "{}" buffer recording)",
-                   m_current_frame_index.value());
+   m_logger.debug(R"([gfx] render command pool "{}" buffer recording)",
+                  m_current_frame_index.value());
 
    std::array<vk::ClearValue, 2> clear_values{};
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
@@ -297,8 +297,9 @@ void render_system::end_frame()
    }
    catch (const vk::SystemError& err)
    {
-      util::log_error(mp_logger, "[core] failed to submit graphics queue");
-      abort();
+      m_logger.error("[gfx] failed to submit graphics queue");
+
+      std::terminate();
    }
 
    const std::array swapchains{vkn::value(m_swapchain)};
@@ -311,8 +312,9 @@ void render_system::end_frame()
                                  .pImageIndices = &m_current_image_index.value()}) !=
        vk::Result::eSuccess)
    {
-      util::log_error(mp_logger, "[core] failed to present present queue");
-      abort();
+      m_logger.error("[gfx] failed to present present queue");
+
+      std::terminate();
    }
 
    m_current_frame_index = (m_current_frame_index + 1) % max_frames_in_flight;
@@ -386,7 +388,7 @@ auto render_system::create_vertex_buffer(const util::dynamic_array<gfx::vertex>&
    return gfx::vertex_buffer::make({.vertices = vertices,
                                     .device = m_device,
                                     .command_pool = m_render_command_pools[0],
-                                    .p_logger = mp_logger});
+                                    .logger = m_logger});
 }
 auto render_system::create_index_buffer(const util::dynamic_array<std::uint32_t>& indices) const
    -> util::result<gfx::index_buffer>
@@ -394,7 +396,7 @@ auto render_system::create_index_buffer(const util::dynamic_array<std::uint32_t>
    return gfx::index_buffer::make({.indices = indices,
                                    .device = m_device,
                                    .command_pool = m_render_command_pools[0],
-                                   .p_logger = mp_logger});
+                                   .logger = m_logger});
 }
 
 auto render_system::lookup_configuration() const -> const config&

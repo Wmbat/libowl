@@ -36,13 +36,13 @@ namespace gfx
       const vkn::device& device = *info.p_device;
 
       const auto buffer_error = [&](util::error_t&& err) noexcept {
-         util::log_error(info.p_logger, "[core] uniform buffer error: {}-{}",
-                         err.value().category().name(), err.value().message());
+         info.logger.error("[core] uniform buffer error: {}-{}", err.value().category().name(),
+                           err.value().message());
 
          return make_error(camera_buffer_error::failed_to_create_uniform_buffer);
       };
 
-      return vkn::buffer::builder{device, info.p_logger}
+      return vkn::buffer::builder{device, info.logger}
          .set_size(sizeof(gfx::camera_matrices))
          .set_usage(vk::BufferUsageFlagBits::eUniformBuffer)
          .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
@@ -50,7 +50,7 @@ namespace gfx
          .build()
          .map_error(buffer_error)
          .map([&](vkn::buffer&& handle) {
-            util::log_info(info.p_logger, "[core] camera buffer created");
+            info.logger.info("[core] camera buffer created");
 
             camera_buffer buf;
             buf.m_buffer = std::move(handle);

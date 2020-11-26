@@ -19,7 +19,7 @@ namespace vkn
    {
       failed_to_initialize_glslang,
       failed_to_query_vulkan_version,
-      vulkan_version_1_2_unavailable,
+      vulkan_version_1_1_unavailable,
       window_extensions_not_present,
       failed_to_create_instance,
       failed_to_create_debug_utils,
@@ -34,7 +34,7 @@ namespace vkn
    public:
       struct create_info
       {
-         std::shared_ptr<util::logger> p_logger{nullptr};
+         util::logger_wrapper logger;
       };
 
       static auto make(const create_info& info) -> util::result<context>;
@@ -59,7 +59,7 @@ namespace vkn
 
       util::dynamic_array<vk::ExtensionProperties> m_enabled_extensions{};
 
-      std::shared_ptr<util::logger> mp_logger{nullptr};
+      util::logger_wrapper m_logger;
 
       static inline bool is_glslang_init = false;
    };

@@ -36,8 +36,7 @@ namespace vkn
 
    using builder = shader::builder;
 
-   builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const device& device, util::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.version = device.vk_version();
@@ -52,7 +51,7 @@ namespace vkn
                                     .uniforms = populate_uniform_buffer(glsl, resources)};
 
       return create_shader().map([&](vk::UniqueShaderModule&& handle) {
-         util::log_info(mp_logger, "[vkn] shader module created");
+         m_logger.info("[vulkan] shader module created");
 
          shader s{};
          s.m_value = std::move(handle);
@@ -94,7 +93,7 @@ namespace vkn
    }
 
    auto shader::builder::populate_shader_input(const spirv_cross::Compiler& compiler,
-                                               const spirv_cross::ShaderResources& resources) const
+                                               const spirv_cross::ShaderResources& resources)
       -> util::dynamic_array<shader_input_location_t>
    {
       util::dynamic_array<shader_input_location_t> res;
@@ -104,7 +103,7 @@ namespace vkn
       {
          std::uint32_t location = compiler.get_decoration(input.id, spv::DecorationLocation);
 
-         util::log_debug(mp_logger, R"([vkn] input "{}" with location {})", input.name, location);
+         m_logger.debug(R"([vulkan] input "{}" with location {})", input.name, location);
 
          res.emplace_back(shader_input_location_t{location});
       }
@@ -113,7 +112,7 @@ namespace vkn
    }
 
    auto builder::populate_uniform_buffer([[maybe_unused]] const spirv_cross::Compiler& compiler,
-                                         const spirv_cross::ShaderResources& resources) const
+                                         const spirv_cross::ShaderResources& resources)
       -> util::dynamic_array<shader_uniform_binding_t>
    {
       util::dynamic_array<shader_uniform_binding_t> data{};
@@ -122,8 +121,7 @@ namespace vkn
       {
          std::uint32_t binding = compiler.get_decoration(uniform.id, spv::DecorationBinding);
 
-         util::log_debug(mp_logger, R"([vkn] uniform buffer "{}" with location {})", uniform.name,
-                         binding);
+         m_logger.debug(R"([vulkan] uniform buffer "{}" with location {})", uniform.name, binding);
 
          data.emplace_back(shader_uniform_binding_t{binding});
       }

@@ -41,7 +41,7 @@ namespace vkn
       {
       public:
          builder(const vkn::device& device, const vkn::render_pass& render_pass,
-                 std::shared_ptr<util::logger> p_logger) noexcept;
+                 util::logger_wrapper logger) noexcept;
 
          /**
           * Attemp to create the framebuffer object with the given information. If something
@@ -72,7 +72,7 @@ namespace vkn
 
       private:
          vk::Device m_device{nullptr};
-         std::shared_ptr<util::logger> mp_logger{nullptr};
+         util::logger_wrapper m_logger{nullptr};
 
          struct info
          {

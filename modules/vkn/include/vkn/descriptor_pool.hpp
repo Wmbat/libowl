@@ -24,7 +24,7 @@ namespace vkn
       [[nodiscard]] auto sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>;
 
    private:
-      std::shared_ptr<util::logger> mp_logger;
+      util::logger_wrapper m_logger;
 
       util::dynamic_array<vk::DescriptorSet> m_sets;
 
@@ -37,7 +37,7 @@ namespace vkn
          struct creation_info;
 
       public:
-         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
+         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
 
          auto build() -> util::result<descriptor_pool>;
 
@@ -51,15 +51,15 @@ namespace vkn
          auto set_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept -> builder&;
 
       private:
-         [[nodiscard]] auto create_descriptor_pool() const noexcept
+         [[nodiscard]] auto create_descriptor_pool() noexcept
             -> util::result<vk::UniqueDescriptorPool>;
-         auto allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle) const
+         auto allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle)
             -> util::result<creation_info>;
 
       private:
          vk::Device m_device;
 
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
 
          struct creation_info
          {

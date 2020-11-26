@@ -33,9 +33,9 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
+         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
 
-         [[nodiscard]] auto build() const noexcept -> util::result<buffer>;
+         [[nodiscard]] auto build() noexcept -> util::result<buffer>;
 
          auto set_size(std::size_t size) noexcept -> builder&;
          auto set_usage(const vk::BufferUsageFlags& flags) noexcept -> builder&;
@@ -54,7 +54,7 @@ namespace vkn
             -> monad::maybe<std::uint32_t>;
 
       private:
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
 
          struct info
          {

@@ -44,7 +44,7 @@ namespace sph
          float kernel_radius;
          float rest_density;
 
-         util::logger_ptr logger;
+         vml::non_null<util::logger*> p_logger;
       };
 
    public:
@@ -83,11 +83,11 @@ namespace sph
    private:
       [[maybe_unused]] entt::registry* mp_registry{nullptr};
 
-      [[maybe_unused]] grid m_grid{};
+      [[maybe_unused]] grid m_grid;
 
       [[maybe_unused]] float m_kernel_radius{};
       [[maybe_unused]] float m_rest_density{};
 
-      [[maybe_unused]] util::logger_ptr m_logger;
+      util::logger_wrapper m_logger;
    };
 } // namespace sph

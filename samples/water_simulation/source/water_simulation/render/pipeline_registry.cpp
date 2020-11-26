@@ -4,9 +4,7 @@
 
 #include <utility>
 
-pipeline_registry::pipeline_registry(std::shared_ptr<util::logger> p_logger) :
-   mp_logger{std::move(p_logger)}
-{}
+pipeline_registry::pipeline_registry(util::logger_wrapper logger) : m_logger{logger} {}
 
 auto pipeline_registry::insert(graphics_pipeline::create_info&& info) -> result<insert_kv>
 {

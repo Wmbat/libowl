@@ -4,8 +4,8 @@
 
 #include <fstream>
 
-shader_registry::shader_registry(render_system& renderer, std::shared_ptr<util::logger> p_logger) :
-   m_renderer{renderer}, mp_logger{std::move(p_logger)}
+shader_registry::shader_registry(render_system& renderer, util::logger_wrapper logger) :
+   m_renderer{renderer}, m_logger{logger}
 {}
 
 auto shader_registry::insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>
@@ -25,7 +25,7 @@ auto shader_registry::insert(const filepath& path, vkn::shader_type type) -> res
    std::memcpy(static_cast<void*>(data.data()), raw_shader_data.data(),
                sizeof(std::uint32_t) * data.size());
 
-   return vkn::shader::builder(m_renderer.device(), mp_logger)
+   return vkn::shader::builder(m_renderer.device(), m_logger)
       .set_name(path.string())
       .set_spirv_binary(data)
       .set_type(type)

@@ -13,14 +13,14 @@ namespace vkn
 
    using builder = descriptor_set_layout::builder;
 
-   builder::builder(vk::Device device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device}, mp_logger{std::move(p_logger)}
+   builder::builder(vk::Device device, util::logger_wrapper logger) noexcept :
+      m_device{device}, m_logger{logger}
    {}
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical()}, mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+      m_device{device.logical()}, m_logger{logger}
    {}
 
-   auto builder::build() const noexcept -> util::result<descriptor_set_layout>
+   auto builder::build() noexcept -> util::result<descriptor_set_layout>
    {
       return try_wrap([&] {
                 return m_device.createDescriptorSetLayoutUnique(
@@ -31,7 +31,7 @@ namespace vkn
             return to_err_code(descriptor_set_layout_error::failed_to_create_descriptor_set_layout);
          })
          .map([&](auto handle) {
-            util::log_info(mp_logger, "[vkn] descriptor set layout created");
+            m_logger.info("[vulkan] descriptor set layout created");
 
             descriptor_set_layout layout;
             layout.m_value = std::move(handle);

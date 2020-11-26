@@ -21,7 +21,7 @@ auto create_uniform_buffers(const camera::create_info& info) -> util::result<cam
 
    for ([[maybe_unused]] std::uint32_t i : vi::iota(0U, info.image_count.value()))
    {
-      auto res = vkn::buffer::builder{info.renderer.device(), info.p_logger}
+      auto res = vkn::buffer::builder{info.renderer.device(), info.logger}
                     .set_size(sizeof(camera::matrices))
                     .set_usage(vk::BufferUsageFlagBits::eUniformBuffer)
                     .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
@@ -43,7 +43,7 @@ auto create_descriptor_pool(camera_data&& data) -> util::result<camera_data>
 {
    auto& info = data.info;
 
-   return vkn::descriptor_pool::builder{info.renderer.device(), info.p_logger}
+   return vkn::descriptor_pool::builder{info.renderer.device(), info.logger}
       .add_pool_size(vk::DescriptorType::eUniformBuffer, info.image_count)
       .set_descriptor_set_layout(info.pipeline.get_descriptor_set_layout("camera_layout").value())
       .set_max_sets(info.image_count)
@@ -98,14 +98,14 @@ void camera::update(util::index_t image_index, const matrices& matrices)
    device.unmapMemory(m_uniform_buffers[image_index.value()].memory());
 }
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline,
-                   const std::shared_ptr<util::logger>& p_logger) -> camera
+auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)
+   -> camera
 {
    auto& config = system.lookup_configuration();
 
    return handle_err(camera::make({.renderer = system,
                                    .pipeline = pipeline,
                                    .image_count = config.swapchain_image_count,
-                                   .p_logger = p_logger}),
-                     p_logger);
+                                   .logger = logger}),
+                     logger);
 }

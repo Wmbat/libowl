@@ -4,10 +4,6 @@
 
 namespace vkn
 {
-   namespace detail
-   {
-   } // namespace detail
-
    struct semaphore_error_category : std::error_category
    {
       [[nodiscard]] auto name() const noexcept -> const char* override { return "vkn_semaphore"; }
@@ -39,13 +35,13 @@ namespace vkn
 
    using builder = semaphore::builder;
 
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+      m_logger{logger}
    {
       m_info.device = device.logical();
    }
 
-   auto builder::build() const noexcept -> util::result<semaphore>
+   auto builder::build() noexcept -> util::result<semaphore>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_info.device.createSemaphoreUnique({});
@@ -54,7 +50,7 @@ namespace vkn
             return to_err_code(semaphore_error::failed_to_create_semaphore);
          })
          .map([&](vk::UniqueSemaphore&& handle) {
-            util::log_info(mp_logger, "[vkn] semaphore created");
+            m_logger.info("[vulkan] semaphore created");
 
             semaphore s{};
             s.m_value = std::move(handle);

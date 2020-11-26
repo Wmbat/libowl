@@ -24,8 +24,8 @@ namespace gfx
    public:
       struct create_info
       {
-         const vkn::device* p_device;
-         std::shared_ptr<util::logger> p_logger;
+         const vkn::device* p_device{};
+         util::logger_wrapper logger{};
       };
 
       static auto make(create_info&& info) noexcept -> gfx::result<camera_buffer>;

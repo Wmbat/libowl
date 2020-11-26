@@ -90,7 +90,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const device& device, std::shared_ptr<util::logger> p_logger);
+         builder(const device& device, util::logger_wrapper p_logger);
 
          /**
           * Attempt to construct a shader object using the provided data. If unable to create
@@ -114,18 +114,16 @@ namespace vkn
       private:
          [[nodiscard]] auto create_shader() const noexcept -> util::result<vk::UniqueShaderModule>;
 
-         [[nodiscard]] auto
-         populate_shader_input(const spirv_cross::Compiler& compiler,
-                               const spirv_cross::ShaderResources& resources) const
+         [[nodiscard]] auto populate_shader_input(const spirv_cross::Compiler& compiler,
+                                                  const spirv_cross::ShaderResources& resources)
             -> util::dynamic_array<shader_input_location_t>;
 
-         [[nodiscard]] auto
-         populate_uniform_buffer(const spirv_cross::Compiler& compiler,
-                                 const spirv_cross::ShaderResources& resources) const
+         [[nodiscard]] auto populate_uniform_buffer(const spirv_cross::Compiler& compiler,
+                                                    const spirv_cross::ShaderResources& resources)
             -> util::dynamic_array<shader_uniform_binding_t>;
 
       private:
-         std::shared_ptr<util::logger> mp_logger{nullptr};
+         util::logger_wrapper m_logger{nullptr};
 
          struct info
          {

@@ -54,7 +54,54 @@ namespace util
       log.set_level(spdlog::level::trace);
    }
 
-   auto logger::get_logger() -> spdlog::logger& { return log; }
+   void logger::debug(const std::string& msg) { log.debug(msg); }
+   void logger::info(const std::string& msg) { log.info(msg); }
+   void logger::warning(const std::string& msg) { log.warn(msg); }
+   void logger::error(const std::string& msg) { log.error(msg); }
 
+   void logger::flush() { log.flush(); }
+
+   auto logger::get_logger() -> spdlog::logger& { return log; }
    auto logger::get_logger() const -> const spdlog::logger& { return log; }
+
+   logger_wrapper::logger_wrapper(util::logger* p_logger) : mp_logger{p_logger} {}
+
+   void logger_wrapper::debug(const std::string& msg)
+   {
+      if (mp_logger)
+      {
+         mp_logger->debug(msg);
+      }
+   }
+   void logger_wrapper::info(const std::string& msg)
+   {
+      if (mp_logger)
+      {
+         mp_logger->info(msg);
+      }
+   }
+   void logger_wrapper::warning(const std::string& msg)
+   {
+      if (mp_logger)
+      {
+         mp_logger->warning(msg);
+      }
+   }
+   void logger_wrapper::error(const std::string& msg)
+   {
+      if (mp_logger)
+      {
+         mp_logger->error(msg);
+      }
+   }
+
+   auto logger_wrapper::get() const -> util::logger* { return mp_logger; }
+   auto logger_wrapper::take() -> util::logger*
+   {
+      auto* temp = mp_logger;
+      mp_logger = nullptr;
+
+      return temp;
+   }
+
 } // namespace util

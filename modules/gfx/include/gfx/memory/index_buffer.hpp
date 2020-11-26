@@ -32,7 +32,7 @@ namespace gfx
          const vkn::device& device;
          const vkn::command_pool& command_pool;
 
-         std::shared_ptr<util::logger> p_logger;
+         util::logger_wrapper logger;
       };
 
       static auto make(create_info&& info) noexcept -> util::result<index_buffer>;

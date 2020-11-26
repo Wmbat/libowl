@@ -81,7 +81,7 @@ public:
    };
 
 public:
-   shader_registry(render_system& renderer, std::shared_ptr<util::logger> p_logger);
+   shader_registry(render_system& renderer, util::logger_wrapper logger);
 
    /**
     * @brief Insert and construct a `vkn::shader` into the registry.
@@ -121,5 +121,5 @@ private:
 
    render_system& m_renderer;
 
-   std::shared_ptr<util::logger> mp_logger;
+   util::logger_wrapper m_logger;
 };

@@ -215,8 +215,7 @@ namespace vkn
 
    using builder = swapchain::builder;
 
-   builder::builder(const device& device, std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const device& device, util::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.physical_device = device.physical();
@@ -301,8 +300,8 @@ namespace vkn
                                .clipped = m_info.clipped,
                                .oldSwapchain = m_info.old_swapchain})
          .and_then([&](vk::UniqueSwapchainKHR&& handle) {
-            util::log_info(mp_logger, "[vkn] swapchain created.");
-            util::log_info(mp_logger, "[vkn] swapchain image count: {0}", image_count);
+            m_logger.info("[vkn] swapchain created.");
+            m_logger.info("[vkn] swapchain image count: {0}", image_count);
 
             return create_images(handle.get()).and_then([&](auto&& images) {
                return create_image_views(images, surface_format).map([&](auto&& views) {

@@ -26,7 +26,7 @@ namespace sph
 
    public:
       grid() = default;
-      grid(float cell_size, const glm::vec3& dimensions, util::logger_ptr logger);
+      grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
 
       /**
        * @brief Give access to all cells within the grid
@@ -52,6 +52,6 @@ namespace sph
 
       util::dynamic_array<cell> m_cells{};
 
-      util::logger_ptr m_logger;
+      util::logger_wrapper m_logger;
    };
 } // namespace sph

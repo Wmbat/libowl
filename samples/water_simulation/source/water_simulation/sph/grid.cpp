@@ -8,10 +8,10 @@ namespace vi = ranges::views;
 
 namespace sph
 {
-   grid::grid(float cell_size, const glm::vec3& dimensions, util::logger_ptr logger) :
-      m_cell_size{cell_size}, m_dimensions{dimensions}, m_logger{std::move(logger)}
+   grid::grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger) :
+      m_cell_size{cell_size}, m_dimensions{dimensions}, m_logger{p_logger}
    {
-      assert(cell_size != 0 && "cell_size cannot be 0"); // NOLINT
+      ENSURE(cell_size != 0);
 
       m_cell_count = glm::u64vec3{
          static_cast<std::size_t>(std::ceil(m_dimensions.x * 2 / m_cell_size)),  // NOLINT
@@ -35,11 +35,10 @@ namespace sph
          }
       }
 
-      util::log_info(m_logger,
-                     "Grid constructed with a total of {} cells distributed as such:\n\t"
-                     "x-axis = {}\n\ty-axis = {}\n\tz-axis = {}",
-                     m_cell_count.x + m_cell_count.y + m_cell_count.z, m_cell_count.x, // NOLINT
-                     m_cell_count.y, m_cell_count.z);                                  // NOLINT
+      m_logger.info("Grid constructed with a total of {} cells distributed as such:\n\t"
+                    "x-axis = {}\n\ty-axis = {}\n\tz-axis = {}",
+                    m_cell_count.x + m_cell_count.y + m_cell_count.z, m_cell_count.x, // NOLINT
+                    m_cell_count.y, m_cell_count.z);                                  // NOLINT
    }
 
    auto grid::cells() -> std::span<cell> { return m_cells; }

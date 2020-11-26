@@ -31,7 +31,7 @@ namespace gfx
          util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>;
 
    public:
-      render_manager(const ui::window& wnd, std::shared_ptr<util::logger> p_logger);
+      render_manager(const ui::window& wnd, util::logger_wrapper logger);
 
       auto subscribe_renderable(const std::string& name, const renderable_data& r) -> bool;
       void update_model_matrix(const std::string& name, const glm::mat4& model);
@@ -57,20 +57,19 @@ namespace gfx
       auto add_pass(const std::string& name, vkn::queue_type queue_type) -> render_pass&;
       void update_camera(uint32_t image_index);
 
-      auto create_swapchain() const noexcept -> vkn::swapchain;
-      auto create_swapchain_render_pass() const noexcept -> vkn::render_pass;
-      auto create_swapchain_framebuffers() const noexcept -> framebuffer_array;
+      auto create_swapchain() noexcept -> vkn::swapchain;
+      auto create_swapchain_render_pass() noexcept -> vkn::render_pass;
+      auto create_swapchain_framebuffers() noexcept -> framebuffer_array;
 
-      auto create_camera_descriptor_pool() const noexcept -> vkn::descriptor_pool;
-      auto create_camera_buffers() const noexcept -> util::dynamic_array<gfx::camera_buffer>;
+      auto create_camera_descriptor_pool() noexcept -> vkn::descriptor_pool;
+      auto create_camera_buffers() noexcept -> util::dynamic_array<gfx::camera_buffer>;
 
-      auto create_command_pool() const noexcept
-         -> std::array<vkn::command_pool, max_frames_in_flight>;
-      auto create_render_finished_semaphores() const noexcept
+      auto create_command_pool() noexcept -> std::array<vkn::command_pool, max_frames_in_flight>;
+      auto create_render_finished_semaphores() noexcept
          -> util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>;
-      auto create_image_available_semaphores() const noexcept
+      auto create_image_available_semaphores() noexcept
          -> std::array<vkn::semaphore, max_frames_in_flight>;
-      auto create_in_flight_fences() const noexcept -> std::array<vkn::fence, max_frames_in_flight>;
+      auto create_in_flight_fences() noexcept -> std::array<vkn::fence, max_frames_in_flight>;
 
    private:
       struct renderable
@@ -80,7 +79,7 @@ namespace gfx
          index_buffer index_buffer;
       };
 
-      std::shared_ptr<util::logger> mp_logger;
+      util::logger_wrapper m_logger;
 
       const ui::window& m_wnd;
 

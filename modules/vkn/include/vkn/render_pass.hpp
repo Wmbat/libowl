@@ -25,7 +25,7 @@ namespace vkn
       {
       public:
          builder(const vkn::device& device, const vkn::swapchain& swapchain,
-                 std::shared_ptr<util::logger> p_logger) noexcept;
+                 util::logger_wrapper logger) noexcept;
 
          /**
           * Construct a render_pass object. If construction fails, an error will be
@@ -38,7 +38,7 @@ namespace vkn
          vk::Format m_swapchain_format;
          vk::Extent2D m_swapchain_extent;
 
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
       };
    };
 

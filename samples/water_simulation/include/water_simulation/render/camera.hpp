@@ -27,9 +27,9 @@ public:
       render_system& renderer;
       graphics_pipeline& pipeline;
 
-      util::count32_t image_count;
+      util::count32_t image_count{};
 
-      std::shared_ptr<util::logger> p_logger;
+      util::logger_wrapper logger{};
    };
 
    static auto make(create_info&& info) -> util::result<camera>;
@@ -45,5 +45,5 @@ private:
    util::dynamic_array<vkn::buffer> m_uniform_buffers;
 };
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline,
-                   const std::shared_ptr<util::logger>& p_logger) -> camera;
+auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)
+   -> camera;

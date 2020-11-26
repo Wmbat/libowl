@@ -19,7 +19,7 @@ auto framebuffer::make(create_info&& info) -> result<framebuffer>
          return to_err_code(framebuffer_error::failed_to_create_framebuffer);
       })
       .map([&](vk::UniqueFramebuffer&& handle) {
-         util::log_info(info.logger, "framebuffer created");
+         info.logger.info("framebuffer created");
 
          framebuffer f{};
          f.m_framebuffer = std::move(handle);

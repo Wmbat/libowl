@@ -41,11 +41,11 @@ private:
    template <typename Any>
    constexpr auto check_err(Any&& result)
    {
-      return handle_err(std::forward<Any>(result), m_logger);
+      return handle_err(std::forward<Any>(result), &m_logger);
    }
 
 private:
-   util::logger_ptr m_logger;
+   util::logger m_logger;
 
    settings m_settings;
 
@@ -67,7 +67,7 @@ private:
    renderable m_sphere;
    renderable m_box;
 
-   sph::system m_sph_system{};
+   sph::system m_sph_system;
    collision::system m_collision_system{};
 
    util::dynamic_array<particle> m_particles;

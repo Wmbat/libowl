@@ -35,8 +35,7 @@ namespace vkn
 
    using builder = command_pool::builder;
 
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) :
-      mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.queue_family_index = device.get_queue_index(queue_type::graphics);
@@ -56,7 +55,7 @@ namespace vkn
       }).map_error([]([[maybe_unused]] auto err) {
          return to_err_code(err_t::failed_to_create_command_pool); 
       }).and_then([&](auto handle){           
-         util::log_info(mp_logger, "[vkn] command pool created");
+         m_logger.info("[vulkan] command pool created");
 
          return create_command_pool(std::move(handle)); 
       });
@@ -95,7 +94,7 @@ namespace vkn
 
       command_pool pool{};
       pool.m_value = std::move(handle);
-      pool.mp_logger = mp_logger;
+      pool.m_logger = m_logger;
       pool.m_queue_index = m_info.queue_family_index;
       pool.m_primary_buffers = primary_res.value().value();
       pool.m_secondary_buffers = secondary_res.value().value();
@@ -118,8 +117,8 @@ namespace vkn
             return to_err_code(err_t::failed_to_allocate_primary_command_buffers);
          })
          .map([&](const auto& buffers) {
-            util::log_info(mp_logger, "[vkn] {0} primary command buffers created",
-                           m_info.primary_buffer_count);
+            m_logger.info("[vulkan] {0} primary command buffers created",
+                          m_info.primary_buffer_count);
 
             return util::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
          });
@@ -141,8 +140,8 @@ namespace vkn
             return to_err_code(err_t::failed_to_allocate_primary_command_buffers);
          })
          .map([&](const auto& buffers) {
-            util::log_info(mp_logger, "[vkn] {0} secondary command buffers created",
-                           m_info.secondary_buffer_count);
+            m_logger.info("[vkn] {0} secondary command buffers created",
+                          m_info.secondary_buffer_count);
 
             return util::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
          });

@@ -40,8 +40,8 @@ public:
 
    struct create_info
    {
-      std::shared_ptr<util::logger> p_logger;
-      ui::window* p_window;
+      util::logger_wrapper logger;
+      vml::non_null<ui::window*> p_window;
    };
 
    static auto make(create_info&& info) -> util::result<render_system>;
@@ -74,7 +74,7 @@ public:
    auto lookup_configuration() const -> const config&; // NOLINT
 
 private:
-   std::shared_ptr<util::logger> mp_logger;
+   util::logger_wrapper m_logger;
 
    ui::window* mp_window;
 

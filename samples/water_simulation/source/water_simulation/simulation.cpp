@@ -21,7 +21,7 @@ struct mesh_data
    glm::vec3 colour;
 };
 
-auto get_main_framebuffers(const render_system& system, const std::shared_ptr<util::logger>& logger)
+auto get_main_framebuffers(const render_system& system, util::logger_wrapper logger)
    -> util::dynamic_array<framebuffer::create_info>
 {
    util::dynamic_array<framebuffer::create_info> infos;
@@ -193,10 +193,9 @@ void compute_forces(std::span<particle> particles, const settings& settings)
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{std::make_shared<util::logger>("water_simulation")},
-   m_settings{settings}, m_window{"Water Simulation", 1920, 1080}, // NOLINT
-   m_render_system{check_err(render_system::make({.p_logger = m_logger, .p_window = &m_window}))},
-   m_shaders{m_render_system, m_logger}, m_pipelines{m_logger}, m_main_pipeline_key{},
+   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1920, 1080},
+   m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
+   m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
    m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
 {
@@ -208,8 +207,8 @@ simulation::simulation(const settings& settings) :
        .swapchain = m_render_system.swapchain().value(),
        .colour_attachment = main_colour_attachment(m_render_system.swapchain().format()),
        .depth_stencil_attachment = main_depth_attachment(m_render_system.device()),
-       .framebuffer_create_infos = get_main_framebuffers(m_render_system, m_logger),
-       .logger = m_logger})));
+       .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
+       .logger = &m_logger})));
 
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
@@ -273,7 +272,7 @@ simulation::simulation(const settings& settings) :
    add_invisible_wall({0.0, 0.0f, -10.5f}, {100.0f, 100.0f, 0.5f});  // NOLINT
    add_invisible_wall({0.0, 0.0f, 10.5f}, {100.0f, 100.0f, 0.5f});   // NOLINT
 
-   util::log_info(m_logger, "particle count = {}", x_count * y_count * z_count);
+   m_logger.info("particle count = {}", x_count * y_count * z_count);
 }
 
 void simulation::run()
@@ -513,7 +512,7 @@ auto simulation::create_main_pipeline() -> pipeline_index_t
 
    auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
                                              .render_pass = m_render_passes[0],
-                                             .p_logger = m_logger,
+                                             .logger = &m_logger,
                                              .bindings = m_render_system.vertex_bindings(),
                                              .attributes = m_render_system.vertex_attributes(),
                                              .viewports = pipeline_viewports,
@@ -526,7 +525,7 @@ auto simulation::setup_camera(pipeline_index_t index) -> camera
 {
    auto pipeline_info = check_err(m_pipelines.lookup(index));
 
-   return create_camera(m_render_system, pipeline_info.value(), m_logger);
+   return create_camera(m_render_system, pipeline_info.value(), &m_logger);
 }
 auto simulation::compute_matrices(const render_system& system) -> camera::matrices
 {

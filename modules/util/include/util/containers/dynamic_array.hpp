@@ -60,24 +60,21 @@ namespace util
       {
          assign(count, value_type{});
       }
-      explicit constexpr small_dynamic_array(
-         size_type count, const_reference value,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+      explicit constexpr small_dynamic_array(size_type count, const_reference value,
+                                             const allocator_type& alloc = allocator_type{}) :
          m_allocator{alloc}
       {
          assign(count, value);
       }
       template <std::input_iterator it_>
-      constexpr small_dynamic_array(
-         it_ first, it_ last,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+      constexpr small_dynamic_array(it_ first, it_ last,
+                                    const allocator_type& alloc = allocator_type{}) :
          m_allocator{alloc}
       {
          assign(first, last);
       }
-      constexpr small_dynamic_array(
-         std::initializer_list<any_> init,
-         const allocator_type& alloc = allocator_type{}) requires std::copyable<value_type> :
+      constexpr small_dynamic_array(std::initializer_list<any_> init,
+                                    const allocator_type& alloc = allocator_type{}) :
          m_allocator{alloc}
       {
          assign(init);
@@ -190,11 +187,7 @@ namespace util
          std::uninitialized_copy(first, last, begin());
       }
 
-      // clang-format off
-      constexpr void assign(std::initializer_list<value_type> initializer_list) 
-      requires 
-         std::copyable<value_type>
-      // clang-format on
+      constexpr void assign(std::initializer_list<value_type> initializer_list)
       {
          assign(initializer_list.begin(), initializer_list.end());
       }
@@ -318,7 +311,6 @@ namespace util
       }
 
       constexpr auto insert(const_iterator pos, const_reference value) -> iterator
-         requires std::copyable<value_type>
       {
          if (pos == cend())
          {
@@ -360,7 +352,6 @@ namespace util
       }
 
       constexpr auto insert(const_iterator pos, value_type&& value) -> iterator
-         requires std::movable<value_type>
       {
          if (pos == cend())
          {
@@ -402,7 +393,6 @@ namespace util
       }
 
       constexpr auto insert(const_iterator pos, size_type count, const_reference value) -> iterator
-         requires std::copyable<value_type>
       {
          size_type start_index = pos - cbegin();
 
@@ -451,7 +441,6 @@ namespace util
 
       template <std::input_iterator it_>
       constexpr auto insert(const_iterator pos, it_ first, it_ last) -> iterator
-         requires std::copyable<value_type>
       {
          size_type start_index = pos - cbegin();
          difference_type count = std::distance(first, last);
@@ -512,14 +501,13 @@ namespace util
       }
 
       constexpr auto insert(const_iterator pos, std::initializer_list<value_type> init_list)
-         -> iterator requires std::copyable<value_type>
+         -> iterator
       {
          return insert(pos, init_list.begin(), init_list.end());
       }
 
       template <class... args_>
       constexpr auto emplace(const_iterator pos, args_&&... args) -> iterator
-         requires std::constructible_from<value_type, args_...>
       {
          if (pos == cend())
          {
@@ -596,18 +584,11 @@ namespace util
          return it_f;
       }
 
-      constexpr void push_back(const value_type& value) requires std::copyable<value_type>
-      {
-         emplace_back(value);
-      };
+      constexpr void push_back(const value_type& value) { emplace_back(value); };
 
-      constexpr void push_back(value_type&& value) requires std::movable<value_type>
-      {
-         emplace_back(std::move(value));
-      };
+      constexpr void push_back(value_type&& value) { emplace_back(std::move(value)); };
 
       constexpr auto emplace_back(auto&&... args) -> reference
-         requires std::constructible_from<value_type, decltype(args)...>
       {
          if (size() >= capacity())
          {
@@ -629,7 +610,7 @@ namespace util
          }
       };
 
-      constexpr void resize(size_type count) requires std::default_initializable<value_type>
+      constexpr void resize(size_type count)
       {
          if (size() > count)
          {
@@ -652,8 +633,7 @@ namespace util
          }
       }
 
-      constexpr void resize(size_type count,
-                            const_reference value) requires std::copyable<value_type>
+      constexpr void resize(size_type count, const_reference value)
       {
          if (size() > count)
          {

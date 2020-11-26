@@ -26,10 +26,10 @@ namespace vkn
       class builder final
       {
       public:
-         builder(vk::Device device, std::shared_ptr<util::logger> p_logger) noexcept;
-         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept;
+         builder(vk::Device device, util::logger_wrapper logger) noexcept;
+         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
 
-         [[nodiscard]] auto build() const noexcept -> util::result<descriptor_set_layout>;
+         [[nodiscard]] auto build() noexcept -> util::result<descriptor_set_layout>;
 
          auto add_binding(const vk::DescriptorSetLayoutBinding& binding) noexcept -> builder&;
 
@@ -45,7 +45,7 @@ namespace vkn
 
          vk::Device m_device;
 
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
       };
    };
 } // namespace vkn

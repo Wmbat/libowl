@@ -28,7 +28,7 @@ public:
 
       util::dynamic_array<framebuffer::create_info> framebuffer_create_infos{};
 
-      std::shared_ptr<util::logger> logger{nullptr};
+      util::logger_wrapper logger{nullptr};
    };
 
    static auto make(create_info&& info) -> result<render_pass>;

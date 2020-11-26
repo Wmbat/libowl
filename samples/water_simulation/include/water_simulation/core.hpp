@@ -18,12 +18,11 @@ using result = monad::result<Any, util::error_t>;
 using filepath = std::filesystem::path;
 
 template <typename Any>
-auto handle_err(Any&& result, const util::logger_ptr& p_logger)
+auto handle_err(Any&& result, util::logger_wrapper logger)
 {
    if (auto err = result.error())
    {
-      util::log_error(p_logger, "{} error: {}", err->value().category().name(),
-                      err->value().message());
+      logger.error("{} error: {}", err->value().category().name(), err->value().message());
 
       std::exit(EXIT_FAILURE);
    }

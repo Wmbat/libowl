@@ -39,18 +39,18 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger);
+         builder(const vkn::device& device, util::logger_wrapper logger);
 
          /**
           * Attempt to create the fence object. Returns an error
           * otherwise
           */
-         [[nodiscard]] auto build() const noexcept -> util::result<fence>;
+         [[nodiscard]] auto build() noexcept -> util::result<fence>;
 
          auto set_signaled(bool signaled = true) noexcept -> builder&;
 
       private:
-         std::shared_ptr<util::logger> mp_logger{nullptr};
+         util::logger_wrapper m_logger{nullptr};
 
          struct info
          {

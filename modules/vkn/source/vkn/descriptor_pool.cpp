@@ -14,8 +14,8 @@ namespace vkn
 
    using builder = descriptor_pool::builder;
 
-   builder::builder(const vkn::device& device, std::shared_ptr<util::logger> p_logger) noexcept :
-      m_device{device.logical()}, mp_logger{std::move(p_logger)}
+   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+      m_device{device.logical()}, m_logger{logger}
    {}
 
    auto builder::build() -> util::result<descriptor_pool>
@@ -28,7 +28,7 @@ namespace vkn
             descriptor_pool ret{};
             ret.m_value = std::move(info.pool);
             ret.m_sets = info.sets;
-            ret.mp_logger = mp_logger;
+            ret.m_logger = m_logger;
 
             return ret;
          });
@@ -60,7 +60,7 @@ namespace vkn
       return *this;
    }
 
-   auto builder::create_descriptor_pool() const noexcept -> util::result<vk::UniqueDescriptorPool>
+   auto builder::create_descriptor_pool() noexcept -> util::result<vk::UniqueDescriptorPool>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return m_device.createDescriptorPoolUnique(
@@ -72,12 +72,12 @@ namespace vkn
             return to_err_code(descriptor_pool_error::failed_to_create_descriptor_pool);
          })
          .map([&](vk::UniqueDescriptorPool&& handle) {
-            util::log_info(mp_logger, "[vkn] descriptor pool created");
+            m_logger.info("[vulkan] descriptor pool created");
 
             return std::move(handle);
          });
    }
-   auto builder::allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle) const
+   auto builder::allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle)
       -> util::result<creation_info>
    {
       util::dynamic_array<vk::DescriptorSetLayout> layouts{};
@@ -107,7 +107,7 @@ namespace vkn
                     .pSetLayouts = layouts.data()});
              })
          .map([&](auto&& data) {
-            util::log_info(mp_logger, "[vkn] {} descriptor sets created", std::size(data));
+            m_logger.info("[vulkan] {} descriptor sets created", std::size(data));
 
             return creation_info{.pool = std::move(handle), .sets = {data.begin(), data.end()}};
          })

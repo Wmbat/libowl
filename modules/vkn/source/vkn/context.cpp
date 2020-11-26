@@ -19,6 +19,8 @@ namespace vkn
       VkDebugUtilsMessageTypeFlagsEXT messageType,
       const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) -> VkBool32
    {
+      assert(p_user_data != nullptr && "user data is null");
+
       auto* p_logger = static_cast<util::logger*>(p_user_data);
 
       std::string type;
@@ -50,11 +52,11 @@ namespace vkn
       {
          if (!type.empty())
          {
-            p_logger->warn("{0} - {1}", type, p_callback_data->pMessage);
+            p_logger->warning("{0} - {1}", type, p_callback_data->pMessage);
          }
          else
          {
-            p_logger->warn("{0}", p_callback_data->pMessage);
+            p_logger->warning("{0}", p_callback_data->pMessage);
          }
       }
       else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
@@ -85,14 +87,14 @@ namespace vkn
 
       util::dynamic_array<vk::ExtensionProperties> enabled_extensions{};
 
-      std::shared_ptr<util::logger> p_logger{nullptr};
+      util::logger_wrapper logger{nullptr};
    };
 
    /**
     * FORWARD DECLARATIONS
     */
 
-   auto load_core(const std::shared_ptr<util::logger>& p_logger) -> context_data;
+   auto load_core(util::logger_wrapper logger) -> context_data;
    auto query_vulkan_version(context_data&& data) -> util::result<context_data>;
    auto create_instance(context_data&& data) -> util::result<context_data>;
    auto create_debug_utils(context_data&& data) -> util::result<context_data>;
@@ -102,7 +104,7 @@ namespace vkn
     */
    auto context::make(const create_info& info) -> util::result<context>
    {
-      return query_vulkan_version(load_core(info.p_logger))
+      return query_vulkan_version(load_core(info.logger))
          .and_then(create_instance)
          .and_then(create_debug_utils)
          .map([](context_data data) {
@@ -111,7 +113,7 @@ namespace vkn
             ctx.m_instance = std::move(data.instance);
             ctx.m_debug_utils = std::move(data.debug_utils);
             ctx.m_api_version = data.api_version;
-            ctx.mp_logger = std::move(data.p_logger);
+            ctx.m_logger = data.logger;
 
             return ctx;
          });
@@ -127,7 +129,7 @@ namespace vkn
                                 .surface = std::move(surface),
                                 .available_devices = devices,
                                 .vulkan_version = m_api_version,
-                                .p_logger = mp_logger});
+                                .logger = m_logger});
       });
    }
 
@@ -146,7 +148,7 @@ namespace vkn
     * HELPER FUNCTIONS
     */
 
-   auto query_instance_layers(const std::shared_ptr<util::logger>& p_logger)
+   auto query_instance_layers(util::logger_wrapper logger)
       -> util::dynamic_array<vk::LayerProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
@@ -159,13 +161,13 @@ namespace vkn
             [&](const auto& err) {
                if constexpr (enable_validation_layers)
                {
-                  log_warn(p_logger, "[vulkan] instance layer enumeration error: {0}", err.what());
+                  logger.warning("[vulkan] instance layer enumeration error: {0}", err.what());
                }
                return util::dynamic_array<vk::LayerProperties>{};
             });
    }
 
-   auto query_instance_extensions(const std::shared_ptr<util::logger>& p_logger)
+   auto query_instance_extensions(util::logger_wrapper logger)
       -> util::dynamic_array<vk::ExtensionProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
@@ -177,7 +179,7 @@ namespace vkn
                                                                    std::end(data)};
             },
             [&](const auto& err) {
-               log_warn(p_logger, "[vulkan] instance layer enumeration error: {1}", err.what());
+               logger.warning("[vulkan] instance layer enumeration error: {1}", err.what());
                return util::dynamic_array<vk::ExtensionProperties>{};
             });
    }
@@ -216,16 +218,16 @@ namespace vkn
              }) != properties.end();
    }
 
-   auto load_core(const std::shared_ptr<util::logger>& p_logger) -> context_data
+   auto load_core(util::logger_wrapper logger) -> context_data
    {
       vk::DynamicLoader loader{};
 
       VULKAN_HPP_DEFAULT_DISPATCHER.init(
          loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
 
-      util::log_info(p_logger, "[vulkan] core functionalities loaded");
+      logger.info("[vulkan] core functionalities loaded");
 
-      return context_data{.dynamic_loader = std::move(loader), .p_logger = p_logger};
+      return context_data{.dynamic_loader = std::move(loader), .logger = logger};
    }
 
    auto query_vulkan_version(context_data&& data) -> util::result<context_data>
@@ -234,29 +236,29 @@ namespace vkn
                 return vk::enumerateInstanceVersion(); // may throw
              })
          .map_error([&](vk::SystemError&& e) {
-            util::log_error(data.p_logger, "[vulkan] {}", e.what());
+            data.logger.error("[vulkan] {}", e.what());
 
             return to_err_code(context_error::failed_to_query_vulkan_version);
          })
          .and_then([&](std::uint32_t v) -> util::result<context_data> {
-            util::log_info(data.p_logger, "[vulkan] vulkan version {}.{}.{} found",
-                           VK_VERSION_MAJOR(v), VK_VERSION_MINOR(v), VK_VERSION_PATCH(v));
+            data.logger.info("[vulkan] vulkan version {}.{}.{} found", VK_VERSION_MAJOR(v),
+                             VK_VERSION_MINOR(v), VK_VERSION_PATCH(v));
 
-            if (VK_VERSION_MINOR(v) >= 2)
+            if (VK_VERSION_MINOR(v) >= 1)
             {
                data.api_version = v;
 
                return std::move(data);
             }
 
-            return monad::err(to_err_code(context_error::vulkan_version_1_2_unavailable));
+            return monad::err(to_err_code(context_error::vulkan_version_1_1_unavailable));
          });
    }
 
    auto create_instance(context_data&& data) -> util::result<context_data>
    {
-      const auto layers = query_instance_layers(data.p_logger);
-      auto extensions = query_instance_extensions(data.p_logger);
+      const auto layers = query_instance_layers(data.logger);
+      auto extensions = query_instance_extensions(data.logger);
 
       if (!has_windowing_extensions(extensions))
       {
@@ -272,7 +274,7 @@ namespace vkn
          }
          else
          {
-            util::log_warn(data.p_logger, "[vulkan] Khronos validation layers not found");
+            data.logger.warning("[vulkan] Khronos validation layers not found");
          }
       }
 
@@ -286,12 +288,12 @@ namespace vkn
 
       for (const char* name : ext_names)
       {
-         util::log_info(data.p_logger, "[vulkan] instance extension: {}", name);
+         data.logger.info("[vulkan] instance extension: {}", name);
       }
 
       for (const char* name : layer_names)
       {
-         util::log_info(data.p_logger, "[vulkan] instance layer: {}", name);
+         data.logger.info("[vulkan] instance layer: {}", name);
       }
 
       const vk::ApplicationInfo app_info{.pNext = nullptr,
@@ -314,15 +316,15 @@ namespace vkn
                 return vk::createInstanceUnique(info);
              })
          .map_error([&](vk::SystemError&& e) {
-            util::log_error(data.p_logger, "[vulkan] instance error: {}", e.what());
+            data.logger.error("[vulkan] instance error: {}", e.what());
 
             return to_err_code(context_error::failed_to_create_instance);
          })
          .map([&](vk::UniqueInstance instance) {
             VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
 
-            util::log_info(data.p_logger, "[vulkan] instance created");
-            util::log_info(data.p_logger, "[vulkan] all instance functions have been loaded");
+            data.logger.info("[vulkan] instance created");
+            data.logger.info("[vulkan] all instance functions have been loaded");
 
             data.instance = std::move(instance);
             data.enabled_extensions = std::move(extensions);
@@ -346,13 +348,13 @@ namespace vkn
                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
                           vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                        .pfnUserCallback = debug_callback,
-                       .pUserData = static_cast<void*>(data.p_logger.get())});
+                       .pUserData = static_cast<void*>(data.logger.get())});
                 })
             .map_error([]([[maybe_unused]] const auto& err) -> util::error_t {
                return to_err_code(context_error::failed_to_create_debug_utils);
             })
             .map([&](vk::UniqueDebugUtilsMessengerEXT handle) {
-               log_info(data.p_logger, "[vulkan] debug utils created");
+               data.logger.info("[vulkan] debug utils created");
 
                data.debug_utils = std::move(handle);
 
@@ -392,9 +394,9 @@ namespace vkn
       {
          return "failed_to_query_vulkan_version";
       }
-      if (err == context_error::vulkan_version_1_2_unavailable)
+      if (err == context_error::vulkan_version_1_1_unavailable)
       {
-         return "vulkan_version_1_2_unavailable";
+         return "vulkan_version_1_1_unavailable";
       }
       if (err == context_error::window_extensions_not_present)
       {

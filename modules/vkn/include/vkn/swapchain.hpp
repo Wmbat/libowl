@@ -82,7 +82,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const device& device, std::shared_ptr<util::logger> mp_logger);
+         builder(const device& device, util::logger_wrapper logger);
 
          /**
           * Attempt to build a swapchain object. May return an error
@@ -127,7 +127,7 @@ namespace vkn
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
 
-         std::shared_ptr<util::logger> mp_logger;
+         util::logger_wrapper m_logger;
 
          struct swap_info
          {
