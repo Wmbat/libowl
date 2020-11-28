@@ -35,7 +35,7 @@ namespace collision
    class system
    {
    public:
-      void update(float time_step);
+      void update(duration<float> time_step);
 
    private:
    };

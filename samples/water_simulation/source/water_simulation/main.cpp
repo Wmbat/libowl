@@ -6,7 +6,6 @@
 auto main() -> int
 {
    settings settings;
-   settings.time_step = 1 / 60.0f;
 
    glfwInit();
 

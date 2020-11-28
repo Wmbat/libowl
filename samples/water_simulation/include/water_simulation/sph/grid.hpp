@@ -12,6 +12,29 @@
 
 namespace sph
 {
+   /**
+    * @brief encapsulate all components within the `sph` submodule
+    */
+   namespace component
+   {
+      /**
+       * @brief Compenent used for the handling of particles affected by the `sph::system`
+       */
+      struct particle
+      {
+         glm::vec3 position{};
+         glm::vec3 velocity{};
+         glm::vec3 force{};
+         glm::vec3 normal{};
+
+         float radius{1.0f};
+         float mass{1.0F};
+         float density{0.0F};
+         float pressure{0.0F};
+         float restitution{0.5f};
+      };
+   } // namespace component
+
    class grid
    {
    public:
@@ -27,6 +50,8 @@ namespace sph
    public:
       grid() = default;
       grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
+
+      void update_layout(vml::non_null<entt::registry*> p_registry);
 
       /**
        * @brief Give access to all cells within the grid
@@ -45,8 +70,8 @@ namespace sph
       auto lookup_neighbours(const cell& cell) -> util::dynamic_array<entt::entity>;
 
    private:
-      const float m_cell_size{};
-      const glm::vec3 m_dimensions{};
+      float m_cell_size{};
+      glm::vec3 m_dimensions{};
 
       glm::u64vec3 m_cell_count{};
 

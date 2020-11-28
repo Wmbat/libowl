@@ -493,11 +493,6 @@ namespace util
          return updated_pos;
       }
 
-      constexpr auto insert(const_iterator pos, const std::ranges::range auto& r) -> iterator
-      {
-         return insert(pos, r.begin(), r.end());
-      }
-
       constexpr auto insert(const_iterator pos, std::initializer_list<value_type> init_list)
          -> iterator
       {

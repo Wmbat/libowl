@@ -193,7 +193,7 @@ void compute_forces(std::span<particle> particles, const settings& settings)
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1920, 1080},
+   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1080, 720},
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
@@ -212,6 +212,12 @@ simulation::simulation(const settings& settings) :
 
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
+
+   m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
+                               .p_logger = vml::make_not_null(&m_logger),
+                               .center = {0.0f, 50.0f, 0.0f},
+                               .dimensions = {50.0f, 50.0f, 50.0f},
+                               .system_settings = settings}};
 
    constexpr std::size_t x_count = 11u;
    constexpr std::size_t y_count = 50u; // 100u;
@@ -235,9 +241,30 @@ simulation::simulation(const settings& settings) :
          {
             const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
+            auto e = m_registry.create();
+            m_registry.emplace<sph::component::particle>(
+               e,
+               sph::component::particle{.position = glm::vec3{x, y, z},
+                                        .radius = m_settings.water_radius,
+                                        .mass = m_settings.water_mass});
+
+            m_registry.emplace<component::transform>(
+               e,
+               component::transform{
+                  .translate = glm::translate(glm::mat4{1}, {x, y, z}),
+                  .scale = glm::scale(glm::mat4{1},
+                                      glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor)});
+
+            m_registry.emplace<component::render>(
+               e,
+               component::render{.p_mesh = &m_sphere,
+                                 .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
+
+            /*
             m_particles.push_back({.position = {x, y, z},
                                    .mass = m_settings.water_mass,
                                    .restitution = 0.75f}); // NOLINT
+                                   */
          }
       }
    }
@@ -299,11 +326,13 @@ void simulation::run()
 
 void simulation::update()
 {
+   /*
    compute_density(m_particles, m_settings);
    compute_normals(m_particles, m_settings);
    compute_forces(m_particles, m_settings);
    integrate(m_particles);
    resolve_collisions(m_particles);
+   */
 
    m_sph_system.update(m_settings.time_step);
    m_collision_system.update(m_settings.time_step);
@@ -348,13 +377,15 @@ void simulation::render()
       buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
 
-      for (const auto& particle : m_particles)
+      for (auto entity : view | vi::filter([&](auto e) {
+                            return view.get<component::render>(e).p_mesh == &m_sphere;
+                         }))
       {
-         const auto scale_factor = m_settings.scale_factor;
-         const auto scale_vector = glm::vec3{scale_factor, scale_factor, scale_factor};
-         const auto trans = glm::translate(glm::mat4{1}, particle.position);
-         mesh_data md{.model = glm::scale(trans, scale_vector),
-                      .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+         const auto& render = view.get<component::render>(entity);
+         const auto& transform = view.get<component::transform>(entity);
+
+         mesh_data md{.model = transform.scale * transform.translate,
+                      .colour = render.colour}; // NOLINT
 
          buffer.pushConstants(pipeline.layout(),
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -372,8 +403,8 @@ void simulation::render()
 void simulation::integrate(std::span<particle> particles)
 {
    std::for_each(std::execution::par, std::begin(particles), std::end(particles), [&](auto& i) {
-      i.velocity += m_settings.time_step * i.force / i.density;
-      i.position += m_settings.time_step * i.velocity;
+      i.velocity += m_settings.time_step.count() * i.force / i.density;
+      i.position += m_settings.time_step.count() * i.velocity;
    });
 }
 
@@ -400,7 +431,7 @@ void simulation::resolve_collisions(std::span<particle> particles)
 {
    std::for_each(
       std::execution::par, std::begin(particles), std::end(particles), [&](particle& particle) {
-         const float t0 = -m_settings.time_step;
+         const float t0 = -m_settings.time_step.count();
          const float t1 = 0.0f;
 
          const auto p0 = particle.position + t0 * particle.velocity;
@@ -446,7 +477,7 @@ void simulation::resolve_collisions(std::span<particle> particles)
                   auto update_velocity = -closing_velocity * particle.restitution;
 
                   auto acceleration = particle.force / particle.density;
-                  auto acc_vel = glm::dot(acceleration, normal) * m_settings.time_step;
+                  auto acc_vel = glm::dot(acceleration, normal) * m_settings.time_step.count();
 
                   if (acc_vel < 0)
                   {

@@ -9,6 +9,9 @@
 
 namespace vml
 {
+   /**
+    * @brief Simple construct to signal that a pointer will not be null
+    */
    template <typename Any>
    class non_null
    {

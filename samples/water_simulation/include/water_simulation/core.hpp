@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/ext/vector_uint3_sized.hpp"
 #include <util/error.hpp>
 #include <util/logger.hpp>
 
@@ -9,13 +10,19 @@
 
 #include <spdlog/fmt/bundled/core.h>
 
+#include <chrono>
 #include <filesystem>
 #include <numbers>
+
+using namespace std::literals::chrono_literals;
 
 template <typename Any>
 using result = monad::result<Any, util::error_t>;
 
 using filepath = std::filesystem::path;
+
+template <typename Any, typename Ratio = std::ratio<1>>
+using duration = std::chrono::duration<Any, Ratio>;
 
 template <typename Any>
 auto handle_err(Any&& result, util::logger_wrapper logger)
@@ -56,6 +63,7 @@ constexpr auto cube(Any num) -> Any
 
 static constexpr float pi = std::numbers::pi_v<float>;
 static constexpr float gravity = -9.81f;
+static constexpr float gravity_multiplier = 0.55f;
 
 static constexpr float bound_damping = 0.5f;
 static constexpr float edge = 15.0f;
@@ -77,7 +85,7 @@ static constexpr float default_gravity_multiplier = 0.5f;
 
 struct settings
 {
-   float time_step = 0.0083f;
+   duration<float, std::milli> time_step = 16ms;
    float water_radius = 1.0f;
 
    float scale_factor = 1.0f;
@@ -87,7 +95,7 @@ struct settings
    float viscosity_constant = 0.225f;
    float surface_tension_coefficient = 0.15f;
    float gravity_multiplier = 0.56f;
-   float kernel_multiplier = 3.5f;
+   float kernel_multiplier = 6.0f;
 
    [[nodiscard]] inline auto kernel_radius() const -> float
    {

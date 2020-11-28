@@ -2,5 +2,5 @@
 
 namespace collision
 {
-   void system::update([[maybe_unused]] float time_step) {}
+   void system::update([[maybe_unused]] duration<float> time_step) {}
 } // namespace collision
