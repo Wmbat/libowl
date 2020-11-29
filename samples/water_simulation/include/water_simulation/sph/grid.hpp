@@ -50,6 +50,8 @@ namespace sph
       grid() = default;
       grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
 
+      void setup_grid(vml::non_null<entt::registry*> p_registry);
+
       void update_layout(vml::non_null<entt::registry*> p_registry);
 
       /**
@@ -62,11 +64,9 @@ namespace sph
       /**
        * @brief find and retrieve all entities from neighbouring cells from the passed cell
        *
-       * @param cell The cell to use a center of neighbouroud search.
-       *
        * @return A list of neighbouring entities.
        */
-      auto lookup_neighbours(const cell& cell) -> util::dynamic_array<entt::entity>;
+      auto lookup_neighbours(const glm::u32vec3& grid_pos) -> util::dynamic_array<entt::entity>;
 
    private:
       float m_cell_size{};

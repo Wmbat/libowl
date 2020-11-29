@@ -69,6 +69,24 @@ namespace sph
                     m_cell_count.y, m_cell_count.z);                                  // NOLINT
    }
 
+   void grid::setup_grid(vml::non_null<entt::registry*> p_registry)
+   {
+      auto view = p_registry->view<component::particle>();
+      for (auto entity : view)
+      {
+         auto& particle = view.get(entity);
+
+         auto it = ranges::find_if(m_cells, [&](cell& c) {
+            return within_box({c.center, glm::vec3{1.0f} * half(m_cell_size)}, particle.position);
+         });
+
+         if (it != std::end(m_cells))
+         {
+            it->entities.push_back(entity);
+         }
+      }
+   }
+
    void grid::update_layout(vml::non_null<entt::registry*> p_registry)
    {
       for (auto& cell : m_cells)
@@ -79,7 +97,7 @@ namespace sph
       auto view = p_registry->view<component::particle>();
 
       std::for_each(std::begin(view), std::end(view), [&](auto e) {
-         const auto& particle = p_registry->get<component::particle>(e);
+         const auto& particle = view.get<component::particle>(e);
 
          auto it = ranges::find_if(m_cells, [&](grid::cell& c) {
             return within_box({c.center, {half(m_cell_size), half(m_cell_size), half(m_cell_size)}},
@@ -95,25 +113,17 @@ namespace sph
 
    auto grid::cells() -> std::span<cell> { return m_cells; }
 
-   auto grid::lookup_neighbours(const cell& cell) -> util::dynamic_array<entt::entity>
+   auto grid::lookup_neighbours(const glm::u32vec3& grid_pos) -> util::dynamic_array<entt::entity>
    {
-      const auto& grip_pos = cell.grid_pos;
+      const int early_x = (grid_pos.x == 0) ? 0 : -1; // NOLINT
+      const int early_y = (grid_pos.y == 0) ? 0 : -1; // NOLINT
+      const int early_z = (grid_pos.z == 0) ? 0 : -1; // NOLINT
 
-      const int early_x = (grip_pos.x == 0) ? 0 : -1; // NOLINT
-      const int early_y = (grip_pos.y == 0) ? 0 : -1; // NOLINT
-      const int early_z = (grip_pos.z == 0) ? 0 : -1; // NOLINT
-
-      const int late_x = (grip_pos.x == m_cell_count.x - 1) ? 1 : 2; // NOLINT
-      const int late_y = (grip_pos.y == m_cell_count.y - 1) ? 1 : 2; // NOLINT
-      const int late_z = (grip_pos.z == m_cell_count.z - 1) ? 1 : 2; // NOLINT
+      const int late_x = (grid_pos.x == m_cell_count.x - 1) ? 1 : 2; // NOLINT
+      const int late_y = (grid_pos.y == m_cell_count.y - 1) ? 1 : 2; // NOLINT
+      const int late_z = (grid_pos.z == m_cell_count.z - 1) ? 1 : 2; // NOLINT
 
       util::dynamic_array<entt::entity> entities{};
-      entities.reserve(std::size(cell.entities));
-
-      for (auto e : cell.entities)
-      {
-         entities.push_back(e);
-      }
 
       for (int x : vi::ints(early_x, late_x))
       {
@@ -121,14 +131,9 @@ namespace sph
          {
             for (int z : vi::ints(early_z, late_z))
             {
-               glm::u64vec3 adjusted_pos{static_cast<int>(grip_pos.x) + x,  // NOLINT
-                                         static_cast<int>(grip_pos.y) + y,  // NOLINT
-                                         static_cast<int>(grip_pos.z) + z}; // NOLINT
-
-               /*
-               m_logger.debug("cell ({}, {}, {}) neighbour -> ({}, {}, {})", grip_pos.x,
-               grip_pos.y, grip_pos.z, adjusted_pos.x, adjusted_pos.y, adjusted_pos.z);
-               */
+               glm::u64vec3 adjusted_pos{static_cast<int>(grid_pos.x) + x,  // NOLINT
+                                         static_cast<int>(grid_pos.y) + y,  // NOLINT
+                                         static_cast<int>(grid_pos.z) + z}; // NOLINT
 
                std::size_t offset = adjusted_pos.x + adjusted_pos.y * m_cell_count.x +
                   adjusted_pos.z * m_cell_count.x * m_cell_count.y;

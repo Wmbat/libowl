@@ -214,15 +214,6 @@ simulation::simulation(const settings& settings) :
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
 
-   {
-      float h = m_settings.kernel_radius();
-      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
-                                  .p_logger = vml::make_not_null(&m_logger),
-                                  .center = {0.0f, 75.0f, 0.0f},
-                                  .dimensions = {50.0f + h, 75.0f + h, 50.0f + h},
-                                  .system_settings = settings}};
-   }
-
    constexpr std::size_t x_count = 11u;
    constexpr std::size_t y_count = 60u; // 100u;
    constexpr std::size_t z_count = 11u;
@@ -299,6 +290,15 @@ simulation::simulation(const settings& settings) :
                                  .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
          }
       }
+   }
+
+   {
+      float h = m_settings.kernel_radius();
+      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
+                                  .p_logger = vml::make_not_null(&m_logger),
+                                  .center = {0.0f, 75.0f, 0.0f},
+                                  .dimensions = {50.0f + h, 75.0f + h, 50.0f + h},
+                                  .system_settings = settings}};
    }
 
    {

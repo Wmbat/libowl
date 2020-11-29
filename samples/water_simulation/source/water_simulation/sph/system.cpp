@@ -1,8 +1,8 @@
-#include "range/v3/range/conversion.hpp"
 #include <water_simulation/sph/system.hpp>
 
 #include <water_simulation/physics/kernel.hpp>
 
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 
 #include <glm/ext/quaternion_geometric.hpp>
@@ -18,7 +18,9 @@ namespace sph
                                                  info.dimensions, info.p_logger},
       m_settings{info.system_settings},
       m_kernel_radius{m_settings.kernel_radius()}, m_logger{info.p_logger}
-   {}
+   {
+      m_grid.setup_grid(info.p_registry);
+   }
 
    void system::update(duration<float> time_step)
    {
@@ -37,8 +39,8 @@ namespace sph
       };
 
       std::for_each(std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-                    [&](auto& cell) {
-                       auto neighbours = m_grid.lookup_neighbours(cell);
+                    [&](grid::cell& cell) {
+                       auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
                        for (auto& particle_i : cell.entities | vi::transform(access_particle))
                        {
@@ -71,8 +73,8 @@ namespace sph
       };
 
       std::for_each(std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-                    [&](auto& cell) {
-                       const auto neighbours = m_grid.lookup_neighbours(cell);
+                    [&](grid::cell& cell) {
+                       const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
                        for (auto& particle_i : cell.entities | vi::transform(access_particle))
                        {
@@ -106,8 +108,8 @@ namespace sph
 
       std::for_each(
          std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-         [&](auto& cell) {
-            const auto neighbours = m_grid.lookup_neighbours(cell);
+         [&](grid::cell& cell) {
+            const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
             for (auto& particle_i : cell.entities | vi::transform(access_particle))
             {
