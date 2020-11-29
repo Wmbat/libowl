@@ -223,7 +223,7 @@ simulation::simulation(const settings& settings) :
                                   .system_settings = settings}};
    }
 
-   constexpr std::size_t x_count = 15u;
+   constexpr std::size_t x_count = 11u;
    constexpr std::size_t y_count = 60u; // 100u;
    constexpr std::size_t z_count = 11u;
 
@@ -232,6 +232,40 @@ simulation::simulation(const settings& settings) :
    float distance_x = settings.water_radius;
    float distance_y = settings.water_radius;
    float distance_z = settings.water_radius;
+
+   for (auto i : vi::iota(0U, x_count))
+   {
+      const float x = -35.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
+
+      for (auto j : vi::iota(0U, y_count))
+      {
+         const float y = 5.0f + distance_y * static_cast<float>(j);
+
+         for (auto k : vi::iota(0U, z_count))
+         {
+            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
+
+            auto e = m_registry.create();
+            m_registry.emplace<sph::component::particle>(
+               e,
+               sph::component::particle{.position = glm::vec3{x, y, z},
+                                        .radius = m_settings.water_radius,
+                                        .mass = m_settings.water_mass});
+
+            m_registry.emplace<component::transform>(
+               e,
+               component::transform{
+                  .translate = glm::translate(glm::mat4{1}, {x, y, z}),
+                  .scale = glm::scale(glm::mat4{1},
+                                      glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor)});
+
+            m_registry.emplace<component::render>(
+               e,
+               component::render{.p_mesh = &m_sphere,
+                                 .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
+         }
+      }
+   }
 
    for (auto i : vi::iota(0U, x_count))
    {
@@ -297,7 +331,7 @@ simulation::simulation(const settings& settings) :
    add_invisible_wall({0.0, 0.0f, -11.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
    add_invisible_wall({0.0, 0.0f, 11.5f}, {100.0f, 100.0f, 1.5f});   // NOLINT
 
-   m_logger.info("particle count = {}", x_count * y_count * z_count);
+   m_logger.info("particle count = {}", x_count * y_count * z_count * 2);
 }
 
 void simulation::run()
@@ -580,7 +614,7 @@ auto simulation::compute_matrices(const render_system& system) -> camera::matric
       glm::perspective(glm::radians(90.0F), (float)dimensions.width / (float)dimensions.height,
                        0.1F, 1000.0F); // NOLINT
    matrices.view =
-      glm::lookAt(glm::vec3(20.0f, 20.0f, 70.0f), glm::vec3(0.0f, 5.0f, -10.0f), // NOLINT
+      glm::lookAt(glm::vec3(0.0f, 20.0f, 70.0f), glm::vec3(0.0f, 5.0f, -10.0f), // NOLINT
                   glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 

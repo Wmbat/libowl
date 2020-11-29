@@ -38,7 +38,7 @@ namespace collision
       auto view = mp_registry->view<sph::component::particle>();
 
       std::for_each(std::begin(view), std::end(view), [&](entt::entity e) {
-         auto& particle = mp_registry->get<sph::component::particle>(e);
+         auto& particle = view.get<sph::component::particle>(e);
 
          const float t0 = -time_step.count();
          const float t1 = 0.0f;

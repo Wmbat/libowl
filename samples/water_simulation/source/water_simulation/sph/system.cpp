@@ -1,3 +1,4 @@
+#include "range/v3/range/conversion.hpp"
 #include <water_simulation/sph/system.hpp>
 
 #include <water_simulation/physics/kernel.hpp>
@@ -120,7 +121,7 @@ namespace sph
                {
                   if (&particle_i != &particle_j)
                   {
-                     auto r_ij = particle_i.position - particle_j.position;
+                     glm::vec3 r_ij = particle_i.position - particle_j.position;
                      if (r_ij.x == 0.0f && r_ij.y == 0.0f) // NOLINT
                      {
                         r_ij.x += 0.0001f; // NOLINT
@@ -131,22 +132,22 @@ namespace sph
 
                      if (r < m_kernel_radius)
                      {
-                        pressure_force -= ((particle_i.pressure + particle_j.pressure) /
-                                           (2.0f * particle_j.density)) *
-                           kernel::spiky_grad(r_ij, m_kernel_radius, r);
+                        pressure_force -= (kernel::spiky_grad(r_ij, m_kernel_radius, r) *
+                                           (particle_i.pressure + particle_j.pressure)) *
+                           reciprocal(2.0f * particle_j.density);
 
                         if (particle_j.density > 0.00001f) // NOLINT
                         {
-                           viscosity_force -=
-                              ((particle_j.velocity - particle_i.velocity) / particle_j.density) *
-                              kernel::viscosity(m_kernel_radius, r);
+                           viscosity_force -= (particle_j.velocity - particle_i.velocity) *
+                              (reciprocal(particle_j.density) *
+                               kernel::viscosity(m_kernel_radius, r));
                         }
 
-                        const float correction_factor = 2.0f * m_settings.rest_density /
+                        const float correction_factor = (2.0f * m_settings.rest_density) /
                            (particle_i.density + particle_j.density);
 
                         cohesion_force +=
-                           correction_factor * (r_ij / r) * kernel::cohesion(m_kernel_radius, r);
+                           (r_ij / r) * (kernel::cohesion(m_kernel_radius, r) * correction_factor);
                         curvature_force +=
                            correction_factor * (particle_i.normal - particle_j.normal);
                      }
