@@ -15,7 +15,6 @@ option(VERMILLON_GFX_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
 option(VERMILLON_GFX_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
 option(VERMILLON_GFX_NO_EXCEPTIONS "Build ${PROJECT_NAME} without exceptions" OFF)
 option(VERMILLON_GFX_NO_LOGGING "Build ${PROJECT_NAME} without internal logging" OFF)
-option(VERMILLON_GFX_SANITIZE_ADDRESS "Build ${PROJECT_NAME} with sanitizers" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -32,7 +31,6 @@ endif ()
 message(STATUS "[${PROJECT_NAME}] Building as a static library: ${VERMILLON_GFX_STATIC}")
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_GFX_BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building benchmarks: ${VERMILLON_GFX_BUILD_BENCH}")
-message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_GFX_SANITIZE_ADDRESS}")
 
 #Define imported targets
 
@@ -47,10 +45,7 @@ if (VERMILLON_GFX_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE VERMILLON_GFX_STATIC) 
 endif ()
 
-target_compile_features(${PROJECT_NAME}
-    PRIVATE
-        cxx_std_20
-)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 target_compile_options(${PROJECT_NAME}
    PRIVATE
@@ -61,11 +56,14 @@ target_compile_options(${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
 )
 
-if (VERMILLON_GFX_SANITIZE_ADDRESS)
-    target_compile_options(${PROJECT_NAME}
-        PRIVATE
-            $<$<CXX_COMPILER_ID:Clang>>:-sanitize=address>
-            $<$<CXX_COMPILER_ID:GNU>>:-sanitize=address>)
+if (VERMILLON_SANITIZE_ADDRESS)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    else ()
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    endif()
 endif()
 
 target_include_directories(${PROJECT_NAME}
@@ -76,8 +74,7 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
@@ -86,13 +83,6 @@ target_link_libraries(${PROJECT_NAME}
         vermillon::vkn
         glm::glm)
 
-if (VERMILLON_GFX_SANITIZE_ADDRESS)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            $<$<CXX_COMPILER_ID:Clang>>:-lasan>
-            $<$<CXX_COMPILER_ID:GNU>>:-lasan>)
-endif()
-
 target_sources(${PROJECT_NAME}
     PRIVATE
         source/gfx/camera.cpp
@@ -100,5 +90,4 @@ target_sources(${PROJECT_NAME}
         source/gfx/render_pass.cpp
         source/gfx/memory/camera_buffer.cpp
         source/gfx/memory/index_buffer.cpp
-        source/gfx/memory/vertex_buffer.cpp
-)
+        source/gfx/memory/vertex_buffer.cpp)

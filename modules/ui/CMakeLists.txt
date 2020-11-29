@@ -14,7 +14,6 @@ project(ui
 option(VERMILLON_UI_STATIC "Build ${PROJECT_NAME} as a static library" ON)
 option(VERMILLON_UI_BUILD_TESTS "Build ${PROJECT_NAME}'s unit tests" OFF)
 option(VERMILLON_UI_BUILD_BENCH "Build ${PROJECT_NAME}'s performance tests" OFF)
-option(VERMILLON_UI_SANITIZE_ADDRESS "Build ${PROJECT_NAME} with sanitizers" OFF)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -29,7 +28,6 @@ else ()
 endif ()
 
 message(STATUS "[${PROJECT_NAME}] Building as a static library: ${VERMILLON_UI_STATIC}")
-message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_UI_SANITIZE_ADDRESS}")
 
 # Define imported targets
 
@@ -44,15 +42,9 @@ if (VERMILLON_UI_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE UI_STATIC) 
 endif ()
 
-set_target_properties(${PROJECT_NAME}
-    PROPERTIES
-        CXX_EXTENSIONS OFF
-)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-target_compile_features(${PROJECT_NAME}
-    PRIVATE
-        cxx_std_20
-)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
@@ -61,17 +53,17 @@ target_link_libraries(${PROJECT_NAME}
         glfw
 )
 
-if (VERMILLON_UI_SANITIZE_ADDRESS)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            $<$<CXX_COMPILER_ID:Clang>>:-lasan>
-            $<$<CXX_COMPILER_ID:GNU>>:-lasan>)
+if (VERMILLON_SANITIZE_ADDRESS)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    else ()
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    endif()
 endif()
 
-target_compile_definitions(${PROJECT_NAME}
-    PUBLIC
-        VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
-)
+target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
 target_compile_options(${PROJECT_NAME}
    PRIVATE
@@ -79,15 +71,7 @@ target_compile_options(${PROJECT_NAME}
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
 
         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
-        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>
-)
-
-if (VERMILLON_UI_SANITIZE_ADDRESS)
-   target_compile_options(${PROJECT_NAME}
-      PRIVATE
-           $<$<CXX_COMPILER_ID:Clang>>:-fsanitize=address>
-           $<$<CXX_COMPILER_ID:GNU>>:-fsanitize=address>) 
-endif()
+        $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>)
 
 target_include_directories(${PROJECT_NAME}
     SYSTEM 
@@ -97,10 +81,6 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
-target_sources(${PROJECT_NAME}
-    PRIVATE
-        source/ui/window.cpp
-)
+target_sources(${PROJECT_NAME} PRIVATE source/ui/window.cpp)

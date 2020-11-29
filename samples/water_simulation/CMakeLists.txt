@@ -42,19 +42,20 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     vermillon::util
     vermillon::ui
     vermillon::gfx
+    vermillon::vkn
 
     EnTT::EnTT 
     tinyobjloader
     tbb)
 
 if (VERMILLON_SANITIZE_ADDRESS)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<CXX_COMPILER_ID:Clang>>:-sanitize=address>
-        $<$<CXX_COMPILER_ID:GNU>>:-sanitize=address>)
-
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        $<$<CXX_COMPILER_ID:Clang>>:-lasan>
-        $<$<CXX_COMPILER_ID:GNU>>:-lasan>)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    else ()
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+        target_link_libraries(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    endif()
 endif()
 
 target_include_directories(${PROJECT_NAME}

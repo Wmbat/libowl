@@ -50,6 +50,12 @@ constexpr auto my_pow(Any num, unsigned int pow) -> Any
 }
 
 template <number Any>
+constexpr auto half(Any num) -> Any
+{
+   return num / static_cast<Any>(2);
+}
+
+template <number Any>
 constexpr auto square(Any num) -> Any
 {
    return num * num;
@@ -91,11 +97,11 @@ struct settings
    float scale_factor = 1.0f;
    float water_mass = 65.0f;
 
-   float rest_density = 25.0f; // higher means denser
-   float viscosity_constant = 0.225f;
-   float surface_tension_coefficient = 0.15f;
+   float rest_density = 30.0f; // higher means denser
+   float viscosity_constant = 0.5f;
+   float surface_tension_coefficient = 0.25f;
    float gravity_multiplier = 0.56f;
-   float kernel_multiplier = 6.0f;
+   float kernel_multiplier = 4.5f;
 
    [[nodiscard]] inline auto kernel_radius() const -> float
    {
@@ -129,3 +135,28 @@ struct fmt::formatter<glm::vec3>
                        v.x, v.y, v.z); // NOLINT
    }
 };
+
+template <>
+struct fmt::formatter<glm::u64vec3>
+{
+   constexpr auto parse(format_parse_context& ctx) { return ctx.end(); }
+
+   template <typename Context>
+   auto format(const glm::u64vec3& p, Context& ctx)
+   {
+      return format_to(ctx.out(), "({}, {}, {})", p.x, p.y, p.z);
+   }
+};
+
+namespace std
+{
+   template <>
+   struct hash<glm::u64vec3>
+   {
+      auto operator()(const glm::u64vec3& v) const -> size_t
+      {
+         return ((hash<size_t>()(v.x) ^ (hash<size_t>()(v.y) << 1)) >> 1) ^
+            (hash<std::size_t>()(v.z) << 1);
+      }
+   };
+} // namespace std

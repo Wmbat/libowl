@@ -2,6 +2,8 @@
 
 #include <water_simulation/core.hpp>
 
+#include <entt/entity/fwd.hpp>
+
 namespace collision
 {
    static constexpr float epsilon = 0.0001f;
@@ -35,8 +37,21 @@ namespace collision
    class system
    {
    public:
+      struct create_info
+      {
+         vml::non_null<entt::registry*> p_registry;
+      };
+
+   public:
+      system();
+      system(create_info&& info);
+
       void update(duration<float> time_step);
 
    private:
+      void resolve_particle_to_box_collision(duration<float> time_step);
+
+   private:
+      entt::registry* mp_registry;
    };
 } // namespace collision

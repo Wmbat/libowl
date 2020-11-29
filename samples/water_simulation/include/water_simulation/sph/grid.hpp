@@ -42,9 +42,8 @@ namespace sph
       {
          glm::u64vec3 grid_pos{};
          glm::vec3 center{};
-         glm::vec3 dimensions{};
 
-         util::dynamic_array<entt::entity> m_entities{};
+         util::dynamic_array<entt::entity> entities{};
       };
 
    public:

@@ -1,12 +1,30 @@
 #include <water_simulation/sph/grid.hpp>
 
+#include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view/iota.hpp>
+#include <range/v3/view/transform.hpp>
 
 #include <glm/vec2.hpp>
 
 #include <cassert>
+#include <execution>
 
 namespace vi = ranges::views;
+
+struct box
+{
+   glm::vec3 center;
+   glm::vec3 dimensions;
+};
+
+auto within_box(const box& b, const glm::vec3& p) -> bool
+{
+   bool within_x = (p.x < b.center.x + b.dimensions.x) && (p.x >= b.center.x - b.dimensions.x);
+   bool within_y = (p.y < b.center.y + b.dimensions.y) && (p.y >= b.center.y - b.dimensions.y);
+   bool within_z = (p.z < b.center.z + b.dimensions.z) && (p.z >= b.center.z - b.dimensions.z);
+
+   return within_x && within_y && within_z;
+}
 
 namespace sph
 {
@@ -22,18 +40,25 @@ namespace sph
 
       m_cells.reserve(m_cell_count.x + m_cell_count.y + m_cell_count.z); // NOLINT
 
-      for (std::size_t x : vi::iota(0u, m_cell_count.x)) // NOLINT
+      for (std::size_t z : vi::iota(0u, m_cell_count.z)) // NOLINT
       {
          for (std::size_t y : vi::iota(0u, m_cell_count.y)) // NOLINT
          {
-            for (std::size_t z : vi::iota(0u, m_cell_count.z)) // NOLINT
+            for (std::size_t x : vi::iota(0u, m_cell_count.x)) // NOLINT
             {
-               glm::vec3 center{cell_size / 2.0f + static_cast<float>(x) * cell_size,
-                                cell_size / 2.0f + static_cast<float>(y) * cell_size,
-                                cell_size / 2.0f + static_cast<float>(z) * cell_size};
-               glm::vec3 dims{cell_size / 2.0f, cell_size / 2.0f, cell_size / 2.0f};
+               glm::vec3 center{
+                  -m_dimensions.x - half(cell_size) + static_cast<float>(x) * cell_size,
+                  -m_dimensions.y - half(cell_size) + static_cast<float>(y) * cell_size,
+                  -m_dimensions.z - half(cell_size) + static_cast<float>(z) * cell_size};
+               glm::u64vec3 grid_pos = {x, y, z};
 
-               m_cells.push_back({.grid_pos = {x, y, z}, .center = center, .dimensions = dims});
+               /*
+               m_logger.debug(
+                  "grid cell:\n\t-> index = ({}, {}, {})\n\t-> center = {}\n\t-> dimensions = {}",
+                  grid_pos.x, grid_pos.y, grid_pos.z, cell_size, dims);
+                  */
+
+               m_cells.push_back({.grid_pos = grid_pos, .center = center});
             }
          }
       }
@@ -46,35 +71,26 @@ namespace sph
 
    void grid::update_layout(vml::non_null<entt::registry*> p_registry)
    {
-      auto view = p_registry->view<component::particle>();
-
       for (auto& cell : m_cells)
       {
-         m_logger.info("{} particles in cell ({}, {}, {})", std::size(cell.m_entities),
-                       cell.grid_pos.x, cell.grid_pos.y, cell.grid_pos.z);
-
-         cell.m_entities.clear();
+         cell.entities.clear();
       }
 
-      for (auto entity : view)
-      {
-         [[maybe_unused]] auto& particle = p_registry->get<component::particle>(entity);
+      auto view = p_registry->view<component::particle>();
 
-         for (auto& cell : m_cells)
+      std::for_each(std::begin(view), std::end(view), [&](auto e) {
+         const auto& particle = p_registry->get<component::particle>(e);
+
+         auto it = ranges::find_if(m_cells, [&](grid::cell& c) {
+            return within_box({c.center, {half(m_cell_size), half(m_cell_size), half(m_cell_size)}},
+                              particle.position);
+         });
+
+         if (it != std::end(m_cells))
          {
-            bool within_x = (particle.position.x <= cell.center.x + cell.dimensions.x) &&
-               (particle.position.x > cell.center.x - cell.dimensions.x);
-            bool within_y = (particle.position.y <= cell.center.y + cell.dimensions.y) &&
-               (particle.position.y > cell.center.y - cell.dimensions.y);
-            bool within_z = (particle.position.z <= cell.center.z + cell.dimensions.z) &&
-               (particle.position.z > cell.center.z - cell.dimensions.z);
-
-            if (within_x && within_y && within_z)
-            {
-               cell.m_entities.push_back(entity);
-            }
+            it->entities.push_back(e);
          }
-      }
+      });
    }
 
    auto grid::cells() -> std::span<cell> { return m_cells; }
@@ -83,44 +99,43 @@ namespace sph
    {
       const auto& grip_pos = cell.grid_pos;
 
-      const bool early_x = grip_pos.x == 0;
-      const bool early_y = grip_pos.y == 0;
-      const bool early_z = grip_pos.z == 0;
+      const int early_x = (grip_pos.x == 0) ? 0 : -1; // NOLINT
+      const int early_y = (grip_pos.y == 0) ? 0 : -1; // NOLINT
+      const int early_z = (grip_pos.z == 0) ? 0 : -1; // NOLINT
 
-      const bool late_x = grip_pos.x == m_cell_count.x - 1;
-      const bool late_y = grip_pos.y == m_cell_count.y - 1;
-      const bool late_z = grip_pos.z == m_cell_count.z - 1;
+      const int late_x = (grip_pos.x == m_cell_count.x - 1) ? 1 : 2; // NOLINT
+      const int late_y = (grip_pos.y == m_cell_count.y - 1) ? 1 : 2; // NOLINT
+      const int late_z = (grip_pos.z == m_cell_count.z - 1) ? 1 : 2; // NOLINT
 
-      util::dynamic_array<entt::entity> entities;
+      util::dynamic_array<entt::entity> entities{};
+      entities.reserve(std::size(cell.entities));
 
-      for (auto x : vi::ints(0u, 3u))
+      for (auto e : cell.entities)
       {
-         if (!(early_x && x == 0u) || !(late_x && x == 2u))
-         {
-            for (auto y : vi::ints(0u, 3u))
-            {
-               if (!(early_y && y == 0u) || !(late_y && y == 2u))
-               {
-                  for (auto z : vi::ints(0u, 3u))
-                  {
-                     if (!(early_z && z == 0u) || !(late_z && z == 2u))
-                     {
-                        // m_logger.info("neighbour cell at {}", glm::vec3{x, y, z});
+         entities.push_back(e);
+      }
 
-                        for (const auto& inner : m_cells)
-                        {
-                           if (inner.grid_pos.x == x && inner.grid_pos.y == y &&
-                               inner.grid_pos.z == z)
-                           {
-                              for (auto e : inner.m_entities)
-                              {
-                                 entities.push_back(e);
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
+      for (int x : vi::ints(early_x, late_x))
+      {
+         for (int y : vi::ints(early_y, late_y))
+         {
+            for (int z : vi::ints(early_z, late_z))
+            {
+               glm::u64vec3 adjusted_pos{static_cast<int>(grip_pos.x) + x,  // NOLINT
+                                         static_cast<int>(grip_pos.y) + y,  // NOLINT
+                                         static_cast<int>(grip_pos.z) + z}; // NOLINT
+
+               /*
+               m_logger.debug("cell ({}, {}, {}) neighbour -> ({}, {}, {})", grip_pos.x,
+               grip_pos.y, grip_pos.z, adjusted_pos.x, adjusted_pos.y, adjusted_pos.z);
+               */
+
+               std::size_t offset = adjusted_pos.x + adjusted_pos.y * m_cell_count.x +
+                  adjusted_pos.z * m_cell_count.x * m_cell_count.y;
+
+               auto& c = m_cells[offset];
+
+               entities.insert(std::cend(entities), c.entities.begin(), c.entities.end());
             }
          }
       }

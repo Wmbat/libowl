@@ -25,6 +25,7 @@ public:
 
 private:
    void update();
+   void update_transforms();
    void render();
 
    auto create_main_pipeline() -> pipeline_index_t;

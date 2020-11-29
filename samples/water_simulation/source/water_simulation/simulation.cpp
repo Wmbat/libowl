@@ -197,7 +197,8 @@ simulation::simulation(const settings& settings) :
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
-   m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
+   m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))},
+   m_collision_system{{.p_registry = vml::make_not_null(&m_registry)}}
 {
    check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
    check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
@@ -213,14 +214,17 @@ simulation::simulation(const settings& settings) :
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
 
-   m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
-                               .p_logger = vml::make_not_null(&m_logger),
-                               .center = {0.0f, 50.0f, 0.0f},
-                               .dimensions = {50.0f, 50.0f, 50.0f},
-                               .system_settings = settings}};
+   {
+      float h = m_settings.kernel_radius();
+      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
+                                  .p_logger = vml::make_not_null(&m_logger),
+                                  .center = {0.0f, 75.0f, 0.0f},
+                                  .dimensions = {50.0f + h, 75.0f + h, 50.0f + h},
+                                  .system_settings = settings}};
+   }
 
-   constexpr std::size_t x_count = 11u;
-   constexpr std::size_t y_count = 50u; // 100u;
+   constexpr std::size_t x_count = 15u;
+   constexpr std::size_t y_count = 60u; // 100u;
    constexpr std::size_t z_count = 11u;
 
    m_particles.reserve(x_count * y_count * z_count);
@@ -231,7 +235,7 @@ simulation::simulation(const settings& settings) :
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = 40.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
+      const float x = 35.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
 
       for (auto j : vi::iota(0U, y_count))
       {
@@ -259,19 +263,13 @@ simulation::simulation(const settings& settings) :
                e,
                component::render{.p_mesh = &m_sphere,
                                  .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
-
-            /*
-            m_particles.push_back({.position = {x, y, z},
-                                   .mass = m_settings.water_mass,
-                                   .restitution = 0.75f}); // NOLINT
-                                   */
          }
       }
    }
 
    {
-      const glm::vec3 position{0.0f, -0.5f, 0.0f};                      // NOLINT
-      const glm::vec3 dimensions{100.0f, 0.5f, 100.0f};                 // NOLINT
+      const glm::vec3 position{0.0f, -1.5f, 0.0f};                      // NOLINT
+      const glm::vec3 dimensions{100.0f, 1.5f, 100.0f};                 // NOLINT
       const glm::vec3 colour{192 / 255.0f, 192 / 255.0f, 192 / 255.0f}; // NOLINT
 
       auto entity = m_registry.create();
@@ -286,18 +284,18 @@ simulation::simulation(const settings& settings) :
    }
 
    {
-      const glm::vec3 position{50.5f, 0.0f, 0.0f};      // NOLINT
-      const glm::vec3 dimensions{0.5f, 100.0f, 100.0f}; // NOLINT
+      const glm::vec3 position{51.5f, 0.0f, 0.0f};      // NOLINT
+      const glm::vec3 dimensions{1.5f, 100.0f, 100.0f}; // NOLINT
 
       auto entity = m_registry.create();
       m_registry.emplace<collision::component::box_collider>(
          entity, collision::component::box_collider{.center = position, .half_size = dimensions});
    }
 
-   add_invisible_wall({50.5f, 0.0f, 0.0f}, {0.5f, 100.0f, 100.0f});  // NOLINT
-   add_invisible_wall({-50.5f, 0.0f, 0.0f}, {0.5f, 100.0f, 100.0f}); // NOLINT
-   add_invisible_wall({0.0, 0.0f, -10.5f}, {100.0f, 100.0f, 0.5f});  // NOLINT
-   add_invisible_wall({0.0, 0.0f, 10.5f}, {100.0f, 100.0f, 0.5f});   // NOLINT
+   add_invisible_wall({51.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f});  // NOLINT
+   add_invisible_wall({-51.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
+   add_invisible_wall({0.0, 0.0f, -11.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
+   add_invisible_wall({0.0, 0.0f, 11.5f}, {100.0f, 100.0f, 1.5f});   // NOLINT
 
    m_logger.info("particle count = {}", x_count * y_count * z_count);
 }
@@ -318,6 +316,8 @@ void simulation::run()
          const auto old = start_time;
          start_time = chrono::steady_clock::now();
          delta_time = start_time - old;
+
+         m_logger.info("frametime = {}", delta_time.count());
       }
    }
 
@@ -336,6 +336,17 @@ void simulation::update()
 
    m_sph_system.update(m_settings.time_step);
    m_collision_system.update(m_settings.time_step);
+
+   update_transforms();
+}
+void simulation::update_transforms()
+{
+   auto view = m_registry.view<component::transform, sph::component::particle>();
+   std::for_each(std::execution::par, std::begin(view), std::end(view), [&](entt::entity e) {
+      auto& transform = m_registry.get<component::transform>(e);
+      auto& particle = m_registry.get<sph::component::particle>(e);
+      transform.translate = glm::translate(glm::mat4{1}, particle.position);
+   });
 }
 void simulation::render()
 {
