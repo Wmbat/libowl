@@ -73,7 +73,7 @@ struct settings
    float viscosity_constant = 0.5f;
    float surface_tension_coefficient = 0.25f;
    float gravity_multiplier = 0.56f;
-   float kernel_multiplier = 4.5f;
+   float kernel_multiplier = 3.0f;
 
    [[nodiscard]] inline auto kernel_radius() const -> float
    {

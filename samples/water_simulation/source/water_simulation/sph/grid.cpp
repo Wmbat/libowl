@@ -96,7 +96,7 @@ namespace sph
 
       auto view = p_registry->view<component::particle>();
 
-      std::for_each(std::begin(view), std::end(view), [&](auto e) {
+      std::for_each(std::execution::par, std::begin(view), std::end(view), [&](auto e) {
          const auto& particle = view.get<component::particle>(e);
 
          auto it = ranges::find_if(m_cells, [&](grid::cell& c) {

@@ -71,129 +71,8 @@ auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-void compute_density(std::span<particle> particles, const settings& settings)
-{
-   std::transform(std::execution::par, std::begin(particles), std::end(particles),
-                  std::begin(particles), [&](const auto& particle_i) {
-                     float density = 0.0F;
-
-                     const auto h = settings.kernel_radius();
-
-                     for (auto& particle_j : particles)
-                     {
-                        const auto r_ij = particle_j.position - particle_i.position;
-                        const auto r = glm::length(r_ij);
-
-                        if (r <= h)
-                        {
-                           density += kernel::poly6(h, r);
-                        }
-                     }
-
-                     float density_ratio = particle_i.density / settings.rest_density;
-
-                     particle r{particle_i};
-                     r.density = density * settings.water_mass * kernel::poly6_constant(h);
-                     r.pressure = density_ratio < 1.0f ? 0 : std::pow(density_ratio, 7.0f) - 1.0f;
-
-                     return r;
-                  });
-}
-void compute_normals(std::span<particle> particles, const settings& settings)
-{
-   std::transform(std::execution::par, std::begin(particles), std::end(particles),
-                  std::begin(particles), [&](const auto& particle_i) {
-                     glm::vec3 normal{0.0f, 0.0f, 0.0f};
-
-                     const auto h = settings.kernel_radius();
-
-                     for (const auto& particle_j : particles)
-                     {
-                        const auto r_ij = particle_j.position - particle_i.position;
-                        const auto r = glm::length(r_ij);
-
-                        if (r <= h)
-                        {
-                           normal += kernel::poly6_grad(r_ij, h, r) / particle_j.density;
-                        }
-                     }
-
-                     particle r = particle_i;
-                     r.normal = normal * h * settings.water_radius * kernel::poly6_grad_constant(h);
-
-                     return r;
-                  });
-}
-void compute_forces(std::span<particle> particles, const settings& settings)
-{
-   const glm::vec3 gravity_vector{0.0f, gravity * settings.gravity_multiplier, 0.0f};
-
-   std::transform(
-      std::execution::par, std::begin(particles), std::end(particles), std::begin(particles),
-      [&](const auto& particle_i) {
-         glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
-         glm::vec3 viscosity_force{0.0f, 0.0f, 0.0f};
-         glm::vec3 cohesion_force{0.0f, 0.0f, 0.0f};
-         glm::vec3 curvature_force{0.0f, 0.0f, 0.0f};
-         glm::vec3 gravity_force{0.0f, 0.0f, 0.0f};
-
-         const float h = settings.kernel_radius();
-
-         for (const auto& particle_j : particles)
-         {
-            if (&particle_i != &particle_j)
-            {
-               auto r_ij = particle_i.position - particle_j.position;
-               if (r_ij.x == 0.0f && r_ij.y == 0.0f) // NOLINT
-               {
-                  r_ij.x += 0.0001f; // NOLINT
-                  r_ij.y += 0.0001f; // NOLINT
-               }
-
-               const auto r = glm::length(r_ij);
-
-               if (r < h)
-               {
-                  pressure_force -=
-                     ((particle_i.pressure + particle_j.pressure) / (2.0f * particle_j.density)) *
-                     kernel::spiky_grad(r_ij, h, r);
-
-                  if (particle_j.density > 0.00001f) // NOLINT
-                  {
-                     viscosity_force -=
-                        ((particle_j.velocity - particle_i.velocity) / particle_j.density) *
-                        kernel::viscosity(h, r);
-                  }
-
-                  const float correction_factor =
-                     2.0f * settings.rest_density / (particle_i.density + particle_j.density);
-
-                  cohesion_force += correction_factor * (r_ij / r) * kernel::cohesion(h, r);
-                  curvature_force += correction_factor * (particle_i.normal - particle_j.normal);
-               }
-            }
-         }
-
-         gravity_force += gravity_vector * particle_i.density;
-         pressure_force *= kernel::spiky_grad_constant(h);
-         viscosity_force *= settings.viscosity_constant * kernel::viscosity_constant(h);
-         cohesion_force *= -settings.surface_tension_coefficient * settings.water_mass *
-            kernel::cohesion_constant(h);
-         curvature_force *= -settings.surface_tension_coefficient;
-
-         const auto main_forces =
-            (viscosity_force + pressure_force + cohesion_force + curvature_force) *
-            settings.water_mass;
-
-         particle r{particle_i};
-         r.force = main_forces + gravity_force;
-
-         return r;
-      });
-}
-
 simulation::simulation(const settings& settings) :
-   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1080, 720},
+   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1920, 1080},
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
@@ -214,9 +93,9 @@ simulation::simulation(const settings& settings) :
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
 
-   constexpr std::size_t x_count = 11u;
+   constexpr std::size_t x_count = 20u;
    constexpr std::size_t y_count = 60u; // 100u;
-   constexpr std::size_t z_count = 11u;
+   constexpr std::size_t z_count = 12u;
 
    m_particles.reserve(x_count * y_count * z_count);
 
@@ -226,11 +105,11 @@ simulation::simulation(const settings& settings) :
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = -35.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
+      const float x = (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
 
       for (auto j : vi::iota(0U, y_count))
       {
-         const float y = 5.0f + distance_y * static_cast<float>(j);
+         const float y = 2.0f + distance_y * static_cast<float>(j);
 
          for (auto k : vi::iota(0U, z_count))
          {
@@ -258,6 +137,7 @@ simulation::simulation(const settings& settings) :
       }
    }
 
+   /*
    for (auto i : vi::iota(0U, x_count))
    {
       const float x = 35.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
@@ -291,13 +171,14 @@ simulation::simulation(const settings& settings) :
          }
       }
    }
+   */
 
    {
       float h = m_settings.kernel_radius();
       m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
                                   .p_logger = vml::make_not_null(&m_logger),
-                                  .center = {0.0f, 75.0f, 0.0f},
-                                  .dimensions = {50.0f + h, 75.0f + h, 50.0f + h},
+                                  .center = {0.0f, 65.0f, 0.0f},
+                                  .dimensions = {50.0f + h, 65.0f + h, 50.0f + h},
                                   .system_settings = settings}};
    }
 
