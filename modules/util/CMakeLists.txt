@@ -58,7 +58,11 @@ if (VERMILLON_UTIL_NO_LOGGING)
 endif ()
 
 if(VERMILLON_ENFORCE_CONTRACTS)
-   target_compile_definitions(${PROJECT_NAME} PRIVATE -DVML_ENFORCE_CONTRACTS) 
+   target_compile_definitions(${PROJECT_NAME} PRIVATE VML_ENFORCE_CONTRACTS) 
+endif()
+
+if (VERMILLON_SHOW_DEBUG_LOGGING)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE VML_DEBUG_LOGGING)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)

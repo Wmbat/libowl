@@ -63,17 +63,17 @@ static constexpr float default_gravity_multiplier = 0.5f;
 
 struct settings
 {
-   duration<float, std::milli> time_step = 16ms;
-   float water_radius = 1.0f;
+   duration<float, std::milli> time_step = 8ms;
 
-   float scale_factor = 1.0f;
-   float water_mass = 65.0f;
+   float rest_density = 1000.0f;
+   float viscosity_constant = 2.0f;
+   float surface_tension_coefficient = 1.0f;
+   float gravity_multiplier = 1.5f;
+   float kernel_multiplier = 5.0f;
+   float scale_factor = 0.3f;
 
-   float rest_density = 30.0f; // higher means denser
-   float viscosity_constant = 0.5f;
-   float surface_tension_coefficient = 0.25f;
-   float gravity_multiplier = 0.56f;
-   float kernel_multiplier = 3.0f;
+   float water_radius = 0.20f;
+   float water_mass = rest_density * cube(water_radius * 2);
 
    [[nodiscard]] inline auto kernel_radius() const -> float
    {

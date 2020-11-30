@@ -10,13 +10,10 @@ namespace kernel
    {
       return -945.f / (32.f * pi * std::pow(kernel_radius, 9.f)); // NOLINT
    }
-   auto poly6(float kernel_radius, float r) -> float
+   auto poly6(float h2, float r2) -> float { return cube(h2 - r2); }
+   auto poly6_grad(const glm::vec3& vec, float h2, float r2) -> glm::vec3
    {
-      return cube(square(kernel_radius) - square(r));
-   }
-   auto poly6_grad(const glm::vec3& vec, float kernel_radius, float r) -> glm::vec3
-   {
-      return square(square(kernel_radius) - square(r)) * vec;
+      return square(h2 - r2) * vec;
    }
 
    auto spiky_constant(float kernel_radius) -> float
@@ -27,7 +24,7 @@ namespace kernel
    {
       return -45.0f / (pi * my_pow(kernel_radius, 6u)); // NOLINT
    }
-   auto spiky(float kernel_radius, float r) -> float { return cube(kernel_radius - r); }
+   auto spiky(float kernel_radius, float r) -> float { return square(kernel_radius - r); }
    auto spiky_grad(const glm::vec3& vec, float kernel_radius, float r) -> glm::vec3
    {
       return vec * (square(kernel_radius - r) * (1.0f / r));

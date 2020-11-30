@@ -25,19 +25,14 @@ public:
 
 private:
    void update();
-   void update_transforms();
    void render();
 
    auto create_main_pipeline() -> pipeline_index_t;
    auto setup_camera(pipeline_index_t index) -> camera;
    auto compute_matrices(const render_system& system) -> camera::matrices;
 
-   void integrate(std::span<particle> particles);
-   void resolve_collisions(std::span<particle> particles);
-
    void add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions);
-
-   auto compare_distance(float d0, float d1) -> bool;
+   void add_box(const glm::vec3& position, const glm::vec3& dimensions, const glm::vec3& colour);
 
    template <typename Any>
    constexpr auto check_err(Any&& result)

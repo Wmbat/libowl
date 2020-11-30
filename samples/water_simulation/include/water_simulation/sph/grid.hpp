@@ -12,28 +12,21 @@
 
 namespace sph
 {
-   /**
-    * @brief encapsulate all components within the `sph` submodule
-    */
-   namespace component
+   struct particle
    {
-      /**
-       * @brief Compenent used for the handling of particles affected by the `sph::system`
-       */
-      struct particle
-      {
-         glm::vec3 position{};
-         glm::vec3 velocity{};
-         glm::vec3 force{};
-         glm::vec3 normal{};
+      glm::i64vec3 grid_position{};
 
-         float radius{1.0f};
-         float mass{1.0F};
-         float density{0.0F};
-         float pressure{0.0F};
-         float restitution{0.5f};
-      };
-   } // namespace component
+      glm::vec3 position{};
+      glm::vec3 velocity{};
+      glm::vec3 force{};
+      glm::vec3 normal{};
+
+      float radius{1.0f};
+      float mass{1.0F};
+      float density{0.0F};
+      float pressure{0.0F};
+      float restitution{0.5f};
+   };
 
    class grid
    {
@@ -43,16 +36,19 @@ namespace sph
          glm::u64vec3 grid_pos{};
          glm::vec3 center{};
 
-         util::dynamic_array<entt::entity> entities{};
+         util::dynamic_array<particle*> particles{};
       };
 
    public:
       grid() = default;
       grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
 
-      void setup_grid(vml::non_null<entt::registry*> p_registry);
-
-      void update_layout(vml::non_null<entt::registry*> p_registry);
+      /**
+       * @brief Update the position of particles within the `grid`
+       *
+       * @param particles  The current state of the particles
+       */
+      void update_layout(std::span<particle> particles);
 
       /**
        * @brief Give access to all cells within the grid
@@ -66,13 +62,13 @@ namespace sph
        *
        * @return A list of neighbouring entities.
        */
-      auto lookup_neighbours(const glm::u32vec3& grid_pos) -> util::dynamic_array<entt::entity>;
+      auto lookup_neighbours(const glm::i64vec3& grid_pos) -> util::dynamic_array<particle*>;
 
    private:
       float m_cell_size{};
       glm::vec3 m_dimensions{};
 
-      glm::u64vec3 m_cell_count{};
+      glm::i64vec3 m_cell_count{};
 
       util::dynamic_array<cell> m_cells{};
 

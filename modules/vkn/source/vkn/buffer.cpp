@@ -31,6 +31,8 @@ namespace vkn
             return "failed_to_create_buffer";
          case buffer_error::failed_to_allocate_memory:
             return "failed_to_allocate_memory";
+         case buffer_error::failed_to_find_desired_memory_type:
+            return "failed_to_find_desired_memory_type";
          default:
             return "UNKNOWN";
       }
@@ -138,7 +140,7 @@ namespace vkn
 
       for (std::uint32_t i = 0; const auto& heap_type : mem_properties.memoryTypes)
       {
-         if ((type_filter & (1U << i)) && (heap_type.propertyFlags == properties))
+         if ((type_filter & (1U << i)) && (heap_type.propertyFlags & properties) == properties)
          {
             return i;
          }

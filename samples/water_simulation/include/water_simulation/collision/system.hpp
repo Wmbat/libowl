@@ -1,6 +1,7 @@
 #pragma once
 
 #include <water_simulation/core.hpp>
+#include <water_simulation/sph/system.hpp>
 
 #include <entt/entity/fwd.hpp>
 
@@ -40,10 +41,11 @@ namespace collision
       struct create_info
       {
          vml::non_null<entt::registry*> p_registry;
+         vml::non_null<sph::system*> p_sph_system;
       };
 
    public:
-      system();
+      system() = default;
       system(create_info&& info);
 
       void update(duration<float> time_step);
@@ -53,5 +55,6 @@ namespace collision
 
    private:
       entt::registry* mp_registry;
+      sph::system* mp_system;
    };
 } // namespace collision

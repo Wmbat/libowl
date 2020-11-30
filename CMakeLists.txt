@@ -27,6 +27,8 @@ project(vermillon
 option(VERMILLON_BUILD_TESTS "Build unit tests" OFF)
 option(VERMILLON_SANITIZE_ADDRESS "Sanitize address" OFF)
 option(VERMILLON_ENFORCE_CONTRACTS "Enforce all contracts at run-time" OFF)
+option(VERMILLON_SHOW_DEBUG_LOGGING "Show logs labelled as debug" ON)
+option(VERMILLON_BUILD_SAMPLES "Build the sample projects" ON)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -54,12 +56,16 @@ set(VERMILLON_CORE_STATIC ON CACHE BOOL "" FORCE)
 
 message(STATUS "[${PROJECT_NAME}] Building unit tests: ${VERMILLON_BUILD_TESTS}")
 message(STATUS "[${PROJECT_NAME}] Building with address sanitizer: ${VERMILLON_SANITIZE_ADDRESS}")
+message(STATUS "[${PROJECT_NAME}] Building provided samples: ${VERMILLON_BUILD_SAMPLES}")
 message(STATUS "[${PROJECT_NAME}] Enforce all contracts at run-time: ${VERMILLON_ENFORCE_CONTRACTS}")
+message(STATUS "[${PROJECT_NAME}] Enable display of debug level logs: ${VERMILLON_SHOW_DEBUG_LOGGING}")
 
 add_subdirectory(modules/gfx)
 add_subdirectory(modules/ui)
 add_subdirectory(modules/util)
 add_subdirectory(modules/vkn)
 
-#add_subdirectory(samples/playground)
-add_subdirectory(samples/water_simulation)
+if (VERMILLON_BUILD_SAMPLES)
+    #add_subdirectory(samples/playground)
+    add_subdirectory(samples/water_simulation)
+endif ()

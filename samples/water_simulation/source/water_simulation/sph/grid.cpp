@@ -33,18 +33,18 @@ namespace sph
    {
       ENSURE(cell_size != 0);
 
-      m_cell_count = glm::u64vec3{
-         static_cast<std::size_t>(std::ceil(m_dimensions.x * 2 / m_cell_size)),  // NOLINT
-         static_cast<std::size_t>(std::ceil(m_dimensions.y * 2 / m_cell_size)),  // NOLINT
-         static_cast<std::size_t>(std::ceil(m_dimensions.z * 2 / m_cell_size))}; // NOLINT
+      m_cell_count = glm::i64vec3{std::ceil(m_dimensions.x * 2 / m_cell_size),  // NOLINT
+                                  std::ceil(m_dimensions.y * 2 / m_cell_size),  // NOLINT
+                                  std::ceil(m_dimensions.z * 2 / m_cell_size)}; // NOLINT
 
-      m_cells.reserve(m_cell_count.x + m_cell_count.y + m_cell_count.z); // NOLINT
+      // NOLINTNEXTLINE
+      m_cells.reserve(static_cast<std::size_t>(m_cell_count.x + m_cell_count.y + m_cell_count.z));
 
-      for (std::size_t z : vi::iota(0u, m_cell_count.z)) // NOLINT
+      for (std::int64_t z : vi::ints(0l, m_cell_count.z)) // NOLINT
       {
-         for (std::size_t y : vi::iota(0u, m_cell_count.y)) // NOLINT
+         for (std::int64_t y : vi::ints(0l, m_cell_count.y)) // NOLINT
          {
-            for (std::size_t x : vi::iota(0u, m_cell_count.x)) // NOLINT
+            for (std::int64_t x : vi::iota(0l, m_cell_count.x)) // NOLINT
             {
                glm::vec3 center{
                   -m_dimensions.x - half(cell_size) + static_cast<float>(x) * cell_size,
@@ -69,51 +69,32 @@ namespace sph
                     m_cell_count.y, m_cell_count.z);                                  // NOLINT
    }
 
-   void grid::setup_grid(vml::non_null<entt::registry*> p_registry)
-   {
-      auto view = p_registry->view<component::particle>();
-      for (auto entity : view)
-      {
-         auto& particle = view.get(entity);
-
-         auto it = ranges::find_if(m_cells, [&](cell& c) {
-            return within_box({c.center, glm::vec3{1.0f} * half(m_cell_size)}, particle.position);
-         });
-
-         if (it != std::end(m_cells))
-         {
-            it->entities.push_back(entity);
-         }
-      }
-   }
-
-   void grid::update_layout(vml::non_null<entt::registry*> p_registry)
+   void grid::update_layout(std::span<particle> particles)
    {
       for (auto& cell : m_cells)
       {
-         cell.entities.clear();
+         cell.particles.clear();
       }
 
-      auto view = p_registry->view<component::particle>();
-
-      std::for_each(std::execution::par, std::begin(view), std::end(view), [&](auto e) {
-         const auto& particle = view.get<component::particle>(e);
-
+      for (auto& p : particles)
+      {
          auto it = ranges::find_if(m_cells, [&](grid::cell& c) {
-            return within_box({c.center, {half(m_cell_size), half(m_cell_size), half(m_cell_size)}},
-                              particle.position);
+            return within_box({c.center, glm::vec3{1.0f, 1.0f, 1.0f} * half(m_cell_size)},
+                              p.position);
          });
 
          if (it != std::end(m_cells))
          {
-            it->entities.push_back(e);
+            p.grid_position = it->grid_pos;
+
+            it->particles.push_back(&p);
          }
-      });
-   }
+      }
+   };
 
    auto grid::cells() -> std::span<cell> { return m_cells; }
 
-   auto grid::lookup_neighbours(const glm::u32vec3& grid_pos) -> util::dynamic_array<entt::entity>
+   auto grid::lookup_neighbours(const glm::i64vec3& grid_pos) -> util::dynamic_array<particle*>
    {
       const int early_x = (grid_pos.x == 0) ? 0 : -1; // NOLINT
       const int early_y = (grid_pos.y == 0) ? 0 : -1; // NOLINT
@@ -123,7 +104,7 @@ namespace sph
       const int late_y = (grid_pos.y == m_cell_count.y - 1) ? 1 : 2; // NOLINT
       const int late_z = (grid_pos.z == m_cell_count.z - 1) ? 1 : 2; // NOLINT
 
-      util::dynamic_array<entt::entity> entities{};
+      util::dynamic_array<particle*> particles{};
 
       for (int x : vi::ints(early_x, late_x))
       {
@@ -131,20 +112,18 @@ namespace sph
          {
             for (int z : vi::ints(early_z, late_z))
             {
-               glm::u64vec3 adjusted_pos{static_cast<int>(grid_pos.x) + x,  // NOLINT
-                                         static_cast<int>(grid_pos.y) + y,  // NOLINT
-                                         static_cast<int>(grid_pos.z) + z}; // NOLINT
+               glm::i64vec3 adjusted_pos{grid_pos.x + x, grid_pos.y + y, grid_pos.z + z};
 
-               std::size_t offset = adjusted_pos.x + adjusted_pos.y * m_cell_count.x +
+               std::int64_t offset = adjusted_pos.x + adjusted_pos.y * m_cell_count.x +
                   adjusted_pos.z * m_cell_count.x * m_cell_count.y;
 
-               auto& c = m_cells[offset];
+               auto& c = m_cells[static_cast<std::size_t>(offset)];
 
-               entities.insert(std::cend(entities), c.entities.begin(), c.entities.end());
+               particles.insert(std::cend(particles), c.particles.begin(), c.particles.end());
             }
          }
       }
 
-      return entities;
+      return particles;
    }
 } // namespace sph

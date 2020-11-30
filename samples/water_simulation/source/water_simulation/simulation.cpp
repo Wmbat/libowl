@@ -76,8 +76,7 @@ simulation::simulation(const settings& settings) :
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
-   m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))},
-   m_collision_system{{.p_registry = vml::make_not_null(&m_registry)}}
+   m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
 {
    check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
    check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
@@ -93,15 +92,30 @@ simulation::simulation(const settings& settings) :
    m_main_pipeline_key = create_main_pipeline();
    m_camera = setup_camera(m_main_pipeline_key);
 
+   glm::vec2 x_edges = {5.0f, -5.0f};
+   glm::vec2 z_edges = {5.0f, -5.0f};
+
+   {
+      float h = m_settings.kernel_radius();
+      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
+                                  .p_logger = vml::make_not_null(&m_logger),
+                                  .center = {0.0f, 65.0f, 0.0f},
+                                  .dimensions = {x_edges.x + h, 15.0f + h, z_edges.x + h},
+                                  .system_settings = settings}};
+
+      m_collision_system = collision::system{{.p_registry = vml::make_not_null(&m_registry),
+                                              .p_sph_system = vml::make_not_null(&m_sph_system)}};
+   }
+
    constexpr std::size_t x_count = 20u;
-   constexpr std::size_t y_count = 60u; // 100u;
-   constexpr std::size_t z_count = 12u;
+   constexpr std::size_t y_count = 25u; // 100u;
+   constexpr std::size_t z_count = 20u;
 
    m_particles.reserve(x_count * y_count * z_count);
 
-   float distance_x = settings.water_radius;
-   float distance_y = settings.water_radius;
-   float distance_z = settings.water_radius;
+   float distance_x = settings.water_radius * 1.25f;
+   float distance_y = settings.water_radius * 1.25f;
+   float distance_z = settings.water_radius * 1.25f;
 
    for (auto i : vi::iota(0U, x_count))
    {
@@ -115,104 +129,34 @@ simulation::simulation(const settings& settings) :
          {
             const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
-            auto e = m_registry.create();
-            m_registry.emplace<sph::component::particle>(
-               e,
-               sph::component::particle{.position = glm::vec3{x, y, z},
-                                        .radius = m_settings.water_radius,
-                                        .mass = m_settings.water_mass});
-
-            m_registry.emplace<component::transform>(
-               e,
-               component::transform{
-                  .translate = glm::translate(glm::mat4{1}, {x, y, z}),
-                  .scale = glm::scale(glm::mat4{1},
-                                      glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor)});
-
-            m_registry.emplace<component::render>(
-               e,
-               component::render{.p_mesh = &m_sphere,
-                                 .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
+            m_sph_system.emit({.position = {x, y, z},
+                               .radius = m_settings.water_radius,
+                               .mass = m_settings.water_mass});
          }
       }
    }
+
+   add_box({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f},       // NOLINT
+           glm::vec3{1.0f, 1.0f, 1.0f} * (192.0f / 255.0f)); // NOLINT
 
    /*
-   for (auto i : vi::iota(0U, x_count))
-   {
-      const float x = 35.0f + (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
-
-      for (auto j : vi::iota(0U, y_count))
-      {
-         const float y = 5.0f + distance_y * static_cast<float>(j);
-
-         for (auto k : vi::iota(0U, z_count))
-         {
-            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
-
-            auto e = m_registry.create();
-            m_registry.emplace<sph::component::particle>(
-               e,
-               sph::component::particle{.position = glm::vec3{x, y, z},
-                                        .radius = m_settings.water_radius,
-                                        .mass = m_settings.water_mass});
-
-            m_registry.emplace<component::transform>(
-               e,
-               component::transform{
-                  .translate = glm::translate(glm::mat4{1}, {x, y, z}),
-                  .scale = glm::scale(glm::mat4{1},
-                                      glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor)});
-
-            m_registry.emplace<component::render>(
-               e,
-               component::render{.p_mesh = &m_sphere,
-                                 .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}); // NOLINT
-         }
-      }
-   }
+   add_box({0.0f, 2.5f, 15.0f}, {5.0f, 2.5f, 2.5f}, {1.0f, 0.0f, 0.0f});
+   add_box({15.0f, 5.0f, 15.0f}, {2.5f, 5.0f, 2.5f}, {1.0f, 0.0f, 0.0f});
    */
 
-   {
-      float h = m_settings.kernel_radius();
-      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
-                                  .p_logger = vml::make_not_null(&m_logger),
-                                  .center = {0.0f, 65.0f, 0.0f},
-                                  .dimensions = {50.0f + h, 65.0f + h, 50.0f + h},
-                                  .system_settings = settings}};
-   }
+   add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
+   add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
+   add_invisible_wall({16.5, 0.0f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
 
-   {
-      const glm::vec3 position{0.0f, -1.5f, 0.0f};                      // NOLINT
-      const glm::vec3 dimensions{100.0f, 1.5f, 100.0f};                 // NOLINT
-      const glm::vec3 colour{192 / 255.0f, 192 / 255.0f, 192 / 255.0f}; // NOLINT
-
-      auto entity = m_registry.create();
-      m_registry.emplace<component::render>(entity,
-                                            component::render{.p_mesh = &m_box, .colour = colour});
-      m_registry.emplace<collision::component::box_collider>(
-         entity, collision::component::box_collider{.center = position, .half_size = dimensions});
-      m_registry.emplace<component::transform>(
-         entity,
-         component::transform{.translate = glm::translate(glm::mat4{1}, position),
-                              .scale = glm::scale(glm::mat4{1}, dimensions)});
-   }
-
-   {
-      const glm::vec3 position{51.5f, 0.0f, 0.0f};      // NOLINT
-      const glm::vec3 dimensions{1.5f, 100.0f, 100.0f}; // NOLINT
-
-      auto entity = m_registry.create();
-      m_registry.emplace<collision::component::box_collider>(
-         entity, collision::component::box_collider{.center = position, .half_size = dimensions});
-   }
-
-   add_invisible_wall({51.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f});  // NOLINT
-   add_invisible_wall({-51.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
-   add_invisible_wall({0.0, 0.0f, -11.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
-   add_invisible_wall({0.0, 0.0f, 11.5f}, {100.0f, 100.0f, 1.5f});   // NOLINT
-
-   m_logger.info("particle count = {}", x_count * y_count * z_count * 2);
+   m_logger.info(
+      "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
+      "{}\n\t-> kernel radius = {}\n\t-> rest density = {}\n\t-> viscosity constant = {}\n\t-> "
+      "surface tension coefficient = {}\n\t-> time step = {}ms",
+      std::size(m_sph_system.particles()), m_settings.water_mass, m_settings.water_radius,
+      m_settings.kernel_radius(), m_settings.rest_density, m_settings.viscosity_constant,
+      m_settings.surface_tension_coefficient, m_settings.time_step.count());
 }
 
 void simulation::run()
@@ -232,7 +176,7 @@ void simulation::run()
          start_time = chrono::steady_clock::now();
          delta_time = start_time - old;
 
-         m_logger.info("frametime = {}", delta_time.count());
+         m_logger.debug("frametime = {}", delta_time.count());
       }
    }
 
@@ -241,27 +185,8 @@ void simulation::run()
 
 void simulation::update()
 {
-   /*
-   compute_density(m_particles, m_settings);
-   compute_normals(m_particles, m_settings);
-   compute_forces(m_particles, m_settings);
-   integrate(m_particles);
-   resolve_collisions(m_particles);
-   */
-
    m_sph_system.update(m_settings.time_step);
    m_collision_system.update(m_settings.time_step);
-
-   update_transforms();
-}
-void simulation::update_transforms()
-{
-   auto view = m_registry.view<component::transform, sph::component::particle>();
-   std::for_each(std::execution::par, std::begin(view), std::end(view), [&](entt::entity e) {
-      auto& transform = m_registry.get<component::transform>(e);
-      auto& particle = m_registry.get<sph::component::particle>(e);
-      transform.translate = glm::translate(glm::mat4{1}, particle.position);
-   });
 }
 void simulation::render()
 {
@@ -289,7 +214,7 @@ void simulation::render()
          const auto& render = view.get<component::render>(entity);
          const auto& transform = view.get<component::transform>(entity);
 
-         mesh_data md{.model = transform.scale * transform.translate,
+         mesh_data md{.model = transform.translate * transform.scale,
                       .colour = render.colour}; // NOLINT
 
          buffer.pushConstants(pipeline.layout(),
@@ -303,15 +228,14 @@ void simulation::render()
       buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
 
-      for (auto entity : view | vi::filter([&](auto e) {
-                            return view.get<component::render>(e).p_mesh == &m_sphere;
-                         }))
+      for (auto& particle : m_sph_system.particles())
       {
-         const auto& render = view.get<component::render>(entity);
-         const auto& transform = view.get<component::transform>(entity);
+         auto scale =
+            glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
+         auto translate = glm::translate(glm::mat4{1}, particle.position);
 
-         mesh_data md{.model = transform.scale * transform.translate,
-                      .colour = render.colour}; // NOLINT
+         mesh_data md{.model = translate * scale,
+                      .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
 
          buffer.pushConstants(pipeline.layout(),
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -326,124 +250,25 @@ void simulation::render()
    m_render_system.end_frame();
 }
 
-void simulation::integrate(std::span<particle> particles)
-{
-   std::for_each(std::execution::par, std::begin(particles), std::end(particles), [&](auto& i) {
-      i.velocity += m_settings.time_step.count() * i.force / i.density;
-      i.position += m_settings.time_step.count() * i.velocity;
-   });
-}
-
-auto get_closest_point(const collision::sphere& sphere,
-                       const collision::component::box_collider& box) -> glm::vec3
-{
-   const auto x = std::clamp(sphere.center.x, box.center.x - box.half_size.x, // NOLINT
-                             box.center.x + box.half_size.x);                 // NOLINT
-   const auto y = std::clamp(sphere.center.y, box.center.y - box.half_size.y, // NOLINT
-                             box.center.y + box.half_size.y);                 // NOLINT
-   const auto z = std::clamp(sphere.center.z, box.center.z - box.half_size.z, // NOLINT
-                             box.center.z + box.half_size.z);                 // NOLINT
-
-   return {x, y, z};
-}
-
-auto get_distance(const collision::sphere& sphere, const collision::component::box_collider& box)
-   -> float
-{
-   return glm::length(get_closest_point(sphere, box) - sphere.center);
-}
-
-void simulation::resolve_collisions(std::span<particle> particles)
-{
-   std::for_each(
-      std::execution::par, std::begin(particles), std::end(particles), [&](particle& particle) {
-         const float t0 = -m_settings.time_step.count();
-         const float t1 = 0.0f;
-
-         const auto p0 = particle.position + t0 * particle.velocity;
-         const auto p1 = particle.position + t1 * particle.velocity;
-
-         collision::sphere sphere_t0{p0, m_settings.water_radius};
-         collision::sphere sphere_t1{p1, m_settings.water_radius};
-
-         auto view = m_registry.view<collision::component::box_collider>();
-
-         for (auto entity : view)
-         {
-            const auto& collider = view.get<collision::component::box_collider>(entity);
-
-            const auto distance0 = get_distance(sphere_t0, collider);
-            const auto distance = get_distance(sphere_t1, collider);
-
-            if (distance - m_settings.water_radius < collision::epsilon) // Handle collision
-            {
-               glm::vec3 p;
-               if (distance0 > distance)
-               {
-                  const auto collision_point = get_closest_point(sphere_t0, collider);
-                  const auto normal = glm::normalize(sphere_t0.center - collision_point);
-
-                  p = sphere_t0.center + normal * (distance0 - m_settings.water_radius);
-               }
-               else
-               {
-                  const auto collision_point = get_closest_point(sphere_t1, collider);
-                  const auto normal = glm::normalize(sphere_t1.center - collision_point);
-
-                  p = sphere_t0.center + normal * (distance - m_settings.water_radius);
-               }
-
-               const auto collision_point =
-                  get_closest_point({p, m_settings.water_radius}, collider);
-               const auto normal = glm::normalize(p - collision_point);
-               const auto closing_velocity = glm::dot(normal, particle.velocity);
-
-               if (closing_velocity <= 0)
-               {
-                  auto update_velocity = -closing_velocity * particle.restitution;
-
-                  auto acceleration = particle.force / particle.density;
-                  auto acc_vel = glm::dot(acceleration, normal) * m_settings.time_step.count();
-
-                  if (acc_vel < 0)
-                  {
-                     update_velocity += particle.restitution * acc_vel;
-
-                     if (update_velocity < 0)
-                     {
-                        update_velocity = 0.0f;
-                     }
-                  }
-
-                  const float delta_velocity = update_velocity - closing_velocity;
-                  const float inverse_mass = 1 / particle.mass;
-                  const auto impulse = (delta_velocity / inverse_mass) * normal;
-
-                  particle.velocity += impulse * inverse_mass;
-                  particle.position = p;
-               }
-            }
-         }
-      });
-}
-
-auto simulation::compare_distance(float d0, float d1) -> bool
-{
-   if (d0 < m_settings.water_radius && d1 < m_settings.water_radius)
-   {
-      return true;
-   }
-
-   return false;
-}
-
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
 {
    auto entity = m_registry.create();
    m_registry.emplace<collision::component::box_collider>(
       entity, collision::component::box_collider{.center = position, .half_size = dimensions});
 }
-
+void simulation::add_box(const glm::vec3& position, const glm::vec3& dimensions,
+                         const glm::vec3& colour)
+{
+   auto entity = m_registry.create();
+   m_registry.emplace<component::render>(entity,
+                                         component::render{.p_mesh = &m_box, .colour = colour});
+   m_registry.emplace<collision::component::box_collider>(
+      entity, collision::component::box_collider{.center = position, .half_size = dimensions});
+   m_registry.emplace<component::transform>(
+      entity,
+      component::transform{.translate = glm::translate(glm::mat4{1}, position),
+                           .scale = glm::scale(glm::mat4{1}, dimensions)});
+}
 auto simulation::create_main_pipeline() -> pipeline_index_t
 {
    auto vert_shader_info = check_err(m_shaders.lookup(m_vert_shader_key));
@@ -493,10 +318,9 @@ auto simulation::compute_matrices(const render_system& system) -> camera::matric
    camera::matrices matrices{};
    matrices.projection =
       glm::perspective(glm::radians(90.0F), (float)dimensions.width / (float)dimensions.height,
-                       0.1F, 1000.0F); // NOLINT
-   matrices.view =
-      glm::lookAt(glm::vec3(0.0f, 20.0f, 70.0f), glm::vec3(0.0f, 5.0f, -10.0f), // NOLINT
-                  glm::vec3(0.0F, 1.0F, 0.0F));
+                       0.1F, 1000.0F);                                                     // NOLINT
+   matrices.view = glm::lookAt(glm::vec3(0.0f, 15.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), // NOLINT
+                               glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 
    return matrices;

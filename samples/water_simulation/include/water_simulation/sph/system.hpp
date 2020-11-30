@@ -28,6 +28,15 @@ namespace sph
       system(create_info&& info);
 
       /**
+       * @brief Add a new particle to the `system`
+       *
+       * @param particle   The initial state of the particle
+       */
+      void emit(particle&& particle);
+
+      auto particles() -> std::span<particle>;
+
+      /**
        * @brief performs computations on all entities with the `component::particle` component using
        * a grid space partitioning system and updates the grid once all the computation is done.
        *
@@ -59,12 +68,13 @@ namespace sph
    private:
       entt::registry* mp_registry{nullptr};
 
-      grid m_grid;
+      util::logger_wrapper m_logger;
 
       settings m_settings;
 
       float m_kernel_radius{};
 
-      util::logger_wrapper m_logger;
+      grid m_grid;
+      util::dynamic_array<particle> m_particles;
    };
 } // namespace sph
