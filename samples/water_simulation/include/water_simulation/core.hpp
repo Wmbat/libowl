@@ -39,6 +39,9 @@ auto handle_err(Any&& result, util::logger_wrapper logger)
    return std::forward<Any>(result).value().value();
 }
 
+static constexpr std::uint32_t image_width = 1920;
+static constexpr std::uint32_t image_height = 1080;
+
 static constexpr float pi = std::numbers::pi_v<float>;
 static constexpr float gravity = -9.81f;
 static constexpr float gravity_multiplier = 0.55f;
@@ -46,31 +49,20 @@ static constexpr float gravity_multiplier = 0.55f;
 static constexpr float bound_damping = 0.5f;
 static constexpr float edge = 15.0f;
 
+static constexpr std::size_t max_frames = 60 * 5;
+
 using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
-
-/*
-static constexpr float default_rest_density = 25.0f; // higher means denser
-static constexpr float default_viscosity_constant = 0.225f;
-static constexpr float default_surface_tension_coefficient = 0.5f;
-static constexpr float default_gravity_multiplier = 0.5f;
-
-   float time_step = 0.016f;
-   float water_radius = 1.0f;
-
-   float scale_factor = 1.0f;
-   float water_mass = 65.0f;
-*/
 
 struct settings
 {
-   duration<float, std::milli> time_step = 8ms;
+   duration<float, std::milli> time_step = 1ms;
 
    float rest_density = 1000.0f;
    float viscosity_constant = 2.0f;
    float surface_tension_coefficient = 1.0f;
    float gravity_multiplier = 1.5f;
    float kernel_multiplier = 5.0f;
-   float scale_factor = 0.3f;
+   float scale_factor = 0.25f;
 
    float water_radius = 0.20f;
    float water_mass = rest_density * cube(water_radius * 2);

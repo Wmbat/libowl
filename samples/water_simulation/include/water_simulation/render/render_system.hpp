@@ -1,6 +1,6 @@
 #pragma once
 
-#include <water_simulation/render/depth_buffer.hpp>
+#include <water_simulation/render/image.hpp>
 #include <water_simulation/render/render_pass.hpp>
 
 #include <ui/window.hpp>
@@ -82,7 +82,7 @@ private:
    vkn::device m_device;
    vkn::swapchain m_swapchain;
 
-   depth_buffer m_depth_buffer;
+   image<image_type::depth> m_depth_image;
 
    semaphore_array m_render_finished_semaphores;
 

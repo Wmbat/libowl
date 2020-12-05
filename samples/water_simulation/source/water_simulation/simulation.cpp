@@ -1,3 +1,4 @@
+#include <water_simulation/render/camera.hpp>
 #include <water_simulation/simulation.hpp>
 
 #include <water_simulation/collision/primitive.hpp>
@@ -9,6 +10,9 @@
 #include <range/v3/view/iota.hpp>
 
 #include <glm/ext/matrix_transform.hpp>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <water_simulation/stb_image_write.h>
 
 #include <execution>
 
@@ -53,6 +57,24 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
            .finalLayout = vk::ImageLayout::ePresentSrcKHR};
 }
 
+auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescription
+{
+   const auto res = find_colour_format(device);
+   if (auto val = res.value())
+   {
+      return {.format = val.value(),
+              .samples = vk::SampleCountFlagBits::e1,
+              .loadOp = vk::AttachmentLoadOp::eClear,
+              .storeOp = vk::AttachmentStoreOp::eStore,
+              .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+              .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+              .initialLayout = vk::ImageLayout::eUndefined,
+              .finalLayout = vk::ImageLayout::eTransferSrcOptimal};
+   }
+
+   return {};
+}
+
 auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 {
    const auto res = find_depth_format(device);
@@ -72,12 +94,14 @@ auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1920, 1080},
+   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1080, 720},
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
    m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
 {
+   m_image_pixels.resize(sizeof(glm::u8vec4) * image_height * image_width);
+
    check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
    check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
 
@@ -90,7 +114,10 @@ simulation::simulation(const settings& settings) :
        .logger = &m_logger})));
 
    m_main_pipeline_key = create_main_pipeline();
-   m_camera = setup_camera(m_main_pipeline_key);
+
+   m_camera = setup_onscreen_camera(m_main_pipeline_key);
+
+   setup_offscreen();
 
    glm::vec2 x_edges = {5.0f, -5.0f};
    glm::vec2 z_edges = {5.0f, -5.0f};
@@ -157,6 +184,9 @@ simulation::simulation(const settings& settings) :
       std::size(m_sph_system.particles()), m_settings.water_mass, m_settings.water_radius,
       m_settings.kernel_radius(), m_settings.rest_density, m_settings.viscosity_constant,
       m_settings.surface_tension_coefficient, m_settings.time_step.count());
+
+   std::filesystem::remove_all("frames");
+   std::filesystem::create_directory("frames");
 }
 
 void simulation::run()
@@ -171,6 +201,13 @@ void simulation::run()
       update();
       render();
 
+      if (m_frame_count.value() >= max_frames)
+      {
+         m_logger.info("Render finished!");
+
+         return;
+      }
+
       {
          const auto old = start_time;
          start_time = chrono::steady_clock::now();
@@ -178,6 +215,8 @@ void simulation::run()
 
          m_logger.debug("frametime = {}", delta_time.count());
       }
+
+      m_time_spent += m_settings.time_step;
    }
 
    m_render_system.wait();
@@ -190,9 +229,29 @@ void simulation::update()
 }
 void simulation::render()
 {
+   onscreen_render();
+
+   if (m_time_spent.count() >= m_time_per_frame.count())
+   {
+      m_logger.info(
+         "Render status {:0>6.2f}%",
+         100.0f * (static_cast<float>(m_frame_count.value()) / static_cast<float>(max_frames - 1)));
+
+      offscreen_render();
+
+      m_time_spent = 0ms;
+      ++m_frame_count;
+   }
+}
+
+void simulation::onscreen_render()
+{
    const auto image_index = m_render_system.begin_frame();
 
-   m_camera.update(image_index.value(), compute_matrices(m_render_system));
+   {
+      auto extent = m_render_system.swapchain().extent();
+      m_camera.update(image_index.value(), compute_matrices(extent.width, extent.height));
+   }
 
    m_render_passes[0].record_render_calls([&](vk::CommandBuffer buffer) {
       auto& pipeline = check_err(m_pipelines.lookup(m_main_pipeline_key)).value();
@@ -247,7 +306,205 @@ void simulation::render()
    });
 
    m_render_system.render(m_render_passes);
+
    m_render_system.end_frame();
+}
+void simulation::offscreen_render()
+{
+   auto& device = m_render_system.device();
+
+   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+                                  std::numeric_limits<std::uint64_t>::max());
+   device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
+
+   m_offscreen.camera.update(util::index_t{0u}, compute_matrices(image_width, image_height));
+
+   std::array<vk::ClearValue, 2> clear_values{};
+   clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
+   clear_values[1].depthStencil = {1.0f, 0};
+
+   for (auto cmd : m_offscreen.command_pool.primary_cmd_buffers())
+   {
+      cmd.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
+
+      m_offscreen.render_pass.record_render_calls([&](vk::CommandBuffer buffer) {
+         auto& pipeline = check_err(m_pipelines.lookup(m_offscreen_pipeline_key)).value();
+
+         buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
+
+         buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
+                                   {m_camera.lookup_set(0)}, {});
+
+         auto view = m_registry.view<component::render, component::transform>();
+
+         buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_box.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+
+         for (auto entity : view | vi::filter([&](auto e) {
+                               return view.get<component::render>(e).p_mesh == &m_box;
+                            }))
+         {
+            const auto& render = view.get<component::render>(entity);
+            const auto& transform = view.get<component::transform>(entity);
+
+            mesh_data md{.model = transform.translate * transform.scale,
+                         .colour = render.colour}; // NOLINT
+
+            buffer.pushConstants(pipeline.layout(),
+                                 pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+                                 sizeof(mesh_data) * 1, &md);
+
+            buffer.drawIndexed(static_cast<std::uint32_t>(m_box.m_index_buffer.index_count()), 1, 0,
+                               0, 0);
+         }
+
+         buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+
+         for (auto& particle : m_sph_system.particles())
+         {
+            auto scale =
+               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
+            auto translate = glm::translate(glm::mat4{1}, particle.position);
+
+            mesh_data md{.model = translate * scale,
+                         .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+
+            buffer.pushConstants(pipeline.layout(),
+                                 pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+                                 sizeof(mesh_data) * 1, &md);
+
+            buffer.drawIndexed(static_cast<std::uint32_t>(m_sphere.m_index_buffer.index_count()), 1,
+                               0, 0, 0);
+         }
+      });
+
+      m_offscreen.render_pass.submit_render_calls(
+         cmd, util::index_t{0}, {.extent = {.width = image_width, .height = image_height}},
+         clear_values);
+
+      cmd.end();
+   }
+
+   if (m_offscreen.in_flight_fence)
+   {
+      device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+                                     std::numeric_limits<std::uint64_t>::max());
+   }
+
+   const std::array signal_semaphores{m_offscreen.render_finished_semaphore.value()};
+   const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers()[0]};
+   const std::array<vk::PipelineStageFlags, 1> wait_stages{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+   device.logical().resetFences({m_offscreen.in_flight_fence.value()});
+
+   const std::array render_submit_infos{
+      vk::SubmitInfo{.pWaitDstStageMask = std::data(wait_stages),
+                     .commandBufferCount = std::size(command_buffers),
+                     .pCommandBuffers = std::data(command_buffers),
+                     .signalSemaphoreCount = std::size(signal_semaphores),
+                     .pSignalSemaphores = std::data(signal_semaphores)}};
+
+   try
+   {
+      const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
+      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.value());
+   }
+   catch (const vk::SystemError& err)
+   {
+      m_logger.error("failed to submit graphics queue for offscreen rendering");
+
+      std::terminate();
+   }
+
+   auto buffer = check_err(m_offscreen.command_pool.create_primary_buffer());
+   buffer->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+   std::array copy_regions{vk::BufferImageCopy{
+      .bufferOffset = 0,
+      .bufferRowLength = image_width,
+      .bufferImageHeight = image_height,
+      .imageSubresource = m_offscreen.colour.subresource_layers(),
+      .imageOffset = {.x = 0, .y = 0, .z = 0},
+      .imageExtent = {.width = image_width, .height = image_height, .depth = 1}}};
+
+   buffer->copyImageToBuffer(m_offscreen.colour.value(), vk::ImageLayout::eTransferSrcOptimal,
+                             m_offscreen.image_buffer.value(), std::size(copy_regions),
+                             std::data(copy_regions));
+   buffer->end();
+
+   try
+   {
+      const std::array copy_command_buffers{buffer.get()};
+      const std::array<vk::PipelineStageFlags, 1> copy_wait_stages{
+         vk::PipelineStageFlagBits::eTransfer};
+
+      const std::array render_submit_infos{
+         vk::SubmitInfo{.waitSemaphoreCount = std::size(signal_semaphores),
+                        .pWaitSemaphores = std::data(signal_semaphores),
+                        .pWaitDstStageMask = std::data(copy_wait_stages),
+                        .commandBufferCount = std::size(copy_command_buffers),
+                        .pCommandBuffers = std::data(copy_command_buffers)}};
+
+      const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
+      gfx_queue.submit(render_submit_infos, nullptr);
+   }
+   catch (const vk::SystemError& err)
+   {
+      m_logger.error("failed to submit graphics queue for image copy");
+
+      std::terminate();
+   }
+
+   device.logical().waitIdle();
+
+   std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
+   write_image_to_disk(filename);
+}
+
+void simulation::setup_offscreen()
+{
+   auto& device = m_render_system.device();
+
+   m_offscreen.colour = check_err(colour_image::make(
+      image_create_info{.device = device, .width = image_width, .height = image_height}));
+   m_offscreen.depth = check_err(depth_image::make(
+      image_create_info{.device = device, .width = image_width, .height = image_height}));
+   m_offscreen.render_pass = check_err(
+      render_pass::make({.device = device.logical(),
+                         .colour_attachment = offscreen_colour_attachment(device),
+                         .depth_stencil_attachment = main_depth_attachment(device),
+                         .framebuffer_create_infos = {framebuffer::create_info{
+                            .device = device.logical(),
+                            .attachments = {m_offscreen.colour.view(), m_offscreen.depth.view()},
+                            .width = image_width,
+                            .height = image_height,
+                            .layers = 1,
+                            .logger = &m_logger}},
+                         .logger = &m_logger}));
+   m_offscreen_pipeline_key = create_offscreen_pipeline();
+   m_offscreen.camera = setup_offscreen_camera(m_offscreen_pipeline_key);
+   m_offscreen.command_pool =
+      check_err(device.get_queue_index(vkn::queue_type::graphics).and_then([&](std::uint32_t i) {
+         return vkn::command_pool::builder{device, &m_logger}
+            .set_queue_family_index(i)
+            .set_primary_buffer_count(1U)
+            .build();
+      }));
+   m_offscreen.in_flight_fence =
+      check_err(vkn::fence::builder{device, &m_logger}.set_signaled().build());
+   m_offscreen.render_finished_semaphore =
+      check_err(vkn::semaphore::builder{device, &m_logger}.build());
+   m_offscreen.image_available_semaphore =
+      check_err(vkn::semaphore::builder{device, &m_logger}.build());
+   m_offscreen.image_buffer =
+      check_err(vkn::buffer::builder{device, &m_logger}
+                   .set_size(sizeof(glm::u8vec4) * image_width * image_width)
+                   .set_usage(vk::BufferUsageFlagBits::eTransferDst)
+                   .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
+                                            vk::MemoryPropertyFlagBits::eHostCoherent)
+                   .build());
 }
 
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
@@ -305,23 +562,83 @@ auto simulation::create_main_pipeline() -> pipeline_index_t
 
    return info.key();
 }
-auto simulation::setup_camera(pipeline_index_t index) -> camera
+auto simulation::create_offscreen_pipeline() -> pipeline_index_t
+{
+   auto vert_shader_info = check_err(m_shaders.lookup(m_vert_shader_key));
+   auto frag_shader_info = check_err(m_shaders.lookup(m_frag_shader_key));
+
+   const pipeline_shader_data vertex_shader_data{
+      .p_shader = &vert_shader_info.value(),
+      .set_layouts = {{.name = "camera_layout",
+                       .bindings = {{.binding = 0,
+                                     .descriptor_type = vk::DescriptorType::eUniformBuffer,
+                                     .descriptor_count = 1}}}},
+      .push_constants = {{.name = "mesh_data", .size = sizeof(mesh_data), .offset = 0}}};
+
+   const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
+
+   util::dynamic_array<vk::Viewport> pipeline_viewports;
+   pipeline_viewports.emplace_back(vk::Viewport{.x = 0.0F,
+                                                .y = 0.0F,
+                                                .width = static_cast<float>(image_width),
+                                                .height = static_cast<float>(image_height),
+                                                .minDepth = 0.0F,
+                                                .maxDepth = 1.0F});
+
+   util::dynamic_array<vk::Rect2D> pipeline_scissors;
+   pipeline_scissors.emplace_back(
+      vk::Rect2D{.offset = {0, 0}, .extent = {image_width, image_height}});
+
+   util::dynamic_array<pipeline_shader_data> pipeline_shader_data;
+   pipeline_shader_data.push_back(vertex_shader_data);
+   pipeline_shader_data.push_back(fragment_shader_data);
+
+   auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
+                                             .render_pass = m_offscreen.render_pass,
+                                             .logger = &m_logger,
+                                             .bindings = m_render_system.vertex_bindings(),
+                                             .attributes = m_render_system.vertex_attributes(),
+                                             .viewports = pipeline_viewports,
+                                             .scissors = pipeline_scissors,
+                                             .shader_infos = pipeline_shader_data}));
+
+   return info.key();
+}
+
+auto simulation::setup_onscreen_camera(pipeline_index_t index) -> camera
 {
    auto pipeline_info = check_err(m_pipelines.lookup(index));
 
    return create_camera(m_render_system, pipeline_info.value(), &m_logger);
 }
-auto simulation::compute_matrices(const render_system& system) -> camera::matrices
+auto simulation::setup_offscreen_camera(pipeline_index_t index) -> camera
 {
-   auto dimensions = system.scissor().extent;
+   auto pipeline_info = check_err(m_pipelines.lookup(index));
 
+   return create_offscreen_camera(m_render_system, pipeline_info.value(), &m_logger);
+}
+
+auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices
+{
    camera::matrices matrices{};
    matrices.projection =
-      glm::perspective(glm::radians(90.0F), (float)dimensions.width / (float)dimensions.height,
-                       0.1F, 1000.0F);                                                     // NOLINT
+      glm::perspective(glm::radians(90.0F), (float)width / (float)height, 0.1F, 1000.0F);  // NOLINT
    matrices.view = glm::lookAt(glm::vec3(0.0f, 15.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), // NOLINT
                                glm::vec3(0.0F, 1.0F, 0.0F));
    matrices.projection[1][1] *= -1;
 
    return matrices;
+}
+
+void simulation::write_image_to_disk(std::string_view name)
+{
+   auto device = m_render_system.device().logical();
+
+   void* p_data = device.mapMemory(m_offscreen.image_buffer.memory(), 0,
+                                   sizeof(glm::u8vec4) * image_height * image_width, {});
+   memcpy(std::data(m_image_pixels), p_data, std::size(m_image_pixels));
+   device.unmapMemory(m_offscreen.image_buffer.memory());
+
+   stbi_write_png(name.data(), image_width, image_height, 4, std::data(m_image_pixels),
+                  image_width * 4);
 }

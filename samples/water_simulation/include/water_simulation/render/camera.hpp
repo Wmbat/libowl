@@ -47,3 +47,5 @@ private:
 
 auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)
    -> camera;
+auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
+                             util::logger_wrapper logger) -> camera;

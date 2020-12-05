@@ -110,6 +110,7 @@ auto render_pass::make(create_info&& info) -> result<render_pass>
          render_pass pass;
          pass.m_render_pass = std::move(data.render_pass);
          pass.m_framebuffers = std::move(data.framebuffers);
+         pass.m_buff_calls = [](vk::CommandBuffer) {};
 
          return pass;
       });
@@ -129,6 +130,8 @@ void render_pass::submit_render_calls(vk::CommandBuffer cmd_buffer, util::index_
                                       vk::Rect2D render_area,
                                       std::span<const vk::ClearValue> clear_colours)
 {
+   ENSURE(framebuffer_index.value() < std::size(m_framebuffers));
+
    cmd_buffer.beginRenderPass(
       {.pNext = nullptr,
        .renderPass = m_render_pass.get(),

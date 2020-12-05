@@ -23,7 +23,7 @@ struct render_system_data
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
 
-   depth_buffer buffer;
+   image<image_type::depth> depth_image;
 
    ui::window* p_window;
 
@@ -157,10 +157,10 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
 auto create_depth_buffer(render_system_data&& data) -> result<render_system_data>
 {
    auto& extent = data.swapchain.extent();
-   return depth_buffer::make(
+   return image<image_type::depth>::make(
              {.device = data.device, .width = extent.width, .height = extent.height})
-      .map([&](depth_buffer&& b) {
-         data.buffer = std::move(b);
+      .map([&](image<image_type::depth>&& b) {
+         data.depth_image = std::move(b);
          return std::move(data);
       });
 }
@@ -186,7 +186,7 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_image_available_semaphores = std::move(data.image_available_semaphores);
          rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
          rs.m_render_command_pools = std::move(data.render_command_pools);
-         rs.m_depth_buffer = std::move(data.buffer);
+         rs.m_depth_image = std::move(data.depth_image);
          rs.m_configuration = {.swapchain_image_count = static_cast<std::uint32_t>(
                                   std::size(rs.m_swapchain.image_views()))};
 
@@ -345,7 +345,7 @@ auto render_system::swapchain() -> vkn::swapchain&
 
 auto render_system::get_depth_attachment() const -> vk::ImageView
 {
-   return m_depth_buffer.view();
+   return m_depth_image.view();
 }
 
 auto render_system::vertex_bindings() -> vertex_bindings_array

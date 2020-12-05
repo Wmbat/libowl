@@ -45,6 +45,10 @@ if (VERMILLON_VKN_STATIC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE VKN_STATIC) 
 endif ()
 
+if (VERMILLON_SHOW_DEBUG_LOGGING)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE VML_DEBUG_LOGGING)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)

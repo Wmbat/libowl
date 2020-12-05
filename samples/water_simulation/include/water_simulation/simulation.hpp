@@ -5,6 +5,7 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/particle.hpp>
 #include <water_simulation/render/camera.hpp>
+#include <water_simulation/render/offscreen.hpp>
 #include <water_simulation/render/pipeline.hpp>
 #include <water_simulation/render/pipeline_registry.hpp>
 #include <water_simulation/render/render_system.hpp>
@@ -27,12 +28,23 @@ private:
    void update();
    void render();
 
+   void onscreen_render();
+   void offscreen_render();
+
+   void setup_offscreen();
+
    auto create_main_pipeline() -> pipeline_index_t;
-   auto setup_camera(pipeline_index_t index) -> camera;
-   auto compute_matrices(const render_system& system) -> camera::matrices;
+   auto create_offscreen_pipeline() -> pipeline_index_t;
+
+   auto setup_onscreen_camera(pipeline_index_t index) -> camera;
+   auto setup_offscreen_camera(pipeline_index_t index) -> camera;
+
+   auto compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices;
 
    void add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions);
    void add_box(const glm::vec3& position, const glm::vec3& dimensions, const glm::vec3& colour);
+
+   void write_image_to_disk(std::string_view name);
 
    template <typename Any>
    constexpr auto check_err(Any&& result)
@@ -56,7 +68,8 @@ private:
 
    util::dynamic_array<render_pass> m_render_passes;
 
-   pipeline_index_t m_main_pipeline_key;
+   pipeline_index_t m_main_pipeline_key{};
+   pipeline_index_t m_offscreen_pipeline_key{};
 
    entt::registry m_registry;
 
@@ -70,4 +83,13 @@ private:
 
    std::string m_vert_shader_key{"resources/shaders/test_vert.spv"};
    std::string m_frag_shader_key{"resources/shaders/test_frag.spv"};
+
+   offscreen m_offscreen;
+
+   util::dynamic_array<std::uint8_t> m_image_pixels;
+
+   duration<float, std::milli> m_time_per_frame = 16ms;
+   duration<float, std::milli> m_time_spent = 0ms;
+
+   util::count64_t m_frame_count = 0;
 };

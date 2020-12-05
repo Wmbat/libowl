@@ -25,7 +25,9 @@ namespace vkn
 
    namespace detail
    {
-#if defined(NDEBUG)
+#if defined(NDEBUG) && defined(VML_DEBUG_LOGGING)
+      static constexpr bool ENABLE_VALIDATION_LAYERS = true;
+#elif defined(NDEBUG)
       static constexpr bool ENABLE_VALIDATION_LAYERS = false;
 #else
       static constexpr bool ENABLE_VALIDATION_LAYERS = true;

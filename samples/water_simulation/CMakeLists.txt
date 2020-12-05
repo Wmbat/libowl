@@ -74,7 +74,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     source/water_simulation/collision/system.cpp
     source/water_simulation/physics/kernel.cpp
     source/water_simulation/render/camera.cpp
-    source/water_simulation/render/depth_buffer.cpp
+    source/water_simulation/render/image.cpp
     source/water_simulation/render/framebuffer.cpp
     source/water_simulation/render/pipeline.cpp
     source/water_simulation/render/pipeline_registry.cpp

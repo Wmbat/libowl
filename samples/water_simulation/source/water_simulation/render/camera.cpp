@@ -109,3 +109,10 @@ auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log
                                    .logger = logger}),
                      logger);
 }
+auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
+                             util::logger_wrapper logger) -> camera
+{
+   return handle_err(
+      camera::make({.renderer = system, .pipeline = pipeline, .image_count = 1, .logger = logger}),
+      logger);
+}
