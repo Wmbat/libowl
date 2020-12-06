@@ -5,6 +5,7 @@
 #include <water_simulation/components.hpp>
 #include <water_simulation/physics/kernel.hpp>
 
+#include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/iota.hpp>
@@ -134,23 +135,23 @@ simulation::simulation(const settings& settings) :
                                               .p_sph_system = vml::make_not_null(&m_sph_system)}};
    }
 
-   constexpr std::size_t x_count = 20u;
-   constexpr std::size_t y_count = 25u; // 100u;
-   constexpr std::size_t z_count = 20u;
+   constexpr std::size_t x_count = 15u;
+   constexpr std::size_t y_count = 30u; // 100u;
+   constexpr std::size_t z_count = 30u;
 
    m_particles.reserve(x_count * y_count * z_count);
 
-   float distance_x = settings.water_radius * 1.25f;
-   float distance_y = settings.water_radius * 1.25f;
-   float distance_z = settings.water_radius * 1.25f;
+   float distance_x = settings.water_radius * 1.20f;
+   float distance_y = settings.water_radius * 1.20f;
+   float distance_z = settings.water_radius * 1.20f;
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = (-distance_x * x_count / 2.0f) + distance_x * static_cast<float>(i);
+      const float x = x_edges.y + 1.0f + distance_x * static_cast<float>(i);
 
       for (auto j : vi::iota(0U, y_count))
       {
-         const float y = 2.0f + distance_y * static_cast<float>(j);
+         const float y = 0.5f + distance_y * static_cast<float>(j);
 
          for (auto k : vi::iota(0U, z_count))
          {
@@ -164,18 +165,19 @@ simulation::simulation(const settings& settings) :
    }
 
    add_box({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f},       // NOLINT
-           glm::vec3{1.0f, 1.0f, 1.0f} * (192.0f / 255.0f)); // NOLINT
+           glm::vec3{1.0f, 1.0f, 1.0f} * (100.0f / 255.0f)); // NOLINT
+
+   //add_box({2.0f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
 
    /*
-   add_box({0.0f, 2.5f, 15.0f}, {5.0f, 2.5f, 2.5f}, {1.0f, 0.0f, 0.0f});
    add_box({15.0f, 5.0f, 15.0f}, {2.5f, 5.0f, 2.5f}, {1.0f, 0.0f, 0.0f});
    */
 
    add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
-   add_invisible_wall({16.5, 0.0f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
+   // add_invisible_wall({16.5, 0.0f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f}); // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f}); // NOLINT
 
    m_logger.info(
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
@@ -229,6 +231,9 @@ void simulation::update()
 }
 void simulation::render()
 {
+   m_max_density =
+      ranges::max_element(m_sph_system.particles(), {}, &sph::particle::density)->density;
+
    onscreen_render();
 
    if (m_time_spent.count() >= m_time_per_frame.count())
@@ -293,8 +298,9 @@ void simulation::onscreen_render()
             glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
          auto translate = glm::translate(glm::mat4{1}, particle.position);
 
+         glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
          mesh_data md{.model = translate * scale,
-                      .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+                      .colour = colour * (1 - (particle.density / m_max_density))};
 
          buffer.pushConstants(pipeline.layout(),
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -367,8 +373,9 @@ void simulation::offscreen_render()
                glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
             auto translate = glm::translate(glm::mat4{1}, particle.position);
 
+            glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
             mesh_data md{.model = translate * scale,
-                         .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+                         .colour = colour * (1 - (particle.density / m_max_density))};
 
             buffer.pushConstants(pipeline.layout(),
                                  pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -623,8 +630,13 @@ auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> 
    camera::matrices matrices{};
    matrices.projection =
       glm::perspective(glm::radians(90.0F), (float)width / (float)height, 0.1F, 1000.0F);  // NOLINT
-   matrices.view = glm::lookAt(glm::vec3(0.0f, 15.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), // NOLINT
+   matrices.view = glm::lookAt(glm::vec3(3.0f, 8.0f, 15.0f), glm::vec3(0.0f, 2.0f, -1.0f), // NOLINT
                                glm::vec3(0.0F, 1.0F, 0.0F));
+                                  /*
+   matrices.view =
+      glm::lookAt(glm::vec3(15.0f, 8.0f, 0.0f), glm::vec3(-10.0f, 2.0f, 0.0f), // NOLINT
+                  glm::vec3(0.0F, 1.0F, 0.0F));
+                  */
    matrices.projection[1][1] *= -1;
 
    return matrices;

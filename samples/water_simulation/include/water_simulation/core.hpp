@@ -46,10 +46,7 @@ static constexpr float pi = std::numbers::pi_v<float>;
 static constexpr float gravity = -9.81f;
 static constexpr float gravity_multiplier = 0.55f;
 
-static constexpr float bound_damping = 0.5f;
-static constexpr float edge = 15.0f;
-
-static constexpr std::size_t max_frames = 60 * 5;
+static constexpr std::size_t max_frames = 30 * 15;
 
 using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
 
@@ -58,8 +55,8 @@ struct settings
    duration<float, std::milli> time_step = 1ms;
 
    float rest_density = 1000.0f;
-   float viscosity_constant = 2.0f;
-   float surface_tension_coefficient = 1.0f;
+   float viscosity_constant = 10.0f;
+   float surface_tension_coefficient = 0.0f;
    float gravity_multiplier = 1.5f;
    float kernel_multiplier = 5.0f;
    float scale_factor = 0.25f;

@@ -70,11 +70,11 @@ namespace sph
                     [&](grid::cell& cell) {
                        const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
-                       for (auto& particle_i : cell.particles)
+                       for (auto* particle_i : cell.particles)
                        {
                           glm::vec3 normal{0.0f, 0.0f, 0.0f};
 
-                          for (const auto& particle_j : neighbours)
+                          for (const auto* particle_j : neighbours)
                           {
                              const auto r_ij = particle_j->position - particle_i->position;
                              const auto r2 = glm::length2(r_ij);
@@ -89,7 +89,7 @@ namespace sph
                           particle_i->normal = normal *
                              (particle_i->radius * m_kernel_radius *
                               kernel::poly6_grad_constant(m_kernel_radius));
-                       }
+                       };
                     });
    }
    void system::compute_forces()
@@ -101,7 +101,7 @@ namespace sph
          [&](grid::cell& cell) {
             const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
-            for (auto* particle_i : cell.particles)
+            for (auto& particle_i : cell.particles)
             {
                glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
                glm::vec3 viscosity_force{0.0f, 0.0f, 0.0f};
@@ -153,15 +153,15 @@ namespace sph
 
                particle_i->force = viscosity_force + pressure_force + cohesion_force +
                   curvature_force + gravity_force;
-            }
+            };
          });
    }
    void system::integrate(duration<float> time_step)
    {
-      for (auto& particle : m_particles)
-      {
-         particle.velocity += time_step.count() * particle.force / particle.density;
-         particle.position += time_step.count() * particle.velocity;
-      }
+      std::for_each(std::execution::par, std::begin(m_particles), std::end(m_particles),
+                    [&](auto& particle) {
+                       particle.velocity += time_step.count() * particle.force / particle.density;
+                       particle.position += time_step.count() * particle.velocity;
+                    });
    }
 } // namespace sph

@@ -88,6 +88,8 @@ private:
 
    util::dynamic_array<std::uint8_t> m_image_pixels;
 
+   float m_max_density{0};
+
    duration<float, std::milli> m_time_per_frame = 16ms;
    duration<float, std::milli> m_time_spent = 0ms;
 
