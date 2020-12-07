@@ -44,9 +44,8 @@ static constexpr std::uint32_t image_height = 1080;
 
 static constexpr float pi = std::numbers::pi_v<float>;
 static constexpr float gravity = -9.81f;
-static constexpr float gravity_multiplier = 0.55f;
 
-static constexpr std::size_t max_frames = 30 * 15;
+static constexpr std::size_t max_frames = 30 * 20;
 
 using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
 
@@ -54,10 +53,11 @@ struct settings
 {
    duration<float, std::milli> time_step = 1ms;
 
+   float gas_constant = 2000.0f;
    float rest_density = 1000.0f;
-   float viscosity_constant = 10.0f;
-   float surface_tension_coefficient = 0.0f;
-   float gravity_multiplier = 1.5f;
+   float viscosity_constant = 250.0f;
+   float surface_tension_coefficient = 1.0f;
+   float gravity_multiplier = 1.0f;
    float kernel_multiplier = 5.0f;
    float scale_factor = 0.25f;
 

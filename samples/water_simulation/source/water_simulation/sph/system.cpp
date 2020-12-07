@@ -37,123 +37,131 @@ namespace sph
    void system::compute_density_pressure()
    {
       std::for_each(std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-                    [&](grid::cell& cell) {
+                    [&](auto& cell) {
                        auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
-                       for (auto* particle_i : cell.particles)
-                       {
-                          float density = 0.0F;
+                       std::for_each(std::execution::par, std::begin(cell.particles),
+                                     std::end(cell.particles), [&](auto* particle_i) {
+                                        float density = 0.0F;
 
-                          for (const auto* particle_j : neighbours)
-                          {
-                             const auto r_ij = particle_j->position - particle_i->position;
-                             const auto r2 = glm::length2(r_ij);
+                                        for (const auto* particle_j : neighbours)
+                                        {
+                                           const auto r_ij =
+                                              particle_i->position - particle_j->position;
+                                           const auto r2 = glm::length2(r_ij);
 
-                             if (r2 <= square(m_kernel_radius))
-                             {
-                                density += kernel::poly6(m_kernel_radius, r2);
-                             }
-                          }
+                                           if (r2 <= square(m_kernel_radius))
+                                           {
+                                              density += particle_j->mass *
+                                                 kernel::poly6(m_kernel_radius, r2) *
+                                                 kernel::poly6_constant(m_kernel_radius);
+                                           }
+                                        }
 
-                          particle_i->density =
-                             particle_i->mass * density * kernel::poly6_constant(m_kernel_radius);
+                                        particle_i->density = density;
 
-                          float t = particle_i->density / m_settings.rest_density;
-
-                          particle_i->pressure = t < 1.0f ? 0.0f : std::pow(t, 7.0f) - 1.0f;
-                       }
+                                        float ratio = particle_i->density / m_settings.rest_density;
+                                        particle_i->pressure =
+                                           ratio < 1.0f ? 0.0f : std::pow(ratio, 7.0f) - 1.0f;
+                                     });
                     });
    }
    void system::compute_normals()
    {
       std::for_each(std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-                    [&](grid::cell& cell) {
+                    [&](auto& cell) {
                        const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
-                       for (auto* particle_i : cell.particles)
-                       {
-                          glm::vec3 normal{0.0f, 0.0f, 0.0f};
+                       std::for_each(std::execution::par, std::begin(cell.particles),
+                                     std::end(cell.particles), [&](auto* particle_i) {
+                                        glm::vec3 normal{0.0f, 0.0f, 0.0f};
 
-                          for (const auto* particle_j : neighbours)
-                          {
-                             const auto r_ij = particle_j->position - particle_i->position;
-                             const auto r2 = glm::length2(r_ij);
-                             const auto h2 = square(m_kernel_radius);
+                                        for (const auto* particle_j : neighbours)
+                                        {
+                                           const auto r_ij =
+                                              particle_i->position - particle_j->position;
+                                           const auto r2 = glm::length2(r_ij);
+                                           const auto h2 = square(m_kernel_radius);
 
-                             if (r2 <= h2)
-                             {
-                                normal += kernel::poly6_grad(r_ij, h2, r2) / particle_j->density;
-                             }
-                          }
+                                           if (r2 <= h2)
+                                           {
+                                              normal += (particle_j->mass / particle_j->density) *
+                                                 kernel::poly6_grad(r_ij, h2, r2);
+                                           }
+                                        }
 
-                          particle_i->normal = normal *
-                             (particle_i->radius * m_kernel_radius *
-                              kernel::poly6_grad_constant(m_kernel_radius));
-                       };
+                                        particle_i->normal = normal *
+                                           (particle_i->radius * m_kernel_radius *
+                                            kernel::poly6_grad_constant(m_kernel_radius));
+                                     });
                     });
    }
+
    void system::compute_forces()
    {
-      const glm::vec3 gravity_vector{0.0f, gravity * gravity_multiplier, 0.0f};
+      const glm::vec3 gravity_vector{0.0f, gravity * m_settings.gravity_multiplier, 0.0f};
 
       std::for_each(
          std::execution::par, std::begin(m_grid.cells()), std::end(m_grid.cells()),
-         [&](grid::cell& cell) {
+         [&](auto& cell) {
             const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
-            for (auto& particle_i : cell.particles)
-            {
-               glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
-               glm::vec3 viscosity_force{0.0f, 0.0f, 0.0f};
-               glm::vec3 cohesion_force{0.0f, 0.0f, 0.0f};
-               glm::vec3 curvature_force{0.0f, 0.0f, 0.0f};
-               glm::vec3 gravity_force{0.0f, 0.0f, 0.0f};
+            std::for_each(
+               std::execution::par, std::begin(cell.particles), std::end(cell.particles),
+               [&](auto* particle_i) {
+                  glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
+                  glm::vec3 viscosity_force{0.0f, 0.0f, 0.0f};
+                  glm::vec3 cohesion_force{0.0f, 0.0f, 0.0f};
+                  glm::vec3 curvature_force{0.0f, 0.0f, 0.0f};
+                  glm::vec3 gravity_force{0.0f, 0.0f, 0.0f};
 
-               for (const auto* particle_j : neighbours)
-               {
-                  if (particle_i != particle_j)
+                  for (const auto* particle_j : neighbours)
                   {
-                     glm::vec3 r_ij = particle_j->position - particle_i->position;
-                     if (r_ij.x == 0.0f && r_ij.y == 0.0f) // NOLINT
+                     if (particle_i != particle_j)
                      {
-                        r_ij.x += 0.0001f; // NOLINT
-                        r_ij.y += 0.0001f; // NOLINT
-                     }
+                        glm::vec3 r_ij = particle_i->position - particle_j->position;
+                        if (r_ij.x == 0.0f && r_ij.y == 0.0f) // NOLINT
+                        {
+                           r_ij.x += 0.0001f; // NOLINT
+                           r_ij.y += 0.0001f; // NOLINT
+                        }
 
-                     const auto r = glm::length(r_ij);
+                        const auto r = glm::length(r_ij);
 
-                     if (r < m_kernel_radius)
-                     {
-                        pressure_force -= glm::normalize(r_ij) *
-                           (particle_j->mass * (particle_i->pressure + particle_j->pressure) /
-                            (2.0f * particle_j->density) * kernel::spiky_constant(m_kernel_radius) *
-                            kernel::spiky(m_kernel_radius, r));
+                        if (r < m_kernel_radius)
+                        {
+                           pressure_force += glm::normalize(r_ij) *
+                              (particle_j->mass * (particle_i->pressure + particle_j->pressure) /
+                               (2.0f * particle_j->density) *
+                               kernel::spiky_constant(m_kernel_radius) *
+                               kernel::spiky(m_kernel_radius, r));
 
-                        viscosity_force += m_settings.viscosity_constant * particle_j->mass *
-                           (particle_j->velocity - particle_i->velocity) / particle_j->density *
-                           kernel::viscosity_constant(m_kernel_radius) *
-                           kernel::viscosity(m_kernel_radius, r);
+                           viscosity_force += m_settings.viscosity_constant * particle_j->mass *
+                              ((particle_j->velocity - particle_i->velocity) /
+                               particle_j->density) *
+                              kernel::viscosity_constant(m_kernel_radius) *
+                              kernel::viscosity(m_kernel_radius, r);
 
-                        const float correction_factor = (2.0f * m_settings.rest_density) /
-                           (particle_i->density + particle_j->density);
+                           const float correction_factor = (2.0f * m_settings.rest_density) /
+                              (particle_i->density + particle_j->density);
 
-                        cohesion_force += ((particle_i->position - particle_j->position) / r) *
-                           (kernel::cohesion(m_kernel_radius, r) * correction_factor);
-                        curvature_force +=
-                           correction_factor * (particle_i->normal - particle_j->normal);
+                           cohesion_force += ((particle_i->position - particle_j->position) / r) *
+                              (kernel::cohesion(m_kernel_radius, r) * correction_factor);
+                           curvature_force +=
+                              correction_factor * (particle_i->normal - particle_j->normal);
+                        }
                      }
                   }
-               }
 
-               gravity_force += gravity_vector * particle_i->density;
+                  gravity_force += gravity_vector * particle_i->density;
 
-               cohesion_force *= -m_settings.surface_tension_coefficient *
-                  kernel::cohesion_constant(m_kernel_radius) * square(particle_i->mass);
-               curvature_force *= -m_settings.surface_tension_coefficient;
+                  cohesion_force *= -m_settings.surface_tension_coefficient *
+                     kernel::cohesion_constant(m_kernel_radius) * square(particle_i->mass);
+                  curvature_force *= -m_settings.surface_tension_coefficient;
 
-               particle_i->force = viscosity_force + pressure_force + cohesion_force +
-                  curvature_force + gravity_force;
-            };
+                  particle_i->force = viscosity_force + pressure_force + cohesion_force +
+                     curvature_force + gravity_force;
+               });
          });
    }
    void system::integrate(duration<float> time_step)

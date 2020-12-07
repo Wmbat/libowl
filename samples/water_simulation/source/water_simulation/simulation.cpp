@@ -120,7 +120,7 @@ simulation::simulation(const settings& settings) :
 
    setup_offscreen();
 
-   glm::vec2 x_edges = {5.0f, -5.0f};
+   glm::vec2 x_edges = {11.0f, -5.0f};
    glm::vec2 z_edges = {5.0f, -5.0f};
 
    {
@@ -135,9 +135,9 @@ simulation::simulation(const settings& settings) :
                                               .p_sph_system = vml::make_not_null(&m_sph_system)}};
    }
 
-   constexpr std::size_t x_count = 15u;
-   constexpr std::size_t y_count = 30u; // 100u;
-   constexpr std::size_t z_count = 30u;
+   constexpr std::size_t x_count = 20u;
+   constexpr std::size_t y_count = 40u; // 100u;
+   constexpr std::size_t z_count = 35u;
 
    m_particles.reserve(x_count * y_count * z_count);
 
@@ -167,17 +167,13 @@ simulation::simulation(const settings& settings) :
    add_box({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f},       // NOLINT
            glm::vec3{1.0f, 1.0f, 1.0f} * (100.0f / 255.0f)); // NOLINT
 
-   //add_box({2.0f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
-
-   /*
-   add_box({15.0f, 5.0f, 15.0f}, {2.5f, 5.0f, 2.5f}, {1.0f, 0.0f, 0.0f});
-   */
+   add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
+   add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
 
    add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
-   // add_invisible_wall({16.5, 0.0f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f}); // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f}); // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
+   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
 
    m_logger.info(
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
@@ -629,14 +625,10 @@ auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> 
 {
    camera::matrices matrices{};
    matrices.projection =
-      glm::perspective(glm::radians(90.0F), (float)width / (float)height, 0.1F, 1000.0F);  // NOLINT
-   matrices.view = glm::lookAt(glm::vec3(3.0f, 8.0f, 15.0f), glm::vec3(0.0f, 2.0f, -1.0f), // NOLINT
-                               glm::vec3(0.0F, 1.0F, 0.0F));
-                                  /*
+      glm::perspective(glm::radians(90.0F), (float)width / (float)height, 0.1F, 1000.0F); // NOLINT
    matrices.view =
-      glm::lookAt(glm::vec3(15.0f, 8.0f, 0.0f), glm::vec3(-10.0f, 2.0f, 0.0f), // NOLINT
+      glm::lookAt(glm::vec3(10.0f, 8.0f, 15.0f), glm::vec3(3.0f, 2.0f, -1.0f), // NOLINT
                   glm::vec3(0.0F, 1.0F, 0.0F));
-                  */
    matrices.projection[1][1] *= -1;
 
    return matrices;
