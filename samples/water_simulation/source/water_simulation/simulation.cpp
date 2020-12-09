@@ -15,6 +15,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <water_simulation/stb_image_write.h>
 
+#include <easy/profiler.h>
+
 #include <execution>
 
 namespace chrono = std::chrono;
@@ -122,13 +124,14 @@ simulation::simulation(const settings& settings) :
 
    glm::vec2 x_edges = {11.0f, -5.0f};
    glm::vec2 z_edges = {5.0f, -5.0f};
+   glm::vec2 y_edges = {15.0f, 0.0f};
 
    {
       float h = m_settings.kernel_radius();
       m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
                                   .p_logger = vml::make_not_null(&m_logger),
-                                  .center = {0.0f, 65.0f, 0.0f},
-                                  .dimensions = {x_edges.x + h, 15.0f + h, z_edges.x + h},
+                                  .center = {0.0f, 7.5f, 0.0f},
+                                  .dimensions = {x_edges.x + h, 7.5f + h, z_edges.x + h},
                                   .system_settings = settings}};
 
       m_collision_system = collision::system{{.p_registry = vml::make_not_null(&m_registry),
@@ -189,6 +192,8 @@ simulation::simulation(const settings& settings) :
 
 void simulation::run()
 {
+   EASY_FUNCTION(profiler::colors::LightBlue900);
+
    chrono::duration<float, std::milli> delta_time{};
    auto start_time = std::chrono::steady_clock::now();
 
@@ -222,11 +227,20 @@ void simulation::run()
 
 void simulation::update()
 {
+   EASY_FUNCTION(profiler::colors::Amber);
+
+   EASY_BLOCK("Updating SPH")
    m_sph_system.update(m_settings.time_step);
+   EASY_END_BLOCK;
+
+   EASY_BLOCK("Handling Collision")
    m_collision_system.update(m_settings.time_step);
+   EASY_END_BLOCK;
 }
 void simulation::render()
 {
+   EASY_FUNCTION(profiler::colors::Coral);
+
    m_max_density =
       ranges::max_element(m_sph_system.particles(), {}, &sph::particle::density)->density;
 

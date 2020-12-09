@@ -1,10 +1,13 @@
 #include <water_simulation/sph/grid.hpp>
 
 #include <range/v3/algorithm/find_if.hpp>
+#include <range/v3/algorithm/remove.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
 
 #include <glm/vec2.hpp>
+
+#include <easy/profiler.h>
 
 #include <cassert>
 #include <execution>
@@ -52,12 +55,6 @@ namespace sph
                   -m_dimensions.z - half(cell_size) + static_cast<float>(z) * cell_size};
                glm::u64vec3 grid_pos = {x, y, z};
 
-               /*
-               m_logger.debug(
-                  "grid cell:\n\t-> index = ({}, {}, {})\n\t-> center = {}\n\t-> dimensions = {}",
-                  grid_pos.x, grid_pos.y, grid_pos.z, cell_size, dims);
-                  */
-
                m_cells.push_back({.grid_pos = grid_pos, .center = center});
             }
          }
@@ -69,28 +66,88 @@ namespace sph
                     m_cell_count.y, m_cell_count.z);                                  // NOLINT
    }
 
-   void grid::update_layout(std::span<particle> particles)
+   void grid::insert_particle(particle* p_particle)
    {
-      for (auto& cell : m_cells)
-      {
-         cell.particles.clear();
-      }
+      const auto half_size = half(m_cell_size);
+      const auto dimensions = glm::vec3{1.0f, 1.0f, 1.0f} * half_size;
 
-      for (auto& p : particles)
+      for (cell& c : m_cells)
       {
-         auto it = ranges::find_if(m_cells, [&](grid::cell& c) {
-            return within_box({c.center, glm::vec3{1.0f, 1.0f, 1.0f} * half(m_cell_size)},
-                              p.position);
-         });
-
-         if (it != std::end(m_cells))
+         if (within_box({c.center, dimensions}, p_particle->position))
          {
-            p.grid_position = it->grid_pos;
-
-            it->particles.push_back(&p);
+            c.particles.push_back(p_particle);
          }
       }
-   };
+   }
+
+   void grid::update_layout()
+   {
+      EASY_FUNCTION(profiler::colors::Brick);
+
+      const auto half_size = half(m_cell_size);
+      const auto dimensions = glm::vec3{1.0f, 1.0f, 1.0f} * half_size;
+
+      for (auto& cell : m_cells)
+      {
+         for (auto* p : cell.particles)
+         {
+            if (!within_box({cell.center, dimensions}, p->position))
+            {
+               const auto distance = p->position - cell.center;
+               const auto adjusted = glm::vec3{
+                  is_negative(distance.x) ? distance.x + half_size : distance.x - half_size,
+                  is_negative(distance.y) ? distance.y + half_size : distance.y - half_size,
+                  is_negative(distance.z) ? distance.z + half_size : distance.z - half_size};
+               const auto offset = glm::i64vec3{
+                  static_cast<std::int64_t>(is_negative(distance.x) ? std::floor(adjusted.x)
+                                                                    : std::ceil(adjusted.x)),
+                  static_cast<std::int64_t>(is_negative(distance.y) ? std::floor(adjusted.y)
+                                                                    : std::ceil(adjusted.y)),
+                  static_cast<std::int64_t>(is_negative(distance.z) ? std::floor(adjusted.z)
+                                                                    : std::ceil(adjusted.z))};
+               const std::int64_t index =
+                  offset.x + offset.y * m_cell_count.x + offset.z * m_cell_count.x * m_cell_count.y;
+
+               p->grid_position = offset;
+
+               m_cells[static_cast<std::size_t>(index)].particles.push_back(p);
+
+               p = nullptr;
+            }
+         }
+
+         auto begin = std::begin(cell.particles);
+         auto end = std::end(cell.particles);
+         cell.particles.erase(std::remove(begin, end, nullptr), end);
+      }
+
+      /*
+
+            EASY_BLOCK("Clearing");
+            parallel_for(m_cells, [](auto& cell) {
+               cell.particles.clear();
+            });
+            EASY_END_BLOCK;
+
+            EASY_BLOCK("Placing");
+
+            for (auto& p : particles)
+            {
+               auto it = ranges::find_if(m_cells, [&](grid::cell& c) {
+                  return within_box({c.center, glm::vec3{1.0f, 1.0f, 1.0f} *
+         half(m_cell_size)}, p.position);
+               });
+
+               if (it != std::end(m_cells))
+               {
+                  p.grid_position = it->grid_pos;
+
+                  it->particles.push_back(&p);
+               }
+            }
+            EASY_END_BLOCK;
+            */
+   }
 
    auto grid::cells() -> std::span<cell> { return m_cells; }
 

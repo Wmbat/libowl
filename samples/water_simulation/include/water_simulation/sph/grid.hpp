@@ -36,19 +36,19 @@ namespace sph
          glm::u64vec3 grid_pos{};
          glm::vec3 center{};
 
-         util::dynamic_array<particle*> particles{};
+         std::vector<particle*> particles{};
       };
 
    public:
       grid() = default;
       grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
 
+      void insert_particle(particle* p_particle);
+
       /**
        * @brief Update the position of particles within the `grid`
-       *
-       * @param particles  The current state of the particles
        */
-      void update_layout(std::span<particle> particles);
+      void update_layout();
 
       /**
        * @brief Give access to all cells within the grid

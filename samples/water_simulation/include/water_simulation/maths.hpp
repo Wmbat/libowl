@@ -37,3 +37,9 @@ auto reciprocal(Num num) -> Num
 {
    return static_cast<Num>(1) / num;
 }
+
+template <typename Num>
+auto is_negative(Num num) -> bool
+{
+   return num < static_cast<Num>(1);
+}

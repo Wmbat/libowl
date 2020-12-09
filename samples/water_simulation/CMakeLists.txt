@@ -46,6 +46,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
     EnTT::EnTT 
     tinyobjloader
+    easy_profiler
     tbb)
 
 if (VERMILLON_SANITIZE_ADDRESS)
@@ -62,6 +63,7 @@ target_include_directories(${PROJECT_NAME}
     SYSTEM 
         PUBLIC
             EnTT::EnTT 
+            easy_profiler
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

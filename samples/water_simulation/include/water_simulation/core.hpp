@@ -13,8 +13,10 @@
 #include <spdlog/fmt/bundled/core.h>
 
 #include <chrono>
+#include <execution>
 #include <filesystem>
 #include <numbers>
+#include <ranges>
 
 using namespace std::literals::chrono_literals;
 
@@ -37,6 +39,13 @@ auto handle_err(Any&& result, util::logger_wrapper logger)
    }
 
    return std::forward<Any>(result).value().value();
+}
+
+template <std::ranges::input_range Range, typename Fun>
+auto parallel_for(Range&& range, Fun&& fun)
+{
+   return std::for_each(std::execution::par_unseq, std::begin(range), std::end(range),
+                        std::forward<Fun>(fun));
 }
 
 static constexpr std::uint32_t image_width = 1920;
