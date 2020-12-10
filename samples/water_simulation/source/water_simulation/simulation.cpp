@@ -18,6 +18,7 @@
 #include <easy/profiler.h>
 
 #include <execution>
+#include <future>
 
 namespace chrono = std::chrono;
 namespace vi = ranges::views;
@@ -122,25 +123,28 @@ simulation::simulation(const settings& settings) :
 
    setup_offscreen();
 
-   glm::vec2 x_edges = {11.0f, -5.0f};
+   glm::vec2 x_edges = {5.0f, -5.0f};
+   glm::vec2 y_edges = {20.0f, 0.0f};
    glm::vec2 z_edges = {5.0f, -5.0f};
-   glm::vec2 y_edges = {15.0f, 0.0f};
 
    {
+      glm::vec3 halfs = {half(x_edges.x - x_edges.y), half(y_edges.x - y_edges.y),
+                         half(z_edges.x - z_edges.y)};
+
       float h = m_settings.kernel_radius();
       m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
                                   .p_logger = vml::make_not_null(&m_logger),
-                                  .center = {0.0f, 7.5f, 0.0f},
-                                  .dimensions = {x_edges.x + h, 7.5f + h, z_edges.x + h},
+                                  .center = halfs,
+                                  .dimensions = halfs + h,
                                   .system_settings = settings}};
 
       m_collision_system = collision::system{{.p_registry = vml::make_not_null(&m_registry),
                                               .p_sph_system = vml::make_not_null(&m_sph_system)}};
    }
 
-   constexpr std::size_t x_count = 20u;
-   constexpr std::size_t y_count = 40u; // 100u;
-   constexpr std::size_t z_count = 35u;
+   constexpr std::size_t x_count = 25u;
+   constexpr std::size_t y_count = 35u; // 100u;
+   constexpr std::size_t z_count = 30u;
 
    m_particles.reserve(x_count * y_count * z_count);
 
@@ -170,8 +174,8 @@ simulation::simulation(const settings& settings) :
    add_box({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f},       // NOLINT
            glm::vec3{1.0f, 1.0f, 1.0f} * (100.0f / 255.0f)); // NOLINT
 
-   add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
-   add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
+   // add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
+   // add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
 
    add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
@@ -192,8 +196,6 @@ simulation::simulation(const settings& settings) :
 
 void simulation::run()
 {
-   EASY_FUNCTION(profiler::colors::LightBlue900);
-
    chrono::duration<float, std::milli> delta_time{};
    auto start_time = std::chrono::steady_clock::now();
 
@@ -229,17 +231,12 @@ void simulation::update()
 {
    EASY_FUNCTION(profiler::colors::Amber);
 
-   EASY_BLOCK("Updating SPH")
    m_sph_system.update(m_settings.time_step);
-   EASY_END_BLOCK;
-
-   EASY_BLOCK("Handling Collision")
    m_collision_system.update(m_settings.time_step);
-   EASY_END_BLOCK;
 }
 void simulation::render()
 {
-   EASY_FUNCTION(profiler::colors::Coral);
+   EASY_FUNCTION(profiler::colors::LightBlue);
 
    m_max_density =
       ranges::max_element(m_sph_system.particles(), {}, &sph::particle::density)->density;
@@ -248,11 +245,20 @@ void simulation::render()
 
    if (m_time_spent.count() >= m_time_per_frame.count())
    {
+      if (m_frame_count.value() != 0)
+      {
+         // m_image_write_fut.get();
+      }
+
       m_logger.info(
          "Render status {:0>6.2f}%",
          100.0f * (static_cast<float>(m_frame_count.value()) / static_cast<float>(max_frames - 1)));
 
       offscreen_render();
+
+      const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
+      m_image_write_fut = std::async(&simulation::write_image_to_disk, this, filename);
+      // write_image_to_disk(filename);
 
       m_time_spent = 0ms;
       ++m_frame_count;
@@ -261,7 +267,11 @@ void simulation::render()
 
 void simulation::onscreen_render()
 {
+   EASY_FUNCTION(profiler::colors::Brown);
+
+   EASY_BLOCK("begin_frame");
    const auto image_index = m_render_system.begin_frame();
+   EASY_END_BLOCK;
 
    {
       auto extent = m_render_system.swapchain().extent();
@@ -321,18 +331,25 @@ void simulation::onscreen_render()
       }
    });
 
+   EASY_BLOCK("render");
    m_render_system.render(m_render_passes);
+   EASY_END_BLOCK;
 
+   EASY_BLOCK("end_frame");
    m_render_system.end_frame();
+   EASY_END_BLOCK;
 }
 void simulation::offscreen_render()
 {
+   EASY_FUNCTION(profiler::colors::Orange);
+
    auto& device = m_render_system.device();
 
-   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
-                                  std::numeric_limits<std::uint64_t>::max());
+   EASY_BLOCK("begin_frame");
    device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
+   EASY_END_BLOCK;
 
+   EASY_BLOCK("Render")
    m_offscreen.camera.update(util::index_t{0u}, compute_matrices(image_width, image_height));
 
    std::array<vk::ClearValue, 2> clear_values{};
@@ -403,12 +420,8 @@ void simulation::offscreen_render()
       cmd.end();
    }
 
-   if (m_offscreen.in_flight_fence)
-   {
-      device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
-                                     std::numeric_limits<std::uint64_t>::max());
-   }
-
+   EASY_BLOCK("Submit render calls")
+   const std::array wait_semaphores{m_offscreen.image_available_semaphore.value()};
    const std::array signal_semaphores{m_offscreen.render_finished_semaphore.value()};
    const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers()[0]};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
@@ -416,15 +429,22 @@ void simulation::offscreen_render()
 
    device.logical().resetFences({m_offscreen.in_flight_fence.value()});
 
-   const std::array render_submit_infos{
-      vk::SubmitInfo{.pWaitDstStageMask = std::data(wait_stages),
-                     .commandBufferCount = std::size(command_buffers),
-                     .pCommandBuffers = std::data(command_buffers),
-                     .signalSemaphoreCount = std::size(signal_semaphores),
-                     .pSignalSemaphores = std::data(signal_semaphores)}};
-
    try
    {
+      std::uint32_t wait_semaphore_count =
+         m_frame_count.value() == 0 ? 0 : std::size(wait_semaphores);
+      const vk::Semaphore* p_wait_semaphores =
+         m_frame_count.value() == 0 ? nullptr : std::data(wait_semaphores);
+
+      const std::array render_submit_infos{
+         vk::SubmitInfo{.waitSemaphoreCount = wait_semaphore_count,
+                        .pWaitSemaphores = p_wait_semaphores,
+                        .pWaitDstStageMask = std::data(wait_stages),
+                        .commandBufferCount = std::size(command_buffers),
+                        .pCommandBuffers = std::data(command_buffers),
+                        .signalSemaphoreCount = std::size(signal_semaphores),
+                        .pSignalSemaphores = std::data(signal_semaphores)}};
+
       const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
       gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.value());
    }
@@ -434,7 +454,15 @@ void simulation::offscreen_render()
 
       std::terminate();
    }
+   EASY_END_BLOCK;
 
+   EASY_BLOCK("Wait for fence");
+   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+                                  std::numeric_limits<std::uint64_t>::max());
+   EASY_END_BLOCK;
+   EASY_END_BLOCK;
+
+   EASY_BLOCK("Image copy")
    auto buffer = check_err(m_offscreen.command_pool.create_primary_buffer());
    buffer->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -451,6 +479,9 @@ void simulation::offscreen_render()
                              std::data(copy_regions));
    buffer->end();
 
+   device.logical().resetFences({m_offscreen.in_flight_fence.value()});
+
+   EASY_BLOCK("Submit")
    try
    {
       const std::array copy_command_buffers{buffer.get()};
@@ -462,10 +493,12 @@ void simulation::offscreen_render()
                         .pWaitSemaphores = std::data(signal_semaphores),
                         .pWaitDstStageMask = std::data(copy_wait_stages),
                         .commandBufferCount = std::size(copy_command_buffers),
-                        .pCommandBuffers = std::data(copy_command_buffers)}};
+                        .pCommandBuffers = std::data(copy_command_buffers),
+                        .signalSemaphoreCount = std::size(wait_semaphores),
+                        .pSignalSemaphores = std::data(wait_semaphores)}};
 
       const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
-      gfx_queue.submit(render_submit_infos, nullptr);
+      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.value());
    }
    catch (const vk::SystemError& err)
    {
@@ -473,11 +506,13 @@ void simulation::offscreen_render()
 
       std::terminate();
    }
+   EASY_END_BLOCK;
 
-   device.logical().waitIdle();
-
-   std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
-   write_image_to_disk(filename);
+   EASY_BLOCK("Fence waiting")
+   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+                                  std::numeric_limits<std::uint64_t>::max());
+   EASY_END_BLOCK;
+   EASY_END_BLOCK;
 }
 
 void simulation::setup_offscreen()
@@ -650,6 +685,8 @@ auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> 
 
 void simulation::write_image_to_disk(std::string_view name)
 {
+   EASY_FUNCTION(profiler::colors::DarkMagenta);
+
    auto device = m_render_system.device().logical();
 
    void* p_data = device.mapMemory(m_offscreen.image_buffer.memory(), 0,
@@ -660,3 +697,4 @@ void simulation::write_image_to_disk(std::string_view name)
    stbi_write_png(name.data(), image_width, image_height, 4, std::data(m_image_pixels),
                   image_width * 4);
 }
+

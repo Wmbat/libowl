@@ -64,8 +64,8 @@ struct settings
 
    float gas_constant = 2000.0f;
    float rest_density = 1000.0f;
-   float viscosity_constant = 250.0f;
-   float surface_tension_coefficient = 1.0f;
+   float viscosity_constant = 300.0f;
+   float surface_tension_coefficient = 0.5f;
    float gravity_multiplier = 1.0f;
    float kernel_multiplier = 5.0f;
    float scale_factor = 0.25f;

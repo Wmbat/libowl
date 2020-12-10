@@ -17,6 +17,8 @@
 
 #include <entt/entt.hpp>
 
+#include <future>
+
 class simulation
 {
 public:
@@ -87,6 +89,7 @@ private:
    offscreen m_offscreen;
 
    util::dynamic_array<std::uint8_t> m_image_pixels;
+   std::future<void> m_image_write_fut;
 
    float m_max_density{0};
 

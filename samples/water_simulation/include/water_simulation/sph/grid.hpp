@@ -43,12 +43,10 @@ namespace sph
       grid() = default;
       grid(float cell_size, const glm::vec3& dimensions, vml::non_null<util::logger*> p_logger);
 
-      void insert_particle(particle* p_particle);
-
       /**
        * @brief Update the position of particles within the `grid`
        */
-      void update_layout();
+      void update_layout(std::span<particle> particles);
 
       /**
        * @brief Give access to all cells within the grid

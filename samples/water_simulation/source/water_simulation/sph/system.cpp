@@ -8,9 +8,6 @@
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include <easy/arbitrary_value.h>
-#include <easy/profiler.h>
-
 #include <execution>
 
 namespace vi = ranges::views;
@@ -23,19 +20,13 @@ namespace sph
                                                           info.dimensions, info.p_logger}
    {}
 
-   void system::emit(particle&& particle)
-   {
-      auto& p = m_particles.emplace_back(particle);
-      m_grid.insert_particle(&p);
-   }
+   void system::emit(particle&& particle) { auto& p = m_particles.emplace_back(particle); }
 
    auto system::particles() -> std::span<particle> { return m_particles; }
 
    void system::update(duration<float> time_step)
    {
-      EASY_FUNCTION(profiler::colors::Magenta);
-
-      m_grid.update_layout();
+      m_grid.update_layout(m_particles);
 
       compute_density_pressure();
       compute_normals();
@@ -45,8 +36,6 @@ namespace sph
 
    void system::compute_density_pressure()
    {
-      EASY_FUNCTION(profiler::colors::Blue);
-
       parallel_for(m_grid.cells(), [&](auto& cell) {
          auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
@@ -73,8 +62,6 @@ namespace sph
    }
    void system::compute_normals()
    {
-      EASY_FUNCTION(profiler::colors::Cyan);
-
       parallel_for(m_grid.cells(), [&](auto& cell) {
          const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
 
@@ -103,8 +90,6 @@ namespace sph
 
    void system::compute_forces()
    {
-      EASY_FUNCTION(profiler::colors::DeepOrange);
-
       const glm::vec3 gravity_vector{0.0f, gravity * m_settings.gravity_multiplier, 0.0f};
 
       parallel_for(m_grid.cells(), [&](auto& cell) {
@@ -167,8 +152,6 @@ namespace sph
    }
    void system::integrate(duration<float> time_step)
    {
-      EASY_FUNCTION(profiler::colors::Brown);
-
       parallel_for(m_particles, [&](auto& particle) {
          particle.velocity += time_step.count() * particle.force / particle.density;
          particle.position += time_step.count() * particle.velocity;

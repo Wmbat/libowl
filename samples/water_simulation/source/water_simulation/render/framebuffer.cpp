@@ -16,7 +16,7 @@ auto framebuffer::make(create_info&& info) -> result<framebuffer>
    return monad::try_wrap<vk::SystemError>([&] {
              return info.device.createFramebufferUnique(create_info);
           })
-      .map_error([]([[maybe_unused]] auto err) {
+      .map_error([](const vk::SystemError& /*err*/) {
          return to_err_code(framebuffer_error::failed_to_create_framebuffer);
       })
       .map([&](vk::UniqueFramebuffer&& handle) {
