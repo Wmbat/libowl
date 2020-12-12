@@ -28,6 +28,9 @@ namespace vml
    private:
       error_t m_error_condition;
    };
+
+   template <typename Any>
+   using result = monad::result<Any, error_t>;
 } // namespace vml
 
 namespace util

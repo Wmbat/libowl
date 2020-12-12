@@ -15,8 +15,8 @@ struct offscreen
    vkn::semaphore render_finished_semaphore;
    vkn::semaphore image_available_semaphore;
 
-   colour_image colour;
-   depth_image depth;
+   image<image_flags::colour | image_flags::transfer_src> colour;
+   image<image_flags::depth_stencil> depth;
    render_pass render_pass;
 
    camera camera;

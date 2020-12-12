@@ -48,3 +48,12 @@ private:
 
    std::function<void(vk::CommandBuffer)> m_buff_calls;
 };
+
+struct render_pass_submission_info
+{
+   vml::non_null<render_pass*> p_render_pass;
+
+   util::index_t framebuffer_index;
+   vk::Rect2D render_area;
+   std::span<const vk::ClearValue> clear_values;
+};

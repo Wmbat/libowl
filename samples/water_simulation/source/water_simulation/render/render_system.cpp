@@ -23,7 +23,7 @@ struct render_system_data
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
 
-   image<image_type::depth> depth_image;
+   image<image_flags::depth_stencil> depth_image;
 
    ui::window* p_window;
 
@@ -154,15 +154,17 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
    return std::move(data);
 }
 
-auto create_depth_buffer(render_system_data&& data) -> result<render_system_data>
+auto create_depth_buffer(util::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
+   -> image<image_flags::depth_stencil>
 {
-   auto& extent = data.swapchain.extent();
-   return image<image_type::depth>::make(
-             {.device = data.device, .width = extent.width, .height = extent.height})
-      .map([&](image<image_type::depth>&& b) {
-         data.depth_image = std::move(b);
-         return std::move(data);
-      });
+   return image<image_flags::depth_stencil>{
+      {.logger = logger,
+       .device = device,
+       .formats = {std::begin(depth_formats), std::end(depth_formats)},
+       .tiling = vk::ImageTiling::eOptimal,
+       .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+       .width = extent.width,
+       .height = extent.height}};
 }
 
 auto render_system::make(create_info&& info) -> util::result<render_system>
@@ -174,7 +176,6 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
       .and_then(create_in_flight_fences)
       .and_then(create_image_available_semaphores)
       .and_then(create_render_finished_semaphores)
-      .and_then(create_depth_buffer)
       .map([](render_system_data&& data) {
          render_system rs{};
          rs.m_logger = data.logger;
@@ -186,7 +187,7 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_image_available_semaphores = std::move(data.image_available_semaphores);
          rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
          rs.m_render_command_pools = std::move(data.render_command_pools);
-         rs.m_depth_image = std::move(data.depth_image);
+         rs.m_depth_image = create_depth_buffer(rs.m_logger, rs.m_device, rs.m_swapchain.extent());
          rs.m_configuration = {.swapchain_image_count = static_cast<std::uint32_t>(
                                   std::size(rs.m_swapchain.image_views()))};
 

@@ -33,10 +33,10 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -fno-omit-frame-pointer
     -Wconversion>
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o2 -g -fno-omit-frame-pointer>
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o2 -march=native>
 
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -Werror -fno-omit-frame-pointer -Wconversion>
-    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3>)
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o2>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     vermillon::util
@@ -46,7 +46,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
     EnTT::EnTT 
     tinyobjloader
-    easy_profiler
     tbb)
 
 if (VERMILLON_SANITIZE_ADDRESS)
@@ -63,7 +62,6 @@ target_include_directories(${PROJECT_NAME}
     SYSTEM 
         PUBLIC
             EnTT::EnTT 
-            easy_profiler
     PUBLIC 
         $<INSTALL_INTERFACE:include>    
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

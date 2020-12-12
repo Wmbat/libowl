@@ -87,14 +87,7 @@ auto create_framebuffers(render_pass_data&& data) -> result<render_pass_data>
    {
       info.framebuffer_create_infos[i].pass = data.render_pass.get();
 
-      auto fb_res = framebuffer::make(std::move(info.framebuffer_create_infos[i]));
-
-      if (auto err = fb_res.error())
-      {
-         return monad::err(err.value());
-      }
-
-      framebuffers.emplace_back(std::move(fb_res).value().value());
+      framebuffers.emplace_back(std::move(info.framebuffer_create_infos[i]));
    }
 
    data.framebuffers = std::move(framebuffers);

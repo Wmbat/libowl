@@ -82,7 +82,7 @@ private:
    vkn::device m_device;
    vkn::swapchain m_swapchain;
 
-   image<image_type::depth> m_depth_image;
+   image<image_flags::depth_stencil> m_depth_image;
 
    semaphore_array m_render_finished_semaphores;
 

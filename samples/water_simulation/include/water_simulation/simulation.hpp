@@ -89,6 +89,7 @@ private:
    offscreen m_offscreen;
 
    util::dynamic_array<std::uint8_t> m_image_pixels;
+   bool has_offscreen_render{false};
    std::future<void> m_image_write_fut;
 
    float m_max_density{0};

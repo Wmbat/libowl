@@ -28,6 +28,12 @@
 #include <ranges>
 #include <type_traits>
 
+namespace vml
+{
+   template <typename Any>
+   concept enumeration = std::is_enum_v<Any>;
+} // namespace vml
+
 namespace util
 {
    // clang-format off

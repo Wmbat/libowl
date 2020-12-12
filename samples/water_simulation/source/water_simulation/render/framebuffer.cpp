@@ -1,6 +1,7 @@
 #include <water_simulation/render/framebuffer.hpp>
 
-auto framebuffer::make(create_info&& info) -> result<framebuffer>
+framebuffer::framebuffer(create_info&& info) :
+   m_width{info.width}, m_height{info.height}, m_layers{info.layers}
 {
    const auto create_info =
       vk::FramebufferCreateInfo{}
@@ -9,63 +10,17 @@ auto framebuffer::make(create_info&& info) -> result<framebuffer>
          .setRenderPass(info.pass)
          .setAttachmentCount(static_cast<std::uint32_t>(info.attachments.size()))
          .setPAttachments(info.attachments.data())
-         .setWidth(info.width)
-         .setHeight(info.height)
-         .setLayers(info.layers);
+         .setWidth(m_width)
+         .setHeight(m_height)
+         .setLayers(m_layers);
 
-   return monad::try_wrap<vk::SystemError>([&] {
-             return info.device.createFramebufferUnique(create_info);
-          })
-      .map_error([](const vk::SystemError& /*err*/) {
-         return to_err_code(framebuffer_error::failed_to_create_framebuffer);
-      })
-      .map([&](vk::UniqueFramebuffer&& handle) {
-         info.logger.info("framebuffer created");
+   m_framebuffer = info.device.createFramebufferUnique(create_info);
 
-         framebuffer f{};
-         f.m_framebuffer = std::move(handle);
-         f.m_width = info.width;
-         f.m_height = info.height;
-         f.m_layers = info.layers;
-         return f;
-      });
+   info.logger.info("Framebuffer of dimensions ({}, {}) with {} attachments created", m_width,
+                    m_height, std::size(info.attachments));
 }
 
 auto framebuffer::value() const -> vk::Framebuffer
 {
    return m_framebuffer.get();
-}
-
-struct framebuffer_error_category : std::error_category
-{
-   /**
-    * The name of the vkn object the error appeared from.
-    */
-   [[nodiscard]] auto name() const noexcept -> const char* override
-   {
-      return "framebuffer";
-   } // namespace vkn
-   /**
-    * Get the message associated with a specific error code.
-    */
-   [[nodiscard]] auto message(int err) const -> std::string override
-   {
-      return to_string(static_cast<framebuffer_error>(err));
-   }
-};
-
-inline static const framebuffer_error_category framebuffer_error_cat{};
-
-auto to_string(framebuffer_error err) -> std::string
-{
-   if (err == framebuffer_error::failed_to_create_framebuffer)
-   {
-      return "failed_to_create_framebuffer";
-   }
-
-   return "UNKNOWN";
-}
-auto to_err_code(framebuffer_error err) -> util::error_t
-{
-   return {{static_cast<int>(err), framebuffer_error_cat}};
 }

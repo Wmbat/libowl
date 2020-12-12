@@ -15,8 +15,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <water_simulation/stb_image_write.h>
 
-#include <easy/profiler.h>
-
 #include <execution>
 #include <future>
 
@@ -63,10 +61,9 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
 
 auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescription
 {
-   const auto res = find_colour_format(device);
-   if (auto val = res.value())
+   if (auto res = find_colour_format(device))
    {
-      return {.format = val.value(),
+      return {.format = res.value(),
               .samples = vk::SampleCountFlagBits::e1,
               .loadOp = vk::AttachmentLoadOp::eClear,
               .storeOp = vk::AttachmentStoreOp::eStore,
@@ -81,8 +78,7 @@ auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescripti
 
 auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 {
-   const auto res = find_depth_format(device);
-   if (auto val = res.value())
+   if (auto val = find_depth_format(device))
    {
       return {.format = val.value(),
               .samples = vk::SampleCountFlagBits::e1,
@@ -98,7 +94,7 @@ auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{"water_simulation"}, m_settings{settings}, m_window{"Water Simulation", 1080, 720},
+   m_logger{"fluid_simulation"}, m_settings{settings}, m_window{"Fluid Simulation", 1080, 720},
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
    m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
@@ -229,25 +225,34 @@ void simulation::run()
 
 void simulation::update()
 {
-   EASY_FUNCTION(profiler::colors::Amber);
-
    m_sph_system.update(m_settings.time_step);
    m_collision_system.update(m_settings.time_step);
 }
 void simulation::render()
 {
-   EASY_FUNCTION(profiler::colors::LightBlue);
-
    m_max_density =
       ranges::max_element(m_sph_system.particles(), {}, &sph::particle::density)->density;
+
+   if (has_offscreen_render)
+   {
+      m_render_system.device().logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+                                                       std::numeric_limits<std::uint64_t>::max());
+
+      const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
+      m_image_write_fut = std::async(&simulation::write_image_to_disk, this, filename);
+
+      has_offscreen_render = false;
+   }
 
    onscreen_render();
 
    if (m_time_spent.count() >= m_time_per_frame.count())
    {
+      has_offscreen_render = true;
+
       if (m_frame_count.value() != 0)
       {
-         // m_image_write_fut.get();
+         m_image_write_fut.get();
       }
 
       m_logger.info(
@@ -256,8 +261,6 @@ void simulation::render()
 
       offscreen_render();
 
-      const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
-      m_image_write_fut = std::async(&simulation::write_image_to_disk, this, filename);
       // write_image_to_disk(filename);
 
       m_time_spent = 0ms;
@@ -267,11 +270,7 @@ void simulation::render()
 
 void simulation::onscreen_render()
 {
-   EASY_FUNCTION(profiler::colors::Brown);
-
-   EASY_BLOCK("begin_frame");
    const auto image_index = m_render_system.begin_frame();
-   EASY_END_BLOCK;
 
    {
       auto extent = m_render_system.swapchain().extent();
@@ -331,25 +330,16 @@ void simulation::onscreen_render()
       }
    });
 
-   EASY_BLOCK("render");
    m_render_system.render(m_render_passes);
-   EASY_END_BLOCK;
 
-   EASY_BLOCK("end_frame");
    m_render_system.end_frame();
-   EASY_END_BLOCK;
 }
 void simulation::offscreen_render()
 {
-   EASY_FUNCTION(profiler::colors::Orange);
-
    auto& device = m_render_system.device();
 
-   EASY_BLOCK("begin_frame");
    device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
-   EASY_END_BLOCK;
 
-   EASY_BLOCK("Render")
    m_offscreen.camera.update(util::index_t{0u}, compute_matrices(image_width, image_height));
 
    std::array<vk::ClearValue, 2> clear_values{};
@@ -420,7 +410,6 @@ void simulation::offscreen_render()
       cmd.end();
    }
 
-   EASY_BLOCK("Submit render calls")
    const std::array wait_semaphores{m_offscreen.image_available_semaphore.value()};
    const std::array signal_semaphores{m_offscreen.render_finished_semaphore.value()};
    const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers()[0]};
@@ -454,15 +443,7 @@ void simulation::offscreen_render()
 
       std::terminate();
    }
-   EASY_END_BLOCK;
 
-   EASY_BLOCK("Wait for fence");
-   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
-                                  std::numeric_limits<std::uint64_t>::max());
-   EASY_END_BLOCK;
-   EASY_END_BLOCK;
-
-   EASY_BLOCK("Image copy")
    auto buffer = check_err(m_offscreen.command_pool.create_primary_buffer());
    buffer->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -479,9 +460,6 @@ void simulation::offscreen_render()
                              std::data(copy_regions));
    buffer->end();
 
-   device.logical().resetFences({m_offscreen.in_flight_fence.value()});
-
-   EASY_BLOCK("Submit")
    try
    {
       const std::array copy_command_buffers{buffer.get()};
@@ -506,23 +484,26 @@ void simulation::offscreen_render()
 
       std::terminate();
    }
-   EASY_END_BLOCK;
-
-   EASY_BLOCK("Fence waiting")
-   device.logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
-                                  std::numeric_limits<std::uint64_t>::max());
-   EASY_END_BLOCK;
-   EASY_END_BLOCK;
 }
 
 void simulation::setup_offscreen()
 {
    auto& device = m_render_system.device();
 
-   m_offscreen.colour = check_err(colour_image::make(
-      image_create_info{.device = device, .width = image_width, .height = image_height}));
-   m_offscreen.depth = check_err(depth_image::make(
-      image_create_info{.device = device, .width = image_width, .height = image_height}));
+   m_offscreen.colour = {{.logger = &m_logger,
+                          .device = device,
+                          .formats = {std::begin(colour_formats), std::end(colour_formats)},
+                          .tiling = vk::ImageTiling::eOptimal,
+                          .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+                          .width = image_width,
+                          .height = image_height}};
+   m_offscreen.depth = {{.logger = &m_logger,
+                         .device = device,
+                         .formats = {std::begin(depth_formats), std::end(depth_formats)},
+                         .tiling = vk::ImageTiling::eOptimal,
+                         .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+                         .width = image_width,
+                         .height = image_height}};
    m_offscreen.render_pass = check_err(
       render_pass::make({.device = device.logical(),
                          .colour_attachment = offscreen_colour_attachment(device),
@@ -685,8 +666,6 @@ auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> 
 
 void simulation::write_image_to_disk(std::string_view name)
 {
-   EASY_FUNCTION(profiler::colors::DarkMagenta);
-
    auto device = m_render_system.device().logical();
 
    void* p_data = device.mapMemory(m_offscreen.image_buffer.memory(), 0,
