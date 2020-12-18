@@ -2,7 +2,7 @@
 
 #include <water_simulation/core.hpp>
 
-#include <util/containers/dynamic_array.hpp>
+#include <libcaramel/containers/dynamic_array.hpp>
 
 #include <entt/entt.hpp>
 
@@ -36,7 +36,7 @@ namespace sph
          glm::u64vec3 grid_pos{};
          glm::vec3 center{};
 
-         std::vector<particle*> particles{};
+         crl::dynamic_array<particle*> particles{};
       };
 
    public:
@@ -60,7 +60,7 @@ namespace sph
        *
        * @return A list of neighbouring entities.
        */
-      auto lookup_neighbours(const glm::i64vec3& grid_pos) -> util::dynamic_array<particle*>;
+      auto lookup_neighbours(const glm::i64vec3& grid_pos) -> crl::dynamic_array<particle*>;
 
    private:
       float m_cell_size{};
@@ -68,7 +68,7 @@ namespace sph
 
       glm::i64vec3 m_cell_count{};
 
-      util::dynamic_array<cell> m_cells{};
+      crl::dynamic_array<cell> m_cells{};
 
       util::logger_wrapper m_logger;
    };

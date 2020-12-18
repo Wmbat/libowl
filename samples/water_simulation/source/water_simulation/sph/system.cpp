@@ -10,8 +10,6 @@
 
 #include <execution>
 
-namespace vi = ranges::views;
-
 namespace sph
 {
    system::system(create_info&& info) :
@@ -20,7 +18,7 @@ namespace sph
                                                           info.dimensions, info.p_logger}
    {}
 
-   void system::emit(particle&& particle) { auto& p = m_particles.emplace_back(particle); }
+   void system::emit(particle&& particle) { m_particles.append(particle); }
 
    auto system::particles() -> std::span<particle> { return m_particles; }
 

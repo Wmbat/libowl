@@ -81,14 +81,14 @@ private:
    sph::system m_sph_system;
    collision::system m_collision_system{};
 
-   util::dynamic_array<particle> m_particles;
+   crl::dynamic_array<particle> m_particles;
 
    std::string m_vert_shader_key{"resources/shaders/test_vert.spv"};
    std::string m_frag_shader_key{"resources/shaders/test_frag.spv"};
 
    offscreen m_offscreen;
 
-   util::dynamic_array<std::uint8_t> m_image_pixels;
+   crl::dynamic_array<std::uint8_t> m_image_pixels;
    bool has_offscreen_render{false};
    std::future<void> m_image_write_fut;
 

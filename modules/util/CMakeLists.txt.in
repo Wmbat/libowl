@@ -13,6 +13,14 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
+    NAME libcaramel
+    GITHUB_REPOSITORY Wmbat/libcaramel
+    GIT_TAG master
+    OPTIONS
+      "BUILD_TESTS OFF"
+)
+
+CPMAddPackage(
    NAME range-v3
    VERSION 0.11.0
    GITHUB_REPOSITORY ericniebler/range-v3

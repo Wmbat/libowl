@@ -11,8 +11,7 @@
 .cache
 tags
 
-html
-latex
+documentation/
 
 .vimspector.json
 

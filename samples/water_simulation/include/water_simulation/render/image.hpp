@@ -16,11 +16,31 @@ enum struct image_error
    failed_to_create_image_view
 };
 
+/**
+ * @brief Convert an image_error value to string
+ *
+ * @param err The error value to convert.
+ *
+ * @return The string representation of the error value.
+ */
 auto to_string(image_error err) -> std::string;
+/**
+ * @brief Convert an image_error value to a vml::error_t
+ */
 auto to_err_cond(image_error err) -> vml::error_t;
 
 auto find_memory_type(uint32_t type_filter, const vk::MemoryPropertyFlags& properties,
                       vk::PhysicalDevice device) -> monad::maybe<std::uint32_t>;
+/**
+ * @brief
+ *
+ * @param candidates The desired format candidates
+ * @param tiling The tiling the format should support
+ * @param features The features the format should support
+ * @param device
+ *
+ * @return
+ */
 auto find_supported_formats(std::span<const vk::Format> candidates, vk::ImageTiling tiling,
                             const vk::FormatFeatureFlags& features, const vkn::device& device)
    -> monad::maybe<vk::Format>;
@@ -57,6 +77,13 @@ constexpr auto operator~(image_flags bits) noexcept -> image_flags
    return static_cast<image_flags>(~(static_cast<std::underlying_type_t<image_flags>>(bits)));
 }
 
+/**
+ * @brief Convert a image_flags value to a string.
+ *
+ * @param flags The bit flags to convert.
+ *
+ * @return The string representation of the flag value.
+ */
 auto to_string(image_flags flags) -> std::string;
 
 struct image_create_info
@@ -74,6 +101,11 @@ struct image_create_info
    std::uint32_t height{0};
 };
 
+/**
+ * @brief
+ *
+ * @tparam Flags
+ */
 template <image_flags Flags>
 class image
 {
@@ -113,7 +145,17 @@ public:
                        vk::to_string(m_fmt));
    }
 
+   /**
+    * @brief Access the underlying vulkan image handle
+    *
+    * @return The handle to the vulkan image.
+    */
    auto value() const -> vk::Image { return m_image.get(); }     // NOLINT
+   /**
+    * @brief Access the underlying vulkan image view  handle
+    *
+    * @return The handle to the vulkan image view.
+    */
    auto view() const -> vk::ImageView { return m_view.get(); }   // NOLINT
    auto subresource_layers() const -> vk::ImageSubresourceLayers // NOLINT
    {

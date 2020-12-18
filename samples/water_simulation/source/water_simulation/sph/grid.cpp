@@ -54,7 +54,7 @@ namespace sph
                   -m_dimensions.z + half(cell_size) + static_cast<float>(z) * cell_size};
                glm::u64vec3 grid_pos = {x, y, z};
 
-               m_cells.push_back({.grid_pos = grid_pos, .center = center});
+               m_cells.append({.grid_pos = grid_pos, .center = center});
             }
          }
       }
@@ -84,13 +84,13 @@ namespace sph
          std::int64_t offset = grid_position.x + grid_position.y * m_cell_count.x +
             grid_position.z * m_cell_count.x * m_cell_count.y;
 
-         m_cells[static_cast<std::size_t>(offset)].particles.push_back(&p);
+         m_cells.lookup(static_cast<std::size_t>(offset)).particles.append(&p);
       }
    }
 
    auto grid::cells() -> std::span<cell> { return m_cells; }
 
-   auto grid::lookup_neighbours(const glm::i64vec3& grid_pos) -> util::dynamic_array<particle*>
+   auto grid::lookup_neighbours(const glm::i64vec3& grid_pos) -> crl::dynamic_array<particle*>
    {
       const int early_x = (grid_pos.x == 0) ? 0 : -1; // NOLINT
       const int early_y = (grid_pos.y == 0) ? 0 : -1; // NOLINT
@@ -100,7 +100,7 @@ namespace sph
       const int late_y = (grid_pos.y == m_cell_count.y - 1) ? 1 : 2; // NOLINT
       const int late_z = (grid_pos.z == m_cell_count.z - 1) ? 1 : 2; // NOLINT
 
-      util::dynamic_array<particle*> particles{};
+      crl::dynamic_array<particle*> particles{};
 
       for (int x : vi::ints(early_x, late_x))
       {
@@ -113,7 +113,7 @@ namespace sph
                std::int64_t offset = adjusted_pos.x + adjusted_pos.y * m_cell_count.x +
                   adjusted_pos.z * m_cell_count.x * m_cell_count.y;
 
-               auto& c = m_cells[static_cast<std::size_t>(offset)];
+               auto& c = m_cells.lookup(static_cast<std::size_t>(offset));
 
                particles.insert(std::cend(particles), c.particles.begin(), c.particles.end());
             }

@@ -3,6 +3,8 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/sph/grid.hpp>
 
+#include <libcaramel/containers/dynamic_array.hpp>
+
 namespace sph
 {
    /**
@@ -75,6 +77,6 @@ namespace sph
       float m_kernel_radius{};
 
       grid m_grid;
-      util::dynamic_array<particle> m_particles;
+      crl::dynamic_array<particle> m_particles;
    };
 } // namespace sph

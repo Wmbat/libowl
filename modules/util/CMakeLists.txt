@@ -84,6 +84,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PUBLIC
    spdlog::spdlog
    monads::monads
+   libcaramel::libcaramel
    range-v3::range-v3)
 
 if (VERMILLON_SANITIZE_ADDRESS)

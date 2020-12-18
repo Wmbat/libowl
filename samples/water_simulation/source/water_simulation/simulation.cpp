@@ -105,13 +105,13 @@ simulation::simulation(const settings& settings) :
    check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
    check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
 
-   m_render_passes.emplace_back(check_err(render_pass::make(
+   m_render_passes.emplace_back(render_pass{
       {.device = m_render_system.device().logical(),
        .swapchain = m_render_system.swapchain().value(),
        .colour_attachment = main_colour_attachment(m_render_system.swapchain().format()),
        .depth_stencil_attachment = main_depth_attachment(m_render_system.device()),
        .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
-       .logger = &m_logger})));
+       .logger = &m_logger}});
 
    m_main_pipeline_key = create_main_pipeline();
 
@@ -504,18 +504,18 @@ void simulation::setup_offscreen()
                          .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
                          .width = image_width,
                          .height = image_height}};
-   m_offscreen.render_pass = check_err(
-      render_pass::make({.device = device.logical(),
-                         .colour_attachment = offscreen_colour_attachment(device),
-                         .depth_stencil_attachment = main_depth_attachment(device),
-                         .framebuffer_create_infos = {framebuffer::create_info{
-                            .device = device.logical(),
-                            .attachments = {m_offscreen.colour.view(), m_offscreen.depth.view()},
-                            .width = image_width,
-                            .height = image_height,
-                            .layers = 1,
-                            .logger = &m_logger}},
-                         .logger = &m_logger}));
+   m_offscreen.render_pass =
+      render_pass{{.device = device.logical(),
+                   .colour_attachment = offscreen_colour_attachment(device),
+                   .depth_stencil_attachment = main_depth_attachment(device),
+                   .framebuffer_create_infos = {framebuffer::create_info{
+                      .device = device.logical(),
+                      .attachments = {m_offscreen.colour.view(), m_offscreen.depth.view()},
+                      .width = image_width,
+                      .height = image_height,
+                      .layers = 1,
+                      .logger = &m_logger}},
+                   .logger = &m_logger}};
    m_offscreen_pipeline_key = create_offscreen_pipeline();
    m_offscreen.camera = setup_offscreen_camera(m_offscreen_pipeline_key);
    m_offscreen.command_pool =

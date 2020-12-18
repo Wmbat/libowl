@@ -27,6 +27,13 @@ public:
    };
 
 public:
+   /**
+    * @brief Creates a framebuffer object.
+    *
+    * @param info
+    *
+    * @throws If something failed during construction
+    */
    framebuffer(create_info&& info);
 
    /**
