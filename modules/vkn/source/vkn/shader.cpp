@@ -63,8 +63,7 @@ namespace vkn
       });
    }
 
-   auto builder::set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary)
-      -> builder&
+   auto builder::set_spirv_binary(const crl::dynamic_array<std::uint32_t>& spirv_binary) -> builder&
    {
       m_info.spirv_binary = spirv_binary;
       return *this;
@@ -94,9 +93,9 @@ namespace vkn
 
    auto shader::builder::populate_shader_input(const spirv_cross::Compiler& compiler,
                                                const spirv_cross::ShaderResources& resources)
-      -> util::dynamic_array<shader_input_location_t>
+      -> crl::dynamic_array<shader_input_location_t>
    {
-      util::dynamic_array<shader_input_location_t> res;
+      crl::dynamic_array<shader_input_location_t> res;
       res.reserve(resources.stage_inputs.size());
 
       for (const auto& input : resources.stage_inputs)
@@ -105,7 +104,7 @@ namespace vkn
 
          m_logger.debug(R"([vulkan] input "{}" with location {})", input.name, location);
 
-         res.emplace_back(shader_input_location_t{location});
+         res.append(shader_input_location_t{location});
       }
 
       return res;
@@ -113,9 +112,9 @@ namespace vkn
 
    auto builder::populate_uniform_buffer([[maybe_unused]] const spirv_cross::Compiler& compiler,
                                          const spirv_cross::ShaderResources& resources)
-      -> util::dynamic_array<shader_uniform_binding_t>
+      -> crl::dynamic_array<shader_uniform_binding_t>
    {
-      util::dynamic_array<shader_uniform_binding_t> data{};
+      crl::dynamic_array<shader_uniform_binding_t> data{};
 
       for (const auto& uniform : resources.uniform_buffers)
       {
@@ -123,7 +122,7 @@ namespace vkn
 
          m_logger.debug(R"([vulkan] uniform buffer "{}" with location {})", uniform.name, binding);
 
-         data.emplace_back(shader_uniform_binding_t{binding});
+         data.append(shader_uniform_binding_t{binding});
       }
 
       return data;

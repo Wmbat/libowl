@@ -1,13 +1,14 @@
 #include <vkn/descriptor_pool.hpp>
 
-#include <monads/try.hpp>
 #include <vkn/framebuffer.hpp>
+
+#include <monads/try.hpp>
 
 namespace vkn
 {
    auto descriptor_pool::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
-   auto descriptor_pool::sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>
+   auto descriptor_pool::sets() const noexcept -> crl::dynamic_array<vk::DescriptorSet>
    {
       return m_sets;
    }
@@ -41,7 +42,7 @@ namespace vkn
    }
 
    auto
-   builder::set_descriptor_set_layouts(const util::dynamic_array<vk::DescriptorSetLayout>& layouts)
+   builder::set_descriptor_set_layouts(const crl::dynamic_array<vk::DescriptorSetLayout>& layouts)
       -> builder&
    {
       m_info.unique_layouts = layouts;
@@ -55,7 +56,7 @@ namespace vkn
 
    auto builder::add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&
    {
-      m_info.pool_sizes.emplace_back(
+      m_info.pool_sizes.append(
          vk::DescriptorPoolSize{.type = type, .descriptorCount = count.value()});
       return *this;
    }
@@ -80,11 +81,11 @@ namespace vkn
    auto builder::allocate_descriptor_sets(vk::UniqueDescriptorPool&& handle)
       -> util::result<creation_info>
    {
-      util::dynamic_array<vk::DescriptorSetLayout> layouts{};
+      crl::dynamic_array<vk::DescriptorSetLayout> layouts{};
       if (m_info.singular_layout)
       {
-         layouts = util::dynamic_array<vk::DescriptorSetLayout>{m_info.max_set_count.value(),
-                                                                m_info.singular_layout};
+         layouts = crl::dynamic_array<vk::DescriptorSetLayout>{m_info.max_set_count.value(),
+                                                               m_info.singular_layout};
       }
       else
       {

@@ -68,7 +68,7 @@ private:
    shader_registry m_shaders;
    pipeline_registry m_pipelines;
 
-   util::dynamic_array<render_pass> m_render_passes;
+   crl::dynamic_array<render_pass> m_render_passes;
 
    pipeline_index_t m_main_pipeline_key{};
    pipeline_index_t m_offscreen_pipeline_key{};

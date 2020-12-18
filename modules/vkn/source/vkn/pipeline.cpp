@@ -78,7 +78,7 @@ namespace vkn
                         graphics_pipeline_data&& data, util::logger_wrapper logger)
       -> util::result<graphics_pipeline_data>
    {
-      util::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
+      crl::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
       shader_stage_info.reserve(std::size(create_info.shader_infos));
 
       util::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
@@ -86,14 +86,13 @@ namespace vkn
       {
          logger.info(R"([vulkan] using shader "{0}" for graphics pipeline)", info.p_shader->name());
 
-         shader_stage_info.emplace_back(
-            vk::PipelineShaderStageCreateInfo{}
-               .setPNext(nullptr)
-               .setFlags({})
-               .setPSpecializationInfo(nullptr)
-               .setStage(detail::to_shader_stage_flag(info.p_shader->stage()))
-               .setModule(info.p_shader->value())
-               .setPName("main"));
+         shader_stage_info.append(vk::PipelineShaderStageCreateInfo{}
+                                     .setPNext(nullptr)
+                                     .setFlags({})
+                                     .setPSpecializationInfo(nullptr)
+                                     .setStage(detail::to_shader_stage_flag(info.p_shader->stage()))
+                                     .setModule(info.p_shader->value())
+                                     .setPName("main"));
 
          if (info.p_shader->stage() == shader_type::vertex)
          {
@@ -103,7 +102,8 @@ namespace vkn
          ++index;
       }
 
-      const auto* p_vertex_shader = create_info.shader_infos[vertex_shader_index.value()].p_shader;
+      const auto* p_vertex_shader =
+         create_info.shader_infos.lookup(vertex_shader_index.value()).p_shader;
       if (!detail::check_vertex_attribute_support(p_vertex_shader, create_info.attributes,
                                                   create_info.logger))
       {
@@ -215,20 +215,20 @@ namespace vkn
    auto create_pipeline_layout(const vkn::device& device, graphics_pipeline_data&& pipeline,
                                util::logger_wrapper logger) -> util::result<graphics_pipeline_data>
    {
-      util::dynamic_array<vk::DescriptorSetLayout> layouts;
+      crl::dynamic_array<vk::DescriptorSetLayout> layouts;
       layouts.reserve(std::size(pipeline.set_layouts));
 
       for (const auto& [name, layout] : pipeline.set_layouts)
       {
-         layouts.emplace_back(layout.value());
+         layouts.append(layout.value());
       }
 
-      util::dynamic_array<vk::PushConstantRange> push_constants;
+      crl::dynamic_array<vk::PushConstantRange> push_constants;
       push_constants.reserve(std::size(pipeline.push_constants));
 
       for (const auto& [name, push] : pipeline.push_constants)
       {
-         push_constants.emplace_back(push);
+         push_constants.append(push);
       }
 
       return monad::try_wrap<vk::SystemError>([&] {
@@ -276,7 +276,7 @@ namespace vkn
                });
 
             auto result = vkn::descriptor_set_layout::builder{device, logger}
-                             .set_bindings(bindings | ranges::to<util::dynamic_array>)
+                             .set_bindings(bindings | ranges::to<crl::dynamic_array>)
                              .build();
 
             if (result)

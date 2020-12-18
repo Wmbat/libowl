@@ -135,13 +135,13 @@ auto create_image_available_semaphores(render_system_data&& data) -> result<rend
 
 auto create_render_finished_semaphores(render_system_data&& data) -> result<render_system_data>
 {
-   util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()> semaphores;
+   crl::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()> semaphores;
 
    for ([[maybe_unused]] const auto& _ : data.swapchain.image_views())
    {
       if (auto res = vkn::semaphore::builder{data.device, data.info.logger}.build())
       {
-         semaphores.emplace_back(std::move(res).value().value());
+         semaphores.append(std::move(res).value().value());
       }
       else
       {
@@ -261,21 +261,21 @@ void render_system::render(std::span<render_pass> passes)
 
 void render_system::end_frame()
 {
-   if (m_images_in_flight[m_current_image_index.value()])
+   if (m_images_in_flight.lookup(m_current_image_index.value()))
    {
       m_device.logical().waitForFences(
-         {vkn::value(m_images_in_flight.at(m_current_frame_index.value()))}, true,
+         {vkn::value(m_images_in_flight.lookup(m_current_frame_index.value()))}, true,
          std::numeric_limits<std::uint64_t>::max());
    }
-   m_images_in_flight[m_current_image_index.value()] =
+   m_images_in_flight.lookup(m_current_image_index.value()) =
       vkn::value(m_in_flight_fences.at(m_current_frame_index.value()));
 
    const std::array wait_semaphores{
       vkn::value(m_image_available_semaphores.at(m_current_frame_index.value()))};
    const std::array signal_semaphores{
-      vkn::value(m_render_finished_semaphores.at(m_current_image_index.value()))};
+      vkn::value(m_render_finished_semaphores.lookup(m_current_image_index.value()))};
    const std::array command_buffers{
-      m_render_command_pools[m_current_frame_index.value()].primary_cmd_buffers()[0]}; // NOLINT
+      m_render_command_pools.at(m_current_frame_index.value()).primary_cmd_buffers().lookup(0)};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -384,7 +384,7 @@ auto render_system::scissor() const -> vk::Rect2D
    return {.offset = {0, 0}, .extent = m_swapchain.extent()};
 }
 
-auto render_system::create_vertex_buffer(const util::dynamic_array<gfx::vertex>& vertices) const
+auto render_system::create_vertex_buffer(const crl::dynamic_array<gfx::vertex>& vertices) const
    -> util::result<gfx::vertex_buffer>
 {
    return gfx::vertex_buffer::make({.vertices = vertices,
@@ -392,7 +392,7 @@ auto render_system::create_vertex_buffer(const util::dynamic_array<gfx::vertex>&
                                     .command_pool = m_render_command_pools[0],
                                     .logger = m_logger});
 }
-auto render_system::create_index_buffer(const util::dynamic_array<std::uint32_t>& indices) const
+auto render_system::create_index_buffer(const crl::dynamic_array<std::uint32_t>& indices) const
    -> util::result<gfx::index_buffer>
 {
    return gfx::index_buffer::make({.indices = indices,

@@ -2,8 +2,6 @@
 
 #include <water_simulation/render/render_system.hpp>
 
-#include <util/containers/dynamic_array.hpp>
-
 #include <gfx/data_types.hpp>
 #include <gfx/memory/index_buffer.hpp>
 #include <gfx/memory/vertex_buffer.hpp>
@@ -58,8 +56,8 @@ inline auto load_obj(const std::filesystem::path& path) -> gfx::renderable_data
 
    std::unordered_map<gfx::vertex, std::uint32_t> unique_vertices{};
 
-   util::dynamic_array<gfx::vertex> vertices;
-   util::dynamic_array<std::uint32_t> indices;
+   crl::dynamic_array<gfx::vertex> vertices;
+   crl::dynamic_array<std::uint32_t> indices;
 
    for (const auto& shape : shapes)
    {
@@ -77,10 +75,10 @@ inline auto load_obj(const std::filesystem::path& path) -> gfx::renderable_data
          if (unique_vertices.count(vertex) == 0)
          {
             unique_vertices[vertex] = static_cast<uint32_t>(vertices.size());
-            vertices.push_back(vertex);
+            vertices.append(vertex);
          }
 
-         indices.push_back(unique_vertices[vertex]);
+         indices.append(unique_vertices[vertex]);
       }
    }
 

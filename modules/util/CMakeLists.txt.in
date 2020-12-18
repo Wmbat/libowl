@@ -15,7 +15,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME libcaramel
     GITHUB_REPOSITORY Wmbat/libcaramel
-    GIT_TAG master
+    GIT_TAG bug/array-bug-fixes
     OPTIONS
       "BUILD_TESTS OFF"
 )

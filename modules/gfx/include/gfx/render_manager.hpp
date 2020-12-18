@@ -28,7 +28,7 @@ namespace gfx
       static constexpr std::size_t max_frames_in_flight = 2;
 
       using framebuffer_array =
-         util::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>;
+         crl::small_dynamic_array<vkn::framebuffer, vkn::expected_image_count.value()>;
 
    public:
       render_manager(const ui::window& wnd, util::logger_wrapper logger);
@@ -62,11 +62,11 @@ namespace gfx
       auto create_swapchain_framebuffers() noexcept -> framebuffer_array;
 
       auto create_camera_descriptor_pool() noexcept -> vkn::descriptor_pool;
-      auto create_camera_buffers() noexcept -> util::dynamic_array<gfx::camera_buffer>;
+      auto create_camera_buffers() noexcept -> crl::dynamic_array<gfx::camera_buffer>;
 
       auto create_command_pool() noexcept -> std::array<vkn::command_pool, max_frames_in_flight>;
       auto create_render_finished_semaphores() noexcept
-         -> util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>;
+         -> crl::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>;
       auto create_image_available_semaphores() noexcept
          -> std::array<vkn::semaphore, max_frames_in_flight>;
       auto create_in_flight_fences() noexcept -> std::array<vkn::fence, max_frames_in_flight>;
@@ -94,24 +94,24 @@ namespace gfx
 
       vkn::descriptor_pool m_camera_descriptor_pool; // Should be recreated with swapchain
 
-      util::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>
+      crl::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()>
          m_render_finished_semaphores;
 
       std::array<vkn::command_pool, max_frames_in_flight> m_gfx_command_pools;
       std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
       std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
 
-      util::dynamic_array<vkn::fence_observer> m_images_in_flight{};
+      crl::dynamic_array<vkn::fence_observer> m_images_in_flight{};
 
-      util::dynamic_array<render_pass> m_render_passes;
+      crl::dynamic_array<render_pass> m_render_passes;
       std::unordered_map<std::string, util::index_t> m_render_pass_to_index;
 
       std::size_t m_current_frame{0};
 
       std::unordered_map<std::string, std::uint32_t> m_renderables_to_index;
-      util::dynamic_array<renderable> m_renderables;
-      util::dynamic_array<glm::mat4> m_renderable_model_matrices;
+      crl::dynamic_array<renderable> m_renderables;
+      crl::dynamic_array<glm::mat4> m_renderable_model_matrices;
 
-      util::dynamic_array<gfx::camera_buffer> m_camera_buffers;
+      crl::dynamic_array<gfx::camera_buffer> m_camera_buffers;
    };
 } // namespace gfx

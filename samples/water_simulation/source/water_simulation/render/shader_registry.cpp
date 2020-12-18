@@ -20,7 +20,8 @@ auto shader_registry::insert(const filepath& path, vkn::shader_type type) -> res
 
    const std::vector<uint8_t> raw_shader_data{file_it{file}, file_it{}};
 
-   spirv_binary data(raw_shader_data.size() / sizeof(std::uint32_t));
+   spirv_binary data{};
+   data.resize(raw_shader_data.size() / sizeof(std::uint32_t));
 
    std::memcpy(static_cast<void*>(data.data()), raw_shader_data.data(),
                sizeof(std::uint32_t) * data.size());

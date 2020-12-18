@@ -2,7 +2,6 @@
 
 #include <vkn/device.hpp>
 
-#include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 
 #include <vulkan/vulkan.hpp>
@@ -47,7 +46,7 @@ namespace vkn
 
    private:
       [[nodiscard]] auto enumerate_physical_devices() const
-         -> util::result<util::dynamic_array<vk::PhysicalDevice>>;
+         -> util::result<crl::dynamic_array<vk::PhysicalDevice>>;
 
    private:
       vk::DynamicLoader m_loader{};
@@ -57,7 +56,7 @@ namespace vkn
 
       std::uint32_t m_api_version{};
 
-      util::dynamic_array<vk::ExtensionProperties> m_enabled_extensions{};
+      crl::dynamic_array<vk::ExtensionProperties> m_enabled_extensions{};
 
       util::logger_wrapper m_logger;
 

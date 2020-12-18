@@ -6,7 +6,7 @@ namespace vkn
 {
    auto descriptor_set_layout::device() const -> vk::Device { return m_value.getOwner(); }
    auto descriptor_set_layout::bindings() const
-      -> const util::dynamic_array<vk::DescriptorSetLayoutBinding>&
+      -> const crl::dynamic_array<vk::DescriptorSetLayoutBinding>&
    {
       return m_bindings;
    }
@@ -43,12 +43,12 @@ namespace vkn
 
    auto builder::add_binding(const vk::DescriptorSetLayoutBinding& binding) noexcept -> builder&
    {
-      m_info.bindings.emplace_back(binding);
+      m_info.bindings.append(binding);
       return *this;
    }
 
    auto builder::set_bindings(
-      const util::dynamic_array<vk::DescriptorSetLayoutBinding>& bindings) noexcept -> builder&
+      const crl::dynamic_array<vk::DescriptorSetLayoutBinding>& bindings) noexcept -> builder&
    {
       m_info.bindings = bindings;
       return *this;

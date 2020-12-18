@@ -3,7 +3,6 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/render/render_system.hpp>
 
-#include <util/containers/dynamic_array.hpp>
 #include <util/error.hpp>
 
 #include <gfx/render_manager.hpp>
@@ -33,7 +32,7 @@ auto to_string(shader_registry_error err) -> std::string;
  */
 auto to_err_code(shader_registry_error err) -> util::error_t;
 
-using spirv_binary = util::dynamic_array<std::uint32_t>;
+using spirv_binary = crl::dynamic_array<std::uint32_t>;
 
 class shader_registry
 {

@@ -11,8 +11,8 @@
 #include <util/error.hpp>
 #include <util/strong_type.hpp>
 
-using vertex_bindings_array = util::dynamic_array<vk::VertexInputBindingDescription>;
-using vertex_attributes_array = util::dynamic_array<vk::VertexInputAttributeDescription>;
+using vertex_bindings_array = crl::dynamic_array<vk::VertexInputBindingDescription>;
+using vertex_attributes_array = crl::dynamic_array<vk::VertexInputAttributeDescription>;
 
 enum struct pipeline_type
 {
@@ -38,7 +38,7 @@ struct set_layout_binding
 struct set_layout_data
 {
    std::string name{};
-   util::dynamic_array<set_layout_binding> bindings{};
+   crl::dynamic_array<set_layout_binding> bindings{};
 };
 
 struct push_constant_data
@@ -51,8 +51,8 @@ struct push_constant_data
 struct pipeline_shader_data
 {
    vkn::shader* p_shader{nullptr};
-   util::dynamic_array<set_layout_data> set_layouts{};
-   util::dynamic_array<push_constant_data> push_constants{};
+   crl::dynamic_array<set_layout_data> set_layouts{};
+   crl::dynamic_array<push_constant_data> push_constants{};
 };
 
 class graphics_pipeline final
@@ -70,10 +70,10 @@ public:
       vertex_bindings_array bindings{};
       vertex_attributes_array attributes{};
 
-      util::dynamic_array<vk::Viewport> viewports{};
-      util::dynamic_array<vk::Rect2D> scissors{};
+      crl::dynamic_array<vk::Viewport> viewports{};
+      crl::dynamic_array<vk::Rect2D> scissors{};
 
-      util::dynamic_array<pipeline_shader_data> shader_infos{};
+      crl::dynamic_array<pipeline_shader_data> shader_infos{};
    };
 
    static auto make(create_info&& info) -> util::result<graphics_pipeline>;

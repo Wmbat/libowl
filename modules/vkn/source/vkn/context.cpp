@@ -1,7 +1,5 @@
 #include <vkn/context.hpp>
 
-#include <util/containers/dynamic_array.hpp>
-
 #include <monads/try.hpp>
 
 #include <range/v3/range/conversion.hpp>
@@ -19,7 +17,7 @@ namespace vkn
       VkDebugUtilsMessageTypeFlagsEXT messageType,
       const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) -> VkBool32
    {
-      assert(p_user_data != nullptr && "user data is null");
+      EXPECT(p_user_data != nullptr);
 
       auto* p_logger = static_cast<util::logger*>(p_user_data);
 
@@ -85,7 +83,7 @@ namespace vkn
 
       std::uint32_t api_version{};
 
-      util::dynamic_array<vk::ExtensionProperties> enabled_extensions{};
+      crl::dynamic_array<vk::ExtensionProperties> enabled_extensions{};
 
       util::logger_wrapper logger{nullptr};
    };
@@ -134,10 +132,10 @@ namespace vkn
    }
 
    auto context::enumerate_physical_devices() const
-      -> util::result<util::dynamic_array<vk::PhysicalDevice>>
+      -> util::result<crl::dynamic_array<vk::PhysicalDevice>>
    {
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_instance->enumeratePhysicalDevices() | ranges::to<util::dynamic_array>;
+                return m_instance->enumeratePhysicalDevices() | ranges::to<crl::dynamic_array>;
              })
          .map_error([]([[maybe_unused]] auto err) {
             return to_err_code(context_error::failed_to_enumerate_physical_devices);
@@ -149,38 +147,37 @@ namespace vkn
     */
 
    auto query_instance_layers(util::logger_wrapper logger)
-      -> util::dynamic_array<vk::LayerProperties>
+      -> crl::dynamic_array<vk::LayerProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return vk::enumerateInstanceLayerProperties();
              })
          .join(
             [](const auto& data) {
-               return util::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
+               return crl::dynamic_array<vk::LayerProperties>{std::begin(data), std::end(data)};
             },
             [&](const auto& err) {
                if constexpr (enable_validation_layers)
                {
                   logger.warning("[vulkan] instance layer enumeration error: {0}", err.what());
                }
-               return util::dynamic_array<vk::LayerProperties>{};
+               return crl::dynamic_array<vk::LayerProperties>{};
             });
    }
 
    auto query_instance_extensions(util::logger_wrapper logger)
-      -> util::dynamic_array<vk::ExtensionProperties>
+      -> crl::dynamic_array<vk::ExtensionProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
                 return vk::enumerateInstanceExtensionProperties();
              })
          .join(
             [](const auto& data) {
-               return util::dynamic_array<vk::ExtensionProperties>{std::begin(data),
-                                                                   std::end(data)};
+               return crl::dynamic_array<vk::ExtensionProperties>{std::begin(data), std::end(data)};
             },
             [&](const auto& err) {
                logger.warning("[vulkan] instance layer enumeration error: {1}", err.what());
-               return util::dynamic_array<vk::ExtensionProperties>{};
+               return crl::dynamic_array<vk::ExtensionProperties>{};
             });
    }
 
@@ -265,12 +262,12 @@ namespace vkn
          return monad::err(to_err_code(context_error::window_extensions_not_present));
       }
 
-      util::dynamic_array<const char*> layer_names;
+      crl::dynamic_array<const char*> layer_names;
       if constexpr (enable_validation_layers)
       {
          if (has_khronos_validation(layers))
          {
-            layer_names.emplace_back("VK_LAYER_KHRONOS_validation");
+            layer_names.append("VK_LAYER_KHRONOS_validation");
          }
          else
          {
@@ -283,7 +280,7 @@ namespace vkn
          | ranges::views::transform([](const auto& ext) -> const char* { 
                return ext.extensionName; 
             }) 
-         | ranges::to<util::dynamic_array>;
+         | ranges::to<crl::dynamic_array>;
       // clang-format on
 
       for (const char* name : ext_names)

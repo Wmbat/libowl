@@ -2,13 +2,13 @@
 
 #include <vkn/core.hpp>
 
-#include <util/containers/dynamic_array.hpp>
-
 #if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 
 #include <vulkan/vulkan.hpp>
+
+#include <libcaramel/containers/dynamic_array.hpp>
 
 #include <span>
 
@@ -47,7 +47,7 @@ namespace vkn
          vk::Instance instance{nullptr};
          vk::UniqueSurfaceKHR surface{nullptr};
 
-         util::dynamic_array<vk::PhysicalDevice> available_devices{};
+         crl::dynamic_array<vk::PhysicalDevice> available_devices{};
 
          std::uint32_t vulkan_version;
 

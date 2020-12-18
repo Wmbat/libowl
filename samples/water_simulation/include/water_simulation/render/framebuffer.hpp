@@ -4,7 +4,7 @@
 
 #include <vkn/core.hpp>
 
-#include <util/containers/dynamic_array.hpp>
+#include <libcaramel/containers/dynamic_array.hpp>
 
 class framebuffer
 {
@@ -17,11 +17,11 @@ public:
       vk::Device device;
       vk::RenderPass pass;
 
-      util::dynamic_array<vk::ImageView> attachments;
+      crl::dynamic_array<vk::ImageView> attachments;
 
-      std::uint32_t width;
-      std::uint32_t height;
-      std::uint32_t layers;
+      std::uint32_t width{};
+      std::uint32_t height{};
+      std::uint32_t layers{};
 
       util::logger_wrapper logger;
    };

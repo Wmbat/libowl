@@ -5,11 +5,11 @@
 namespace vkn
 {
    auto command_pool::device() const noexcept -> vk::Device { return m_value.getOwner(); }
-   auto command_pool::primary_cmd_buffers() const -> const util::dynamic_array<vk::CommandBuffer>&
+   auto command_pool::primary_cmd_buffers() const -> const crl::dynamic_array<vk::CommandBuffer>&
    {
       return m_primary_buffers;
    }
-   auto command_pool::secondary_cmd_buffers() const -> const util::dynamic_array<vk::CommandBuffer>&
+   auto command_pool::secondary_cmd_buffers() const -> const crl::dynamic_array<vk::CommandBuffer>&
    {
       return m_secondary_buffers;
    }
@@ -102,7 +102,7 @@ namespace vkn
       return pool;
    }
    auto builder::create_primary_buffers(vk::CommandPool handle)
-      -> util::result<util::dynamic_array<vk::CommandBuffer>>
+      -> util::result<crl::dynamic_array<vk::CommandBuffer>>
    {
       using err_t = command_pool_error;
 
@@ -120,11 +120,11 @@ namespace vkn
             m_logger.info("[vulkan] {0} primary command buffers created",
                           m_info.primary_buffer_count);
 
-            return util::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
+            return crl::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
          });
    }
    auto builder::create_secondary_buffers(vk::CommandPool handle)
-      -> util::result<util::dynamic_array<vk::CommandBuffer>>
+      -> util::result<crl::dynamic_array<vk::CommandBuffer>>
    {
       using err_t = command_pool_error;
 
@@ -143,7 +143,7 @@ namespace vkn
             m_logger.info("[vkn] {0} secondary command buffers created",
                           m_info.secondary_buffer_count);
 
-            return util::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
+            return crl::dynamic_array<vk::CommandBuffer>{buffers.begin(), buffers.end()};
          });
    }
 

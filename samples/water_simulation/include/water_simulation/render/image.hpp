@@ -92,7 +92,7 @@ struct image_create_info
 
    vkn::device& device;
 
-   util::small_dynamic_array<vk::Format, 5> formats;
+   crl::small_dynamic_array<vk::Format, 5> formats;
 
    vk::ImageTiling tiling;
    vk::MemoryPropertyFlags memory_properties;
@@ -150,7 +150,7 @@ public:
     *
     * @return The handle to the vulkan image.
     */
-   auto value() const -> vk::Image { return m_image.get(); }     // NOLINT
+   auto value() const -> vk::Image { return m_image.get(); } // NOLINT
    /**
     * @brief Access the underlying vulkan image view  handle
     *

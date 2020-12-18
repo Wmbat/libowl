@@ -13,8 +13,8 @@ namespace vkn
       struct surface_support
       {
          vk::SurfaceCapabilitiesKHR capabilities;
-         util::dynamic_array<vk::SurfaceFormatKHR> formats;
-         util::dynamic_array<vk::PresentModeKHR> present_modes;
+         crl::dynamic_array<vk::SurfaceFormatKHR> formats;
+         crl::dynamic_array<vk::PresentModeKHR> present_modes;
 
          enum class error
          {
@@ -107,9 +107,9 @@ namespace vkn
 
          return surface_support{
             .capabilities = capabilities_res.value().value(),
-            .formats = util::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()},
+            .formats = crl::dynamic_array<vk::SurfaceFormatKHR>{formats.begin(), formats.end()},
             .present_modes =
-               util::dynamic_array<vk::PresentModeKHR>{present_mode.begin(), present_mode.end()}};
+               crl::dynamic_array<vk::PresentModeKHR>{present_mode.begin(), present_mode.end()}};
       }
 
       auto find_surface_format(std::span<const vk::SurfaceFormatKHR> available_formats,
@@ -208,7 +208,7 @@ namespace vkn
    auto swapchain::format() const noexcept -> vk::Format { return m_format; }
    auto swapchain::extent() const noexcept -> const vk::Extent2D& { return m_extent; }
    auto swapchain::image_views() const noexcept
-      -> const util::small_dynamic_array<vk::UniqueImageView, expected_image_count>&
+      -> const crl::small_dynamic_array<vk::UniqueImageView, expected_image_count>&
    {
       return m_image_views;
    }
@@ -249,13 +249,13 @@ namespace vkn
 
       const auto surface_support = surface_support_res.value().value();
 
-      util::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
+      crl::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats = m_info.desired_formats;
       if (desired_formats.empty())
       {
          desired_formats = add_desired_formats();
       }
 
-      util::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
+      crl::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes =
          m_info.desired_present_modes;
       if (desired_present_modes.empty())
       {
@@ -336,7 +336,7 @@ namespace vkn
    }
    auto builder::add_fallback_format(const vk::SurfaceFormatKHR& format) -> builder&
    {
-      m_info.desired_formats.push_back(format);
+      m_info.desired_formats.append(format);
       return *this;
    }
 
@@ -355,7 +355,7 @@ namespace vkn
    }
    auto builder::add_fallback_present_mode(vk::PresentModeKHR present_mode) -> builder&
    {
-      m_info.desired_present_modes.push_back(present_mode);
+      m_info.desired_present_modes.append(present_mode);
       return *this;
    }
 
@@ -396,20 +396,20 @@ namespace vkn
       return *this;
    }
 
-   auto builder::add_desired_formats() const -> util::small_dynamic_array<vk::SurfaceFormatKHR, 2>
+   auto builder::add_desired_formats() const -> crl::small_dynamic_array<vk::SurfaceFormatKHR, 2>
    {
       // clang-format off
-      return util::small_dynamic_array<vk::SurfaceFormatKHR, 2>{{
+      return crl::small_dynamic_array<vk::SurfaceFormatKHR, 2>{{
          vk::SurfaceFormatKHR{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
          vk::SurfaceFormatKHR{vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear}
       }};
       // clang-format on
    }
    auto builder::add_desired_present_modes() const
-      -> util::small_dynamic_array<vk::PresentModeKHR, 2>
+      -> crl::small_dynamic_array<vk::PresentModeKHR, 2>
    {
       // clang-format off
-      return util::small_dynamic_array<vk::PresentModeKHR, 2>{{
+      return crl::small_dynamic_array<vk::PresentModeKHR, 2>{{
          vk::PresentModeKHR::eMailbox,
          vk::PresentModeKHR::eFifo
       }};
@@ -436,7 +436,7 @@ namespace vkn
             return make_error(error_type::failed_to_get_swapchain_images);
          })
          .map([](const auto& images) {
-            return util::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
+            return crl::small_dynamic_array<vk::Image, 3>{images.begin(), images.end()};
          });
    }
 
@@ -444,7 +444,7 @@ namespace vkn
                                     vk::SurfaceFormatKHR format) const
       -> util::result<image_dynamic_array<vk::UniqueImageView>>
    {
-      util::small_dynamic_array<vk::UniqueImageView, 3> views{};
+      crl::small_dynamic_array<vk::UniqueImageView, 3> views{};
 
       if (!monad::try_wrap<std::bad_alloc>([&] {
              views.reserve(images.size());
@@ -478,7 +478,7 @@ namespace vkn
          const auto view_res = monad::try_wrap<vk::SystemError>([&] {
                                   return m_info.device.createImageViewUnique(create_info);
                                }).map([&](vk::UniqueImageView&& handle) {
-            views.push_back(std::move(handle));
+            views.append(std::move(handle));
             return 0;
          });
 

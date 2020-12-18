@@ -11,12 +11,12 @@ struct camera_data
    const camera::create_info& info;
 
    vkn::descriptor_pool pool;
-   util::dynamic_array<vkn::buffer> buffers;
+   crl::dynamic_array<vkn::buffer> buffers;
 };
 
 auto create_uniform_buffers(const camera::create_info& info) -> util::result<camera_data>
 {
-   util::dynamic_array<vkn::buffer> buffers;
+   crl::dynamic_array<vkn::buffer> buffers;
    buffers.reserve(info.image_count.value());
 
    for ([[maybe_unused]] std::uint32_t i : vi::iota(0U, info.image_count.value()))
@@ -33,7 +33,7 @@ auto create_uniform_buffers(const camera::create_info& info) -> util::result<cam
          return monad::err(err.value());
       }
 
-      buffers.emplace_back(std::move(res).value().value());
+      buffers.append(std::move(res).value().value());
    }
 
    return camera_data{.info = info, .buffers = std::move(buffers)};
@@ -53,8 +53,9 @@ auto create_descriptor_pool(camera_data&& data) -> util::result<camera_data>
 
          for (std::size_t i = 0; auto set : data.pool.sets())
          {
-            std::array buf_info{vk::DescriptorBufferInfo{
-               .buffer = *data.buffers[i++], .offset = 0, .range = sizeof(gfx::camera_matrices)}};
+            std::array buf_info{vk::DescriptorBufferInfo{.buffer = *data.buffers.lookup(i++),
+                                                         .offset = 0,
+                                                         .range = sizeof(gfx::camera_matrices)}};
             vk::WriteDescriptorSet write{.dstSet = set,
                                          .dstBinding = 0,
                                          .dstArrayElement = 0,
@@ -84,7 +85,7 @@ auto camera::make(create_info&& info) -> util::result<camera>
 
 auto camera::lookup_set(util::index_t image_index) -> vk::DescriptorSet
 {
-   return m_descriptor_pool.sets()[image_index.value()];
+   return m_descriptor_pool.sets().lookup(image_index.value());
 }
 
 void camera::update(util::index_t image_index, const matrices& matrices)
@@ -93,9 +94,10 @@ void camera::update(util::index_t image_index, const matrices& matrices)
 
    auto device = m_descriptor_pool.device();
 
-   void* p_data = device.mapMemory(m_uniform_buffers[image_index.value()].memory(), 0, size, {});
+   void* p_data =
+      device.mapMemory(m_uniform_buffers.lookup(image_index.value()).memory(), 0, size, {});
    memcpy(p_data, &matrices, size);
-   device.unmapMemory(m_uniform_buffers[image_index.value()].memory());
+   device.unmapMemory(m_uniform_buffers.lookup(image_index.value()).memory());
 }
 
 auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)

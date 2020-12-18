@@ -21,18 +21,18 @@ namespace vkn
 
       void update_sets(const vk::DescriptorBufferInfo& info);
 
-      [[nodiscard]] auto sets() const noexcept -> util::dynamic_array<vk::DescriptorSet>;
+      [[nodiscard]] auto sets() const noexcept -> crl::dynamic_array<vk::DescriptorSet>;
 
    private:
       util::logger_wrapper m_logger;
 
-      util::dynamic_array<vk::DescriptorSet> m_sets;
+      crl::dynamic_array<vk::DescriptorSet> m_sets;
 
    public:
       class builder final
       {
          using pool_size_dynamic_array =
-            util::small_dynamic_array<vk::DescriptorPoolSize, expected_image_count.value()>;
+            crl::small_dynamic_array<vk::DescriptorPoolSize, expected_image_count.value()>;
 
          struct creation_info;
 
@@ -45,8 +45,7 @@ namespace vkn
 
          auto add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&;
 
-         auto
-         set_descriptor_set_layouts(const util::dynamic_array<vk::DescriptorSetLayout>& layouts)
+         auto set_descriptor_set_layouts(const crl::dynamic_array<vk::DescriptorSetLayout>& layouts)
             -> builder&;
          auto set_descriptor_set_layout(vk::DescriptorSetLayout layout) noexcept -> builder&;
 
@@ -64,17 +63,17 @@ namespace vkn
          struct creation_info
          {
             vk::UniqueDescriptorPool pool;
-            util::dynamic_array<vk::DescriptorSet> sets;
+            crl::dynamic_array<vk::DescriptorSet> sets;
          };
 
          struct info
          {
-            util::count32_t max_set_count;
+            util::count32_t max_set_count{};
 
             pool_size_dynamic_array pool_sizes;
 
             vk::DescriptorSetLayout singular_layout;
-            util::dynamic_array<vk::DescriptorSetLayout> unique_layouts;
+            crl::dynamic_array<vk::DescriptorSetLayout> unique_layouts;
          } m_info;
       };
    };

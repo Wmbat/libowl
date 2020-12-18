@@ -13,7 +13,7 @@ namespace vkn
    {
       std::uint32_t index = 0;
       std::uint32_t count = 0;
-      util::small_dynamic_array<float, 1> priorities;
+      crl::small_dynamic_array<float, 1> priorities;
    };
 
    struct device_data
@@ -247,7 +247,7 @@ namespace vkn
    }
 
    auto get_queue_descriptions(vk::PhysicalDevice device)
-      -> util::result<util::dynamic_array<queue_description>>
+      -> util::result<crl::dynamic_array<queue_description>>
    {
       // clang-format off
       return monad::try_wrap<vk::SystemError>([&] {
@@ -259,9 +259,9 @@ namespace vkn
                       return queue_description{.index = static_cast<std::uint32_t>(i),
                                                .count = 1U,
                                                .priorities =
-                                                  util::small_dynamic_array<float, 1>{1.0f}};
+                                                  crl::small_dynamic_array<float, 1>{1.0f}};
                    }) 
-               | ranges::to<util::dynamic_array>;
+               | ranges::to<crl::dynamic_array>;
          })
          .map_error([]([[maybe_unused]] auto err) {
             return to_err_code(device_error::failed_to_enumerate_queue_properties);
@@ -270,7 +270,7 @@ namespace vkn
    }
 
    auto generate_queue_infos(std::span<const queue_description> description)
-      -> util::dynamic_array<vk::DeviceQueueCreateInfo>
+      -> crl::dynamic_array<vk::DeviceQueueCreateInfo>
    {
       // clang-format off
       return description 
@@ -279,7 +279,7 @@ namespace vkn
                                                 .queueCount = desc.count,
                                                 .pQueuePriorities = std::data(desc.priorities)};
             }) 
-         | ranges::to<util::dynamic_array>;
+         | ranges::to<crl::dynamic_array>;
       // clang-format on
    }
 
@@ -293,10 +293,10 @@ namespace vkn
          return monad::err(err.value());
       }
 
-      util::dynamic_array<const char*> extensions{};
+      crl::dynamic_array<const char*> extensions{};
       if (data.surface)
       {
-         extensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+         extensions.append(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
       }
 
       for (const auto& desired : extensions)

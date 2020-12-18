@@ -100,21 +100,21 @@ auto find_colour_format(const vkn::device& device) -> monad::maybe<vk::Format>
 
 auto to_string(image_flags flags) -> std::string
 {
-   util::dynamic_array<const char*> strs;
+   crl::dynamic_array<const char*> strs;
 
    if ((flags & image_flags::colour) == image_flags::colour)
    {
-      strs.push_back("colour");
+      strs.append("colour");
    }
 
    if ((flags & image_flags::transfer_src) == image_flags::transfer_src)
    {
-      strs.push_back("transfer_src");
+      strs.append("transfer_src");
    }
 
    if ((flags & image_flags::depth_stencil) == image_flags::depth_stencil)
    {
-      strs.push_back("depth_stencil");
+      strs.append("depth_stencil");
    }
 
    std::ostringstream oss;
@@ -123,7 +123,7 @@ auto to_string(image_flags flags) -> std::string
       oss << "{";
       std::copy(std::begin(strs), std::end(strs) - 1,
                 std::ostream_iterator<std::string>(oss, ", "));
-      oss << strs.back() << "}";
+      oss << *(std::end(strs) - 1) << "}";
    }
 
    return oss.str();

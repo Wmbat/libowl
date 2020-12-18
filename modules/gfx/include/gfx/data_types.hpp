@@ -1,6 +1,6 @@
 #pragma once
 
-#include <util/containers/dynamic_array.hpp>
+#include <libcaramel/containers/dynamic_array.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -28,9 +28,9 @@ namespace gfx
 
    struct renderable_data
    {
-      util::dynamic_array<vertex> vertices;
-      util::dynamic_array<std::uint32_t> indices;
-      glm::mat4 model;
+      crl::dynamic_array<vertex> vertices;
+      crl::dynamic_array<std::uint32_t> indices;
+      glm::mat4 model{};
    };
 } // namespace gfx
 

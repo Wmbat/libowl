@@ -39,7 +39,7 @@ namespace gfx
 
    auto index_buffer::make(create_info&& info) noexcept -> util::result<index_buffer>
    {
-      const std::size_t size = sizeof(info.indices[0]) * std::size(info.indices);
+      const std::size_t size = sizeof(info.indices.lookup(0)) * std::size(info.indices);
       const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
          void* p_data = info.device.logical().mapMemory(buffer.memory(), 0, size, {});
          memcpy(p_data, info.indices.data(), size);

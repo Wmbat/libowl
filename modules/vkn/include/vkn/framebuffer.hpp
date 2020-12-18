@@ -56,7 +56,7 @@ namespace vkn
          /**
           * Set multiple image view attachments for the framebuffer
           */
-         auto set_attachments(const util::dynamic_array<vk::ImageView>& attachments) -> builder&;
+         auto set_attachments(const crl::dynamic_array<vk::ImageView>& attachments) -> builder&;
          /**
           * Set the width of the framebuffer
           */
@@ -78,7 +78,7 @@ namespace vkn
          {
             vk::RenderPass render_pass{nullptr};
 
-            util::dynamic_array<vk::ImageView> attachments;
+            crl::dynamic_array<vk::ImageView> attachments;
 
             uint32_t width{0};
             uint32_t height{0};

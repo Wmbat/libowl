@@ -35,7 +35,7 @@ void render_pass::submit_render_calls(vk::CommandBuffer cmd_buffer, util::index_
    cmd_buffer.beginRenderPass(
       {.pNext = nullptr,
        .renderPass = m_render_pass.get(),
-       .framebuffer = m_framebuffers[framebuffer_index.value()].value(),
+       .framebuffer = m_framebuffers.lookup(framebuffer_index.value()).value(),
        .renderArea = render_area,
        .clearValueCount = static_cast<std::uint32_t>(std::size(clear_colours)),
        .pClearValues = std::data(clear_colours)},
@@ -65,13 +65,13 @@ auto render_pass::create_render_pass(const render_pass_create_info& info) -> vk:
    const vk::AttachmentReference depth_stencil_ref{
       .attachment = 1, .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal};
 
-   const util::small_dynamic_array<vk::SubpassDescription, 1> descriptions{
+   const crl::small_dynamic_array<vk::SubpassDescription, 1> descriptions{
       {.pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
        .colorAttachmentCount = 1,
        .pColorAttachments = &colour_ref,
        .pDepthStencilAttachment = &depth_stencil_ref}};
 
-   const util::small_dynamic_array<vk::SubpassDependency, 1> dependencies{
+   const crl::small_dynamic_array<vk::SubpassDependency, 1> dependencies{
       {.srcSubpass = VK_SUBPASS_EXTERNAL,
        .dstSubpass = 0,
        .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput |
@@ -91,19 +91,20 @@ auto render_pass::create_render_pass(const render_pass_create_info& info) -> vk:
        .pDependencies = std::data(dependencies)});
 }
 auto render_pass::create_framebuffers(const render_pass_create_info& info)
-   -> util::dynamic_array<framebuffer>
+   -> crl::dynamic_array<framebuffer>
 {
    auto framebuffer_infos = info.framebuffer_create_infos;
    const std::size_t framebuffer_count = std::size(framebuffer_infos);
 
-   util::dynamic_array<framebuffer> framebuffers;
+   crl::dynamic_array<framebuffer> framebuffers;
    framebuffers.reserve(framebuffer_count);
 
    for (auto i : vi::iota(0u, framebuffer_count))
    {
-      framebuffer_infos[i].pass = m_render_pass.get();
+      auto& pass = framebuffer_infos.lookup(i);
+      pass.pass = m_render_pass.get();
 
-      framebuffers.emplace_back(std::move(framebuffer_infos[i]));
+      framebuffers.append(std::move(pass));
    }
 
    return framebuffers;

@@ -14,7 +14,7 @@ namespace vkn
       static constexpr size_t expected_image_count = 3U;
 
       template <typename any_>
-      using image_dynamic_array = util::small_dynamic_array<any_, expected_image_count>;
+      using image_dynamic_array = crl::small_dynamic_array<any_, expected_image_count>;
 
    public:
       using value_type = vk::SwapchainKHR;
@@ -65,15 +65,15 @@ namespace vkn
        */
       [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
       [[nodiscard]] auto image_views() const noexcept
-         -> const util::small_dynamic_array<vk::UniqueImageView, expected_image_count>&;
+         -> const crl::small_dynamic_array<vk::UniqueImageView, expected_image_count>&;
 
    private:
       vk::UniqueSwapchainKHR m_swapchain{nullptr};
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
-      util::small_dynamic_array<vk::Image, expected_image_count> m_images;
-      util::small_dynamic_array<vk::UniqueImageView, expected_image_count> m_image_views;
+      crl::small_dynamic_array<vk::Image, expected_image_count> m_images;
+      crl::small_dynamic_array<vk::UniqueImageView, expected_image_count> m_image_views;
 
    public:
       /**
@@ -112,9 +112,9 @@ namespace vkn
 
       private:
          [[nodiscard]] auto add_desired_formats() const
-            -> util::small_dynamic_array<vk::SurfaceFormatKHR, 2>;
+            -> crl::small_dynamic_array<vk::SurfaceFormatKHR, 2>;
          [[nodiscard]] auto add_desired_present_modes() const
-            -> util::small_dynamic_array<vk::PresentModeKHR, 2>;
+            -> crl::small_dynamic_array<vk::PresentModeKHR, 2>;
 
          [[nodiscard]] auto create_swapchain(vk::SwapchainCreateInfoKHR&& info) const
             -> util::result<vk::UniqueSwapchainKHR>;
@@ -136,8 +136,8 @@ namespace vkn
             vk::SurfaceKHR surface{nullptr};
             vk::SwapchainKHR old_swapchain{nullptr};
 
-            util::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats{};
-            util::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes{};
+            crl::small_dynamic_array<vk::SurfaceFormatKHR, 2> desired_formats{};
+            crl::small_dynamic_array<vk::PresentModeKHR, 2> desired_present_modes{};
 
             uint32_t desired_width{DEFAULT_SIZE};
             uint32_t desired_height{DEFAULT_SIZE};
@@ -163,8 +163,8 @@ namespace vkn
          vk::Format format{};
          vk::Extent2D extent{};
 
-         util::small_dynamic_array<vk::Image, expected_image_count> images{};
-         util::small_dynamic_array<vk::UniqueImageView, expected_image_count> image_views{};
+         crl::small_dynamic_array<vk::Image, expected_image_count> images{};
+         crl::small_dynamic_array<vk::UniqueImageView, expected_image_count> image_views{};
       };
 
       explicit swapchain(create_info&& info) noexcept;

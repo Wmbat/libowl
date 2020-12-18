@@ -34,9 +34,9 @@ namespace vkn
        */
       [[nodiscard]] auto device() const noexcept -> vk::Device;
       [[nodiscard]] auto primary_cmd_buffers() const
-         -> const util::dynamic_array<vk::CommandBuffer>&;
+         -> const crl::dynamic_array<vk::CommandBuffer>&;
       [[nodiscard]] auto secondary_cmd_buffers() const
-         -> const util::dynamic_array<vk::CommandBuffer>&;
+         -> const crl::dynamic_array<vk::CommandBuffer>&;
 
       [[nodiscard]] auto create_primary_buffer() const noexcept
          -> util::result<vk::UniqueCommandBuffer>;
@@ -46,8 +46,8 @@ namespace vkn
 
       uint32_t m_queue_index{0};
 
-      util::dynamic_array<vk::CommandBuffer> m_primary_buffers;
-      util::dynamic_array<vk::CommandBuffer> m_secondary_buffers;
+      crl::dynamic_array<vk::CommandBuffer> m_primary_buffers;
+      crl::dynamic_array<vk::CommandBuffer> m_secondary_buffers;
 
    public:
       /**
@@ -83,9 +83,9 @@ namespace vkn
       private:
          auto create_command_pool(vk::UniqueCommandPool handle) -> util::result<command_pool>;
          auto create_primary_buffers(vk::CommandPool pool)
-            -> util::result<util::dynamic_array<vk::CommandBuffer>>;
+            -> util::result<crl::dynamic_array<vk::CommandBuffer>>;
          auto create_secondary_buffers(vk::CommandPool handle)
-            -> util::result<util::dynamic_array<vk::CommandBuffer>>;
+            -> util::result<crl::dynamic_array<vk::CommandBuffer>>;
 
       private:
          util::logger_wrapper m_logger;

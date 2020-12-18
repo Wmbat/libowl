@@ -77,8 +77,8 @@ namespace vkn
 
       struct shader_data
       {
-         util::dynamic_array<shader_input_location_t> inputs;
-         util::dynamic_array<shader_uniform_binding_t> uniforms;
+         crl::dynamic_array<shader_input_location_t> inputs;
+         crl::dynamic_array<shader_uniform_binding_t> uniforms;
       } m_data;
 
       std::string m_name{};
@@ -101,7 +101,7 @@ namespace vkn
          /**
           * Set the compiled SPIRV shader bytecode for the shader module
           */
-         auto set_spirv_binary(const util::dynamic_array<std::uint32_t>& spirv_binary) -> builder&;
+         auto set_spirv_binary(const crl::dynamic_array<std::uint32_t>& spirv_binary) -> builder&;
          /**
           * Set the name of the shader
           */
@@ -116,11 +116,11 @@ namespace vkn
 
          [[nodiscard]] auto populate_shader_input(const spirv_cross::Compiler& compiler,
                                                   const spirv_cross::ShaderResources& resources)
-            -> util::dynamic_array<shader_input_location_t>;
+            -> crl::dynamic_array<shader_input_location_t>;
 
          [[nodiscard]] auto populate_uniform_buffer(const spirv_cross::Compiler& compiler,
                                                     const spirv_cross::ShaderResources& resources)
-            -> util::dynamic_array<shader_uniform_binding_t>;
+            -> crl::dynamic_array<shader_uniform_binding_t>;
 
       private:
          util::logger_wrapper m_logger{nullptr};
@@ -130,7 +130,7 @@ namespace vkn
             vk::Device device{};
             uint32_t version{0U};
 
-            util::dynamic_array<std::uint32_t> spirv_binary{};
+            crl::dynamic_array<std::uint32_t> spirv_binary{};
 
             shader_type type{shader_type::count};
             std::string name{};

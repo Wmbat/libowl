@@ -3,11 +3,12 @@
 #include <gfx/commons.hpp>
 #include <gfx/data_types.hpp>
 
-#include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 
 #include <vkn/buffer.hpp>
 #include <vkn/command_pool.hpp>
+
+#include <libcaramel/containers/dynamic_array.hpp>
 
 namespace gfx
 {

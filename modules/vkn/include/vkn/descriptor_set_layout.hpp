@@ -17,10 +17,10 @@ namespace vkn
    public:
       [[nodiscard]] auto device() const -> vk::Device;
       [[nodiscard]] auto bindings() const
-         -> const util::dynamic_array<vk::DescriptorSetLayoutBinding>&;
+         -> const crl::dynamic_array<vk::DescriptorSetLayoutBinding>&;
 
    private:
-      util::dynamic_array<vk::DescriptorSetLayoutBinding> m_bindings;
+      crl::dynamic_array<vk::DescriptorSetLayoutBinding> m_bindings;
 
    public:
       class builder final
@@ -34,13 +34,13 @@ namespace vkn
          auto add_binding(const vk::DescriptorSetLayoutBinding& binding) noexcept -> builder&;
 
          auto
-         set_bindings(const util::dynamic_array<vk::DescriptorSetLayoutBinding>& bindings) noexcept
+         set_bindings(const crl::dynamic_array<vk::DescriptorSetLayoutBinding>& bindings) noexcept
             -> builder&;
 
       private:
          struct build_info
          {
-            util::dynamic_array<vk::DescriptorSetLayoutBinding> bindings;
+            crl::dynamic_array<vk::DescriptorSetLayoutBinding> bindings;
          } m_info;
 
          vk::Device m_device;

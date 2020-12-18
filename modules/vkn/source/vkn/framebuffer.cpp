@@ -53,10 +53,10 @@ namespace vkn
 
    auto builder::add_attachment(vk::ImageView image_view) noexcept -> builder&
    {
-      m_info.attachments.emplace_back(image_view);
+      m_info.attachments.append(image_view);
       return *this;
    }
-   auto builder::set_attachments(const util::dynamic_array<vk::ImageView>& attachments) -> builder&
+   auto builder::set_attachments(const crl::dynamic_array<vk::ImageView>& attachments) -> builder&
    {
       m_info.attachments = attachments;
       return *this;

@@ -28,14 +28,14 @@ struct mesh_data
 };
 
 auto get_main_framebuffers(const render_system& system, util::logger_wrapper logger)
-   -> util::dynamic_array<framebuffer::create_info>
+   -> crl::dynamic_array<framebuffer::create_info>
 {
-   util::dynamic_array<framebuffer::create_info> infos;
+   crl::dynamic_array<framebuffer::create_info> infos;
 
    const auto swap_extent = system.swapchain().extent();
    for (auto& image_view : system.swapchain().image_views())
    {
-      infos.emplace_back(
+      infos.append(
          framebuffer::create_info{.device = system.device().logical(),
                                   .attachments = {image_view.get(), system.get_depth_attachment()},
                                   .width = swap_extent.width,
@@ -105,7 +105,7 @@ simulation::simulation(const settings& settings) :
    check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
    check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
 
-   m_render_passes.emplace_back(render_pass{
+   m_render_passes.append(render_pass{
       {.device = m_render_system.device().logical(),
        .swapchain = m_render_system.swapchain().value(),
        .colour_attachment = main_colour_attachment(m_render_system.swapchain().format()),
@@ -277,7 +277,7 @@ void simulation::onscreen_render()
       m_camera.update(image_index.value(), compute_matrices(extent.width, extent.height));
    }
 
-   m_render_passes[0].record_render_calls([&](vk::CommandBuffer buffer) {
+   m_render_passes.lookup(0).record_render_calls([&](vk::CommandBuffer buffer) {
       auto& pipeline = check_err(m_pipelines.lookup(m_main_pipeline_key)).value();
 
       buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
@@ -412,7 +412,7 @@ void simulation::offscreen_render()
 
    const std::array wait_semaphores{m_offscreen.image_available_semaphore.value()};
    const std::array signal_semaphores{m_offscreen.render_finished_semaphore.value()};
-   const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers()[0]};
+   const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers().lookup(0)};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -574,18 +574,18 @@ auto simulation::create_main_pipeline() -> pipeline_index_t
 
    const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
 
-   util::dynamic_array<vk::Viewport> pipeline_viewports;
-   pipeline_viewports.emplace_back(m_render_system.viewport());
+   crl::dynamic_array<vk::Viewport> pipeline_viewports;
+   pipeline_viewports.append(m_render_system.viewport());
 
-   util::dynamic_array<vk::Rect2D> pipeline_scissors;
-   pipeline_scissors.emplace_back(m_render_system.scissor());
+   crl::dynamic_array<vk::Rect2D> pipeline_scissors;
+   pipeline_scissors.append(m_render_system.scissor());
 
-   util::dynamic_array<pipeline_shader_data> pipeline_shader_data;
-   pipeline_shader_data.push_back(vertex_shader_data);
-   pipeline_shader_data.push_back(fragment_shader_data);
+   crl::dynamic_array<pipeline_shader_data> pipeline_shader_data;
+   pipeline_shader_data.append(vertex_shader_data);
+   pipeline_shader_data.append(fragment_shader_data);
 
    auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
-                                             .render_pass = m_render_passes[0],
+                                             .render_pass = m_render_passes.lookup(0),
                                              .logger = &m_logger,
                                              .bindings = m_render_system.vertex_bindings(),
                                              .attributes = m_render_system.vertex_attributes(),
@@ -610,21 +610,20 @@ auto simulation::create_offscreen_pipeline() -> pipeline_index_t
 
    const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
 
-   util::dynamic_array<vk::Viewport> pipeline_viewports;
-   pipeline_viewports.emplace_back(vk::Viewport{.x = 0.0F,
-                                                .y = 0.0F,
-                                                .width = static_cast<float>(image_width),
-                                                .height = static_cast<float>(image_height),
-                                                .minDepth = 0.0F,
-                                                .maxDepth = 1.0F});
+   crl::dynamic_array<vk::Viewport> pipeline_viewports;
+   pipeline_viewports.append(vk::Viewport{.x = 0.0F,
+                                          .y = 0.0F,
+                                          .width = static_cast<float>(image_width),
+                                          .height = static_cast<float>(image_height),
+                                          .minDepth = 0.0F,
+                                          .maxDepth = 1.0F});
 
-   util::dynamic_array<vk::Rect2D> pipeline_scissors;
-   pipeline_scissors.emplace_back(
-      vk::Rect2D{.offset = {0, 0}, .extent = {image_width, image_height}});
+   crl::dynamic_array<vk::Rect2D> pipeline_scissors;
+   pipeline_scissors.append(vk::Rect2D{.offset = {0, 0}, .extent = {image_width, image_height}});
 
-   util::dynamic_array<pipeline_shader_data> pipeline_shader_data;
-   pipeline_shader_data.push_back(vertex_shader_data);
-   pipeline_shader_data.push_back(fragment_shader_data);
+   crl::dynamic_array<pipeline_shader_data> pipeline_shader_data;
+   pipeline_shader_data.append(vertex_shader_data);
+   pipeline_shader_data.append(fragment_shader_data);
 
    auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
                                              .render_pass = m_offscreen.render_pass,

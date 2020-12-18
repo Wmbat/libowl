@@ -15,7 +15,7 @@ struct render_pass_create_info
    monad::maybe<vk::AttachmentDescription> colour_attachment{monad::none};
    monad::maybe<vk::AttachmentDescription> depth_stencil_attachment{monad::none};
 
-   util::dynamic_array<framebuffer::create_info> framebuffer_create_infos{};
+   crl::dynamic_array<framebuffer::create_info> framebuffer_create_infos{};
 
    util::logger_wrapper logger{nullptr};
 };
@@ -51,13 +51,12 @@ public:
 
 private:
    auto create_render_pass(const render_pass_create_info& info) -> vk::UniqueRenderPass;
-   auto create_framebuffers(const render_pass_create_info& info)
-      -> util::dynamic_array<framebuffer>;
+   auto create_framebuffers(const render_pass_create_info& info) -> crl::dynamic_array<framebuffer>;
 
 private:
    vk::UniqueRenderPass m_render_pass;
 
-   util::dynamic_array<framebuffer> m_framebuffers;
+   crl::dynamic_array<framebuffer> m_framebuffers;
 
    std::function<void(vk::CommandBuffer)> m_buff_calls;
 };

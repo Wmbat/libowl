@@ -42,7 +42,7 @@ public:
 private:
    vkn::descriptor_pool m_descriptor_pool;
 
-   util::dynamic_array<vkn::buffer> m_uniform_buffers;
+   crl::dynamic_array<vkn::buffer> m_uniform_buffers;
 };
 
 auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)

@@ -3,7 +3,6 @@
 #include <gfx/commons.hpp>
 #include <gfx/data_types.hpp>
 
-#include <util/containers/dynamic_array.hpp>
 #include <util/logger.hpp>
 
 #include <vkn/buffer.hpp>
@@ -27,7 +26,7 @@ namespace gfx
    public:
       struct create_info
       {
-         util::dynamic_array<vertex> vertices;
+         crl::dynamic_array<vertex> vertices;
 
          const vkn::device& device;
          const vkn::command_pool& command_pool;
