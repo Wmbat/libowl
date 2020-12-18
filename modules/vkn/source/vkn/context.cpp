@@ -135,8 +135,11 @@ namespace vkn
       -> util::result<crl::dynamic_array<vk::PhysicalDevice>>
    {
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_instance->enumeratePhysicalDevices() | ranges::to<crl::dynamic_array>;
+                return m_instance->enumeratePhysicalDevices();
              })
+         .map([](auto&& r) {
+            return crl::dynamic_array<vk::PhysicalDevice>{std::begin(r), std::end(r)};
+         })
          .map_error([]([[maybe_unused]] auto err) {
             return to_err_code(context_error::failed_to_enumerate_physical_devices);
          });
@@ -276,11 +279,13 @@ namespace vkn
       }
 
       // clang-format off
-      const auto ext_names = extensions
-         | ranges::views::transform([](const auto& ext) -> const char* { 
-               return ext.extensionName; 
-            }) 
-         | ranges::to<crl::dynamic_array>;
+      crl::dynamic_array<const char*> ext_names;
+      ext_names.reserve(std::size(extensions));
+
+      for(auto& extension : extensions)
+      {
+         ext_names.append(extension.extensionName);
+      }
       // clang-format on
 
       for (const char* name : ext_names)

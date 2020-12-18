@@ -72,8 +72,8 @@ namespace gfx
       m_renderables_to_index.insert_or_assign(name, std::size(m_renderables));
       m_renderable_model_matrices.append(r.model);
       m_renderables.append(renderable{.name = name,
-                                      .vertex_buffer = std::move(vertex).value().value(),
-                                      .index_buffer = std::move(index).value().value()});
+                                      .vertex_buf = std::move(vertex).value().value(),
+                                      .index_buf = std::move(index).value().value()});
 
       return true;
    }
@@ -212,11 +212,11 @@ namespace gfx
                m_graphics_pipeline.layout(),
                m_graphics_pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
                sizeof(glm::mat4) * 1, &m_renderable_model_matrices.lookup(index));
-            buffer.bindVertexBuffers(0, {m_renderables.lookup(index).vertex_buffer->value()},
+            buffer.bindVertexBuffers(0, {m_renderables.lookup(index).vertex_buf->value()},
                                      {vk::DeviceSize{0}});
-            buffer.bindIndexBuffer(m_renderables.lookup(index).index_buffer->value(), 0,
+            buffer.bindIndexBuffer(m_renderables.lookup(index).index_buf->value(), 0,
                                    vk::IndexType::eUint32);
-            buffer.drawIndexed(m_renderables.lookup(index).index_buffer.index_count(), 1, 0, 0, 0);
+            buffer.drawIndexed(m_renderables.lookup(index).index_buf.index_count(), 1, 0, 0, 0);
          }
 
          buffer.endRenderPass();
@@ -395,11 +395,13 @@ namespace gfx
    auto render_manager::create_camera_descriptor_pool() noexcept -> vkn::descriptor_pool
    {
       return vkn::descriptor_pool::builder{m_device, m_logger}
-         .add_pool_size(vk::DescriptorType::eUniformBuffer,
-                        util::count32_t{std::size(m_swapchain.image_views())})
+         .add_pool_size(
+            vk::DescriptorType::eUniformBuffer,
+            util::count32_t{static_cast<std::uint32_t>(std::size(m_swapchain.image_views()))})
          .set_descriptor_set_layout(
             vkn::value(m_graphics_pipeline.get_descriptor_set_layout("camera_layout")))
-         .set_max_sets(util::count32_t{std::size(m_swapchain.image_views())})
+         .set_max_sets(
+            util::count32_t{static_cast<std::uint32_t>(std::size(m_swapchain.image_views()))})
          .build()
          .map_error([&](util::error_t&& err) {
             m_logger.error("[core] Failed to camera descriptor pool: \"{0}\"",

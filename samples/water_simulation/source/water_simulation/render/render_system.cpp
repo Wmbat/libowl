@@ -242,7 +242,7 @@ void render_system::render(std::span<render_pass> passes)
 
    std::array<vk::ClearValue, 2> clear_values{};
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
-   clear_values[1].depthStencil = {1.0f, 0};
+   clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
 
    for (const auto& buffer :
         m_render_command_pools[m_current_frame_index.value()].primary_cmd_buffers()) // NOLINT

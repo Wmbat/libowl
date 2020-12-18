@@ -17,9 +17,9 @@ struct offscreen
 
    image<image_flags::colour | image_flags::transfer_src> colour;
    image<image_flags::depth_stencil> depth;
-   render_pass render_pass;
+   render_pass pass;
 
-   camera camera;
+   camera cam;
 
    vkn::buffer image_buffer;
 };

@@ -63,7 +63,7 @@ public:
    struct create_info
    {
       const vkn::device& device;
-      const render_pass& render_pass;
+      const render_pass& pass;
 
       util::logger_wrapper logger{};
 

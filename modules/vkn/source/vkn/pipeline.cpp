@@ -172,7 +172,7 @@ namespace vkn
                            .setPMultisampleState(&multisample_state_create_info)
                            .setPColorBlendState(&colour_blend_state_create_info)
                            .setLayout(data.pipeline_layout.get())
-                           .setRenderPass(create_info.render_pass.value())
+                           .setRenderPass(create_info.pass.value())
                            .setSubpass(0)
                            .setBasePipelineHandle(nullptr);
 

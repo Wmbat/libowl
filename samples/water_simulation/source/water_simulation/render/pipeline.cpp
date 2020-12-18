@@ -176,7 +176,7 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
                         .setPColorBlendState(&colour_blend_state_create_info)
                         .setPDepthStencilState(&depth_stencil_create_info)
                         .setLayout(data.pipeline_layout.get())
-                        .setRenderPass(create_info.render_pass.value())
+                        .setRenderPass(create_info.pass.value())
                         .setSubpass(0)
                         .setBasePipelineHandle(nullptr);
 

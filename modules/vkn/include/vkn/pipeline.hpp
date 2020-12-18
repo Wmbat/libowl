@@ -63,7 +63,7 @@ namespace vkn
       struct create_info
       {
          const vkn::device& device;
-         const vkn::render_pass& render_pass;
+         const vkn::render_pass& pass;
 
          util::logger_wrapper logger{};
 

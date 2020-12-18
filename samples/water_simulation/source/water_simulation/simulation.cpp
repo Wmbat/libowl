@@ -340,17 +340,17 @@ void simulation::offscreen_render()
 
    device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
 
-   m_offscreen.camera.update(util::index_t{0u}, compute_matrices(image_width, image_height));
+   m_offscreen.cam.update(util::index_t{0u}, compute_matrices(image_width, image_height));
 
    std::array<vk::ClearValue, 2> clear_values{};
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
-   clear_values[1].depthStencil = {1.0f, 0};
+   clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
 
    for (auto cmd : m_offscreen.command_pool.primary_cmd_buffers())
    {
       cmd.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
 
-      m_offscreen.render_pass.record_render_calls([&](vk::CommandBuffer buffer) {
+      m_offscreen.pass.record_render_calls([&](vk::CommandBuffer buffer) {
          auto& pipeline = check_err(m_pipelines.lookup(m_offscreen_pipeline_key)).value();
 
          buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
@@ -403,7 +403,7 @@ void simulation::offscreen_render()
          }
       });
 
-      m_offscreen.render_pass.submit_render_calls(
+      m_offscreen.pass.submit_render_calls(
          cmd, util::index_t{0}, {.extent = {.width = image_width, .height = image_height}},
          clear_values);
 
@@ -504,7 +504,7 @@ void simulation::setup_offscreen()
                          .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
                          .width = image_width,
                          .height = image_height}};
-   m_offscreen.render_pass =
+   m_offscreen.pass =
       render_pass{{.device = device.logical(),
                    .colour_attachment = offscreen_colour_attachment(device),
                    .depth_stencil_attachment = main_depth_attachment(device),
@@ -517,7 +517,7 @@ void simulation::setup_offscreen()
                       .logger = &m_logger}},
                    .logger = &m_logger}};
    m_offscreen_pipeline_key = create_offscreen_pipeline();
-   m_offscreen.camera = setup_offscreen_camera(m_offscreen_pipeline_key);
+   m_offscreen.cam = setup_offscreen_camera(m_offscreen_pipeline_key);
    m_offscreen.command_pool =
       check_err(device.get_queue_index(vkn::queue_type::graphics).and_then([&](std::uint32_t i) {
          return vkn::command_pool::builder{device, &m_logger}
@@ -585,7 +585,7 @@ auto simulation::create_main_pipeline() -> pipeline_index_t
    pipeline_shader_data.append(fragment_shader_data);
 
    auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
-                                             .render_pass = m_render_passes.lookup(0),
+                                             .pass = m_render_passes.lookup(0),
                                              .logger = &m_logger,
                                              .bindings = m_render_system.vertex_bindings(),
                                              .attributes = m_render_system.vertex_attributes(),
@@ -626,7 +626,7 @@ auto simulation::create_offscreen_pipeline() -> pipeline_index_t
    pipeline_shader_data.append(fragment_shader_data);
 
    auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
-                                             .render_pass = m_offscreen.render_pass,
+                                             .pass = m_offscreen.pass,
                                              .logger = &m_logger,
                                              .bindings = m_render_system.vertex_bindings(),
                                              .attributes = m_render_system.vertex_attributes(),

@@ -75,8 +75,8 @@ namespace gfx
       struct renderable
       {
          std::string name;
-         vertex_buffer vertex_buffer;
-         index_buffer index_buffer;
+         vertex_buffer vertex_buf;
+         index_buffer index_buf;
       };
 
       util::logger_wrapper m_logger;
