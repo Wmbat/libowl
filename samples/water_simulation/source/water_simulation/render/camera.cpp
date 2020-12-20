@@ -10,8 +10,8 @@ struct camera_data
 {
    const camera::create_info& info;
 
-   vkn::descriptor_pool pool;
-   crl::dynamic_array<vkn::buffer> buffers;
+   vkn::descriptor_pool pool{};
+   crl::dynamic_array<vkn::buffer> buffers{};
 };
 
 auto create_uniform_buffers(const camera::create_info& info) -> util::result<camera_data>

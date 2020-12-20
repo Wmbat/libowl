@@ -64,7 +64,7 @@ public:
 public:
    pipeline_registry(util::logger_wrapper logger);
 
-   auto insert(graphics_pipeline::create_info&& info) -> result<insert_kv>;
+   auto insert(graphics_pipeline_create_info&& info) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
    auto remove(const key_type& key) -> result<remove_v>;
 

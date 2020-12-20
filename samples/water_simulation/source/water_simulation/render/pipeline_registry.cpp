@@ -6,19 +6,17 @@
 
 pipeline_registry::pipeline_registry(util::logger_wrapper logger) : m_logger{logger} {}
 
-auto pipeline_registry::insert(graphics_pipeline::create_info&& info) -> result<insert_kv>
+auto pipeline_registry::insert(graphics_pipeline_create_info&& info) -> result<insert_kv>
 {
-   return graphics_pipeline::make(std::move(info))
-      .and_then([&](graphics_pipeline&& pipeline) -> result<insert_kv> {
-         const std::size_t key = id_counter++;
+   auto pipeline = graphics_pipeline{std::move(info)};
+   const std::size_t key = id_counter++;
 
-         if (auto [it, res] = m_graphics_pipelines.try_emplace(key, std::move(pipeline)); !res)
-         {
-            return monad::err(to_err_code(pipeline_registry_error::failed_to_insert_pipeline));
-         }
+   if (auto [it, res] = m_graphics_pipelines.try_emplace(key, std::move(pipeline)); !res)
+   {
+      return monad::err(to_err_code(pipeline_registry_error::failed_to_insert_pipeline));
+   }
 
-         return insert_kv{key_type{key}, &m_graphics_pipelines.at(key)};
-      });
+   return insert_kv{key_type{key}, &m_graphics_pipelines.at(key)};
 }
 auto pipeline_registry::lookup(const key_type& key) -> result<lookup_v>
 {

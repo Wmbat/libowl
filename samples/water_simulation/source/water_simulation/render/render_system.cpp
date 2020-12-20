@@ -13,21 +13,21 @@ struct render_system_data
 {
    render_system::create_info& info;
 
-   vkn::context context;
-   vkn::device device;
-   vkn::swapchain swapchain;
+   vkn::context context{};
+   vkn::device device{};
+   vkn::swapchain swapchain{};
 
    semaphore_array render_finished_semaphores{};
 
-   std::array<vkn::command_pool, max_frames_in_flight> render_command_pools;
+   std::array<vkn::command_pool, max_frames_in_flight> render_command_pools{};
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
 
-   image<image_flags::depth_stencil> depth_image;
+   image<image_flags::depth_stencil> depth_image{};
 
-   ui::window* p_window;
+   ui::window* p_window{};
 
-   util::logger_wrapper logger;
+   util::logger_wrapper logger{};
 };
 
 auto create_context(render_system_data&& data) -> result<render_system_data>

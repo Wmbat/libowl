@@ -63,27 +63,156 @@ namespace detail
 
 }; // namespace detail
 
-struct graphics_pipeline_data
+graphics_pipeline::graphics_pipeline(graphics_pipeline_create_info&& info) :
+   m_set_layouts{create_descriptor_set_layouts(info.device, info.shader_infos, info.logger)},
+   m_push_constants{populate_push_constants(info.shader_infos)}, mp_render_pass{&info.pass}
 {
-   vk::UniquePipeline pipeline{nullptr};
-   vk::UniquePipelineLayout pipeline_layout{nullptr};
+   m_pipeline_layout = create_pipeline_layout(info.device);
+   m_pipeline = create_pipeline(info.device, info.shader_infos, info.bindings, info.attributes,
+                                info.viewports, info.scissors, info.logger);
 
-   std::unordered_map<std::string, vkn::descriptor_set_layout> set_layouts{};
-   std::unordered_map<std::string, vk::PushConstantRange> push_constants{};
-};
+   std::string msg = "Graphics pipeline created with:";
 
-auto create_pipeline(const graphics_pipeline::create_info& create_info,
-                     graphics_pipeline_data&& data, util::logger_wrapper logger)
-   -> util::result<graphics_pipeline_data>
+   msg += "\n\tset layouts = { ";
+   for (std::size_t i = 0; const auto& [name, layout] : m_set_layouts)
+   {
+      msg += name;
+
+      if (i++ != 0)
+      {
+         msg += ",";
+      }
+   }
+   msg += " }";
+
+   msg += "\n\tpush constants = { ";
+   for (std::size_t i = 0; const auto& [name, push] : m_push_constants)
+   {
+      msg += name;
+
+      if (i++ != 0)
+      {
+         msg += ",";
+      }
+   }
+   msg += " }";
+
+   info.logger.info(msg);
+}
+
+auto graphics_pipeline::value() const noexcept -> vk::Pipeline
+{
+   return m_pipeline.get();
+}
+auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
+{
+   return m_pipeline_layout.get();
+}
+auto graphics_pipeline::get_descriptor_set_layout(const std::string& name) const
+   -> const vkn::descriptor_set_layout&
+{
+   return m_set_layouts.at(name);
+}
+auto graphics_pipeline::get_push_constant_ranges(const std::string& name) const
+   -> const vk::PushConstantRange&
+{
+   return m_push_constants.at(name);
+}
+
+auto graphics_pipeline::populate_push_constants(std::span<const pipeline_shader_data> shader_infos)
+   -> push_constant_map
+{
+   push_constant_map ranges;
+
+   for (const auto& info : shader_infos)
+   {
+      for (const auto& push : info.push_constants)
+      {
+         ranges.insert_or_assign(
+            push.name,
+            vk::PushConstantRange{.stageFlags = to_shader_flag(info.p_shader->stage()),
+                                  .offset = static_cast<uint32_t>(push.offset.value()),
+                                  .size = static_cast<uint32_t>(push.size.value())});
+      }
+   }
+
+   return ranges;
+}
+
+auto graphics_pipeline::create_descriptor_set_layouts(
+   const vkn::device& device, std::span<const pipeline_shader_data> shader_infos,
+   util::logger_wrapper logger) -> set_layout_map
+{
+   set_layout_map set_layouts;
+
+   for (const auto& shader_info : shader_infos)
+   {
+      for (const auto& set_info : shader_info.set_layouts)
+      {
+         auto bindings =
+            set_info.bindings | ranges::views::transform([&](set_layout_binding binding) {
+               vk::DescriptorSetLayoutBinding result;
+               result.binding = static_cast<std::uint32_t>(binding.binding.value());
+               result.descriptorType = binding.descriptor_type;
+               result.descriptorCount = binding.descriptor_count.value();
+               result.stageFlags = detail::to_shader_stage_flag(shader_info.p_shader->stage());
+
+               return result;
+            });
+
+         set_layouts.insert_or_assign(
+            set_info.name,
+            vkn::descriptor_set_layout{{.device = device,
+                                        .bindings = bindings | ranges::to<crl::dynamic_array>,
+                                        .logger = logger}});
+      }
+   }
+
+   return set_layouts;
+}
+
+auto graphics_pipeline::create_pipeline_layout(const vkn::device& device)
+   -> vk::UniquePipelineLayout
+{
+   crl::dynamic_array<vk::DescriptorSetLayout> layouts;
+   layouts.reserve(std::size(m_set_layouts));
+
+   for (const auto& [name, layout] : m_set_layouts)
+   {
+      layouts.append(layout.value());
+   }
+
+   crl::dynamic_array<vk::PushConstantRange> push_constants;
+   push_constants.reserve(std::size(m_push_constants));
+
+   for (const auto& [name, push] : m_push_constants)
+   {
+      push_constants.append(push);
+   }
+
+   return device.logical().createPipelineLayoutUnique(
+      {.pNext = nullptr,
+       .flags = {},
+       .setLayoutCount = static_cast<std::uint32_t>(std::size(layouts)),
+       .pSetLayouts = std::data(layouts),
+       .pushConstantRangeCount = static_cast<std::uint32_t>(std::size(push_constants)),
+       .pPushConstantRanges = std::data(push_constants)});
+}
+
+auto graphics_pipeline::create_pipeline(const vkn::device& device,
+                                        std::span<const pipeline_shader_data> shader_infos,
+                                        std::span<vk::VertexInputBindingDescription> bindings,
+                                        std::span<vk::VertexInputAttributeDescription> attributes,
+                                        std::span<vk::Viewport> viewports,
+                                        std::span<vk::Rect2D> scissors, util::logger_wrapper logger)
+   -> vk::UniquePipeline
 {
    crl::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
-   shader_stage_info.reserve(std::size(create_info.shader_infos));
+   shader_stage_info.reserve(std::size(shader_infos));
 
    util::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
-   for (std::uint32_t index = 0; const auto& info : create_info.shader_infos)
+   for (std::uint32_t index = 0; const auto& info : shader_infos)
    {
-      logger.info(R"([vulkan] using shader "{0}" for graphics pipeline)", info.p_shader->name());
-
       shader_stage_info.append(vk::PipelineShaderStageCreateInfo{}
                                   .setPNext(nullptr)
                                   .setFlags({})
@@ -100,22 +229,19 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
       ++index;
    }
 
-   const auto* p_vertex_shader =
-      create_info.shader_infos.lookup(vertex_shader_index.value()).p_shader;
-   if (!detail::check_vertex_attribute_support(p_vertex_shader, create_info.attributes,
-                                               create_info.logger))
+   const auto* p_vertex_shader = shader_infos[vertex_shader_index.value()].p_shader;
+   if (!detail::check_vertex_attribute_support(p_vertex_shader, attributes, logger))
    {
-      return monad::err(to_err_code(graphics_pipeline_error::invalid_vertex_shader_bindings));
+      // TODO: ERROR
+      // return monad::err(to_err_code(graphics_pipeline_error::invalid_vertex_shader_bindings));
    }
 
    const auto vertex_input_state_create_info =
       vk::PipelineVertexInputStateCreateInfo{}
-         .setVertexBindingDescriptionCount(
-            static_cast<std::uint32_t>(std::size(create_info.bindings)))
-         .setPVertexBindingDescriptions(std::data(create_info.bindings))
-         .setVertexAttributeDescriptionCount(
-            static_cast<std::uint32_t>(std::size(create_info.attributes)))
-         .setPVertexAttributeDescriptions(std::data(create_info.attributes));
+         .setVertexBindingDescriptionCount(static_cast<std::uint32_t>(std::size(bindings)))
+         .setPVertexBindingDescriptions(std::data(bindings))
+         .setVertexAttributeDescriptionCount(static_cast<std::uint32_t>(std::size(attributes)))
+         .setPVertexAttributeDescriptions(std::data(attributes));
 
    const auto input_assembly_state_create_info =
       vk::PipelineInputAssemblyStateCreateInfo{}
@@ -124,10 +250,10 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
 
    const auto viewport_state_create_info =
       vk::PipelineViewportStateCreateInfo{}
-         .setViewportCount(static_cast<std::uint32_t>(std::size(create_info.viewports)))
-         .setPViewports(create_info.viewports.data())
-         .setScissorCount(static_cast<std::uint32_t>(std::size(create_info.scissors)))
-         .setPScissors(create_info.scissors.data());
+         .setViewportCount(static_cast<std::uint32_t>(std::size(viewports)))
+         .setPViewports(viewports.data())
+         .setScissorCount(static_cast<std::uint32_t>(std::size(scissors)))
+         .setPScissors(scissors.data());
 
    const auto rasterization_state_create_info = vk::PipelineRasterizationStateCreateInfo{}
                                                    .setDepthClampEnable(false)
@@ -175,167 +301,12 @@ auto create_pipeline(const graphics_pipeline::create_info& create_info,
                         .setPMultisampleState(&multisample_state_create_info)
                         .setPColorBlendState(&colour_blend_state_create_info)
                         .setPDepthStencilState(&depth_stencil_create_info)
-                        .setLayout(data.pipeline_layout.get())
-                        .setRenderPass(create_info.pass.value())
+                        .setLayout(m_pipeline_layout.get())
+                        .setRenderPass(mp_render_pass->value())
                         .setSubpass(0)
                         .setBasePipelineHandle(nullptr);
 
-   auto logical_device = create_info.device.logical();
-   return monad::try_wrap<vk::SystemError>([&] {
-             return logical_device.createGraphicsPipelineUnique(nullptr, info);
-          })
-      .map_error([]([[maybe_unused]] auto&& err) {
-         return to_err_code(graphics_pipeline_error::failed_to_create_pipeline);
-      })
-      .map([&](vk::UniquePipeline&& handle) {
-         logger.info(R"([vulkan] graphics pipeline created)");
-
-         data.pipeline = std::move(handle);
-
-         return std::move(data);
-      });
-}
-
-auto populate_push_constants(std::span<const pipeline_shader_data> shader_infos)
-   -> std::unordered_map<std::string, vk::PushConstantRange>
-{
-   std::unordered_map<std::string, vk::PushConstantRange> ranges;
-
-   for (const auto& info : shader_infos)
-   {
-      for (const auto& push : info.push_constants)
-      {
-         ranges.insert_or_assign(
-            push.name,
-            vk::PushConstantRange{.stageFlags = to_shader_flag(info.p_shader->stage()),
-                                  .offset = static_cast<uint32_t>(push.offset.value()),
-                                  .size = static_cast<uint32_t>(push.size.value())});
-      }
-   }
-
-   return ranges;
-}
-
-auto create_pipeline_layout(const vkn::device& device, graphics_pipeline_data&& pipeline,
-                            util::logger_wrapper logger) -> util::result<graphics_pipeline_data>
-{
-   crl::dynamic_array<vk::DescriptorSetLayout> layouts;
-   layouts.reserve(std::size(pipeline.set_layouts));
-
-   for (const auto& [name, layout] : pipeline.set_layouts)
-   {
-      layouts.append(layout.value());
-   }
-
-   crl::dynamic_array<vk::PushConstantRange> push_constants;
-   push_constants.reserve(std::size(pipeline.push_constants));
-
-   for (const auto& [name, push] : pipeline.push_constants)
-   {
-      push_constants.append(push);
-   }
-
-   return monad::try_wrap<vk::SystemError>([&] {
-             return device.logical().createPipelineLayoutUnique(
-                {.pNext = nullptr,
-                 .flags = {},
-                 .setLayoutCount = static_cast<std::uint32_t>(std::size(layouts)),
-                 .pSetLayouts = std::data(layouts),
-                 .pushConstantRangeCount = static_cast<std::uint32_t>(std::size(push_constants)),
-                 .pPushConstantRanges = std::data(push_constants)});
-          })
-      .map([&](vk::UniquePipelineLayout&& layout) {
-         pipeline.pipeline_layout = std::move(layout);
-
-         logger.debug("[vulkan] graphics pipeline layout created");
-
-         return std::move(pipeline);
-      })
-      .map_error([]([[maybe_unused]] const auto& err) {
-         return to_err_code(graphics_pipeline_error::failed_to_create_pipeline_layout);
-      });
-}
-
-auto create_descriptor_set_layouts(const vkn::device& device,
-                                   std::span<const pipeline_shader_data> shader_infos,
-                                   util::logger_wrapper logger)
-   -> util::result<graphics_pipeline_data>
-{
-   graphics_pipeline_data data;
-   data.push_constants = populate_push_constants(shader_infos);
-
-   for (const auto& shader_info : shader_infos)
-   {
-      for (const auto& set_info : shader_info.set_layouts)
-      {
-         auto bindings =
-            set_info.bindings | ranges::views::transform([&](set_layout_binding binding) {
-               vk::DescriptorSetLayoutBinding result;
-               result.binding = static_cast<std::uint32_t>(binding.binding.value());
-               result.descriptorType = binding.descriptor_type;
-               result.descriptorCount = binding.descriptor_count.value();
-               result.stageFlags = detail::to_shader_stage_flag(shader_info.p_shader->stage());
-
-               return result;
-            });
-
-         auto result = vkn::descriptor_set_layout::builder{device, logger}
-                          .set_bindings(bindings | ranges::to<crl::dynamic_array>)
-                          .build();
-
-         if (result)
-         {
-            data.set_layouts.insert_or_assign(set_info.name, std::move(result).value().value());
-         }
-         else
-         {
-            return monad::err(result.error().value());
-         }
-      }
-   }
-
-   return data;
-}
-
-auto graphics_pipeline::make(create_info&& info) -> util::result<graphics_pipeline>
-{
-   const auto finalize = [](graphics_pipeline_data&& data) {
-      graphics_pipeline pipeline;
-      pipeline.m_pipeline = std::move(data.pipeline);
-      pipeline.m_pipeline_layout = std::move(data.pipeline_layout);
-      pipeline.m_set_layouts = std::move(data.set_layouts);
-      pipeline.m_push_constants = std::move(data.push_constants);
-
-      return pipeline;
-   };
-
-   return create_descriptor_set_layouts(info.device, info.shader_infos, info.logger)
-      .and_then([&](graphics_pipeline_data&& data) {
-         return create_pipeline_layout(info.device, std::move(data), info.logger);
-      })
-      .and_then([&](graphics_pipeline_data&& data) {
-         return create_pipeline(info, std::move(data), info.logger);
-      })
-      .map(finalize);
-}
-
-auto graphics_pipeline::value() const noexcept -> vk::Pipeline
-{
-   return m_pipeline.get();
-}
-auto graphics_pipeline::layout() const noexcept -> vk::PipelineLayout
-{
-   return m_pipeline_layout.get();
-}
-auto graphics_pipeline::get_descriptor_set_layout(const std::string& name) const
-   -> const vkn::descriptor_set_layout&
-{
-   return m_set_layouts.at(name);
-}
-auto graphics_pipeline::get_push_constant_ranges(const std::string& name) const
-   -> const vk::PushConstantRange&
-{
-   return m_push_constants.at(name);
+   return device.logical().createGraphicsPipelineUnique(nullptr, info);
 }
 
 /**

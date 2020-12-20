@@ -2,58 +2,31 @@
 
 #include <vkn/device.hpp>
 
+#include <span>
+
 namespace vkn
 {
-   enum struct descriptor_set_layout_error
+   struct descriptor_set_layout_create_info
    {
-      failed_to_create_descriptor_set_layout
+      const vkn::device& device;
+
+      crl::dynamic_array<vk::DescriptorSetLayoutBinding> bindings;
+
+      util::logger_wrapper logger;
    };
 
-   auto to_string(descriptor_set_layout_error err) -> std::string;
-   auto to_err_code(descriptor_set_layout_error err) -> util::error_t;
-
-   class descriptor_set_layout : public owning_handle<vk::DescriptorSetLayout>
+   class descriptor_set_layout
    {
    public:
-      [[nodiscard]] auto device() const -> vk::Device;
-      [[nodiscard]] auto bindings() const
-         -> const crl::dynamic_array<vk::DescriptorSetLayoutBinding>&;
+      descriptor_set_layout() = default;
+      descriptor_set_layout(descriptor_set_layout_create_info&& info);
+
+      [[nodiscard]] auto value() const -> vk::DescriptorSetLayout;
+      [[nodiscard]] auto bindings() const -> std::span<const vk::DescriptorSetLayoutBinding>;
 
    private:
+      vk::UniqueDescriptorSetLayout m_set_layout;
+
       crl::dynamic_array<vk::DescriptorSetLayoutBinding> m_bindings;
-
-   public:
-      class builder final
-      {
-      public:
-         builder(vk::Device device, util::logger_wrapper logger) noexcept;
-         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
-
-         [[nodiscard]] auto build() noexcept -> util::result<descriptor_set_layout>;
-
-         auto add_binding(const vk::DescriptorSetLayoutBinding& binding) noexcept -> builder&;
-
-         auto
-         set_bindings(const crl::dynamic_array<vk::DescriptorSetLayoutBinding>& bindings) noexcept
-            -> builder&;
-
-      private:
-         struct build_info
-         {
-            crl::dynamic_array<vk::DescriptorSetLayoutBinding> bindings;
-         } m_info;
-
-         vk::Device m_device;
-
-         util::logger_wrapper m_logger;
-      };
    };
 } // namespace vkn
-
-namespace std
-{
-   template <>
-   struct is_error_code_enum<vkn::descriptor_set_layout_error> : true_type
-   {
-   };
-} // namespace std

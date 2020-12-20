@@ -275,18 +275,12 @@ namespace vkn
                   return result;
                });
 
-            auto result = vkn::descriptor_set_layout::builder{device, logger}
-                             .set_bindings(bindings | ranges::to<crl::dynamic_array>)
-                             .build();
-
-            if (result)
-            {
-               data.set_layouts.insert_or_assign(set_info.name, std::move(result).value().value());
-            }
-            else
-            {
-               return monad::err(result.error().value());
-            }
+            data.set_layouts.insert_or_assign(
+               set_info.name,
+               vkn::descriptor_set_layout{vkn::descriptor_set_layout_create_info{
+                  .device = device,
+                  .bindings = bindings | ranges::to<crl::dynamic_array>,
+                  .logger = logger}});
          }
       }
 

@@ -14,10 +14,10 @@ public:
     */
    struct create_info
    {
-      vk::Device device;
-      vk::RenderPass pass;
+      vk::Device device{};
+      vk::RenderPass pass{};
 
-      crl::dynamic_array<vk::ImageView> attachments;
+      crl::dynamic_array<vk::ImageView> attachments{};
 
       std::uint32_t width{};
       std::uint32_t height{};

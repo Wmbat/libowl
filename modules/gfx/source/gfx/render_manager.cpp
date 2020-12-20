@@ -178,8 +178,7 @@ namespace gfx
       m_logger.debug(R"([gfx] swapchain image "{}" acquired)", image_index);
       m_logger.debug(R"([gfx] graphics command pool "{}" resetting)", m_current_frame);
 
-      m_device.logical().resetCommandPool(m_gfx_command_pools[m_current_frame].value(),
-                                          {}); // NOLINT
+      m_device.logical().resetCommandPool(m_gfx_command_pools.at(m_current_frame).value(), {});
 
       m_logger.debug(R"([gfx] graphics command pool "{}" buffer recording)", m_current_frame);
 
@@ -216,7 +215,8 @@ namespace gfx
                                      {vk::DeviceSize{0}});
             buffer.bindIndexBuffer(m_renderables.lookup(index).index_buf->value(), 0,
                                    vk::IndexType::eUint32);
-            buffer.drawIndexed(m_renderables.lookup(index).index_buf.index_count(), 1, 0, 0, 0);
+            buffer.drawIndexed((std::uint32_t)m_renderables.lookup(index).index_buf.index_count(),
+                               1, 0, 0, 0);
          }
 
          buffer.endRenderPass();
@@ -308,8 +308,8 @@ namespace gfx
    {
       gfx::camera_matrices matrices{};
       matrices.perspective = glm::perspective(
-         glm::radians(45.0F), m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F,
-         10.0F);
+         glm::radians(45.0F),
+         (float)m_swapchain.extent().width / (float)m_swapchain.extent().height, 0.1F, 10.0F);
       matrices.view = glm::lookAt(glm::vec3(2.0F, 2.0F, 2.0F), glm::vec3(0.0F, 0.0F, 0.0F),
                                   glm::vec3(0.0F, 0.0F, 1.0F));
       matrices.perspective[1][1] *= -1;
@@ -399,7 +399,7 @@ namespace gfx
             vk::DescriptorType::eUniformBuffer,
             util::count32_t{static_cast<std::uint32_t>(std::size(m_swapchain.image_views()))})
          .set_descriptor_set_layout(
-            vkn::value(m_graphics_pipeline.get_descriptor_set_layout("camera_layout")))
+            m_graphics_pipeline.get_descriptor_set_layout("camera_layout").value())
          .set_max_sets(
             util::count32_t{static_cast<std::uint32_t>(std::size(m_swapchain.image_views()))})
          .build()

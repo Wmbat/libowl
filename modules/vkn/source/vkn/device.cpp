@@ -18,13 +18,13 @@ namespace vkn
 
    struct device_data
    {
-      vk::UniqueSurfaceKHR surface;
-      vk::PhysicalDevice physical_device;
-      vk::UniqueDevice logical_device;
+      vk::UniqueSurfaceKHR surface{};
+      vk::PhysicalDevice physical_device{};
+      vk::UniqueDevice logical_device{};
 
-      std::uint32_t version;
+      std::uint32_t version{};
 
-      util::logger_wrapper logger;
+      util::logger_wrapper logger{};
    };
 
    auto find_suitable_device(std::span<const vk::PhysicalDevice> devices, device_data&& data)
