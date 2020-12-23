@@ -64,5 +64,5 @@ add_subdirectory(vermillon)
 
 if (VERMILLON_BUILD_SAMPLES)
     #add_subdirectory(samples/playground)
-    add_subdirectory(samples/water_simulation)
+    add_subdirectory(samples/fluid_simulation)
 endif ()

@@ -4,11 +4,10 @@ cmake_minimum_required(VERSION 3.14...3.17 FATAL_ERROR)
 
 #Set the project language toolchain, version and description
 
-project(vermillon
+project(cacao
    VERSION 0.0.1
    DESCRIPTION ""
-   LANGUAGES CXX
-)
+   LANGUAGES CXX)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE FORCE)
@@ -25,7 +24,7 @@ endif ()
 include(CMakeLists.txt.in)
 
 add_library(${PROJECT_NAME} STATIC)
-add_library(vermillon::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(cacao::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
