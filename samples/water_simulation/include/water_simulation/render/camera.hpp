@@ -3,7 +3,7 @@
 #include <water_simulation/render/pipeline.hpp>
 #include <water_simulation/render/render_system.hpp>
 
-#include <vkn/descriptor_pool.hpp>
+#include <vermillon/vulkan/descriptor_pool.hpp>
 
 enum struct camera_error
 {

@@ -2,8 +2,8 @@
 
 #include <water_simulation/maths.hpp>
 
-#include <util/error.hpp>
-#include <util/logger.hpp>
+#include <vermillon/util/error.hpp>
+#include <vermillon/util/logger.hpp>
 
 #include <monads/result.hpp>
 

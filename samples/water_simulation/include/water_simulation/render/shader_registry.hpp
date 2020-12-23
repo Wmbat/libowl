@@ -3,9 +3,8 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/render/render_system.hpp>
 
-#include <util/error.hpp>
-
-#include <gfx/render_manager.hpp>
+#include <vermillon/util/error.hpp>
+#include <vermillon/vulkan/shader.hpp>
 
 #include <filesystem>
 #include <string>

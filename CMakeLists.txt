@@ -60,10 +60,7 @@ message(STATUS "[${PROJECT_NAME}] Building provided samples: ${VERMILLON_BUILD_S
 message(STATUS "[${PROJECT_NAME}] Enforce all contracts at run-time: ${VERMILLON_ENFORCE_CONTRACTS}")
 message(STATUS "[${PROJECT_NAME}] Enable display of debug level logs: ${VERMILLON_SHOW_DEBUG_LOGGING}")
 
-add_subdirectory(modules/gfx)
-add_subdirectory(modules/ui)
-add_subdirectory(modules/util)
-add_subdirectory(modules/vkn)
+add_subdirectory(vermillon)
 
 if (VERMILLON_BUILD_SAMPLES)
     #add_subdirectory(samples/playground)

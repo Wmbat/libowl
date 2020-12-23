@@ -3,27 +3,22 @@
 #include <water_simulation/render/image.hpp>
 #include <water_simulation/render/render_pass.hpp>
 
-#include <ui/window.hpp>
-
-#include <gfx/memory/index_buffer.hpp>
-#include <gfx/memory/vertex_buffer.hpp>
-
-#include <util/logger.hpp>
-#include <util/strong_type.hpp>
-
-#include <vkn/command_pool.hpp>
-#include <vkn/framebuffer.hpp>
-#include <vkn/render_pass.hpp>
-#include <vkn/swapchain.hpp>
-#include <vkn/sync/fence.hpp>
-#include <vkn/sync/semaphore.hpp>
+#include <vermillon/gfx/index_buffer.hpp>
+#include <vermillon/gfx/vertex_buffer.hpp>
+#include <vermillon/ui/window.hpp>
+#include <vermillon/util/logger.hpp>
+#include <vermillon/util/strong_type.hpp>
+#include <vermillon/vulkan/command_pool.hpp>
+#include <vermillon/vulkan/swapchain.hpp>
+#include <vermillon/vulkan/sync/fence.hpp>
+#include <vermillon/vulkan/sync/semaphore.hpp>
 
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
 
 using frame_index_t = util::strong_type<std::uint32_t, struct frame_index_tag, util::arithmetic>;
 
-using framebuffer_array = crl::small_dynamic_array<vkn::framebuffer, expected_image_count>;
+using framebuffer_array = crl::small_dynamic_array<framebuffer, expected_image_count>;
 using semaphore_array = crl::small_dynamic_array<vkn::semaphore, expected_image_count>;
 
 using vertex_bindings_array = crl::dynamic_array<vk::VertexInputBindingDescription>;

@@ -2,7 +2,7 @@
 
 #include <water_simulation/core.hpp>
 
-#include <vkn/core.hpp>
+#include <vermillon/vulkan/core.hpp>
 
 #include <libcaramel/containers/dynamic_array.hpp>
 

@@ -3,7 +3,7 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/render/framebuffer.hpp>
 
-#include <vkn/core.hpp>
+#include <vermillon/vulkan/core.hpp>
 
 #include <span>
 

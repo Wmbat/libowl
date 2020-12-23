@@ -39,10 +39,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3 -march=native>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    vermillon::util
-    vermillon::ui
-    vermillon::gfx
-    vermillon::vkn
+    vermillon::vermillon
 
     EnTT::EnTT 
     tinyobjloader

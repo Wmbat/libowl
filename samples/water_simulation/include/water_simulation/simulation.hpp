@@ -13,7 +13,7 @@
 #include <water_simulation/render/shader_registry.hpp>
 #include <water_simulation/sph/system.hpp>
 
-#include <ui/window.hpp>
+#include <vermillon/ui/window.hpp>
 
 #include <entt/entt.hpp>
 

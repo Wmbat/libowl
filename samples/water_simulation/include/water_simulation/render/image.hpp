@@ -1,12 +1,11 @@
 #pragma once
 
-#include <type_traits>
 #include <water_simulation/core.hpp>
 
-#include <util/logger.hpp>
+#include <vermillon/util/logger.hpp>
+#include <vermillon/vulkan/device.hpp>
 
-#include <vkn/device.hpp>
-
+#include <type_traits>
 enum struct image_error
 {
    failed_to_find_supported_format,

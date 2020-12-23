@@ -3,14 +3,13 @@
 #include <water_simulation/core.hpp>
 #include <water_simulation/render/render_pass.hpp>
 
-#include <vkn/core.hpp>
-#include <vkn/descriptor_set_layout.hpp>
-#include <vkn/device.hpp>
-#include <vkn/shader.hpp>
-
-#include <util/error.hpp>
-#include <util/logger.hpp>
-#include <util/strong_type.hpp>
+#include <vermillon/util/error.hpp>
+#include <vermillon/util/logger.hpp>
+#include <vermillon/util/strong_type.hpp>
+#include <vermillon/vulkan/core.hpp>
+#include <vermillon/vulkan/descriptor_set_layout.hpp>
+#include <vermillon/vulkan/device.hpp>
+#include <vermillon/vulkan/shader.hpp>
 
 using vertex_bindings_array = crl::dynamic_array<vk::VertexInputBindingDescription>;
 using vertex_attributes_array = crl::dynamic_array<vk::VertexInputAttributeDescription>;

@@ -5,7 +5,7 @@
 #include <water_simulation/render/image.hpp>
 #include <water_simulation/render/render_pass.hpp>
 
-#include <vkn/command_pool.hpp>
+#include <vermillon/vulkan/command_pool.hpp>
 
 struct offscreen
 {

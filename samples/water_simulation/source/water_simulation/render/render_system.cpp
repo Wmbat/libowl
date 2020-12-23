@@ -1,7 +1,5 @@
 #include <water_simulation/render/render_system.hpp>
 
-#include <gfx/data_types.hpp>
-
 #include <utility>
 
 auto to_util_error(ui::error_t&& err) -> util::error_t
