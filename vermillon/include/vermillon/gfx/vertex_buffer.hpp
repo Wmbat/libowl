@@ -5,7 +5,7 @@
 #include <vermillon/vulkan/buffer.hpp>
 #include <vermillon/vulkan/command_pool.hpp>
 
-namespace gfx
+namespace cacao
 {
    enum struct vertex_buffer_error
    {
@@ -45,12 +45,12 @@ namespace gfx
    private:
       vkn::buffer m_buffer;
    };
-} // namespace gfx
+} // namespace cacao
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<gfx::vertex_buffer_error> : true_type
+   struct is_error_code_enum<cacao::vertex_buffer_error> : true_type
    {
    };
 } // namespace std

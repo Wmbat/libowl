@@ -1,6 +1,6 @@
 #include <vermillon/gfx/index_buffer.hpp>
 
-namespace gfx
+namespace cacao
 {
    auto to_string(index_buffer_error err) -> std::string
    {
@@ -135,4 +135,4 @@ namespace gfx
    auto index_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
 
    auto index_buffer::index_count() const noexcept -> std::size_t { return m_index_count; }
-} // namespace gfx
+} // namespace cacao

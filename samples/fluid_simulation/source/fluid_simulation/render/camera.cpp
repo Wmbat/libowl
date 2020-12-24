@@ -55,7 +55,7 @@ auto create_descriptor_pool(camera_data&& data) -> util::result<camera_data>
          {
             std::array buf_info{vk::DescriptorBufferInfo{.buffer = *data.buffers.lookup(i++),
                                                          .offset = 0,
-                                                         .range = sizeof(gfx::camera_matrices)}};
+                                                         .range = sizeof(cacao::camera_matrices)}};
             vk::WriteDescriptorSet write{.dstSet = set,
                                          .dstBinding = 0,
                                          .dstArrayElement = 0,

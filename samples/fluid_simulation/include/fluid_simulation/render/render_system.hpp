@@ -1,8 +1,8 @@
 #pragma once
 
-#include <fluid_simulation/render/image.hpp>
 #include <fluid_simulation/render/render_pass.hpp>
 
+#include <vermillon/gfx/image.hpp>
 #include <vermillon/gfx/index_buffer.hpp>
 #include <vermillon/gfx/vertex_buffer.hpp>
 #include <vermillon/ui/window.hpp>
@@ -60,10 +60,10 @@ public:
    auto viewport() const -> vk::Viewport; // NOLINT
    auto scissor() const -> vk::Rect2D;    // NOLINT
 
-   [[nodiscard]] auto create_vertex_buffer(const crl::dynamic_array<gfx::vertex>& vertices) const
-      -> util::result<gfx::vertex_buffer>;
+   [[nodiscard]] auto create_vertex_buffer(const crl::dynamic_array<cacao::vertex>& vertices) const
+      -> util::result<cacao::vertex_buffer>;
    [[nodiscard]] auto create_index_buffer(const crl::dynamic_array<std::uint32_t>& indices) const
-      -> util::result<gfx::index_buffer>;
+      -> util::result<cacao::index_buffer>;
 
    auto lookup_configuration() const -> const config&; // NOLINT
 
@@ -76,7 +76,7 @@ private:
    vkn::device m_device;
    vkn::swapchain m_swapchain;
 
-   image<image_flags::depth_stencil> m_depth_image;
+   cacao::image m_depth_image;
 
    semaphore_array m_render_finished_semaphores;
 

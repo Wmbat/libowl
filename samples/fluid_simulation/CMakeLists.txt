@@ -71,7 +71,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     source/fluid_simulation/collision/system.cpp
     source/fluid_simulation/physics/kernel.cpp
     source/fluid_simulation/render/camera.cpp
-    source/fluid_simulation/render/image.cpp
     source/fluid_simulation/render/framebuffer.cpp
     source/fluid_simulation/render/pipeline.cpp
     source/fluid_simulation/render/pipeline_registry.cpp
@@ -84,4 +83,4 @@ target_sources(${PROJECT_NAME} PRIVATE
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/resources  # Origin
-    ${CMAKE_BINARY_DIR}/samples/water_simulation/resources)  # Destination
+    ${CMAKE_BINARY_DIR}/samples/fluid_simulation/resources)  # Destination

@@ -1,18 +1,18 @@
 #include <vermillon/gfx/vertex_buffer.hpp>
 
-namespace gfx
+namespace cacao
 {
    auto to_string(vertex_buffer_error err) -> std::string
    {
       switch (err)
       {
-         case gfx::vertex_buffer_error::failed_to_create_staging_buffer:
+         case vertex_buffer_error::failed_to_create_staging_buffer:
             return "failed_to_create_staging_buffer";
-         case gfx::vertex_buffer_error::failed_to_create_vertex_buffer:
+         case vertex_buffer_error::failed_to_create_vertex_buffer:
             return "failed_to_create_vertex_buffer";
-         case gfx::vertex_buffer_error::failed_to_create_command_buffer:
+         case vertex_buffer_error::failed_to_create_command_buffer:
             return "failed_to_create_command_buffer";
-         case gfx::vertex_buffer_error::failed_to_find_a_suitable_queue:
+         case vertex_buffer_error::failed_to_find_a_suitable_queue:
             return "failed_to_find_a_suitable_queue";
          default:
             return "UNKNOWN";
@@ -145,4 +145,4 @@ namespace gfx
 
    auto vertex_buffer::value() noexcept -> vkn::buffer& { return m_buffer; }
    auto vertex_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
-} // namespace gfx
+} // namespace cacao

@@ -21,7 +21,7 @@ struct render_system_data
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
 
-   image<image_flags::depth_stencil> depth_image{};
+   cacao::image depth_image{};
 
    ui::window* p_window{};
 
@@ -153,13 +153,14 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
 }
 
 auto create_depth_buffer(util::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
-   -> image<image_flags::depth_stencil>
+   -> cacao::image
 {
-   return image<image_flags::depth_stencil>{
+   return cacao::image{
       {.logger = logger,
        .device = device,
-       .formats = {std::begin(depth_formats), std::end(depth_formats)},
+       .formats = {std::begin(cacao::depth_formats), std::end(cacao::depth_formats)},
        .tiling = vk::ImageTiling::eOptimal,
+       .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
        .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
        .width = extent.width,
        .height = extent.height}};
@@ -350,22 +351,22 @@ auto render_system::get_depth_attachment() const -> vk::ImageView
 auto render_system::vertex_bindings() -> vertex_bindings_array
 {
    return {
-      {.binding = 0, .stride = sizeof(gfx::vertex), .inputRate = vk::VertexInputRate::eVertex}};
+      {.binding = 0, .stride = sizeof(cacao::vertex), .inputRate = vk::VertexInputRate::eVertex}};
 }
 auto render_system::vertex_attributes() -> vertex_attributes_array
 {
    return {{.location = 0,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(gfx::vertex, position)},
+            .offset = offsetof(cacao::vertex, position)},
            {.location = 1,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(gfx::vertex, normal)},
+            .offset = offsetof(cacao::vertex, normal)},
            {.location = 2,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(gfx::vertex, colour)}};
+            .offset = offsetof(cacao::vertex, colour)}};
 }
 
 auto render_system::viewport() const -> vk::Viewport
@@ -382,21 +383,21 @@ auto render_system::scissor() const -> vk::Rect2D
    return {.offset = {0, 0}, .extent = m_swapchain.extent()};
 }
 
-auto render_system::create_vertex_buffer(const crl::dynamic_array<gfx::vertex>& vertices) const
-   -> util::result<gfx::vertex_buffer>
+auto render_system::create_vertex_buffer(const crl::dynamic_array<cacao::vertex>& vertices) const
+   -> util::result<cacao::vertex_buffer>
 {
-   return gfx::vertex_buffer::make({.vertices = vertices,
-                                    .device = m_device,
-                                    .command_pool = m_render_command_pools[0],
-                                    .logger = m_logger});
+   return cacao::vertex_buffer::make({.vertices = vertices,
+                                      .device = m_device,
+                                      .command_pool = m_render_command_pools[0],
+                                      .logger = m_logger});
 }
 auto render_system::create_index_buffer(const crl::dynamic_array<std::uint32_t>& indices) const
-   -> util::result<gfx::index_buffer>
+   -> util::result<cacao::index_buffer>
 {
-   return gfx::index_buffer::make({.indices = indices,
-                                   .device = m_device,
-                                   .command_pool = m_render_command_pools[0],
-                                   .logger = m_logger});
+   return cacao::index_buffer::make({.indices = indices,
+                                     .device = m_device,
+                                     .command_pool = m_render_command_pools[0],
+                                     .logger = m_logger});
 }
 
 auto render_system::lookup_configuration() const -> const config&

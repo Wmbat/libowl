@@ -14,13 +14,13 @@
 
 struct renderable
 {
-   gfx::vertex_buffer m_vertex_buffer;
-   gfx::index_buffer m_index_buffer;
+   cacao::vertex_buffer m_vertex_buffer;
+   cacao::index_buffer m_index_buffer;
 
    glm::mat4 m_model{};
 };
 
-inline auto create_renderable(const render_system& system, const gfx::renderable_data& data)
+inline auto create_renderable(const render_system& system, const cacao::renderable_data& data)
    -> renderable
 {
    auto vertices_res = system.create_vertex_buffer(data.vertices);
@@ -39,7 +39,7 @@ inline auto create_renderable(const render_system& system, const gfx::renderable
    return r;
 }
 
-inline auto load_obj(const std::filesystem::path& path) -> gfx::renderable_data
+inline auto load_obj(const std::filesystem::path& path) -> cacao::renderable_data
 {
    tinyobj::attrib_t attrib;
 
@@ -54,16 +54,16 @@ inline auto load_obj(const std::filesystem::path& path) -> gfx::renderable_data
       throw std::runtime_error(warn + err);
    }
 
-   std::unordered_map<gfx::vertex, std::uint32_t> unique_vertices{};
+   std::unordered_map<cacao::vertex, std::uint32_t> unique_vertices{};
 
-   crl::dynamic_array<gfx::vertex> vertices;
+   crl::dynamic_array<cacao::vertex> vertices;
    crl::dynamic_array<std::uint32_t> indices;
 
    for (const auto& shape : shapes)
    {
       for (const auto& index : shape.mesh.indices)
       {
-         gfx::vertex vertex{
+         cacao::vertex vertex{
             .position = {attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 0u],
                          attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 1u],
                          attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 2u]},

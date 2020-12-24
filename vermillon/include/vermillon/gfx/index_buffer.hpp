@@ -5,7 +5,7 @@
 #include <vermillon/vulkan/buffer.hpp>
 #include <vermillon/vulkan/command_pool.hpp>
 
-namespace gfx
+namespace cacao
 {
    enum struct index_buffer_error
    {
@@ -49,12 +49,12 @@ namespace gfx
 
       std::size_t m_index_count;
    };
-} // namespace gfx
+} // namespace cacao
 
 namespace std
 {
    template <>
-   struct is_error_code_enum<gfx::index_buffer_error> : true_type
+   struct is_error_code_enum<cacao::index_buffer_error> : true_type
    {
    };
 } // namespace std

@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-namespace gfx
+namespace cacao
 {
    struct vertex
    {
@@ -32,14 +32,14 @@ namespace gfx
       crl::dynamic_array<std::uint32_t> indices;
       glm::mat4 model{};
    };
-} // namespace gfx
+} // namespace cacao
 
 namespace std
 {
    template <>
-   struct hash<gfx::vertex>
+   struct hash<cacao::vertex>
    {
-      auto operator()(const gfx::vertex& vertex) const -> std::size_t
+      auto operator()(const cacao::vertex& vertex) const -> std::size_t
       {
          return ((hash<glm::vec3>()(vertex.position) ^ (hash<glm::vec3>()(vertex.colour) << 1)) >>
                  1);

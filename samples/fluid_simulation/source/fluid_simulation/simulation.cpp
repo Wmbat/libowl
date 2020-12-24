@@ -61,7 +61,7 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
 
 auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescription
 {
-   if (auto res = find_colour_format(device))
+   if (auto res = cacao::find_colour_format(device))
    {
       return {.format = res.value(),
               .samples = vk::SampleCountFlagBits::e1,
@@ -78,7 +78,7 @@ auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescripti
 
 auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 {
-   if (auto val = find_depth_format(device))
+   if (auto val = cacao::find_depth_format(device))
    {
       return {.format = val.value(),
               .samples = vk::SampleCountFlagBits::e1,
@@ -119,13 +119,14 @@ simulation::simulation(const settings& settings) :
 
    setup_offscreen();
 
-   glm::vec2 x_edges = {5.0f, -5.0f};
-   glm::vec2 y_edges = {20.0f, 0.0f};
-   glm::vec2 z_edges = {5.0f, -5.0f};
+   glm::vec2 x_edges = {5.0f, -5.0f}; // NOLINT
+   glm::vec2 y_edges = {20.0f, 0.0f}; // NOLINT
+   glm::vec2 z_edges = {5.0f, -5.0f}; // NOLINT
 
    {
-      glm::vec3 halfs = {half(x_edges.x - x_edges.y), half(y_edges.x - y_edges.y),
-                         half(z_edges.x - z_edges.y)};
+      glm::vec3 halfs = {half(x_edges.x - x_edges.y),  // NOLINT
+                         half(y_edges.x - y_edges.y),  // NOLINT
+                         half(z_edges.x - z_edges.y)}; // NOLINT
 
       float h = m_settings.kernel_radius();
       m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
@@ -144,13 +145,13 @@ simulation::simulation(const settings& settings) :
 
    m_particles.reserve(x_count * y_count * z_count);
 
-   float distance_x = settings.water_radius * 1.20f;
-   float distance_y = settings.water_radius * 1.20f;
-   float distance_z = settings.water_radius * 1.20f;
+   float distance_x = settings.water_radius * 1.20f; // NOLINT
+   float distance_y = settings.water_radius * 1.20f; // NOLINT
+   float distance_z = settings.water_radius * 1.20f; // NOLINT
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = x_edges.y + 1.0f + distance_x * static_cast<float>(i);
+      const float x = x_edges.y + 1.0f + distance_x * static_cast<float>(i); // NOLINT
 
       for (auto j : vi::iota(0U, y_count))
       {
@@ -167,12 +168,10 @@ simulation::simulation(const settings& settings) :
       }
    }
 
-   add_box({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f},       // NOLINT
-           glm::vec3{1.0f, 1.0f, 1.0f} * (100.0f / 255.0f)); // NOLINT
-
    // add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
    // add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
 
+   add_invisible_wall({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
    add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
@@ -490,20 +489,24 @@ void simulation::setup_offscreen()
 {
    auto& device = m_render_system.device();
 
-   m_offscreen.colour = {{.logger = &m_logger,
-                          .device = device,
-                          .formats = {std::begin(colour_formats), std::end(colour_formats)},
-                          .tiling = vk::ImageTiling::eOptimal,
-                          .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
-                          .width = image_width,
-                          .height = image_height}};
-   m_offscreen.depth = {{.logger = &m_logger,
-                         .device = device,
-                         .formats = {std::begin(depth_formats), std::end(depth_formats)},
-                         .tiling = vk::ImageTiling::eOptimal,
-                         .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
-                         .width = image_width,
-                         .height = image_height}};
+   m_offscreen.colour = {
+      {.logger = &m_logger,
+       .device = device,
+       .formats = {std::begin(cacao::colour_formats), std::end(cacao::colour_formats)},
+       .tiling = vk::ImageTiling::eOptimal,
+       .usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
+       .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+       .width = image_width,
+       .height = image_height}};
+   m_offscreen.depth = {
+      {.logger = &m_logger,
+       .device = device,
+       .formats = {std::begin(cacao::depth_formats), std::end(cacao::depth_formats)},
+       .tiling = vk::ImageTiling::eOptimal,
+       .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+       .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+       .width = image_width,
+       .height = image_height}};
    m_offscreen.pass =
       render_pass{{.device = device.logical(),
                    .colour_attachment = offscreen_colour_attachment(device),

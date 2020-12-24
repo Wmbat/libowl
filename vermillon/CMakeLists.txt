@@ -85,6 +85,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_sources(${PROJECT_NAME}
     PRIVATE
+        source/vermillon/gfx/image.cpp
         source/vermillon/gfx/index_buffer.cpp
         source/vermillon/gfx/vertex_buffer.cpp
         source/vermillon/ui/window.cpp
