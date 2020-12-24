@@ -29,11 +29,11 @@ add_library(cacao::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
 
 if(VERMILLON_ENFORCE_CONTRACTS)
-   target_compile_definitions(${PROJECT_NAME} PRIVATE VML_ENFORCE_CONTRACTS) 
+   target_compile_definitions(${PROJECT_NAME} PRIVATE CACAO_ENFORCE_CONTRACTS) 
 endif()
 
 if (VERMILLON_SHOW_DEBUG_LOGGING)
-   target_compile_definitions(${PROJECT_NAME} PRIVATE VML_DEBUG_LOGGING)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE CACAO_DEBUG_LOGGING)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
@@ -91,7 +91,6 @@ target_sources(${PROJECT_NAME}
         source/vermillon/ui/window.cpp
         source/vermillon/util/logger.cpp
         source/vermillon/util/error.cpp
-        source/vermillon/vulkan/sync/fence.cpp
         source/vermillon/vulkan/sync/semaphore.cpp
         source/vermillon/vulkan/buffer.cpp
         source/vermillon/vulkan/command_pool.cpp

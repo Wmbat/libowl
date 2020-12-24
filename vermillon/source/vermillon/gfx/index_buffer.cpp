@@ -48,7 +48,7 @@ namespace cacao
          return std::move(buffer);
       };
       const auto buffer_error = [&](util::error_t&& err) noexcept {
-         info.logger.error("[core] staging buffer error: {}-{}", err.value().category().name(),
+         info.logger.error("staging buffer error: {}-{}", err.value().category().name(),
                            err.value().message());
 
          return to_err_code(index_buffer_error::failed_to_create_staging_buffer);
@@ -94,7 +94,7 @@ namespace cacao
 
          return info.device.get_queue(vkn::queue_type::graphics)
             .map_error([&](util::error_t&& err) {
-               info.logger.error("[core] no queue found for transfer : {}-{}",
+               info.logger.error("no queue found for transfer : {}-{}",
                                  err.value().category().name(), err.value().message());
 
                return to_err_code(index_buffer_error::failed_to_find_a_suitable_queue);
@@ -105,7 +105,7 @@ namespace cacao
                   nullptr);
                queue.waitIdle();
 
-               info.logger.info("[core] index buffer created");
+               info.logger.info("index buffer created");
 
                class index_buffer buf = {};
                buf.m_buffer = std::move(index_buffer);
@@ -117,8 +117,8 @@ namespace cacao
 
       return info.command_pool.create_primary_buffer()
          .map_error([&](util::error_t&& err) {
-            info.logger.error("[core] transfer cmd buffer error: {}-{}",
-                              err.value().category().name(), err.value().message());
+            info.logger.error("transfer cmd buffer error: {}-{}", err.value().category().name(),
+                              err.value().message());
 
             return to_err_code(index_buffer_error::failed_to_create_command_buffer);
          })

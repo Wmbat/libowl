@@ -33,7 +33,7 @@ namespace vkn
    public:
       struct create_info
       {
-         util::logger_wrapper logger;
+         cacao::logger_wrapper logger;
       };
 
       static auto make(const create_info& info) -> util::result<context>;
@@ -58,7 +58,7 @@ namespace vkn
 
       crl::dynamic_array<vk::ExtensionProperties> m_enabled_extensions{};
 
-      util::logger_wrapper m_logger;
+      cacao::logger_wrapper m_logger;
 
       static inline bool is_glslang_init = false;
    };

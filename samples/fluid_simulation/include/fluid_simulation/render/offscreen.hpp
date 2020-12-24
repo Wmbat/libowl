@@ -11,7 +11,7 @@ struct offscreen
 {
    vkn::command_pool command_pool;
 
-   vkn::fence in_flight_fence;
+   vk::UniqueFence in_flight_fence;
    vkn::semaphore render_finished_semaphore;
    vkn::semaphore image_available_semaphore;
 

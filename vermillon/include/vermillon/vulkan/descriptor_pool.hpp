@@ -24,7 +24,7 @@ namespace vkn
       [[nodiscard]] auto sets() const noexcept -> crl::dynamic_array<vk::DescriptorSet>;
 
    private:
-      util::logger_wrapper m_logger;
+      cacao::logger_wrapper m_logger;
 
       crl::dynamic_array<vk::DescriptorSet> m_sets;
 
@@ -37,13 +37,13 @@ namespace vkn
          struct creation_info;
 
       public:
-         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
+         builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept;
 
          auto build() -> util::result<descriptor_pool>;
 
-         auto set_max_sets(util::count32_t count) noexcept -> builder&;
+         auto set_max_sets(cacao::count32_t count) noexcept -> builder&;
 
-         auto add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&;
+         auto add_pool_size(vk::DescriptorType type, cacao::count32_t count) -> builder&;
 
          auto set_descriptor_set_layouts(const crl::dynamic_array<vk::DescriptorSetLayout>& layouts)
             -> builder&;
@@ -58,7 +58,7 @@ namespace vkn
       private:
          vk::Device m_device;
 
-         util::logger_wrapper m_logger;
+         cacao::logger_wrapper m_logger;
 
          struct creation_info
          {
@@ -68,7 +68,7 @@ namespace vkn
 
          struct info
          {
-            util::count32_t max_set_count{};
+            cacao::count32_t max_set_count{};
 
             pool_size_dynamic_array pool_sizes;
 

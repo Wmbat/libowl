@@ -83,12 +83,12 @@ auto camera::make(create_info&& info) -> util::result<camera>
    return create_uniform_buffers(info).and_then(create_descriptor_pool).map(finalize);
 }
 
-auto camera::lookup_set(util::index_t image_index) -> vk::DescriptorSet
+auto camera::lookup_set(cacao::index_t image_index) -> vk::DescriptorSet
 {
    return m_descriptor_pool.sets().lookup(image_index.value());
 }
 
-void camera::update(util::index_t image_index, const matrices& matrices)
+void camera::update(cacao::index_t image_index, const matrices& matrices)
 {
    constexpr auto size = sizeof(matrices);
 
@@ -100,7 +100,7 @@ void camera::update(util::index_t image_index, const matrices& matrices)
    device.unmapMemory(m_uniform_buffers.lookup(image_index.value()).memory());
 }
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)
+auto create_camera(render_system& system, graphics_pipeline& pipeline, cacao::logger_wrapper logger)
    -> camera
 {
    auto& config = system.lookup_configuration();
@@ -112,7 +112,7 @@ auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log
                      logger);
 }
 auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             util::logger_wrapper logger) -> camera
+                             cacao::logger_wrapper logger) -> camera
 {
    return handle_err(
       camera::make({.renderer = system, .pipeline = pipeline, .image_count = 1, .logger = logger}),

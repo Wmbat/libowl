@@ -4,7 +4,7 @@
 
 #include <utility>
 
-pipeline_registry::pipeline_registry(util::logger_wrapper logger) : m_logger{logger} {}
+pipeline_registry::pipeline_registry(cacao::logger_wrapper logger) : m_logger{logger} {}
 
 auto pipeline_registry::insert(graphics_pipeline_create_info&& info) -> result<insert_kv>
 {

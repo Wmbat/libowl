@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace util
+namespace cacao
 {
    // clang-format off
    template <typename any_, typename parameter, template <typename> class... utils_>
@@ -251,14 +251,14 @@ namespace util
    using count64_t = strong_type<std::uint64_t, struct count64, arithmetic, hashable>;
    using index_t = strong_type<std::size_t, struct index, arithmetic, hashable>;
    using size_t = strong_type<std::size_t, struct size, arithmetic, hashable>;
-} // namespace util
+} // namespace cacao
 
 namespace std
 {
    template <typename Any, typename Parameter, template <typename> class... Skills>
-   struct hash<util::strong_type<Any, Parameter, Skills...>>
+   struct hash<cacao::strong_type<Any, Parameter, Skills...>>
    {
-      using strong_type = util::strong_type<Any, Parameter, Skills...>;
+      using strong_type = cacao::strong_type<Any, Parameter, Skills...>;
       using check_hashable = typename std::enable_if_t<strong_type::is_hashable, void>;
 
       auto operator()(const strong_type& x) const noexcept -> size_t

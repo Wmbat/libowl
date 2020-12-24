@@ -1,6 +1,6 @@
 #include <vermillon/util/error.hpp>
 
-namespace vml
+namespace cacao
 {
    runtime_error::runtime_error(error_t e) :
       std::runtime_error{e.value().message()}, m_error_condition{e}
@@ -28,4 +28,4 @@ namespace vml
    auto runtime_error::condition() const noexcept -> const error_t& { return m_error_condition; }
 
    auto runtime_error::what() const noexcept -> const char* { return std::runtime_error::what(); }
-} // namespace vml
+} // namespace cacao

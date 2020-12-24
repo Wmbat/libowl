@@ -215,7 +215,7 @@ namespace vkn
 
    using builder = swapchain::builder;
 
-   builder::builder(const device& device, util::logger_wrapper logger) : m_logger{logger}
+   builder::builder(const device& device, cacao::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.physical_device = device.physical();

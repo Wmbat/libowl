@@ -30,9 +30,9 @@ enum struct graphics_pipeline_error
 
 struct set_layout_binding
 {
-   util::index_t binding{};
+   cacao::index_t binding{};
    vk::DescriptorType descriptor_type{};
-   util::count32_t descriptor_count{};
+   cacao::count32_t descriptor_count{};
 };
 
 struct set_layout_data
@@ -44,8 +44,8 @@ struct set_layout_data
 struct push_constant_data
 {
    std::string name{};
-   util::size_t size{};
-   util::size_t offset{};
+   cacao::size_t size{};
+   cacao::size_t offset{};
 };
 
 struct pipeline_shader_data
@@ -60,7 +60,7 @@ struct graphics_pipeline_create_info
    const vkn::device& device;
    const render_pass& pass;
 
-   util::logger_wrapper logger{};
+   cacao::logger_wrapper logger{};
 
    vertex_bindings_array bindings{};
    vertex_attributes_array attributes{};
@@ -94,14 +94,14 @@ private:
       -> push_constant_map;
    auto create_descriptor_set_layouts(const vkn::device& device,
                                       std::span<const pipeline_shader_data> shader_infos,
-                                      util::logger_wrapper logger) -> set_layout_map;
+                                      cacao::logger_wrapper logger) -> set_layout_map;
    auto create_pipeline_layout(const vkn::device& device) -> vk::UniquePipelineLayout;
    auto create_pipeline(const vkn::device& device,
                         std::span<const pipeline_shader_data> shader_infos,
                         std::span<vk::VertexInputBindingDescription> bindings,
                         std::span<vk::VertexInputAttributeDescription> attributes,
                         std::span<vk::Viewport> viewports, std::span<vk::Rect2D> scissors,
-                        util::logger_wrapper logger) -> vk::UniquePipeline;
+                        cacao::logger_wrapper logger) -> vk::UniquePipeline;
 
 private:
    vk::UniquePipeline m_pipeline{nullptr};

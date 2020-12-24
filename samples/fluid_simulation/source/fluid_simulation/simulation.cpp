@@ -27,7 +27,7 @@ struct mesh_data
    glm::vec3 colour;
 };
 
-auto get_main_framebuffers(const render_system& system, util::logger_wrapper logger)
+auto get_main_framebuffers(const render_system& system, cacao::logger_wrapper logger)
    -> crl::dynamic_array<framebuffer::create_info>
 {
    crl::dynamic_array<framebuffer::create_info> infos;
@@ -129,14 +129,14 @@ simulation::simulation(const settings& settings) :
                          half(z_edges.x - z_edges.y)}; // NOLINT
 
       float h = m_settings.kernel_radius();
-      m_sph_system = sph::system{{.p_registry = vml::make_not_null(&m_registry),
-                                  .p_logger = vml::make_not_null(&m_logger),
+      m_sph_system = sph::system{{.p_registry = cacao::make_non_null(&m_registry),
+                                  .p_logger = cacao::make_non_null(&m_logger),
                                   .center = halfs,
                                   .dimensions = halfs + h,
                                   .system_settings = settings}};
 
-      m_collision_system = collision::system{{.p_registry = vml::make_not_null(&m_registry),
-                                              .p_sph_system = vml::make_not_null(&m_sph_system)}};
+      m_collision_system = collision::system{{.p_registry = cacao::make_non_null(&m_registry),
+                                              .p_sph_system = cacao::make_non_null(&m_sph_system)}};
    }
 
    constexpr std::size_t x_count = 25u;
@@ -234,7 +234,7 @@ void simulation::render()
 
    if (has_offscreen_render)
    {
-      m_render_system.device().logical().waitForFences({m_offscreen.in_flight_fence.value()}, true,
+      m_render_system.device().logical().waitForFences({m_offscreen.in_flight_fence.get()}, true,
                                                        std::numeric_limits<std::uint64_t>::max());
 
       const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
@@ -339,7 +339,7 @@ void simulation::offscreen_render()
 
    device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
 
-   m_offscreen.cam.update(util::index_t{0u}, compute_matrices(image_width, image_height));
+   m_offscreen.cam.update(cacao::index_t{0u}, compute_matrices(image_width, image_height));
 
    std::array<vk::ClearValue, 2> clear_values{};
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
@@ -403,7 +403,7 @@ void simulation::offscreen_render()
       });
 
       m_offscreen.pass.submit_render_calls(
-         cmd, util::index_t{0}, {.extent = {.width = image_width, .height = image_height}},
+         cmd, cacao::index_t{0}, {.extent = {.width = image_width, .height = image_height}},
          clear_values);
 
       cmd.end();
@@ -415,7 +415,7 @@ void simulation::offscreen_render()
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-   device.logical().resetFences({m_offscreen.in_flight_fence.value()});
+   device.logical().resetFences({m_offscreen.in_flight_fence.get()});
 
    try
    {
@@ -434,7 +434,7 @@ void simulation::offscreen_render()
                         .pSignalSemaphores = std::data(signal_semaphores)}};
 
       const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
-      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.value());
+      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.get());
    }
    catch (const vk::SystemError& err)
    {
@@ -475,7 +475,7 @@ void simulation::offscreen_render()
                         .pSignalSemaphores = std::data(wait_semaphores)}};
 
       const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
-      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.value());
+      gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.get());
    }
    catch (const vk::SystemError& err)
    {
@@ -528,8 +528,8 @@ void simulation::setup_offscreen()
             .set_primary_buffer_count(1U)
             .build();
       }));
-   m_offscreen.in_flight_fence =
-      check_err(vkn::fence::builder{device, &m_logger}.set_signaled().build());
+   m_offscreen.in_flight_fence = m_render_system.device().logical().createFenceUnique(
+      vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
    m_offscreen.render_finished_semaphore =
       check_err(vkn::semaphore::builder{device, &m_logger}.build());
    m_offscreen.image_available_semaphore =

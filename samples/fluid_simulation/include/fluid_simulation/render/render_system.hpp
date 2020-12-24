@@ -10,13 +10,12 @@
 #include <vermillon/util/strong_type.hpp>
 #include <vermillon/vulkan/command_pool.hpp>
 #include <vermillon/vulkan/swapchain.hpp>
-#include <vermillon/vulkan/sync/fence.hpp>
 #include <vermillon/vulkan/sync/semaphore.hpp>
 
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
 
-using frame_index_t = util::strong_type<std::uint32_t, struct frame_index_tag, util::arithmetic>;
+using frame_index_t = cacao::strong_type<std::uint32_t, struct frame_index_tag, cacao::arithmetic>;
 
 using framebuffer_array = crl::small_dynamic_array<framebuffer, expected_image_count>;
 using semaphore_array = crl::small_dynamic_array<vkn::semaphore, expected_image_count>;
@@ -29,13 +28,13 @@ class render_system
 public:
    struct config
    {
-      util::count32_t swapchain_image_count;
+      cacao::count32_t swapchain_image_count;
    };
 
    struct create_info
    {
-      util::logger_wrapper logger;
-      vml::non_null<ui::window*> p_window;
+      cacao::logger_wrapper logger;
+      cacao::non_null<ui::window*> p_window;
    };
 
    static auto make(create_info&& info) -> util::result<render_system>;
@@ -68,7 +67,7 @@ public:
    auto lookup_configuration() const -> const config&; // NOLINT
 
 private:
-   util::logger_wrapper m_logger;
+   cacao::logger_wrapper m_logger;
 
    ui::window* mp_window;
 
@@ -82,9 +81,9 @@ private:
 
    std::array<vkn::command_pool, max_frames_in_flight> m_render_command_pools;
    std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
-   std::array<vkn::fence, max_frames_in_flight> m_in_flight_fences;
+   std::array<vk::UniqueFence, max_frames_in_flight> m_in_flight_fences;
 
-   crl::dynamic_array<vkn::fence_observer> m_images_in_flight{};
+   crl::dynamic_array<vk::Fence> m_images_in_flight{};
 
    image_index_t m_current_image_index;
    frame_index_t m_current_frame_index;

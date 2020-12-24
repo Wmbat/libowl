@@ -23,7 +23,7 @@ public:
       std::uint32_t height{};
       std::uint32_t layers{};
 
-      util::logger_wrapper logger;
+      cacao::logger_wrapper logger;
    };
 
 public:

@@ -27,7 +27,7 @@
 #include <compare>
 #include <concepts>
 
-namespace util
+namespace cacao
 {
    template <class lhs_, std::totally_ordered_with<lhs_> rhs_>
    constexpr auto synth_three_way(lhs_ const& lhs, rhs_ const& rhs)
@@ -42,14 +42,13 @@ namespace util
          {
             return std::strong_ordering::equal;
          }
-         else if (lhs < rhs)
+
+         if (lhs < rhs)
          {
             return std::strong_ordering::less;
          }
-         else
-         {
-            return std::strong_ordering::greater;
-         }
+
+         return std::strong_ordering::greater;
       }
    }
-} // namespace util
+} // namespace cacao

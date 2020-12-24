@@ -35,7 +35,7 @@ namespace vkn
 
    using builder = semaphore::builder;
 
-   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+   builder::builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept :
       m_logger{logger}
    {
       m_info.device = device.logical();

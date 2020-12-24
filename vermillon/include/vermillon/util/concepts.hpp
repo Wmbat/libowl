@@ -28,13 +28,7 @@
 #include <ranges>
 #include <type_traits>
 
-namespace vml
-{
-   template <typename Any>
-   concept enumeration = std::is_enum_v<Any>;
-} // namespace vml
-
-namespace util
+namespace cacao
 {
    // clang-format off
    template <typename any_>
@@ -94,4 +88,4 @@ namespace util
          { a.deallocate(p, n)} -> std::same_as<void>;
       };
    // clang-format on
-} // namespace util
+} // namespace cacao

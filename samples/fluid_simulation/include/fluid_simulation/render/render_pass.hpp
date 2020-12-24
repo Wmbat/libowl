@@ -17,7 +17,7 @@ struct render_pass_create_info
 
    crl::dynamic_array<framebuffer::create_info> framebuffer_create_infos{};
 
-   util::logger_wrapper logger{nullptr};
+   cacao::logger_wrapper logger{nullptr};
 };
 
 class render_pass
@@ -46,7 +46,7 @@ public:
    /**
     * @brief
     */
-   void submit_render_calls(vk::CommandBuffer cmd_buffer, util::index_t framebuffer_index,
+   void submit_render_calls(vk::CommandBuffer cmd_buffer, cacao::index_t framebuffer_index,
                             vk::Rect2D render_area, std::span<const vk::ClearValue> clear_colours);
 
 private:

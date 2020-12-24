@@ -45,7 +45,7 @@ namespace cacao
 
       return "UNKNOWN";
    }
-   auto to_err_cond(image_error err) -> vml::error_t
+   auto to_err_cond(image_error err) -> cacao::error_t
    {
       return {{static_cast<int>(err), image_error_cat}};
    }

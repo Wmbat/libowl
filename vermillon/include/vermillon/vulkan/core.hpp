@@ -20,22 +20,22 @@
 #include <span>
 #include <system_error>
 
-namespace vml
+namespace cacao
 {
    template <typename Any>
    auto to_array_proxy(std::span<Any> s) -> vk::ArrayProxyNoTemporaries<Any>
    {
       return vk::ArrayProxyNoTemporaries<Any>{s.size(), s.data()};
    }
-} // namespace vml
+} // namespace cacao
 
 namespace vkn
 {
-   static constexpr util::count32_t expected_image_count = 3U;
+   static constexpr cacao::count32_t expected_image_count = 3U;
 
    namespace detail
    {
-#if defined(NDEBUG) && defined(VML_DEBUG_LOGGING)
+#if defined(NDEBUG) && defined(CACAO_DEBUG_LOGGING)
       static constexpr bool ENABLE_VALIDATION_LAYERS = true;
 #elif defined(NDEBUG)
       static constexpr bool ENABLE_VALIDATION_LAYERS = false;

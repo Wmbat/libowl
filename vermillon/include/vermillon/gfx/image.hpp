@@ -27,7 +27,7 @@ namespace cacao
    /**
     * @brief Convert an image_error value to a vml::error_t
     */
-   auto to_err_cond(image_error err) -> vml::error_t;
+   auto to_err_cond(image_error err) -> cacao::error_t;
 
    auto find_memory_type(uint32_t type_filter, const vk::MemoryPropertyFlags& properties,
                          vk::PhysicalDevice device) -> monad::maybe<std::uint32_t>;
@@ -49,7 +49,7 @@ namespace cacao
 
    struct image_create_info
    {
-      util::logger_wrapper logger;
+      cacao::logger_wrapper logger;
 
       vkn::device& device;
 
@@ -83,7 +83,7 @@ namespace cacao
 
          if (!fmt)
          {
-            throw vml::runtime_error{to_err_cond(image_error::failed_to_find_supported_format)};
+            throw cacao::runtime_error{to_err_cond(image_error::failed_to_find_supported_format)};
          }
 
          auto logical = info.device.logical();
@@ -153,7 +153,7 @@ namespace cacao
                                                 .memoryTypeIndex = memory_type_index.value()});
          }
 
-         throw vml::runtime_error{to_err_cond(image_error::failed_to_find_memory_type)};
+         throw cacao::runtime_error{to_err_cond(image_error::failed_to_find_memory_type)};
       }
       [[nodiscard]] auto create_image_view(vk::Device device) const -> vk::UniqueImageView
       {

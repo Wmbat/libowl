@@ -10,7 +10,7 @@
 
 #include <type_traits>
 
-namespace util
+namespace cacao
 {
    struct nonesuch
    {
@@ -49,4 +49,4 @@ namespace util
    template <class Default, template <class...> class Op, class... Args>
    using detected_or = detail::detector<Default, void, Op, Args...>;
 
-} // namespace util
+} // namespace cacao

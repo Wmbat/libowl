@@ -6,9 +6,9 @@
 
 #include <system_error>
 
-namespace vml
+namespace cacao
 {
-   using error_t = util::strong_type<std::error_condition, struct error_condition_tag>;
+   using error_t = cacao::strong_type<std::error_condition, struct error_condition_tag>;
 
    class runtime_error : public std::runtime_error
    {
@@ -31,12 +31,11 @@ namespace vml
 
    template <typename Any>
    using result = monad::result<Any, error_t>;
-} // namespace vml
+} // namespace cacao
 
 namespace util
 {
-
-   using error_t = strong_type<std::error_code, struct error_code_tag>;
+   using error_t = cacao::strong_type<std::error_code, struct error_code_tag>;
 
    template <typename Any>
    using result = monad::result<Any, error_t>;

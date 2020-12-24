@@ -34,7 +34,7 @@ namespace detail
    auto
    check_vertex_attribute_support(const vkn::shader* p_shader,
                                   std::span<const vk::VertexInputAttributeDescription> attributes,
-                                  util::logger_wrapper logger) -> bool
+                                  cacao::logger_wrapper logger) -> bool
    {
       const auto& data = p_shader->get_data();
       for (const auto& attrib : attributes)
@@ -141,7 +141,7 @@ auto graphics_pipeline::populate_push_constants(std::span<const pipeline_shader_
 
 auto graphics_pipeline::create_descriptor_set_layouts(
    const vkn::device& device, std::span<const pipeline_shader_data> shader_infos,
-   util::logger_wrapper logger) -> set_layout_map
+   cacao::logger_wrapper logger) -> set_layout_map
 {
    set_layout_map set_layouts;
 
@@ -204,13 +204,13 @@ auto graphics_pipeline::create_pipeline(const vkn::device& device,
                                         std::span<vk::VertexInputBindingDescription> bindings,
                                         std::span<vk::VertexInputAttributeDescription> attributes,
                                         std::span<vk::Viewport> viewports,
-                                        std::span<vk::Rect2D> scissors, util::logger_wrapper logger)
-   -> vk::UniquePipeline
+                                        std::span<vk::Rect2D> scissors,
+                                        cacao::logger_wrapper logger) -> vk::UniquePipeline
 {
    crl::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
    shader_stage_info.reserve(std::size(shader_infos));
 
-   util::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
+   cacao::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
    for (std::uint32_t index = 0; const auto& info : shader_infos)
    {
       shader_stage_info.append(vk::PipelineShaderStageCreateInfo{}

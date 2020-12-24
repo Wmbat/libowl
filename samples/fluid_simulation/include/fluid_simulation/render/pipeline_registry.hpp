@@ -14,7 +14,7 @@ auto to_string(pipeline_registry_error err) -> std::string;
 auto to_err_code(pipeline_registry_error err) -> util::error_t;
 
 using pipeline_index_t =
-   util::strong_type<std::size_t, struct pipeline_index_tag, util::arithmetic>;
+   cacao::strong_type<std::size_t, struct pipeline_index_tag, cacao::arithmetic>;
 
 class pipeline_registry
 {
@@ -62,7 +62,7 @@ public:
    };
 
 public:
-   pipeline_registry(util::logger_wrapper logger);
+   pipeline_registry(cacao::logger_wrapper logger);
 
    auto insert(graphics_pipeline_create_info&& info) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
@@ -71,7 +71,7 @@ public:
 private:
    graphics_map m_graphics_pipelines;
 
-   util::logger_wrapper m_logger;
+   cacao::logger_wrapper m_logger;
 
    std::size_t id_counter{0};
 };

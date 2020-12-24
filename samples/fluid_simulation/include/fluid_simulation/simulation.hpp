@@ -55,7 +55,7 @@ private:
    }
 
 private:
-   util::logger m_logger;
+   cacao::logger m_logger;
 
    settings m_settings;
 
@@ -97,5 +97,5 @@ private:
    duration<float, std::milli> m_time_per_frame = 16ms;
    duration<float, std::milli> m_time_spent = 0ms;
 
-   util::count64_t m_frame_count = 0;
+   cacao::count64_t m_frame_count = 0;
 };

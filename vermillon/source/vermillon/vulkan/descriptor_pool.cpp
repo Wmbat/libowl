@@ -13,7 +13,7 @@ namespace vkn
 
    using builder = descriptor_pool::builder;
 
-   builder::builder(const vkn::device& device, util::logger_wrapper logger) noexcept :
+   builder::builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept :
       m_device{device.logical()}, m_logger{logger}
    {}
 
@@ -33,7 +33,7 @@ namespace vkn
          });
    }
 
-   auto builder::set_max_sets(util::count32_t count) noexcept -> builder&
+   auto builder::set_max_sets(cacao::count32_t count) noexcept -> builder&
    {
       m_info.max_set_count = count;
       return *this;
@@ -52,7 +52,7 @@ namespace vkn
       return *this;
    }
 
-   auto builder::add_pool_size(vk::DescriptorType type, util::count32_t count) -> builder&
+   auto builder::add_pool_size(vk::DescriptorType type, cacao::count32_t count) -> builder&
    {
       m_info.pool_sizes.append(
          vk::DescriptorPoolSize{}.setType(type).setDescriptorCount(count.value()));
@@ -67,7 +67,7 @@ namespace vkn
                    vk::DescriptorPoolCreateInfo{}
                       .setMaxSets(m_info.max_set_count.value())
                       .setPoolSizes(
-                         vml::to_array_proxy<const vk::DescriptorPoolSize>(m_info.pool_sizes)));
+                         cacao::to_array_proxy<const vk::DescriptorPoolSize>(m_info.pool_sizes)));
              })
          .map_error([]([[maybe_unused]] auto err) {
             return to_err_code(descriptor_pool_error::failed_to_create_descriptor_pool);

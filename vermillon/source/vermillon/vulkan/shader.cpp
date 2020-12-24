@@ -2,6 +2,8 @@
 
 #include <monads/try.hpp>
 
+#include <range/v3/range/conversion.hpp>
+
 #include <spirv_cross.hpp>
 
 #include <fstream>
@@ -36,7 +38,7 @@ namespace vkn
 
    using builder = shader::builder;
 
-   builder::builder(const device& device, util::logger_wrapper logger) : m_logger{logger}
+   builder::builder(const device& device, cacao::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.version = device.vk_version();
@@ -82,8 +84,8 @@ namespace vkn
    auto builder::create_shader() const noexcept -> util::result<vk::UniqueShaderModule>
    {
       return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{}.setCode(
-                   vml::to_array_proxy<const std::uint32_t>(m_info.spirv_binary)));
+                return m_info.device.createShaderModuleUnique(
+                   vk::ShaderModuleCreateInfo{}.setCode(m_info.spirv_binary | ranges::to_vector));
              })
          .map_error([]([[maybe_unused]] const auto& error) {
             return to_err_code(shader_error::failed_to_create_shader_module);

@@ -29,7 +29,7 @@ template <typename Any, typename Ratio = std::ratio<1>>
 using duration = std::chrono::duration<Any, Ratio>;
 
 template <typename Any>
-auto handle_err(Any&& result, util::logger_wrapper logger)
+auto handle_err(Any&& result, cacao::logger_wrapper logger)
 {
    if (auto err = result.error())
    {
@@ -56,7 +56,7 @@ static constexpr float gravity = -9.81f;
 
 static constexpr std::size_t max_frames = 30 * 20;
 
-using image_index_t = util::strong_type<std::uint32_t, struct image_index_tag, util::arithmetic>;
+using image_index_t = cacao::strong_type<std::uint32_t, struct image_index_tag, cacao::arithmetic>;
 
 struct settings
 {

@@ -51,7 +51,7 @@ namespace vkn
 
          std::uint32_t vulkan_version;
 
-         util::logger_wrapper logger;
+         cacao::logger_wrapper logger;
       };
 
       static auto select(selection_info&& info) -> util::result<device>;
@@ -98,7 +98,7 @@ namespace vkn
 
       std::uint32_t m_version;
 
-      util::logger_wrapper m_logger;
+      cacao::logger_wrapper m_logger;
    };
 
    auto get_graphics_queue_index(std::span<const vk::QueueFamilyProperties> families)

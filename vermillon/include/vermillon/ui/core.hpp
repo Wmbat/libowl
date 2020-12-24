@@ -8,7 +8,7 @@
 
 namespace ui
 {
-   using error_t = util::strong_type<std::error_code, struct error_tag>;
+   using error_t = cacao::strong_type<std::error_code, struct error_tag>;
 
    template <typename Any>
    using result = monad::result<Any, error_t>;

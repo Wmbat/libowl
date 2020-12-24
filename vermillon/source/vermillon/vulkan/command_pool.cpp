@@ -36,7 +36,7 @@ namespace vkn
 
    using builder = command_pool::builder;
 
-   builder::builder(const vkn::device& device, util::logger_wrapper logger) : m_logger{logger}
+   builder::builder(const vkn::device& device, cacao::logger_wrapper logger) : m_logger{logger}
    {
       m_info.device = device.logical();
       m_info.queue_family_index = device.get_queue_index(queue_type::graphics);

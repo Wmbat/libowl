@@ -82,7 +82,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const device& device, util::logger_wrapper logger);
+         builder(const device& device, cacao::logger_wrapper logger);
 
          /**
           * Attempt to build a swapchain object. May return an error
@@ -127,7 +127,7 @@ namespace vkn
       private:
          static constexpr uint32_t DEFAULT_SIZE = 256;
 
-         util::logger_wrapper m_logger;
+         cacao::logger_wrapper m_logger;
 
          struct swap_info
          {

@@ -33,7 +33,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
+         builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept;
 
          [[nodiscard]] auto build() noexcept -> util::result<buffer>;
 
@@ -54,7 +54,7 @@ namespace vkn
             -> monad::maybe<std::uint32_t>;
 
       private:
-         util::logger_wrapper m_logger;
+         cacao::logger_wrapper m_logger;
 
          struct info
          {

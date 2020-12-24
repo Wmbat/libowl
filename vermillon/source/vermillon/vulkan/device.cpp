@@ -2,6 +2,7 @@
 
 #include <monads/try.hpp>
 
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view.hpp>
 
 #include <map>
@@ -24,7 +25,7 @@ namespace vkn
 
       std::uint32_t version{};
 
-      util::logger_wrapper logger{};
+      cacao::logger_wrapper logger{};
    };
 
    auto find_suitable_device(std::span<const vk::PhysicalDevice> devices, device_data&& data)
@@ -328,10 +329,8 @@ namespace vkn
       return monad::try_wrap<vk::SystemError>([&] {
                 return data.physical_device.createDeviceUnique(
                    vk::DeviceCreateInfo{}
-                      .setQueueCreateInfos(vml::to_array_proxy<const vk::DeviceQueueCreateInfo>(
-                         queue_create_infos))
-                      .setPEnabledExtensionNames(
-                         vml::to_array_proxy<const char* const>(extensions))
+                      .setQueueCreateInfos(queue_create_infos | ranges::to_vector)
+                      .setPEnabledExtensionNames(extensions | ranges::to_vector)
                       .setPEnabledFeatures(&features));
              })
          .map_error([]([[maybe_unused]] auto err) {

@@ -19,13 +19,13 @@ struct render_system_data
 
    std::array<vkn::command_pool, max_frames_in_flight> render_command_pools{};
    std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
-   std::array<vkn::fence, max_frames_in_flight> in_flight_fences{};
+   std::array<vk::UniqueFence, max_frames_in_flight> in_flight_fences{};
 
    cacao::image depth_image{};
 
    ui::window* p_window{};
 
-   util::logger_wrapper logger{};
+   cacao::logger_wrapper logger{};
 };
 
 auto create_context(render_system_data&& data) -> result<render_system_data>
@@ -91,24 +91,19 @@ auto create_render_command_pools(render_system_data&& data) -> result<render_sys
    return std::move(data);
 }
 
-auto create_in_flight_fences(render_system_data&& data) -> result<render_system_data>
+auto create_in_flight_fences(const vkn::device& device, cacao::logger_wrapper logger)
+   -> std::array<vk::UniqueFence, max_frames_in_flight>
 {
-   std::array<vkn::fence, max_frames_in_flight> fences;
+   std::array<vk::UniqueFence, max_frames_in_flight> fences;
    for (auto& fence : fences)
    {
-      if (auto res = vkn::fence::builder{data.device, data.info.logger}.set_signaled().build())
-      {
-         fence = std::move(res).value().value();
-      }
-      else
-      {
-         return monad::err(res.error().value());
-      }
+      fence = device.logical().createFenceUnique(
+         vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
+
+      logger.info("signaled fence created");
    }
 
-   data.in_flight_fences = std::move(fences);
-
-   return std::move(data);
+   return fences;
 }
 
 auto create_image_available_semaphores(render_system_data&& data) -> result<render_system_data>
@@ -152,7 +147,7 @@ auto create_render_finished_semaphores(render_system_data&& data) -> result<rend
    return std::move(data);
 }
 
-auto create_depth_buffer(util::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
+auto create_depth_buffer(cacao::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
    -> cacao::image
 {
    return cacao::image{
@@ -172,7 +167,6 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
       .and_then(create_device)
       .and_then(create_swapchain)
       .and_then(create_render_command_pools)
-      .and_then(create_in_flight_fences)
       .and_then(create_image_available_semaphores)
       .and_then(create_render_finished_semaphores)
       .map([](render_system_data&& data) {
@@ -182,7 +176,7 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_context = std::move(data.context);
          rs.m_device = std::move(data.device);
          rs.m_swapchain = std::move(data.swapchain);
-         rs.m_in_flight_fences = std::move(data.in_flight_fences);
+         rs.m_in_flight_fences = create_in_flight_fences(rs.m_device, rs.m_logger);
          rs.m_image_available_semaphores = std::move(data.image_available_semaphores);
          rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
          rs.m_render_command_pools = std::move(data.render_command_pools);
@@ -212,9 +206,8 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
 
 auto render_system::begin_frame() -> image_index_t
 {
-   m_device.logical().waitForFences(
-      {vkn::value(m_in_flight_fences.at(m_current_frame_index.value()))}, true,
-      std::numeric_limits<std::uint64_t>::max());
+   m_device.logical().waitForFences({m_in_flight_fences.at(m_current_frame_index.value()).get()},
+                                    true, std::numeric_limits<std::uint64_t>::max());
 
    auto [image_res, image_index] = m_device.logical().acquireNextImageKHR(
       vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
@@ -262,12 +255,11 @@ void render_system::end_frame()
 {
    if (m_images_in_flight.lookup(m_current_image_index.value()))
    {
-      m_device.logical().waitForFences(
-         {vkn::value(m_images_in_flight.lookup(m_current_frame_index.value()))}, true,
-         std::numeric_limits<std::uint64_t>::max());
+      m_device.logical().waitForFences({m_images_in_flight.lookup(m_current_frame_index.value())},
+                                       true, std::numeric_limits<std::uint64_t>::max());
    }
    m_images_in_flight.lookup(m_current_image_index.value()) =
-      vkn::value(m_in_flight_fences.at(m_current_frame_index.value()));
+      m_in_flight_fences.at(m_current_frame_index.value()).get();
 
    const std::array wait_semaphores{
       vkn::value(m_image_available_semaphores.at(m_current_frame_index.value()))};
@@ -278,8 +270,7 @@ void render_system::end_frame()
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-   m_device.logical().resetFences(
-      {vkn::value(m_in_flight_fences.at(m_current_frame_index.value()))});
+   m_device.logical().resetFences({m_in_flight_fences.at(m_current_frame_index.value()).get()});
 
    const std::array submit_infos{
       vk::SubmitInfo{.waitSemaphoreCount = std::size(wait_semaphores),
@@ -293,8 +284,7 @@ void render_system::end_frame()
    try
    {
       const auto gfx_queue = *m_device.get_queue(vkn::queue_type::graphics).value();
-      gfx_queue.submit(submit_infos,
-                       vkn::value(m_in_flight_fences.at(m_current_frame_index.value())));
+      gfx_queue.submit(submit_infos, m_in_flight_fences.at(m_current_frame_index.value()).get());
    }
    catch (const vk::SystemError& err)
    {

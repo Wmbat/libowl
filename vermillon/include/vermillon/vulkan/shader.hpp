@@ -69,10 +69,10 @@ namespace vkn
       shader_type m_type{shader_type::count};
 
       using shader_input_location_t =
-         util::strong_type<std::uint32_t, struct input_location, util::arithmetic>;
+         cacao::strong_type<std::uint32_t, struct input_location, cacao::arithmetic>;
 
       using shader_uniform_binding_t =
-         util::strong_type<std::uint32_t, struct uniform_binding, util::arithmetic>;
+         cacao::strong_type<std::uint32_t, struct uniform_binding, cacao::arithmetic>;
 
       struct shader_data
       {
@@ -89,7 +89,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const device& device, util::logger_wrapper p_logger);
+         builder(const device& device, cacao::logger_wrapper p_logger);
 
          /**
           * Attempt to construct a shader object using the provided data. If unable to create
@@ -122,7 +122,7 @@ namespace vkn
             -> crl::dynamic_array<shader_uniform_binding_t>;
 
       private:
-         util::logger_wrapper m_logger{nullptr};
+         cacao::logger_wrapper m_logger{nullptr};
 
          struct info
          {

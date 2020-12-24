@@ -26,8 +26,8 @@ void render_pass::record_render_calls(const std::function<void(vk::CommandBuffer
    m_buff_calls = calls;
 }
 
-void render_pass::submit_render_calls(vk::CommandBuffer cmd_buffer, util::index_t framebuffer_index,
-                                      vk::Rect2D render_area,
+void render_pass::submit_render_calls(vk::CommandBuffer cmd_buffer,
+                                      cacao::index_t framebuffer_index, vk::Rect2D render_area,
                                       std::span<const vk::ClearValue> clear_colours)
 {
    ENSURE(framebuffer_index.value() < std::size(m_framebuffers));

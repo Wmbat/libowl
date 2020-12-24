@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-shader_registry::shader_registry(render_system& renderer, util::logger_wrapper logger) :
+shader_registry::shader_registry(render_system& renderer, cacao::logger_wrapper logger) :
    m_renderer{renderer}, m_logger{logger}
 {}
 

@@ -12,7 +12,7 @@ namespace vkn
 
       crl::dynamic_array<vk::DescriptorSetLayoutBinding> bindings;
 
-      util::logger_wrapper logger;
+      cacao::logger_wrapper logger;
    };
 
    class descriptor_set_layout

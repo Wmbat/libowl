@@ -25,7 +25,7 @@
 #include <cstring>
 #include <string_view>
 
-namespace util
+namespace cacao
 {
    class logger
    {
@@ -73,7 +73,7 @@ namespace util
    class logger_wrapper
    {
    public:
-      logger_wrapper(util::logger* p_logger = nullptr);
+      logger_wrapper(cacao::logger* p_logger = nullptr);
 
       void debug(const std::string& msg);
       void info(const std::string& msg);
@@ -113,12 +113,12 @@ namespace util
          }
       }
 
-      auto get() const -> util::logger*; // NOLINT
+      auto get() const -> cacao::logger*; // NOLINT
 
-      [[nodiscard]] auto take() -> util::logger*;
+      [[nodiscard]] auto take() -> cacao::logger*;
 
    private:
-      util::logger* mp_logger;
+      cacao::logger* mp_logger;
    };
 
-} // namespace util
+} // namespace cacao

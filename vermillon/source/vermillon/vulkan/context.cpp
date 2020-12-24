@@ -8,7 +8,7 @@
 #include <ranges>
 #include <span>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
 
 namespace vkn
 {
@@ -19,7 +19,7 @@ namespace vkn
    {
       EXPECT(p_user_data != nullptr);
 
-      auto* p_logger = static_cast<util::logger*>(p_user_data);
+      auto* p_logger = static_cast<cacao::logger*>(p_user_data);
 
       std::string type;
       if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
@@ -85,14 +85,14 @@ namespace vkn
 
       crl::dynamic_array<vk::ExtensionProperties> enabled_extensions{};
 
-      util::logger_wrapper logger{nullptr};
+      cacao::logger_wrapper logger{nullptr};
    };
 
    /**
     * FORWARD DECLARATIONS
     */
 
-   auto load_core(util::logger_wrapper logger) -> context_data;
+   auto load_core(cacao::logger_wrapper logger) -> context_data;
    auto query_vulkan_version(context_data&& data) -> util::result<context_data>;
    auto create_instance(context_data&& data) -> util::result<context_data>;
    auto create_debug_utils(context_data&& data) -> util::result<context_data>;
@@ -149,7 +149,7 @@ namespace vkn
     * HELPER FUNCTIONS
     */
 
-   auto query_instance_layers(util::logger_wrapper logger)
+   auto query_instance_layers(cacao::logger_wrapper logger)
       -> crl::dynamic_array<vk::LayerProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
@@ -168,7 +168,7 @@ namespace vkn
             });
    }
 
-   auto query_instance_extensions(util::logger_wrapper logger)
+   auto query_instance_extensions(cacao::logger_wrapper logger)
       -> crl::dynamic_array<vk::ExtensionProperties>
    {
       return monad::try_wrap<vk::SystemError>([&] {
@@ -218,7 +218,7 @@ namespace vkn
              }) != properties.end();
    }
 
-   auto load_core(util::logger_wrapper logger) -> context_data
+   auto load_core(cacao::logger_wrapper logger) -> context_data
    {
       vk::DynamicLoader loader{};
 
@@ -265,26 +265,26 @@ namespace vkn
          return monad::err(to_err_code(context_error::window_extensions_not_present));
       }
 
-      crl::dynamic_array<const char*> layer_names;
+      std::vector<const char*> layer_names;
       if constexpr (enable_validation_layers)
       {
          if (has_khronos_validation(layers))
          {
-            layer_names.append("VK_LAYER_KHRONOS_validation");
+            layer_names.push_back("VK_LAYER_KHRONOS_validation");
          }
          else
          {
-            data.logger.warning("[vulkan] Khronos validation layers not found");
+            data.logger.warning("Khronos validation layers not found");
          }
       }
 
       // clang-format off
-      crl::dynamic_array<const char*> ext_names;
+      std::vector<const char*> ext_names;
       ext_names.reserve(std::size(extensions));
 
       for(auto& extension : extensions)
       {
-         ext_names.append(extension.extensionName);
+         ext_names.push_back(extension.extensionName);
       }
       // clang-format on
 
@@ -301,23 +301,21 @@ namespace vkn
       const auto app_info = vk::ApplicationInfo{}.setApiVersion(data.api_version);
 
       return monad::try_wrap<vk::SystemError>([&] {
-                return vk::createInstanceUnique(
-                   vk::InstanceCreateInfo{}
-                      .setPApplicationInfo(&app_info)
-                      .setPEnabledLayerNames(vml::to_array_proxy<const char* const>(layer_names))
-                      .setPEnabledExtensionNames(
-                         vml::to_array_proxy<const char* const>(ext_names)));
+                return vk::createInstanceUnique(vk::InstanceCreateInfo{}
+                                                   .setPApplicationInfo(&app_info)
+                                                   .setPEnabledLayerNames(layer_names)
+                                                   .setPEnabledExtensionNames(ext_names));
              })
          .map_error([&](vk::SystemError&& e) {
-            data.logger.error("[vulkan] instance error: {}", e.what());
+            data.logger.error("instance error: {}", e.what());
 
             return to_err_code(context_error::failed_to_create_instance);
          })
          .map([&](vk::UniqueInstance instance) {
             VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
 
-            data.logger.info("[vulkan] instance created");
-            data.logger.info("[vulkan] all instance functions have been loaded");
+            data.logger.info("instance created");
+            data.logger.info("all instance functions have been loaded");
 
             data.instance = std::move(instance);
             data.enabled_extensions = std::move(extensions);

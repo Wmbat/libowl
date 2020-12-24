@@ -39,7 +39,7 @@ namespace vkn
       class builder
       {
       public:
-         builder(const vkn::device& device, util::logger_wrapper logger) noexcept;
+         builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept;
 
          /**
           * Attempt to create the semaphore object. Returns an error
@@ -48,7 +48,7 @@ namespace vkn
          [[nodiscard]] auto build() noexcept -> util::result<semaphore>;
 
       private:
-         util::logger_wrapper m_logger;
+         cacao::logger_wrapper m_logger;
 
          struct info
          {

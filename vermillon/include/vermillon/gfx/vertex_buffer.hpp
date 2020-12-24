@@ -28,7 +28,7 @@ namespace cacao
          const vkn::device& device;
          const vkn::command_pool& command_pool;
 
-         util::logger_wrapper logger;
+         logger_wrapper logger;
       };
 
       static auto make(create_info&& info) noexcept -> util::result<vertex_buffer>;

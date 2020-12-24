@@ -23,7 +23,7 @@
 
 #include <memory>
 
-namespace util
+namespace cacao
 {
    logger::logger() : log("Default logger")
    {
@@ -51,7 +51,7 @@ namespace util
       file_sink->set_level(spdlog::level::trace);
 
       log = spdlog::logger(std::string{name}, {console_sink, file_sink});
-#if defined(VML_DEBUG_LOGGING)
+#if defined(CACAO_DEBUG_LOGGING)
       log.set_level(spdlog::level::trace);
 #else
       log.set_level(spdlog::level::info);
@@ -68,7 +68,7 @@ namespace util
    auto logger::get_logger() -> spdlog::logger& { return log; }
    auto logger::get_logger() const -> const spdlog::logger& { return log; }
 
-   logger_wrapper::logger_wrapper(util::logger* p_logger) : mp_logger{p_logger} {}
+   logger_wrapper::logger_wrapper(cacao::logger* p_logger) : mp_logger{p_logger} {}
 
    void logger_wrapper::debug(const std::string& msg)
    {
@@ -99,13 +99,12 @@ namespace util
       }
    }
 
-   auto logger_wrapper::get() const -> util::logger* { return mp_logger; }
-   auto logger_wrapper::take() -> util::logger*
+   auto logger_wrapper::get() const -> cacao::logger* { return mp_logger; }
+   auto logger_wrapper::take() -> cacao::logger*
    {
       auto* temp = mp_logger;
       mp_logger = nullptr;
 
       return temp;
    }
-
-} // namespace util
+} // namespace cacao

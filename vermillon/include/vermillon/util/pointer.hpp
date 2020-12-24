@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace vml
+namespace cacao
 {
    /**
     * @brief Simple construct to signal that a pointer will not be null
@@ -73,7 +73,7 @@ namespace vml
    };
 
    template <class Any>
-   auto make_not_null(Any&& any) noexcept
+   auto make_non_null(Any&& any) noexcept
    {
       return non_null<std::remove_cv_t<std::remove_reference_t<Any>>>{std::forward<Any>(any)};
    }
@@ -85,14 +85,14 @@ namespace vml
    {
       return lhs.get() == rhs.get();
    }
-} // namespace vml
+} // namespace cacao
 
 namespace std
 {
    template <typename Any>
-   struct hash<vml::non_null<Any>>
+   struct hash<cacao::non_null<Any>>
    {
-      auto operator()(const vml::non_null<Any>& value) const -> std::size_t
+      auto operator()(const cacao::non_null<Any>& value) const -> std::size_t
       {
          return hash<Any>{}(value.get());
       }
