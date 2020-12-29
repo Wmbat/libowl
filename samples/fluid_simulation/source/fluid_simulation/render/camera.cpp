@@ -11,29 +11,24 @@ struct camera_data
    const camera::create_info& info;
 
    vkn::descriptor_pool pool{};
-   crl::dynamic_array<vkn::buffer> buffers{};
+
+   crl::dynamic_array<cacao::vulkan::buffer> buffers{};
 };
 
 auto create_uniform_buffers(const camera::create_info& info) -> util::result<camera_data>
 {
-   crl::dynamic_array<vkn::buffer> buffers;
+   crl::dynamic_array<cacao::vulkan::buffer> buffers;
    buffers.reserve(info.image_count.value());
 
    for ([[maybe_unused]] std::uint32_t i : vi::iota(0U, info.image_count.value()))
    {
-      auto res = vkn::buffer::builder{info.renderer.device(), info.logger}
-                    .set_size(sizeof(camera::matrices))
-                    .set_usage(vk::BufferUsageFlagBits::eUniformBuffer)
-                    .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
-                                             vk::MemoryPropertyFlagBits::eHostCoherent)
-                    .build();
-
-      if (auto err = res.error())
-      {
-         return monad::err(err.value());
-      }
-
-      buffers.append(std::move(res).value().value());
+      buffers.append(cacao::vulkan::buffer_create_info{
+         .device = info.renderer.device(),
+         .buffer_size = sizeof(camera::matrices),
+         .usage = vk::BufferUsageFlagBits::eUniformBuffer,
+         .desired_mem_flags =
+            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+         .logger = info.logger});
    }
 
    return camera_data{.info = info, .buffers = std::move(buffers)};
@@ -53,7 +48,7 @@ auto create_descriptor_pool(camera_data&& data) -> util::result<camera_data>
 
          for (std::size_t i = 0; auto set : data.pool.sets())
          {
-            std::array buf_info{vk::DescriptorBufferInfo{.buffer = *data.buffers.lookup(i++),
+            std::array buf_info{vk::DescriptorBufferInfo{.buffer = data.buffers.lookup(i++).get(),
                                                          .offset = 0,
                                                          .range = sizeof(cacao::camera_matrices)}};
             vk::WriteDescriptorSet write{.dstSet = set,

@@ -41,58 +41,32 @@ namespace cacao
    auto vertex_buffer::make(create_info&& info) noexcept -> util::result<vertex_buffer>
    {
       const std::size_t size = sizeof(vertex) * std::size(info.vertices);
-      const auto map_memory = [&](vkn::buffer&& buffer) noexcept {
-         info.logger.debug("mapping vertex data into staging buffer");
-
-         void* p_data = info.device.logical().mapMemory(buffer.memory(), 0, size, {});
-         memcpy(p_data, info.vertices.data(), size);
-         info.device.logical().unmapMemory(buffer.memory());
-
-         return std::move(buffer);
-      };
-      const auto buffer_error = [&](util::error_t&& err) noexcept {
-         info.logger.error("staging buffer error: {}-{}", err.value().category().name(),
-                           err.value().message());
-
-         return to_err_code(vertex_buffer_error::failed_to_create_staging_buffer);
-      };
 
       info.logger.debug("staging buffer of size {} on memory {}", size,
                         vk::to_string(vk::MemoryPropertyFlagBits::eHostVisible));
 
-      auto staging_buffer_res =
-         vkn::buffer::builder{info.device, info.logger}
-            .set_size(size)
-            .set_usage(vk::BufferUsageFlagBits::eTransferSrc)
-            .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
-                                     vk::MemoryPropertyFlagBits::eHostCoherent)
-            .build()
-            .map(map_memory)
-            .map_error(buffer_error);
+      vulkan::buffer staging_buffer{{.device = info.device,
+                                     .buffer_size = size,
+                                     .usage = vk::BufferUsageFlagBits::eTransferSrc,
+                                     .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
+                                        vk::MemoryPropertyFlagBits::eHostCoherent,
+                                     .logger = info.logger}};
 
-      if (!staging_buffer_res)
       {
-         return monad::err(*staging_buffer_res.error());
+         void* p_data = info.device.logical().mapMemory(staging_buffer.memory(), 0, size, {});
+         memcpy(p_data, info.vertices.data(), size);
+         info.device.logical().unmapMemory(staging_buffer.memory());
       }
+
+      vulkan::buffer vertex_buffer{
+         {.device = info.device,
+          .buffer_size = size,
+          .usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+          .desired_mem_flags = vk::MemoryPropertyFlagBits::eDeviceLocal,
+          .logger = info.logger}};
 
       info.logger.debug("vertex buffer of size {} on memory {}", size,
                         vk::to_string(vk::MemoryPropertyFlagBits::eDeviceLocal));
-
-      auto vertex_buffer_res = vkn::buffer::builder{info.device, info.logger}
-                                  .set_size(size)
-                                  .set_usage(vk::BufferUsageFlagBits::eTransferDst |
-                                             vk::BufferUsageFlagBits::eVertexBuffer)
-                                  .set_desired_memory_type(vk::MemoryPropertyFlagBits::eDeviceLocal)
-                                  .build()
-                                  .map_error(buffer_error);
-
-      if (!vertex_buffer_res)
-      {
-         return monad::err(*vertex_buffer_res.error());
-      }
-
-      auto staging_buffer = *std::move(staging_buffer_res).value();
-      auto vertex_buffer = *std::move(vertex_buffer_res).value();
 
       const auto copy_n_create = [&](vk::UniqueCommandBuffer buffer) noexcept {
          info.logger.info("copying data from staging buffer ({}) to vertex buffer ({})",
@@ -101,7 +75,7 @@ namespace cacao
 
          buffer->begin(
             vk::CommandBufferBeginInfo{}.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-         buffer->copyBuffer(vkn::value(staging_buffer), vkn::value(vertex_buffer),
+         buffer->copyBuffer(staging_buffer.get(), vertex_buffer.get(),
                             {vk::BufferCopy{}.setSize(size)});
          buffer->end();
 
@@ -129,20 +103,20 @@ namespace cacao
 
       return info.command_pool.create_primary_buffer()
          .map_error([&](util::error_t&& err) {
-            info.logger.error("transfer cmd buffer error: {}-{}",
-                              err.value().category().name(), err.value().message());
+            info.logger.error("transfer cmd buffer error: {}-{}", err.value().category().name(),
+                              err.value().message());
 
             return to_err_code(vertex_buffer_error::failed_to_create_command_buffer);
          })
          .and_then(copy_n_create);
    }
 
-   auto vertex_buffer::operator->() noexcept -> vkn::buffer* { return &m_buffer; }
-   auto vertex_buffer::operator->() const noexcept -> const vkn::buffer* { return &m_buffer; }
+   auto vertex_buffer::operator->() noexcept -> vulkan::buffer* { return &m_buffer; }
+   auto vertex_buffer::operator->() const noexcept -> const vulkan::buffer* { return &m_buffer; }
 
-   auto vertex_buffer::operator*() noexcept -> vkn::buffer& { return value(); }
-   auto vertex_buffer::operator*() const noexcept -> const vkn::buffer& { return value(); }
+   auto vertex_buffer::operator*() noexcept -> vulkan::buffer& { return value(); }
+   auto vertex_buffer::operator*() const noexcept -> const vulkan::buffer& { return value(); }
 
-   auto vertex_buffer::value() noexcept -> vkn::buffer& { return m_buffer; }
-   auto vertex_buffer::value() const noexcept -> const vkn::buffer& { return m_buffer; }
+   auto vertex_buffer::value() noexcept -> vulkan::buffer& { return m_buffer; }
+   auto vertex_buffer::value() const noexcept -> const vulkan::buffer& { return m_buffer; }
 } // namespace cacao

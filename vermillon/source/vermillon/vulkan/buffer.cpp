@@ -4,7 +4,7 @@
 
 #include <monads/try.hpp>
 
-namespace vkn
+namespace cacao::vulkan
 {
    struct buffer_error_category : std::error_category
    {
@@ -27,10 +27,6 @@ namespace vkn
    {
       switch (err)
       {
-         case buffer_error::failed_to_create_buffer:
-            return "failed_to_create_buffer";
-         case buffer_error::failed_to_allocate_memory:
-            return "failed_to_allocate_memory";
          case buffer_error::failed_to_find_desired_memory_type:
             return "failed_to_find_desired_memory_type";
          default:
@@ -38,109 +34,68 @@ namespace vkn
       }
    };
 
-   auto to_err_code(buffer_error err) -> util::error_t
+   auto to_err_code(buffer_error err) -> cacao::error_t
    {
       return {{static_cast<int>(err), buffer_category}};
    }
 
+   buffer::buffer(buffer_create_info&& info)
+   {
+      auto logical = info.device.logical();
+
+      m_buffer = create_buffer(logical, info);
+      m_memory = allocate_memory(logical, info);
+
+      logical.bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
+
+      info.logger.info("Buffer created");
+   }
+
+   auto buffer::get() const noexcept -> vk::Buffer { return m_buffer.get(); }
    auto buffer::memory() const noexcept -> vk::DeviceMemory { return m_memory.get(); }
-   auto buffer::device() const noexcept -> vk::Device { return m_value.getOwner(); }
 
-   using builder = buffer::builder;
-
-   builder::builder(const vkn::device& device, cacao::logger_wrapper logger) noexcept :
-      m_logger{logger}
+   auto buffer::create_buffer(vk::Device logical, const buffer_create_info& info) const
+      -> vk::UniqueBuffer
    {
-      m_info.device = device.logical();
-      m_info.physical_device = device.physical();
+      return logical.createBufferUnique(vk::BufferCreateInfo{}
+                                           .setSize(info.buffer_size.value())
+                                           .setUsage(info.usage)
+                                           .setSharingMode(info.set_concurrent
+                                                              ? vk::SharingMode::eConcurrent
+                                                              : vk::SharingMode::eExclusive));
    }
 
-   auto builder::build() noexcept -> util::result<buffer>
+   auto buffer::allocate_memory(vk::Device logical, const buffer_create_info& info) const
+      -> vk::UniqueDeviceMemory
    {
-      const auto allocate_n_construct = [&](vk::UniqueBuffer buffer) noexcept {
-         return allocate_memory(buffer.get()).map([&](vk::UniqueDeviceMemory memory) noexcept {
-            m_logger.info("[vulkan] buffer of size {} created", m_info.size);
+      const auto requirements = logical.getBufferMemoryRequirements(m_buffer.get());
+      const auto desired = find_memory_requirements(
+         info.device.physical(), requirements.memoryTypeBits, info.desired_mem_flags);
+      const auto fallback = find_memory_requirements(
+         info.device.physical(), requirements.memoryTypeBits, info.fallback_mem_flags);
 
-            m_info.device.bindBufferMemory(buffer.get(), memory.get(), 0);
+      if (desired)
+      {
+         return logical.allocateMemoryUnique(vk::MemoryAllocateInfo{}
+                                                .setAllocationSize(requirements.size)
+                                                .setMemoryTypeIndex(desired.value()));
+      }
 
-            class buffer b;
-            b.m_value = std::move(buffer);
-            b.m_memory = std::move(memory);
+      if (fallback)
+      {
+         return logical.allocateMemoryUnique(vk::MemoryAllocateInfo{}
+                                                .setAllocationSize(requirements.size)
+                                                .setMemoryTypeIndex(fallback.value()));
+      }
 
-            return b;
-         });
-      };
-
-      return create_buffer().and_then(allocate_n_construct);
+      throw cacao::runtime_error{to_err_code(buffer_error::failed_to_find_desired_memory_type)};
    }
 
-   auto builder::set_size(std::size_t size) noexcept -> builder&
-   {
-      m_info.size = size;
-      return *this;
-   }
-   auto builder::set_usage(const vk::BufferUsageFlags& flags) noexcept -> builder&
-   {
-      m_info.flags = flags;
-      return *this;
-   }
-   auto builder::set_concurrent() noexcept -> builder&
-   {
-      m_info.mode = vk::SharingMode::eConcurrent;
-      return *this;
-   }
-   auto builder::set_desired_memory_type(const vk::MemoryPropertyFlags& flags) noexcept -> builder&
-   {
-      m_info.desired_mem_flags = flags;
-      return *this;
-   }
-   auto builder::add_fallback_memory_type(const vk::MemoryPropertyFlags& flags) noexcept -> builder&
-   {
-      m_info.fallback_mem_flags = flags;
-      return *this;
-   }
-
-   auto builder::create_buffer() const -> util::result<vk::UniqueBuffer>
-   {
-      return monad::try_wrap<vk::SystemError>([&] {
-                return m_info.device.createBufferUnique(vk::BufferCreateInfo{}
-                                                           .setSize(m_info.size)
-                                                           .setUsage(m_info.flags)
-                                                           .setSharingMode(m_info.mode));
-             })
-         .map_error([]([[maybe_unused]] auto err) {
-            return to_err_code(buffer_error::failed_to_create_buffer);
-         });
-   }
-
-   auto builder::allocate_memory(vk::Buffer buffer) const -> util::result<vk::UniqueDeviceMemory>
-   {
-      const auto requirements = m_info.device.getBufferMemoryRequirements(buffer);
-      auto error_res = util::result<vk::UniqueDeviceMemory>{
-         monad::err(to_err_code(buffer_error::failed_to_find_desired_memory_type))};
-
-      const auto alloc_memory = [&](uint32_t index) noexcept {
-         return monad::try_wrap<vk::SystemError>([&] {
-                   return m_info.device.allocateMemoryUnique(
-                      vk::MemoryAllocateInfo{}
-                         .setAllocationSize(requirements.size)
-                         .setMemoryTypeIndex(index));
-                })
-            .map_error([]([[maybe_unused]] auto err) {
-               return to_err_code(buffer_error::failed_to_allocate_memory);
-            });
-      };
-
-      return find_memory_requirements(requirements.memoryTypeBits, m_info.desired_mem_flags)
-         .map_or(alloc_memory,
-                 find_memory_requirements(requirements.memoryTypeBits, m_info.fallback_mem_flags)
-                    .map_or(alloc_memory, std::move(error_res)));
-   }
-   auto builder::find_memory_requirements(std::uint32_t type_filter,
-                                          const vk::MemoryPropertyFlags& properties) const noexcept
+   auto buffer::find_memory_requirements(vk::PhysicalDevice physical, std::uint32_t type_filter,
+                                         const vk::MemoryPropertyFlags& properties) const noexcept
       -> monad::maybe<std::uint32_t>
    {
-      const auto mem_properties = m_info.physical_device.getMemoryProperties();
+      const auto mem_properties = physical.getMemoryProperties();
 
       for (std::uint32_t i = 0; const auto& heap_type : mem_properties.memoryTypes)
       {
@@ -154,4 +109,4 @@ namespace vkn
 
       return monad::none;
    }
-} // namespace vkn
+} // namespace cacao::vulkan

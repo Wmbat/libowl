@@ -286,8 +286,8 @@ void simulation::onscreen_render()
 
       auto view = m_registry.view<component::render, component::transform>();
 
-      buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
-      buffer.bindIndexBuffer(m_box.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+      buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
+      buffer.bindIndexBuffer(m_box.m_index_buffer->get(), 0, vk::IndexType::eUint32);
 
       for (auto entity : view | vi::filter([&](auto e) {
                             return view.get<component::render>(e).p_mesh == &m_box;
@@ -307,8 +307,8 @@ void simulation::onscreen_render()
                             0);
       }
 
-      buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
-      buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+      buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
+      buffer.bindIndexBuffer(m_sphere.m_index_buffer->get(), 0, vk::IndexType::eUint32);
 
       for (auto& particle : m_sph_system.particles())
       {
@@ -359,8 +359,8 @@ void simulation::offscreen_render()
 
          auto view = m_registry.view<component::render, component::transform>();
 
-         buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_box.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+         buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_box.m_index_buffer->get(), 0, vk::IndexType::eUint32);
 
          for (auto entity : view | vi::filter([&](auto e) {
                                return view.get<component::render>(e).p_mesh == &m_box;
@@ -380,8 +380,8 @@ void simulation::offscreen_render()
                                0, 0);
          }
 
-         buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->value()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_sphere.m_index_buffer->value(), 0, vk::IndexType::eUint32);
+         buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_sphere.m_index_buffer->get(), 0, vk::IndexType::eUint32);
 
          for (auto& particle : m_sph_system.particles())
          {
@@ -409,8 +409,8 @@ void simulation::offscreen_render()
       cmd.end();
    }
 
-   const std::array wait_semaphores{m_offscreen.image_available_semaphore.value()};
-   const std::array signal_semaphores{m_offscreen.render_finished_semaphore.value()};
+   const std::array wait_semaphores{m_offscreen.image_available_semaphore.get()};
+   const std::array signal_semaphores{m_offscreen.render_finished_semaphore.get()};
    const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers().lookup(0)};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
@@ -455,7 +455,7 @@ void simulation::offscreen_render()
       .imageExtent = {.width = image_width, .height = image_height, .depth = 1}}};
 
    buffer->copyImageToBuffer(m_offscreen.colour.value(), vk::ImageLayout::eTransferSrcOptimal,
-                             m_offscreen.image_buffer.value(), std::size(copy_regions),
+                             m_offscreen.image_buffer.get(), std::size(copy_regions),
                              std::data(copy_regions));
    buffer->end();
 
@@ -531,16 +531,16 @@ void simulation::setup_offscreen()
    m_offscreen.in_flight_fence = m_render_system.device().logical().createFenceUnique(
       vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
    m_offscreen.render_finished_semaphore =
-      check_err(vkn::semaphore::builder{device, &m_logger}.build());
+      m_render_system.device().logical().createSemaphoreUnique({});
    m_offscreen.image_available_semaphore =
-      check_err(vkn::semaphore::builder{device, &m_logger}.build());
+      m_render_system.device().logical().createSemaphoreUnique({});
    m_offscreen.image_buffer =
-      check_err(vkn::buffer::builder{device, &m_logger}
-                   .set_size(sizeof(glm::u8vec4) * image_width * image_width)
-                   .set_usage(vk::BufferUsageFlagBits::eTransferDst)
-                   .set_desired_memory_type(vk::MemoryPropertyFlagBits::eHostVisible |
-                                            vk::MemoryPropertyFlagBits::eHostCoherent)
-                   .build());
+      cacao::vulkan::buffer{{.device = device,
+                             .buffer_size = sizeof(glm::u8vec4) * image_width * image_height,
+                             .usage = vk::BufferUsageFlagBits::eTransferDst,
+                             .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
+                                vk::MemoryPropertyFlagBits::eHostCoherent,
+                             .logger = &m_logger}};
 }
 
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)

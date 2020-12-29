@@ -10,7 +10,6 @@
 #include <vermillon/util/strong_type.hpp>
 #include <vermillon/vulkan/command_pool.hpp>
 #include <vermillon/vulkan/swapchain.hpp>
-#include <vermillon/vulkan/sync/semaphore.hpp>
 
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
@@ -18,7 +17,7 @@ static constexpr std::size_t expected_image_count = 3;
 using frame_index_t = cacao::strong_type<std::uint32_t, struct frame_index_tag, cacao::arithmetic>;
 
 using framebuffer_array = crl::small_dynamic_array<framebuffer, expected_image_count>;
-using semaphore_array = crl::small_dynamic_array<vkn::semaphore, expected_image_count>;
+using semaphore_array = crl::small_dynamic_array<vk::UniqueSemaphore, expected_image_count>;
 
 using vertex_bindings_array = crl::dynamic_array<vk::VertexInputBindingDescription>;
 using vertex_attributes_array = crl::dynamic_array<vk::VertexInputAttributeDescription>;
@@ -80,7 +79,7 @@ private:
    semaphore_array m_render_finished_semaphores;
 
    std::array<vkn::command_pool, max_frames_in_flight> m_render_command_pools;
-   std::array<vkn::semaphore, max_frames_in_flight> m_image_available_semaphores;
+   std::array<vk::UniqueSemaphore, max_frames_in_flight> m_image_available_semaphores;
    std::array<vk::UniqueFence, max_frames_in_flight> m_in_flight_fences;
 
    crl::dynamic_array<vk::Fence> m_images_in_flight{};

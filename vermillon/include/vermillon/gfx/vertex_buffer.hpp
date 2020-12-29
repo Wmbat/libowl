@@ -33,17 +33,17 @@ namespace cacao
 
       static auto make(create_info&& info) noexcept -> util::result<vertex_buffer>;
 
-      auto operator->() noexcept -> vkn::buffer*;
-      auto operator->() const noexcept -> const vkn::buffer*;
+      auto operator->() noexcept -> vulkan::buffer*;
+      auto operator->() const noexcept -> const vulkan::buffer*;
 
-      auto operator*() noexcept -> vkn::buffer&;
-      auto operator*() const noexcept -> const vkn::buffer&;
+      auto operator*() noexcept -> vulkan::buffer&;
+      auto operator*() const noexcept -> const vulkan::buffer&;
 
-      auto value() noexcept -> vkn::buffer&;
-      [[nodiscard]] auto value() const noexcept -> const vkn::buffer&;
+      auto value() noexcept -> vulkan::buffer&;
+      [[nodiscard]] auto value() const noexcept -> const vulkan::buffer&;
 
    private:
-      vkn::buffer m_buffer;
+      vulkan::buffer m_buffer;
    };
 } // namespace cacao
 

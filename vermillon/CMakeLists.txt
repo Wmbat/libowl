@@ -91,7 +91,6 @@ target_sources(${PROJECT_NAME}
         source/vermillon/ui/window.cpp
         source/vermillon/util/logger.cpp
         source/vermillon/util/error.cpp
-        source/vermillon/vulkan/sync/semaphore.cpp
         source/vermillon/vulkan/buffer.cpp
         source/vermillon/vulkan/command_pool.cpp
         source/vermillon/vulkan/context.cpp

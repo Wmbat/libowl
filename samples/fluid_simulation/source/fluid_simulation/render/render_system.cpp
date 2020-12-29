@@ -1,3 +1,5 @@
+#include "range/v3/view/iota.hpp"
+#include "range/v3/view/transform.hpp"
 #include <fluid_simulation/render/render_system.hpp>
 
 #include <utility>
@@ -18,7 +20,7 @@ struct render_system_data
    semaphore_array render_finished_semaphores{};
 
    std::array<vkn::command_pool, max_frames_in_flight> render_command_pools{};
-   std::array<vkn::semaphore, max_frames_in_flight> image_available_semaphores{};
+   std::array<vk::UniqueSemaphore, max_frames_in_flight> image_available_semaphores{};
    std::array<vk::UniqueFence, max_frames_in_flight> in_flight_fences{};
 
    cacao::image depth_image{};
@@ -106,45 +108,35 @@ auto create_in_flight_fences(const vkn::device& device, cacao::logger_wrapper lo
    return fences;
 }
 
-auto create_image_available_semaphores(render_system_data&& data) -> result<render_system_data>
+auto create_image_available_semaphores(const vkn::device& device, cacao::logger_wrapper logger)
+   -> std::array<vk::UniqueSemaphore, max_frames_in_flight>
 {
-   std::array<vkn::semaphore, max_frames_in_flight> semaphores;
+   std::array<vk::UniqueSemaphore, max_frames_in_flight> semaphores;
+
    for (auto& semaphore : semaphores)
    {
-      if (auto res = vkn::semaphore::builder{data.device, data.info.logger}.build())
-      {
-         semaphore = std::move(res).value().value();
-      }
-      else
-      {
-         return monad::err(res.error().value());
-      }
+      semaphore = device.logical().createSemaphoreUnique({});
+
+      logger.info("Semaphore created");
    }
 
-   data.image_available_semaphores = std::move(semaphores);
-
-   return std::move(data);
+   return semaphores;
 }
 
-auto create_render_finished_semaphores(render_system_data&& data) -> result<render_system_data>
+auto create_render_finished_semaphores(const vkn::device& device, cacao::count32_t count,
+                                       cacao::logger_wrapper logger)
+   -> crl::small_dynamic_array<vk::UniqueSemaphore, vkn::expected_image_count.value()>
 {
-   crl::small_dynamic_array<vkn::semaphore, vkn::expected_image_count.value()> semaphores;
+   crl::small_dynamic_array<vk::UniqueSemaphore, vkn::expected_image_count.value()> semaphores;
 
-   for ([[maybe_unused]] const auto& _ : data.swapchain.image_views())
+   for ([[maybe_unused]] auto i : ranges::views::iota(0u, count.value()))
    {
-      if (auto res = vkn::semaphore::builder{data.device, data.info.logger}.build())
-      {
-         semaphores.append(std::move(res).value().value());
-      }
-      else
-      {
-         return monad::err(res.error().value());
-      }
+      semaphores.append(device.logical().createSemaphoreUnique({}));
+
+      logger.info("Semaphore created");
    }
 
-   data.render_finished_semaphores = std::move(semaphores);
-
-   return std::move(data);
+   return semaphores;
 }
 
 auto create_depth_buffer(cacao::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
@@ -167,8 +159,6 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
       .and_then(create_device)
       .and_then(create_swapchain)
       .and_then(create_render_command_pools)
-      .and_then(create_image_available_semaphores)
-      .and_then(create_render_finished_semaphores)
       .map([](render_system_data&& data) {
          render_system rs{};
          rs.m_logger = data.logger;
@@ -177,8 +167,10 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.m_device = std::move(data.device);
          rs.m_swapchain = std::move(data.swapchain);
          rs.m_in_flight_fences = create_in_flight_fences(rs.m_device, rs.m_logger);
-         rs.m_image_available_semaphores = std::move(data.image_available_semaphores);
-         rs.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
+         rs.m_image_available_semaphores =
+            create_image_available_semaphores(rs.device(), rs.m_logger);
+         rs.m_render_finished_semaphores = create_render_finished_semaphores(
+            rs.m_device, cacao::count32_t{std::size(rs.m_swapchain.image_views())}, rs.m_logger);
          rs.m_render_command_pools = std::move(data.render_command_pools);
          rs.m_depth_image = create_depth_buffer(rs.m_logger, rs.m_device, rs.m_swapchain.extent());
          rs.m_configuration = {.swapchain_image_count = static_cast<std::uint32_t>(
@@ -188,20 +180,6 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
 
          return rs;
       });
-
-   /*
-      .and_then([](render_system&& sys) {
-         return create_sync_primitives(sys.m_device, sys.m_swapchain, sys.mp_logger)
-            .map([&](detail::sync_data&& data) {
-               sys.m_render_finished_semaphores = std::move(data.render_finished_semaphores);
-               sys.m_image_available_semaphores = std::move(data.image_available_semaphores);
-               sys.m_in_flight_fences = std::move(data.in_flight_fences);
-               sys.m_images_in_flight.resize(std::size(sys.m_swapchain.image_views()), {nullptr});
-
-               return std::move(sys);
-            });
-      })
-      */
 }
 
 auto render_system::begin_frame() -> image_index_t
@@ -211,7 +189,7 @@ auto render_system::begin_frame() -> image_index_t
 
    auto [image_res, image_index] = m_device.logical().acquireNextImageKHR(
       vkn::value(m_swapchain), std::numeric_limits<std::uint64_t>::max(),
-      vkn::value(m_image_available_semaphores.at(m_current_frame_index.value())), nullptr);
+      m_image_available_semaphores.at(m_current_frame_index.value()).get(), nullptr);
    if (image_res != vk::Result::eSuccess)
    {
       abort();
@@ -262,9 +240,9 @@ void render_system::end_frame()
       m_in_flight_fences.at(m_current_frame_index.value()).get();
 
    const std::array wait_semaphores{
-      vkn::value(m_image_available_semaphores.at(m_current_frame_index.value()))};
+      m_image_available_semaphores.at(m_current_frame_index.value()).get()};
    const std::array signal_semaphores{
-      vkn::value(m_render_finished_semaphores.lookup(m_current_image_index.value()))};
+      m_render_finished_semaphores.lookup(m_current_image_index.value()).get()};
    const std::array command_buffers{
       m_render_command_pools.at(m_current_frame_index.value()).primary_cmd_buffers().lookup(0)};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{

@@ -12,8 +12,8 @@ struct offscreen
    vkn::command_pool command_pool;
 
    vk::UniqueFence in_flight_fence;
-   vkn::semaphore render_finished_semaphore;
-   vkn::semaphore image_available_semaphore;
+   vk::UniqueSemaphore render_finished_semaphore;
+   vk::UniqueSemaphore image_available_semaphore;
 
    cacao::image colour;
    cacao::image depth;
@@ -21,5 +21,5 @@ struct offscreen
 
    camera cam;
 
-   vkn::buffer image_buffer;
+   cacao::vulkan::buffer image_buffer;
 };
