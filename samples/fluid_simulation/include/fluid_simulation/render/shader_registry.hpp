@@ -3,8 +3,8 @@
 #include <fluid_simulation/core.hpp>
 #include <fluid_simulation/render/render_system.hpp>
 
-#include <vermillon/util/error.hpp>
-#include <vermillon/vulkan/shader.hpp>
+#include <cacao/util/error.hpp>
+#include <cacao/vulkan/shader.hpp>
 
 #include <filesystem>
 #include <string>
@@ -79,7 +79,7 @@ public:
    };
 
 public:
-   shader_registry(render_system& renderer, cacao::logger_wrapper logger);
+   shader_registry(render_system& renderer, util::logger_wrapper logger);
 
    /**
     * @brief Insert and construct a `vkn::shader` into the registry.
@@ -119,5 +119,5 @@ private:
 
    render_system& m_renderer;
 
-   cacao::logger_wrapper m_logger;
+   util::logger_wrapper m_logger;
 };

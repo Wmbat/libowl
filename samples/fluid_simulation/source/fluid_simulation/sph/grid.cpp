@@ -31,9 +31,10 @@ auto within_box(const box& b, const glm::vec3& p) -> bool
 namespace sph
 {
    grid::grid(float cell_size, const glm::vec3& dimensions,
-              cacao::non_null<cacao::logger*> p_logger) :
+              util::non_null<util::logger*> p_logger) :
       m_cell_size{cell_size},
-      m_dimensions{dimensions}, m_logger{p_logger}
+      m_dimensions{dimensions},
+      m_logger{p_logger}
    {
       ENSURE(cell_size != 0);
 

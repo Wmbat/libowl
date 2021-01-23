@@ -41,7 +41,7 @@ namespace sph
 
    public:
       grid() = default;
-      grid(float cell_size, const glm::vec3& dimensions, cacao::non_null<cacao::logger*> p_logger);
+      grid(float cell_size, const glm::vec3& dimensions, util::non_null<util::logger*> p_logger);
 
       /**
        * @brief Update the position of particles within the `grid`
@@ -70,6 +70,6 @@ namespace sph
 
       crl::dynamic_array<cell> m_cells{};
 
-      cacao::logger_wrapper m_logger;
+      util::logger_wrapper m_logger;
    };
 } // namespace sph

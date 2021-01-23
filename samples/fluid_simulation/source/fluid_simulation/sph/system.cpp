@@ -13,9 +13,11 @@
 namespace sph
 {
    system::system(create_info&& info) :
-      mp_registry{info.p_registry.get()}, m_logger{info.p_logger}, m_settings{info.system_settings},
-      m_kernel_radius{m_settings.kernel_radius()}, m_grid{m_settings.kernel_radius(),
-                                                          info.dimensions, info.p_logger}
+      mp_registry{info.p_registry.get()},
+      m_logger{info.p_logger},
+      m_settings{info.system_settings},
+      m_kernel_radius{m_settings.kernel_radius()},
+      m_grid{m_settings.kernel_radius(), info.dimensions, info.p_logger}
    {}
 
    void system::emit(particle&& particle) { m_particles.append(particle); }

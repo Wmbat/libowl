@@ -1,8 +1,12 @@
-#include "range/v3/view/iota.hpp"
-#include "range/v3/view/transform.hpp"
 #include <fluid_simulation/render/render_system.hpp>
 
+#include <cacao/device.hpp>
+#include <cacao/vulkan/command_pool.hpp>
+
 #include <utility>
+
+#include <range/v3/view/iota.hpp>
+#include <range/v3/view/transform.hpp>
 
 auto to_util_error(ui::error_t&& err) -> util::error_t
 {
@@ -13,8 +17,9 @@ struct render_system_data
 {
    render_system::create_info& info;
 
-   vkn::context context{};
-   vkn::device device{};
+   cacao::context context{};
+   vk::UniqueSurfaceKHR surface{};
+   cacao::device device{};
    vkn::swapchain swapchain{};
 
    semaphore_array render_finished_semaphores{};
@@ -27,32 +32,33 @@ struct render_system_data
 
    ui::window* p_window{};
 
-   cacao::logger_wrapper logger{};
+   util::logger_wrapper logger{};
 };
 
 auto create_context(render_system_data&& data) -> result<render_system_data>
 {
-   return vkn::context::make({.logger = data.logger}).map([&](vkn::context&& ctx) {
-      data.context = std::move(ctx);
-      return std::move(data);
-   });
+   data.context = cacao::context{
+      {.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0), .use_window = true, .logger = data.logger}};
+
+   return std::move(data);
 }
 
 auto create_device(render_system_data&& data) -> result<render_system_data>
 {
    return data.p_window->get_surface(data.context.instance())
       .map_error(to_util_error)
-      .and_then([&](vk::UniqueSurfaceKHR&& surface) {
-         return data.context.select_device(std::move(surface)).map([&](vkn::device&& device) {
-            data.device = std::move(device);
-            return std::move(data);
-         });
+      .map([&](vk::UniqueSurfaceKHR&& surface) {
+         data.surface = std::move(surface);
+         data.device = cacao::device{
+            {.ctx = data.context, .surface = data.surface.get(), .logger = data.logger}};
+
+         return std::move(data);
       });
 }
 
 auto create_swapchain(render_system_data&& data) -> result<render_system_data>
 {
-   return vkn::swapchain::builder{data.device, data.logger}
+   return vkn::swapchain::builder{data.device, data.surface.get(), data.logger}
       .set_desired_format({vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear})
       .set_desired_present_mode(vk::PresentModeKHR::eMailbox)
       .add_fallback_present_mode(vk::PresentModeKHR::eFifo)
@@ -72,13 +78,13 @@ auto create_render_command_pools(render_system_data&& data) -> result<render_sys
 
    for (auto& pool : pools)
    {
-      auto result =
-         data.device.get_queue_index(vkn::queue_type::graphics).and_then([&](std::uint32_t i) {
-            return vkn::command_pool::builder{data.device, data.logger}
-               .set_queue_family_index(i)
-               .set_primary_buffer_count(1U)
-               .build();
-         });
+      const std::uint32_t family_index = data.device.get_queue_index(
+         cacao::queue_flag_bits::graphics | cacao::queue_flag_bits::present);
+
+      auto result = vkn::command_pool::builder{data.device, data.logger}
+                       .set_queue_family_index(family_index)
+                       .set_primary_buffer_count(1U)
+                       .build();
 
       if (auto err = result.error())
       {
@@ -93,7 +99,7 @@ auto create_render_command_pools(render_system_data&& data) -> result<render_sys
    return std::move(data);
 }
 
-auto create_in_flight_fences(const vkn::device& device, cacao::logger_wrapper logger)
+auto create_in_flight_fences(const cacao::device& device, util::logger_wrapper logger)
    -> std::array<vk::UniqueFence, max_frames_in_flight>
 {
    std::array<vk::UniqueFence, max_frames_in_flight> fences;
@@ -108,7 +114,7 @@ auto create_in_flight_fences(const vkn::device& device, cacao::logger_wrapper lo
    return fences;
 }
 
-auto create_image_available_semaphores(const vkn::device& device, cacao::logger_wrapper logger)
+auto create_image_available_semaphores(const cacao::device& device, util::logger_wrapper logger)
    -> std::array<vk::UniqueSemaphore, max_frames_in_flight>
 {
    std::array<vk::UniqueSemaphore, max_frames_in_flight> semaphores;
@@ -123,8 +129,8 @@ auto create_image_available_semaphores(const vkn::device& device, cacao::logger_
    return semaphores;
 }
 
-auto create_render_finished_semaphores(const vkn::device& device, cacao::count32_t count,
-                                       cacao::logger_wrapper logger)
+auto create_render_finished_semaphores(const cacao::device& device, cacao::count32_t count,
+                                       util::logger_wrapper logger)
    -> crl::small_dynamic_array<vk::UniqueSemaphore, vkn::expected_image_count.value()>
 {
    crl::small_dynamic_array<vk::UniqueSemaphore, vkn::expected_image_count.value()> semaphores;
@@ -139,7 +145,7 @@ auto create_render_finished_semaphores(const vkn::device& device, cacao::count32
    return semaphores;
 }
 
-auto create_depth_buffer(cacao::logger_wrapper logger, vkn::device& device, vk::Extent2D extent)
+auto create_depth_buffer(util::logger_wrapper logger, cacao::device& device, vk::Extent2D extent)
    -> cacao::image
 {
    return cacao::image{
@@ -165,12 +171,15 @@ auto render_system::make(create_info&& info) -> util::result<render_system>
          rs.mp_window = data.p_window;
          rs.m_context = std::move(data.context);
          rs.m_device = std::move(data.device);
+         rs.m_surface = std::move(data.surface);
          rs.m_swapchain = std::move(data.swapchain);
          rs.m_in_flight_fences = create_in_flight_fences(rs.m_device, rs.m_logger);
          rs.m_image_available_semaphores =
             create_image_available_semaphores(rs.device(), rs.m_logger);
          rs.m_render_finished_semaphores = create_render_finished_semaphores(
-            rs.m_device, cacao::count32_t{std::size(rs.m_swapchain.image_views())}, rs.m_logger);
+            rs.m_device,
+            cacao::count32_t{static_cast<std::uint32_t>(std::size(rs.m_swapchain.image_views()))},
+            rs.m_logger);
          rs.m_render_command_pools = std::move(data.render_command_pools);
          rs.m_depth_image = create_depth_buffer(rs.m_logger, rs.m_device, rs.m_swapchain.extent());
          rs.m_configuration = {.swapchain_image_count = static_cast<std::uint32_t>(
@@ -261,7 +270,7 @@ void render_system::end_frame()
 
    try
    {
-      const auto gfx_queue = *m_device.get_queue(vkn::queue_type::graphics).value();
+      const auto gfx_queue = m_device.get_queue(cacao::queue_flag_bits::graphics).value;
       gfx_queue.submit(submit_infos, m_in_flight_fences.at(m_current_frame_index.value()).get());
    }
    catch (const vk::SystemError& err)
@@ -273,12 +282,12 @@ void render_system::end_frame()
 
    const std::array swapchains{vkn::value(m_swapchain)};
 
-   const auto present_queue = *m_device.get_queue(vkn::queue_type::present).value();
-   if (present_queue.presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
-                                 .pWaitSemaphores = std::data(signal_semaphores),
-                                 .swapchainCount = std::size(swapchains),
-                                 .pSwapchains = std::data(swapchains),
-                                 .pImageIndices = &m_current_image_index.value()}) !=
+   const auto present_queue = m_device.get_queue(cacao::queue_flag_bits::present);
+   if (present_queue.value.presentKHR({.waitSemaphoreCount = std::size(signal_semaphores),
+                                       .pWaitSemaphores = std::data(signal_semaphores),
+                                       .swapchainCount = std::size(swapchains),
+                                       .pSwapchains = std::data(swapchains),
+                                       .pImageIndices = &m_current_image_index.value()}) !=
        vk::Result::eSuccess)
    {
       m_logger.error("[gfx] failed to present present queue");
@@ -294,11 +303,11 @@ void render_system::wait()
    m_device.logical().waitIdle();
 }
 
-auto render_system::device() const -> const vkn::device&
+auto render_system::device() const -> const cacao::device&
 {
    return m_device;
 }
-auto render_system::device() -> vkn::device&
+auto render_system::device() -> cacao::device&
 {
    return m_device;
 }

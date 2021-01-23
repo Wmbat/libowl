@@ -62,7 +62,7 @@ public:
    };
 
 public:
-   pipeline_registry(cacao::logger_wrapper logger);
+   pipeline_registry(util::logger_wrapper logger);
 
    auto insert(graphics_pipeline_create_info&& info) -> result<insert_kv>;
    auto lookup(const key_type& key) -> result<lookup_v>;
@@ -71,7 +71,7 @@ public:
 private:
    graphics_map m_graphics_pipelines;
 
-   cacao::logger_wrapper m_logger;
+   util::logger_wrapper m_logger;
 
    std::size_t id_counter{0};
 };

@@ -31,12 +31,12 @@ endif()
 target_compile_options(${PROJECT_NAME} PRIVATE
     $<$<PLATFORM_ID:UNIX>:-pthread>
 
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -fno-omit-frame-pointer
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:DEBUG>>:-O0 -g -Wall -Wextra -fno-omit-frame-pointer
     -Wconversion>
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-o3>
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RELEASE>>:-O3>
 
-    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-o0 -g -Wall -Wextra -fno-omit-frame-pointer -Wconversion>
-    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-o3 -march=native>)
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:DEBUG>>:-O0 -g -Wall -Wextra -fno-omit-frame-pointer -Wconversion>
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-O3 -march=native>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     cacao::cacao

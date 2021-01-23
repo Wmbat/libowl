@@ -2,7 +2,7 @@
 
 #include <fluid_simulation/core.hpp>
 
-#include <vermillon/vulkan/core.hpp>
+#include <cacao/vulkan/core.hpp>
 
 #include <libcaramel/containers/dynamic_array.hpp>
 
@@ -23,7 +23,7 @@ public:
       std::uint32_t height{};
       std::uint32_t layers{};
 
-      cacao::logger_wrapper logger;
+      util::logger_wrapper logger;
    };
 
 public:

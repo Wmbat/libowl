@@ -1,7 +1,9 @@
 #include <fluid_simulation/render/framebuffer.hpp>
 
 framebuffer::framebuffer(create_info&& info) :
-   m_width{info.width}, m_height{info.height}, m_layers{info.layers}
+   m_width{info.width},
+   m_height{info.height},
+   m_layers{info.layers}
 {
    const auto create_info =
       vk::FramebufferCreateInfo{}

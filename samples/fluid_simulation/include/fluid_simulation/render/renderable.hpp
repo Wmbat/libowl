@@ -2,9 +2,9 @@
 
 #include <fluid_simulation/render/render_system.hpp>
 
-#include <vermillon/gfx/data_types.hpp>
-#include <vermillon/gfx/index_buffer.hpp>
-#include <vermillon/gfx/vertex_buffer.hpp>
+#include <cacao/gfx/data_types.hpp>
+#include <cacao/gfx/index_buffer.hpp>
+#include <cacao/gfx/vertex_buffer.hpp>
 
 #include <glm/mat4x4.hpp>
 

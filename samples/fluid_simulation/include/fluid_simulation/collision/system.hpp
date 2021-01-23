@@ -40,8 +40,8 @@ namespace collision
    public:
       struct create_info
       {
-         cacao::non_null<entt::registry*> p_registry;
-         cacao::non_null<sph::system*> p_sph_system;
+         util::non_null<entt::registry*> p_registry;
+         util::non_null<sph::system*> p_sph_system;
       };
 
    public:

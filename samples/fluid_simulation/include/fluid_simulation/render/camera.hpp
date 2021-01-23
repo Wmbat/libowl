@@ -3,7 +3,7 @@
 #include <fluid_simulation/render/pipeline.hpp>
 #include <fluid_simulation/render/render_system.hpp>
 
-#include <vermillon/vulkan/descriptor_pool.hpp>
+#include <cacao/vulkan/descriptor_pool.hpp>
 
 enum struct camera_error
 {
@@ -29,7 +29,7 @@ public:
 
       cacao::count32_t image_count{};
 
-      cacao::logger_wrapper logger{};
+      util::logger_wrapper logger{};
    };
 
    static auto make(create_info&& info) -> util::result<camera>;
@@ -45,7 +45,7 @@ private:
    crl::dynamic_array<cacao::vulkan::buffer> m_uniform_buffers;
 };
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline, cacao::logger_wrapper logger)
+auto create_camera(render_system& system, graphics_pipeline& pipeline, util::logger_wrapper logger)
    -> camera;
 auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             cacao::logger_wrapper logger) -> camera;
+                             util::logger_wrapper logger) -> camera;

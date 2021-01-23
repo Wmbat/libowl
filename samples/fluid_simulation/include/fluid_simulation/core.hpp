@@ -2,8 +2,9 @@
 
 #include <fluid_simulation/maths.hpp>
 
-#include <vermillon/util/error.hpp>
-#include <vermillon/util/logger.hpp>
+#include <cacao/util/error.hpp>
+
+#include <utility/logger.hpp>
 
 #include <monads/result.hpp>
 
@@ -29,7 +30,7 @@ template <typename Any, typename Ratio = std::ratio<1>>
 using duration = std::chrono::duration<Any, Ratio>;
 
 template <typename Any>
-auto handle_err(Any&& result, cacao::logger_wrapper logger)
+auto handle_err(Any&& result, util::logger_wrapper logger)
 {
    if (auto err = result.error())
    {

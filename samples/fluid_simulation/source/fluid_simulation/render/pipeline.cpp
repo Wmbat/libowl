@@ -34,7 +34,7 @@ namespace detail
    auto
    check_vertex_attribute_support(const vkn::shader* p_shader,
                                   std::span<const vk::VertexInputAttributeDescription> attributes,
-                                  cacao::logger_wrapper logger) -> bool
+                                  util::logger_wrapper logger) -> bool
    {
       const auto& data = p_shader->get_data();
       for (const auto& attrib : attributes)
@@ -65,7 +65,8 @@ namespace detail
 
 graphics_pipeline::graphics_pipeline(graphics_pipeline_create_info&& info) :
    m_set_layouts{create_descriptor_set_layouts(info.device, info.shader_infos, info.logger)},
-   m_push_constants{populate_push_constants(info.shader_infos)}, mp_render_pass{&info.pass}
+   m_push_constants{populate_push_constants(info.shader_infos)},
+   mp_render_pass{&info.pass}
 {
    m_pipeline_layout = create_pipeline_layout(info.device);
    m_pipeline = create_pipeline(info.device, info.shader_infos, info.bindings, info.attributes,
@@ -140,8 +141,8 @@ auto graphics_pipeline::populate_push_constants(std::span<const pipeline_shader_
 }
 
 auto graphics_pipeline::create_descriptor_set_layouts(
-   const vkn::device& device, std::span<const pipeline_shader_data> shader_infos,
-   cacao::logger_wrapper logger) -> set_layout_map
+   const cacao::device& device, std::span<const pipeline_shader_data> shader_infos,
+   util::logger_wrapper logger) -> set_layout_map
 {
    set_layout_map set_layouts;
 
@@ -171,7 +172,7 @@ auto graphics_pipeline::create_descriptor_set_layouts(
    return set_layouts;
 }
 
-auto graphics_pipeline::create_pipeline_layout(const vkn::device& device)
+auto graphics_pipeline::create_pipeline_layout(const cacao::device& device)
    -> vk::UniquePipelineLayout
 {
    crl::dynamic_array<vk::DescriptorSetLayout> layouts;
@@ -199,13 +200,13 @@ auto graphics_pipeline::create_pipeline_layout(const vkn::device& device)
        .pPushConstantRanges = std::data(push_constants)});
 }
 
-auto graphics_pipeline::create_pipeline(const vkn::device& device,
+auto graphics_pipeline::create_pipeline(const cacao::device& device,
                                         std::span<const pipeline_shader_data> shader_infos,
                                         std::span<vk::VertexInputBindingDescription> bindings,
                                         std::span<vk::VertexInputAttributeDescription> attributes,
                                         std::span<vk::Viewport> viewports,
-                                        std::span<vk::Rect2D> scissors,
-                                        cacao::logger_wrapper logger) -> vk::UniquePipeline
+                                        std::span<vk::Rect2D> scissors, util::logger_wrapper logger)
+   -> vk::UniquePipeline
 {
    crl::dynamic_array<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
    shader_stage_info.reserve(std::size(shader_infos));

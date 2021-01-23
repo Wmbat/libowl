@@ -7,24 +7,12 @@
 
 ## Table of Content
 * [Requirements](#requirements)
-* [Dependencies](#dependencies)
 * [Installation](#installation)
 * [License](#license)
 
 ## Requirements
 
 You need to use clang-10.0 and above.
-
-## Dependencies
-
-* [Vulkan Headers - 1.2.135](https://github.com/KhronosGroup/Vulkan-Headers)
-* [GLFW - 3.3.2](https://github.com/glfw/glfw)
-* [GLM - 0.9.9.8](https://github.com/g-truc/glm)
-* [spdlog - 1.6.1](https://github.com/gabime/spdlog)
-* [monads - master](https://github.com/Wmbat/monads)
-* [range-v3 - 0.11.0](https//github.com/ericniebler/range-v3)
-* [glslang - 8.13.3743](https://github.com/KhronosGroup/glslang)
-* [SPIRV-Cross - 2020-06-29](https://github.com/KhronosGroup/SPIRV-cross)
 
 ## Samples
 

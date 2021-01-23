@@ -3,7 +3,7 @@
 #include <fluid_simulation/core.hpp>
 #include <fluid_simulation/render/framebuffer.hpp>
 
-#include <vermillon/vulkan/core.hpp>
+#include <cacao/vulkan/core.hpp>
 
 #include <span>
 
@@ -17,7 +17,7 @@ struct render_pass_create_info
 
    crl::dynamic_array<framebuffer::create_info> framebuffer_create_infos{};
 
-   cacao::logger_wrapper logger{nullptr};
+   util::logger_wrapper logger{nullptr};
 };
 
 class render_pass

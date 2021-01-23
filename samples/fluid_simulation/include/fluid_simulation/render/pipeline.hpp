@@ -3,13 +3,11 @@
 #include <fluid_simulation/core.hpp>
 #include <fluid_simulation/render/render_pass.hpp>
 
-#include <vermillon/util/error.hpp>
-#include <vermillon/util/logger.hpp>
-#include <vermillon/util/strong_type.hpp>
-#include <vermillon/vulkan/core.hpp>
-#include <vermillon/vulkan/descriptor_set_layout.hpp>
-#include <vermillon/vulkan/device.hpp>
-#include <vermillon/vulkan/shader.hpp>
+#include <cacao/util/error.hpp>
+#include <cacao/util/strong_type.hpp>
+#include <cacao/vulkan/core.hpp>
+#include <cacao/vulkan/descriptor_set_layout.hpp>
+#include <cacao/vulkan/shader.hpp>
 
 using vertex_bindings_array = crl::dynamic_array<vk::VertexInputBindingDescription>;
 using vertex_attributes_array = crl::dynamic_array<vk::VertexInputAttributeDescription>;
@@ -57,10 +55,10 @@ struct pipeline_shader_data
 
 struct graphics_pipeline_create_info
 {
-   const vkn::device& device;
+   const cacao::device& device;
    const render_pass& pass;
 
-   cacao::logger_wrapper logger{};
+   util::logger_wrapper logger{};
 
    vertex_bindings_array bindings{};
    vertex_attributes_array attributes{};
@@ -92,16 +90,16 @@ public:
 private:
    auto populate_push_constants(std::span<const pipeline_shader_data> shader_infos)
       -> push_constant_map;
-   auto create_descriptor_set_layouts(const vkn::device& device,
+   auto create_descriptor_set_layouts(const cacao::device& device,
                                       std::span<const pipeline_shader_data> shader_infos,
-                                      cacao::logger_wrapper logger) -> set_layout_map;
-   auto create_pipeline_layout(const vkn::device& device) -> vk::UniquePipelineLayout;
-   auto create_pipeline(const vkn::device& device,
+                                      util::logger_wrapper logger) -> set_layout_map;
+   auto create_pipeline_layout(const cacao::device& device) -> vk::UniquePipelineLayout;
+   auto create_pipeline(const cacao::device& device,
                         std::span<const pipeline_shader_data> shader_infos,
                         std::span<vk::VertexInputBindingDescription> bindings,
                         std::span<vk::VertexInputAttributeDescription> attributes,
                         std::span<vk::Viewport> viewports, std::span<vk::Rect2D> scissors,
-                        cacao::logger_wrapper logger) -> vk::UniquePipeline;
+                        util::logger_wrapper logger) -> vk::UniquePipeline;
 
 private:
    vk::UniquePipeline m_pipeline{nullptr};

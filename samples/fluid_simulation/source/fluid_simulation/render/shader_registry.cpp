@@ -4,8 +4,9 @@
 
 #include <fstream>
 
-shader_registry::shader_registry(render_system& renderer, cacao::logger_wrapper logger) :
-   m_renderer{renderer}, m_logger{logger}
+shader_registry::shader_registry(render_system& renderer, util::logger_wrapper logger) :
+   m_renderer{renderer},
+   m_logger{logger}
 {}
 
 auto shader_registry::insert(const filepath& path, vkn::shader_type type) -> result<insert_kv>
@@ -78,7 +79,8 @@ auto shader_registry::lookup_v::value() const -> value_type&
 }
 
 shader_registry::insert_kv::insert_kv(key_type key, value_type* p_value) :
-   m_key{std::move(key)}, mp_value{p_value}
+   m_key{std::move(key)},
+   mp_value{p_value}
 {}
 
 auto shader_registry::insert_kv::key() const -> const key_type&

@@ -30,7 +30,8 @@ namespace collision
    }
 
    system::system(create_info&& info) :
-      mp_registry{info.p_registry.get()}, mp_system{info.p_sph_system.get()}
+      mp_registry{info.p_registry.get()},
+      mp_system{info.p_sph_system.get()}
    {}
 
    void system::update(duration<float> time_step) { resolve_particle_to_box_collision(time_step); }

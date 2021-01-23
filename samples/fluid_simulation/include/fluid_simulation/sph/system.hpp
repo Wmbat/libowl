@@ -16,8 +16,8 @@ namespace sph
    public:
       struct create_info
       {
-         cacao::non_null<entt::registry*> p_registry;
-         cacao::non_null<cacao::logger*> p_logger;
+         util::non_null<entt::registry*> p_registry;
+         util::non_null<util::logger*> p_logger;
 
          glm::vec3 center;
          glm::vec3 dimensions;
@@ -70,7 +70,7 @@ namespace sph
    private:
       entt::registry* mp_registry{nullptr};
 
-      cacao::logger_wrapper m_logger;
+      util::logger_wrapper m_logger;
 
       settings m_settings;
 

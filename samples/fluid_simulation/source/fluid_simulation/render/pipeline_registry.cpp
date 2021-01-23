@@ -4,7 +4,7 @@
 
 #include <utility>
 
-pipeline_registry::pipeline_registry(cacao::logger_wrapper logger) : m_logger{logger} {}
+pipeline_registry::pipeline_registry(util::logger_wrapper logger) : m_logger{logger} {}
 
 auto pipeline_registry::insert(graphics_pipeline_create_info&& info) -> result<insert_kv>
 {
@@ -79,7 +79,8 @@ auto pipeline_registry::lookup_v::value() const -> value_type&
 // INSERT_KV
 
 pipeline_registry::insert_kv::insert_kv(key_type key, value_type* p_value) :
-   m_key{key}, mp_value{p_value}
+   m_key{key},
+   mp_value{p_value}
 {}
 
 auto pipeline_registry::insert_kv::key() const -> const key_type&

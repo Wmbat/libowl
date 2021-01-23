@@ -2,14 +2,14 @@
 
 #include <fluid_simulation/render/render_pass.hpp>
 
-#include <vermillon/gfx/image.hpp>
-#include <vermillon/gfx/index_buffer.hpp>
-#include <vermillon/gfx/vertex_buffer.hpp>
-#include <vermillon/ui/window.hpp>
-#include <vermillon/util/logger.hpp>
-#include <vermillon/util/strong_type.hpp>
-#include <vermillon/vulkan/command_pool.hpp>
-#include <vermillon/vulkan/swapchain.hpp>
+#include <cacao/context.hpp>
+#include <cacao/gfx/image.hpp>
+#include <cacao/gfx/index_buffer.hpp>
+#include <cacao/gfx/vertex_buffer.hpp>
+#include <cacao/ui/window.hpp>
+#include <cacao/util/strong_type.hpp>
+#include <cacao/vulkan/command_pool.hpp>
+#include <cacao/vulkan/swapchain.hpp>
 
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
@@ -32,8 +32,8 @@ public:
 
    struct create_info
    {
-      cacao::logger_wrapper logger;
-      cacao::non_null<ui::window*> p_window;
+      util::logger_wrapper logger;
+      util::non_null<ui::window*> p_window;
    };
 
    static auto make(create_info&& info) -> util::result<render_system>;
@@ -45,8 +45,8 @@ public:
 
    void wait();
 
-   auto device() const -> const vkn::device&;       // NOLINT
-   auto device() -> vkn::device&;                   // NOLINT
+   auto device() const -> const cacao::device&;     // NOLINT
+   auto device() -> cacao::device&;                 // NOLINT
    auto swapchain() const -> const vkn::swapchain&; // NOLINT
    auto swapchain() -> vkn::swapchain&;             // NOLINT
 
@@ -66,12 +66,15 @@ public:
    auto lookup_configuration() const -> const config&; // NOLINT
 
 private:
-   cacao::logger_wrapper m_logger;
+   util::logger_wrapper m_logger;
 
    ui::window* mp_window;
 
-   vkn::context m_context;
-   vkn::device m_device;
+   cacao::context m_context;
+   cacao::device m_device;
+
+   vk::UniqueSurfaceKHR m_surface;
+
    vkn::swapchain m_swapchain;
 
    cacao::image m_depth_image;

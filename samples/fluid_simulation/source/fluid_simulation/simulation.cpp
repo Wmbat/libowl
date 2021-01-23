@@ -27,7 +27,7 @@ struct mesh_data
    glm::vec3 colour;
 };
 
-auto get_main_framebuffers(const render_system& system, cacao::logger_wrapper logger)
+auto get_main_framebuffers(const render_system& system, util::logger_wrapper logger)
    -> crl::dynamic_array<framebuffer::create_info>
 {
    crl::dynamic_array<framebuffer::create_info> infos;
@@ -59,7 +59,7 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
            .finalLayout = vk::ImageLayout::ePresentSrcKHR};
 }
 
-auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescription
+auto offscreen_colour_attachment(cacao::device& device) -> vk::AttachmentDescription
 {
    if (auto res = cacao::find_colour_format(device))
    {
@@ -76,7 +76,7 @@ auto offscreen_colour_attachment(vkn::device& device) -> vk::AttachmentDescripti
    return {};
 }
 
-auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
+auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
 {
    if (auto val = cacao::find_depth_format(device))
    {
@@ -94,9 +94,13 @@ auto main_depth_attachment(vkn::device& device) -> vk::AttachmentDescription
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{"fluid_simulation"}, m_settings{settings}, m_window{"Fluid Simulation", 1080, 720},
+   m_logger{"fluid_simulation"},
+   m_settings{settings},
+   m_window{"Fluid Simulation", 1080, 720},
    m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
-   m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
+   m_shaders{m_render_system, &m_logger},
+   m_pipelines{&m_logger},
+   m_main_pipeline_key{},
    m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
    m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
 {
@@ -129,14 +133,14 @@ simulation::simulation(const settings& settings) :
                          half(z_edges.x - z_edges.y)}; // NOLINT
 
       float h = m_settings.kernel_radius();
-      m_sph_system = sph::system{{.p_registry = cacao::make_non_null(&m_registry),
-                                  .p_logger = cacao::make_non_null(&m_logger),
+      m_sph_system = sph::system{{.p_registry = util::make_non_null(&m_registry),
+                                  .p_logger = util::make_non_null(&m_logger),
                                   .center = halfs,
                                   .dimensions = halfs + h,
                                   .system_settings = settings}};
 
-      m_collision_system = collision::system{{.p_registry = cacao::make_non_null(&m_registry),
-                                              .p_sph_system = cacao::make_non_null(&m_sph_system)}};
+      m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry),
+                                              .p_sph_system = util::make_non_null(&m_sph_system)}};
    }
 
    constexpr std::size_t x_count = 25u;
@@ -420,7 +424,7 @@ void simulation::offscreen_render()
    try
    {
       std::uint32_t wait_semaphore_count =
-         m_frame_count.value() == 0 ? 0 : std::size(wait_semaphores);
+         m_frame_count.value() == 0 ? 0 : static_cast<std::uint32_t>(std::size(wait_semaphores));
       const vk::Semaphore* p_wait_semaphores =
          m_frame_count.value() == 0 ? nullptr : std::data(wait_semaphores);
 
@@ -433,7 +437,7 @@ void simulation::offscreen_render()
                         .signalSemaphoreCount = std::size(signal_semaphores),
                         .pSignalSemaphores = std::data(signal_semaphores)}};
 
-      const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
+      const auto gfx_queue = device.get_queue(cacao::queue_flag_bits::graphics).value;
       gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.get());
    }
    catch (const vk::SystemError& err)
@@ -474,7 +478,7 @@ void simulation::offscreen_render()
                         .signalSemaphoreCount = std::size(wait_semaphores),
                         .pSignalSemaphores = std::data(wait_semaphores)}};
 
-      const auto gfx_queue = *device.get_queue(vkn::queue_type::graphics).value();
+      const auto gfx_queue = device.get_queue(cacao::queue_flag_bits::graphics).value;
       gfx_queue.submit(render_submit_infos, m_offscreen.in_flight_fence.get());
    }
    catch (const vk::SystemError& err)
@@ -521,13 +525,11 @@ void simulation::setup_offscreen()
                    .logger = &m_logger}};
    m_offscreen_pipeline_key = create_offscreen_pipeline();
    m_offscreen.cam = setup_offscreen_camera(m_offscreen_pipeline_key);
-   m_offscreen.command_pool =
-      check_err(device.get_queue_index(vkn::queue_type::graphics).and_then([&](std::uint32_t i) {
-         return vkn::command_pool::builder{device, &m_logger}
-            .set_queue_family_index(i)
-            .set_primary_buffer_count(1U)
-            .build();
-      }));
+   m_offscreen.command_pool = check_err(
+      vkn::command_pool::builder{device, &m_logger}
+         .set_queue_family_index(device.get_queue(cacao::queue_flag_bits::graphics).family_index)
+         .set_primary_buffer_count(1U)
+         .build());
    m_offscreen.in_flight_fence = m_render_system.device().logical().createFenceUnique(
       vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
    m_offscreen.render_finished_semaphore =

@@ -13,7 +13,7 @@
 #include <fluid_simulation/render/shader_registry.hpp>
 #include <fluid_simulation/sph/system.hpp>
 
-#include <vermillon/ui/window.hpp>
+#include <cacao/ui/window.hpp>
 
 #include <entt/entt.hpp>
 
@@ -55,7 +55,7 @@ private:
    }
 
 private:
-   cacao::logger m_logger;
+   util::logger m_logger;
 
    settings m_settings;
 
