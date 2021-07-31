@@ -48,6 +48,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RELEASE>>:-O3>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
+    maths::maths
     utilities::utilities
     Vulkan-Headers
     glfw

@@ -9,7 +9,7 @@ auto main() -> int
 
    glfwInit();
 
-   simulation sim{settings};
+   auto sim = simulation(settings);
    sim.run();
 
    return 0;
