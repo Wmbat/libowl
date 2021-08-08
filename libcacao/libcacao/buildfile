@@ -1,0 +1,62 @@
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import intf_libs += libutils%lib{utils}
+import intf_libs += libmannele%lib{mannele}
+import intf_libs += magic_enum%lib{magic_enum}
+import intf_libs += glfw%lib{glfw}
+import intf_libs += glm%lib{glm}
+import intf_libs += gsl%lib{gsl}
+import intf_libs += Vulkan-Hpp%lib{Vulkan-Hpp}
+import intf_libs += spirv-cross-glsl%lib{spirv-cross-glsl}
+
+lib{cacao}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
+
+# Include the generated version header into the distribution (so that we don't
+# pick up an installed one) and don't remove it when cleaning in src (so that
+# clean results in a state identical to distributed).
+#
+hxx{version}: in{version} $src_root/manifest
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+}
+
+hxx{export}@./: cxx.importable = false
+
+# Build options.
+#
+cxx.poptions =+ "-I$out_root" "-I$src_root"
+cxx.poptions += -DVULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+
+{hbmia obja}{*}: cxx.poptions += -DLIBCACAO_STATIC_BUILD
+{hbmis objs}{*}: cxx.poptions += -DVULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+
+# Export options.
+#
+lib{cacao}:
+{
+  cxx.export.poptions = "-I$out_root" "-I$src_root"
+  cxx.export.libs = $intf_libs
+}
+
+liba{cacao}: cxx.export.poptions += -DLIBCACAO_STATIC
+libs{cacao}: cxx.export.poptions += -DLIBCACAO_SHARED
+
+# For pre-releases use the complete version to make sure they cannot be used
+# in place of another pre-release or the final version. See the version module
+# for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{cacao}: bin.lib.version = @"-$version.project_id"
+else
+  lib{cacao}: bin.lib.version = @"-$version.major.$version.minor"
+
+# Install into the libcacao/ subdirectory of, say, /usr/include/
+# recreating subdirectories.
+#
+{hxx ixx txx}{*}:
+{
+  install         = include/libcacao/
+  install.subdirs = true
+}

@@ -37,7 +37,7 @@ namespace cacao
       return {{static_cast<int>(err), m_index_buffer_category}};
    }
 
-   auto index_buffer::make(create_info&& info) noexcept -> util::result<index_buffer>
+   auto index_buffer::make(create_info&& info) noexcept -> index_buffer
    {
       const std::size_t size = sizeof(info.indices.lookup(0)) * std::size(info.indices);
 

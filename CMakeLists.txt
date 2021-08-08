@@ -61,7 +61,7 @@ message(STATUS "[${PROJECT_NAME}] Enforce all contracts at run-time: ${VERMILLON
 message(STATUS "[${PROJECT_NAME}] Enable display of debug level logs: ${VERMILLON_SHOW_DEBUG_LOGGING}")
 
 add_subdirectory(utility)
-add_subdirectory(cacao)
+add_subdirectory(cacao-temp)
 
 if (VERMILLON_BUILD_SAMPLES)
     #add_subdirectory(samples/playground)

@@ -1,0 +1,3 @@
+import libs = libmannele%lib{mannele}
+
+exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}
