@@ -11,6 +11,7 @@ namespace cacao
    class LIBCACAO_SYMEXPORT surface
    {
    public:
+      surface() = default;
       surface(const context& context, vk::SurfaceKHR surface);
 
       [[nodiscard]] auto value() const -> vk::SurfaceKHR;

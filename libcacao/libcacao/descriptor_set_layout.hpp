@@ -1,10 +1,11 @@
-#pragma once
+#ifndef LIBCACAO_DESCRIPTOR_SET_LAYOUT
+#define LIBCACAO_DESCRIPTOR_SET_LAYOUT
 
 #include <libcacao/device.hpp>
 
 #include <span>
 
-namespace vkn
+namespace cacao 
 {
    struct descriptor_set_layout_create_info
    {
@@ -12,7 +13,7 @@ namespace vkn
 
       std::vector<vk::DescriptorSetLayoutBinding> bindings;
 
-      util::logger_wrapper logger;
+      util::log_ptr logger;
    };
 
    class descriptor_set_layout
@@ -29,4 +30,6 @@ namespace vkn
 
       vk::UniqueDescriptorSetLayout m_set_layout;
    };
-} // namespace vkn
+} // namespace cacao
+
+#endif // LIBCACAO_DESCRIPTOR_SET_LAYOUT

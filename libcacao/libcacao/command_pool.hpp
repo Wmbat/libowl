@@ -40,6 +40,7 @@ namespace cacao
    class LIBCACAO_SYMEXPORT command_pool
    {
    public:
+      command_pool() = default;
       command_pool(const command_pool_create_info& info);
       command_pool(command_pool_create_info&& info);
 
@@ -48,7 +49,7 @@ namespace cacao
       [[nodiscard]] auto secondary_buffers() const noexcept -> std::span<const vk::CommandBuffer>;
 
    private:
-      uint32_t m_queue_index;
+      mannele::u32 m_queue_index = std::numeric_limits<mannele::u32>::max();
 
       vk::UniqueCommandPool m_pool;
       std::vector<vk::CommandBuffer> m_primary_buffers;

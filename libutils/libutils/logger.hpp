@@ -41,23 +41,23 @@ namespace util
       void flush();
 
       template <typename... Args>
-      void info(std::string_view msg, Args&&... args)
+      void info(fmt::format_string<Args...> msg, Args&&... args)
       {
          log.info(msg, std::forward<Args>(args)...);
       }
       template <typename... Args>
-      void debug(std::string_view msg, Args&&... args)
+      void debug(fmt::format_string<Args...> msg, Args&&... args)
       {
          log.debug(msg, std::forward<Args>(args)...);
       }
       template <typename... Args>
-      void warning(std::string_view msg, Args&&... args)
+      void warning(fmt::format_string<Args...> msg, Args&&... args)
       {
          log.warn(msg, std::forward<Args>(args)...);
          log.flush();
       }
       template <typename... Args>
-      void error(std::string_view msg, Args&&... args)
+      void error(fmt::format_string<Args...> msg, Args&&... args)
       {
          log.error(msg, std::forward<Args>(args)...);
          log.flush();
@@ -75,13 +75,8 @@ namespace util
    public:
       log_ptr(util::logger* p_logger = nullptr);
 
-      void debug(const std::string& msg);
-      void info(const std::string& msg);
-      void warning(const std::string& msg);
-      void error(const std::string& msg);
-
       template <typename... Args>
-      void info(std::string_view msg, Args&&... args)
+      void info(fmt::format_string<Args...> msg, Args&&... args)
       {
          if (mp_logger)
          {
@@ -89,7 +84,7 @@ namespace util
          }
       }
       template <typename... Args>
-      void debug(std::string_view msg, Args&&... args)
+      void debug(fmt::format_string<Args...> msg, Args&&... args)
       {
          if (mp_logger)
          {
@@ -97,7 +92,7 @@ namespace util
          }
       }
       template <typename... Args>
-      void warning(std::string_view msg, Args&&... args)
+      void warning(fmt::format_string<Args...> msg, Args&&... args)
       {
          if (mp_logger)
          {
@@ -105,7 +100,7 @@ namespace util
          }
       }
       template <typename... Args>
-      void error(std::string_view msg, Args&&... args)
+      void error(fmt::format_string<Args...> msg, Args&&... args)
       {
          if (mp_logger)
          {

@@ -66,6 +66,16 @@ namespace cacao
          m_queue_index, info.primary_buffer_count, info.secondary_buffer_count);
    }
 
+   auto command_pool::value() const noexcept -> vk::CommandPool { return m_pool.get(); }
+   auto command_pool::primary_buffers() const noexcept -> std::span<const vk::CommandBuffer>
+   {
+      return m_primary_buffers;
+   }
+   auto command_pool::secondary_buffers() const noexcept -> std::span<const vk::CommandBuffer>
+   {
+      return m_secondary_buffers;
+   }
+
    auto to_vk_level(command_buffer_level level)
    {
       return level == command_buffer_level::primary ? vk::CommandBufferLevel::ePrimary

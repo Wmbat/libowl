@@ -24,7 +24,7 @@ namespace cacao
    struct window_create_info
    {
       std::string title = "Default libcacao window";
-      mannele::dimension_i32 dimension = {.width = DEFAULT_WINDOW_WIDTH,
+      mannele::dimension_u32 dimension = {.width = DEFAULT_WINDOW_WIDTH,
                                           .height = DEFAULT_WINDOW_WIDTH};
       bool is_resizable = false;
    };
@@ -44,13 +44,13 @@ namespace cacao
          -> reglisse::result<surface, error_code>;
 
       [[nodiscard]] auto title() const -> std::string_view;
-      [[nodiscard]] auto dimension() const -> const mannele::dimension_i32&;
+      [[nodiscard]] auto dimension() const -> const mannele::dimension_u32&;
       [[nodiscard]] auto is_resizable() const -> bool;
       [[nodiscard]] auto is_open() const -> bool;
 
    private:
       std::string m_title;
-      mannele::dimension_i32 m_dimension{};
+      mannele::dimension_u32 m_dimension{};
 
       bool m_is_resizable{};
 

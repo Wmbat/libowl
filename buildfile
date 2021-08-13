@@ -1,3 +1,3 @@
-import pkgs = {libcacao/}
+import pkgs = {lib*/ samples/*/}
 
 ./: $pkgs

@@ -5,7 +5,7 @@
 
 #include <magic_enum.hpp>
 
-#include <spirv_cross.hpp>
+#include <spirv_glsl.hpp>
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
@@ -90,10 +90,32 @@ namespace cacao
    }
 
    auto shader::name() const noexcept -> std::string_view { return m_name; }
+   auto shader::module() const noexcept -> vk::ShaderModule { return m_module.get(); }
    auto shader::type() const noexcept -> shader_type { return m_type; }
    auto shader::input_ids() const noexcept -> std::span<const std::uint32_t> { return m_inputs; }
    auto shader::uniform_buffer_ids() const noexcept -> std::span<const std::uint32_t>
    {
       return m_uniforms;
+   }
+
+   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags
+   {
+      switch (type)
+      {
+         case shader_type::vertex:
+            return vk::ShaderStageFlagBits::eVertex;
+         case shader_type::fragment:
+            return vk::ShaderStageFlagBits::eFragment;
+         case shader_type::compute:
+            return vk::ShaderStageFlagBits::eCompute;
+         case shader_type::geometry:
+            return vk::ShaderStageFlagBits::eGeometry;
+         case shader_type::tess_control:
+            return vk::ShaderStageFlagBits::eTessellationControl;
+         case shader_type::tess_eval:
+            return vk::ShaderStageFlagBits::eTessellationEvaluation;
+         default:
+            return vk::ShaderStageFlagBits::eAll;
+      }
    }
 } // namespace cacao

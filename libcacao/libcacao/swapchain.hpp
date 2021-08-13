@@ -42,6 +42,7 @@ namespace cacao
       static constexpr std::size_t expected_image_count = 3U;
 
    public:
+      swapchain() = default;
       swapchain(const swapchain_create_info& info);
       swapchain(swapchain_create_info&& info);
 
@@ -50,9 +51,13 @@ namespace cacao
       [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
       [[nodiscard]] auto images() const noexcept -> std::span<const vk::Image>;
 
+      // TODO: BAD
+      [[nodiscard]] auto image_views() const noexcept -> std::vector<vk::ImageView>; 
+
    private:
       vk::UniqueSwapchainKHR m_swapchain;
       std::vector<vk::Image> m_images;
+      std::vector<vk::UniqueImageView> m_image_views;
 
       vk::Format m_format{};
       vk::Extent2D m_extent{};

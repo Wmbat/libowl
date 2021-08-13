@@ -1,8 +1,8 @@
-#include <libcacao/vulkan/descriptor_set_layout.hpp>
+#include <libcacao/descriptor_set_layout.hpp>
 
 #include <utility>
 
-namespace vkn
+namespace cacao
 {
    descriptor_set_layout::descriptor_set_layout(descriptor_set_layout_create_info&& info) :
       m_bindings{std::move(info.bindings)},
@@ -29,7 +29,7 @@ namespace vkn
       }
       msg += "\n\t}";
 
-      info.logger.info(msg);
+      info.logger.info(fmt::runtime(msg));
    }
 
    auto descriptor_set_layout::value() const -> vk::DescriptorSetLayout
@@ -40,4 +40,4 @@ namespace vkn
    {
       return m_bindings;
    }
-} // namespace vkn
+} // namespace cacao

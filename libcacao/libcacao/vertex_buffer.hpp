@@ -13,7 +13,7 @@ namespace cacao
       const cacao::device& device;
       const cacao::command_pool& pool;
 
-      std::span<vertex> vertices;
+      std::span<const vertex> vertices;
 
       util::log_ptr logger;
    };

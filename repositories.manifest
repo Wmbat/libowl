@@ -23,4 +23,12 @@ location: https://github.com/Wmbat/SPIRV-Cross.git#main
 
 :
 role: prerequisite
+location: https://github.com/Wmbat/build2-tinyobjloader.git#main
+
+:
+role: prerequisite
+location: https://github.com/Wmbat/stb.git#master
+
+:
+role: prerequisite
 location: https://github.com/Swat-SomeBug/glfw.git#master

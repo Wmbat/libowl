@@ -5,6 +5,9 @@
 #include <libreglisse/operations/transform_err.hpp>
 #include <libreglisse/try.hpp>
 
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
+
 using namespace reglisse;
 using namespace mannele;
 
@@ -70,6 +73,7 @@ namespace cacao
 
    swapchain::swapchain(const swapchain_create_info& info) : m_logger(info.logger)
    {
+      const auto device = info.device.logical();
       const auto surface_support_res = query_surface_support(info.device, info.surface);
 
       if (!surface_support_res)
@@ -122,16 +126,40 @@ namespace cacao
          .clipped = info.should_clip,
          .oldSwapchain = info.old_swapchain->value()};
 
-      m_swapchain = info.device.logical().createSwapchainKHRUnique(create_info);
-      m_images = info.device.logical().getSwapchainImagesKHR(m_swapchain.get());
+      m_swapchain = device.createSwapchainKHRUnique(create_info);
+      m_images = device.getSwapchainImagesKHR(m_swapchain.get());
       m_extent = extent;
       m_format = format.format;
+
+      for (const auto& image : m_images)
+      {
+         m_image_views.push_back(device.createImageViewUnique(
+            {.image = image,
+             .viewType = vk::ImageViewType::e2D,
+             .format = m_format,
+             .components = {.r = vk::ComponentSwizzle::eIdentity,
+                            .g = vk::ComponentSwizzle::eIdentity,
+                            .b = vk::ComponentSwizzle::eIdentity,
+                            .a = vk::ComponentSwizzle::eIdentity},
+             .subresourceRange = {.aspectMask = vk::ImageAspectFlagBits::eColor,
+                                  .baseMipLevel = 0u,
+                                  .levelCount = 1u,
+                                  .baseArrayLayer = 0u,
+                                  .layerCount = 1u}}));
+      }
    }
 
    auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain.get(); }
    auto swapchain::format() const noexcept -> vk::Format { return m_format; }
    auto swapchain::extent() const noexcept -> const vk::Extent2D& { return m_extent; }
    auto swapchain::images() const noexcept -> std::span<const vk::Image> { return m_images; }
+   auto swapchain::image_views() const noexcept -> std::vector<vk::ImageView>
+   {
+      return m_image_views | ranges::views::transform([](const vk::UniqueImageView& view) {
+                return view.get();
+             }) |
+         ranges::to_vector;
+   }
 
    auto get_surface_capabilities(const device& device, const surface& surface)
    {

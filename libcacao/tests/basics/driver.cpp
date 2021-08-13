@@ -1,4 +1,6 @@
-int main ()
+
+
+auto main () -> int
 {
    return 0;
 }

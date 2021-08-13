@@ -15,7 +15,7 @@ namespace cacao
       const cacao::device& device;
       const cacao::command_pool& pool;
 
-      std::vector<mannele::u32> indices;
+      std::span<const mannele::u32> indices;
 
       util::log_ptr logger;
    };

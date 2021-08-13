@@ -70,35 +70,6 @@ namespace util
 
    log_ptr::log_ptr(util::logger* p_logger) : mp_logger{p_logger} {}
 
-   void log_ptr::debug(const std::string& msg)
-   {
-      if (mp_logger)
-      {
-         mp_logger->debug(msg);
-      }
-   }
-   void log_ptr::info(const std::string& msg)
-   {
-      if (mp_logger)
-      {
-         mp_logger->info(msg);
-      }
-   }
-   void log_ptr::warning(const std::string& msg)
-   {
-      if (mp_logger)
-      {
-         mp_logger->warning(msg);
-      }
-   }
-   void log_ptr::error(const std::string& msg)
-   {
-      if (mp_logger)
-      {
-         mp_logger->error(msg);
-      }
-   }
-
    auto log_ptr::get() const -> util::logger* { return mp_logger; }
    auto log_ptr::take() -> util::logger*
    {

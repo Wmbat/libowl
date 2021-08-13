@@ -40,11 +40,12 @@ namespace cacao
 
    struct LIBCACAO_SYMEXPORT shader_create_info
    {
+      const cacao::device& device;
+
       std::string name;
       shader_type type;
       std::vector<std::uint32_t> binary;
 
-      const cacao::device& device;
       util::log_ptr logger;
    };
 
@@ -55,6 +56,7 @@ namespace cacao
       shader(shader_create_info&& info);
 
       [[nodiscard]] auto name() const noexcept -> std::string_view;
+      [[nodiscard]] auto module() const noexcept -> vk::ShaderModule;
       [[nodiscard]] auto type() const noexcept -> shader_type;
       [[nodiscard]] auto input_ids() const noexcept -> std::span<const std::uint32_t>;
       [[nodiscard]] auto uniform_buffer_ids() const noexcept -> std::span<const std::uint32_t>;
@@ -70,6 +72,8 @@ namespace cacao
 
       util::log_ptr m_logger;
    };
+
+   auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags;
 } // namespace cacao
 
 #endif // LIBCACAO_SHADER_HPP

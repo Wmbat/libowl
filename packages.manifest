@@ -4,3 +4,5 @@ location: libcacao/
 location: libutils/
 :
 location: libmannele/
+:
+location: samples/sph-simulation/
