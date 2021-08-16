@@ -38,6 +38,7 @@ namespace cacao
    class LIBCACAO_SYMEXPORT buffer
    {
    public:
+      buffer() = default;
       buffer(const buffer_create_info& info);
       buffer(buffer_create_info&& info);
 

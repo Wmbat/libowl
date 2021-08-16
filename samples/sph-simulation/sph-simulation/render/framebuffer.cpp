@@ -1,23 +1,17 @@
 #include <sph-simulation/render/framebuffer.hpp>
 
-framebuffer::framebuffer(create_info&& info) :
-   m_width{info.width}, m_height{info.height}, m_layers{info.layers}
+framebuffer::framebuffer(framebuffer_create_info&& info) :
+   m_dimensions(info.dimensions), m_layers(info.layers),
+   m_framebuffer(info.device.createFramebufferUnique(vk::FramebufferCreateInfo{
+      .renderPass = info.pass,
+      .attachmentCount = static_cast<mannele::u32>(std::size(info.attachments)),
+      .pAttachments = std::data(info.attachments),
+      .width = m_dimensions.width,
+      .height = m_dimensions.height,
+      .layers = m_layers}))
 {
-   const auto create_info =
-      vk::FramebufferCreateInfo{}
-         .setPNext(nullptr)
-         .setFlags({})
-         .setRenderPass(info.pass)
-         .setAttachmentCount(static_cast<std::uint32_t>(info.attachments.size()))
-         .setPAttachments(info.attachments.data())
-         .setWidth(m_width)
-         .setHeight(m_height)
-         .setLayers(m_layers);
-
-   m_framebuffer = info.device.createFramebufferUnique(create_info);
-
-   info.logger.info("Framebuffer of dimensions ({}, {}) with {} attachments created", m_width,
-                    m_height, std::size(info.attachments));
+   info.logger.info("Framebuffer of dimensions ({}, {}) with {} attachments created",
+                    m_dimensions.width, m_dimensions.height, std::size(info.attachments));
 }
 
 auto framebuffer::value() const -> vk::Framebuffer

@@ -17,7 +17,7 @@ struct render_pass_create_info
    reglisse::maybe<vk::AttachmentDescription> colour_attachment;
    reglisse::maybe<vk::AttachmentDescription> depth_stencil_attachment;
 
-   std::vector<framebuffer::create_info> framebuffer_create_infos{};
+   std::vector<framebuffer_create_info> framebuffer_create_infos{};
 
    util::log_ptr logger{nullptr};
 };

@@ -9,7 +9,9 @@ import intf_libs += glm%lib{glm}
 import intf_libs += gsl%lib{gsl}
 import intf_libs += Vulkan-Hpp%lib{Vulkan-Hpp}
 
+
 import impl_libs += spirv-cross-glsl%lib{spirv-cross-glsl}
+
 
 lib{cacao}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 

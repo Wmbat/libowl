@@ -2,14 +2,9 @@
 #define LIBCACAO_CONTEXT_HPP
 
 #include <libcacao/export.hpp>
+#include <libcacao/vulkan.hpp>
 
 #include <libutils/logger.hpp>
-
-#if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
-#   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-#endif
-
-#include <vulkan/vulkan.hpp>
 
 #include <span>
 #include <vector>

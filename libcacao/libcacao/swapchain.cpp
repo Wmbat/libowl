@@ -5,8 +5,8 @@
 #include <libreglisse/operations/transform_err.hpp>
 #include <libreglisse/try.hpp>
 
-#include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/transform.hpp>
 
 using namespace reglisse;
 using namespace mannele;
@@ -124,7 +124,7 @@ namespace cacao
          .compositeAlpha = info.composite_alpha_flags,
          .presentMode = present_mode,
          .clipped = info.should_clip,
-         .oldSwapchain = info.old_swapchain->value()};
+         .oldSwapchain = info.old_swapchain ? info.old_swapchain->value() : VK_NULL_HANDLE};
 
       m_swapchain = device.createSwapchainKHRUnique(create_info);
       m_images = device.getSwapchainImagesKHR(m_swapchain.get());
@@ -147,6 +147,9 @@ namespace cacao
                                   .baseArrayLayer = 0u,
                                   .layerCount = 1u}}));
       }
+
+      m_logger.info("Swapchain created with {} {}x{} images", std::size(m_images),
+                    info.desired_dimensions.width, info.desired_dimensions.height);
    }
 
    auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain.get(); }

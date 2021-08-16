@@ -4,8 +4,6 @@
 #include <libcacao/context.hpp>
 #include <libcacao/export.hpp>
 
-#include <vulkan/vulkan_raii.hpp>
-
 namespace cacao
 {
    class LIBCACAO_SYMEXPORT surface

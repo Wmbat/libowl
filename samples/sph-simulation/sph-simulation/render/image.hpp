@@ -25,11 +25,11 @@ class image
 public:
    image() = default;
    image(const image_create_info& info);
-   image(image_create_info&& info);
 
    [[nodiscard]] auto value() const noexcept -> vk::Image;
    [[nodiscard]] auto view() const noexcept -> vk::ImageView;
    [[nodiscard]] auto dimensions() const noexcept -> const mannele::dimension_u32&;
+   [[nodiscard]] auto subresource_layers() const -> vk::ImageSubresourceLayers;
 
 private:
    vk::UniqueImage m_image;
@@ -45,8 +45,11 @@ private:
    mannele::dimension_u32 m_dimensions{};
 };
 
-static constexpr std::array depth_formats = {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
+auto find_depth_format(const cacao::device& device) -> reglisse::maybe<vk::Format>;
+auto find_colour_format(const cacao::device& device) -> reglisse::maybe<vk::Format>;
+
+[[maybe_unused]] static constexpr std::array depth_formats = {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
                                              vk::Format::eD24UnormS8Uint};
-static constexpr std::array colour_formats = {vk::Format::eR8G8B8A8Srgb};
+[[maybe_unused]] static constexpr std::array colour_formats = {vk::Format::eR8G8B8A8Srgb};
 
 #endif // SPH_SIMULATION_RENDER_IMAGE_HPP

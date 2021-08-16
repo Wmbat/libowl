@@ -40,7 +40,7 @@ auto handle_err(Any&& result, util::log_ptr logger)
 template <std::ranges::input_range Range, typename Fun>
 auto parallel_for(Range&& range, Fun&& fun)
 {
-   return std::for_each(std::execution::par_unseq, std::begin(range), std::end(range),
+   return std::for_each(std::execution::par, std::begin(range), std::end(range),
                         std::forward<Fun>(fun));
 }
 

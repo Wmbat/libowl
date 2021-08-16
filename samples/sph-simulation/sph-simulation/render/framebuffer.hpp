@@ -2,49 +2,36 @@
 
 #include <sph-simulation/core.hpp>
 
-#include <vulkan/vulkan_raii.hpp>
+#include <libcacao/vulkan.hpp>
+
+#include <libmannele/dimension.hpp>
+
+/**
+ * @brief Data used for the creation of a framebuffer object.
+ */
+struct framebuffer_create_info
+{
+   vk::Device device{};
+   vk::RenderPass pass{};
+
+   std::vector<vk::ImageView> attachments{};
+
+   mannele::dimension_u32 dimensions;
+   mannele::u32 layers;
+
+   util::log_ptr logger;
+};
 
 class framebuffer
 {
 public:
-   /**
-    * @brief Data used for the creation of a framebuffer object.
-    */
-   struct create_info
-   {
-      vk::Device device{};
-      vk::RenderPass pass{};
+   framebuffer(framebuffer_create_info&& info);
 
-      std::vector<vk::ImageView> attachments{};
-
-      std::uint32_t width{};
-      std::uint32_t height{};
-      std::uint32_t layers{};
-
-      util::log_ptr logger;
-   };
-
-public:
-   /**
-    * @brief Creates a framebuffer object.
-    *
-    * @param info
-    *
-    * @throws If something failed during construction
-    */
-   framebuffer(create_info&& info);
-
-   /**
-    * @brief access the underlying vulkan handle
-    *
-    * @return The vulkan `vk::framebuffer` handle.
-    */
    auto value() const -> vk::Framebuffer; // NOLINT
 
 private:
-   vk::UniqueFramebuffer m_framebuffer;
+   mannele::dimension_u32 m_dimensions;
+   mannele::u32 m_layers;
 
-   std::uint32_t m_width;
-   std::uint32_t m_height;
-   std::uint32_t m_layers;
+   vk::UniqueFramebuffer m_framebuffer;
 };

@@ -35,12 +35,10 @@ inline auto load_obj(const std::filesystem::path& path) -> cacao::renderable_dat
    std::vector<tinyobj::shape_t> shapes;
    std::vector<tinyobj::material_t> materials;
 
-   std::string warn;
    std::string err;
-
-   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
+   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, path.c_str()))
    {
-      throw std::runtime_error(warn + err);
+      throw std::runtime_error(err);
    }
 
    std::unordered_map<cacao::vertex, std::uint32_t> unique_vertices{};

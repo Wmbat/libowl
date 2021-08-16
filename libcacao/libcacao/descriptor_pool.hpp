@@ -6,8 +6,6 @@
 
 #include <libutils/logger.hpp>
 
-#include <vulkan/vulkan_raii.hpp>
-
 namespace cacao
 {
    struct descriptor_pool_create_info

@@ -22,17 +22,16 @@ namespace cacao
    {
    public:
       vertex_buffer(const vertex_buffer_create_info& info);
-      vertex_buffer(vertex_buffer_create_info&& info);
 
-      [[nodiscard]] auto value() const noexcept -> const buffer&;
-      auto value() noexcept -> buffer&;
+      [[nodiscard]] auto buffer() const noexcept -> const cacao::buffer&;
+      auto buffer() noexcept -> cacao::buffer&;
 
       [[nodiscard]] auto vertex_count() const noexcept -> mannele::u64;
 
    private:
       mannele::u64 m_vertex_count;
 
-      buffer m_buffer;
+      cacao::buffer m_buffer;
 
       util::log_ptr m_logger;
    };

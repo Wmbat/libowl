@@ -39,7 +39,7 @@ namespace cacao
       auto operator*() const noexcept -> const vulkan::buffer&;
 
       auto value() noexcept -> vulkan::buffer&;
-      [[nodiscard]] auto value() const noexcept -> const vulkan::buffer&;
+      [[nodiscard]] auto buffer() const noexcept -> const vulkan::buffer&;
 
    private:
       vulkan::buffer m_buffer;

@@ -6,12 +6,13 @@ namespace cacao
    {
       const mannele::u64 size = sizeof(mannele::u32) * std::size(info.indices);
 
-      auto staging_buffer = buffer({.device = info.device,
-                                    .buffer_size = size,
-                                    .usage = vk::BufferUsageFlagBits::eTransferSrc,
-                                    .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
-                                       vk::MemoryPropertyFlagBits::eHostCoherent,
-                                    .logger = info.logger});
+      auto staging_buffer =
+         cacao::buffer({.device = info.device,
+                        .buffer_size = size,
+                        .usage = vk::BufferUsageFlagBits::eTransferSrc,
+                        .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
+                           vk::MemoryPropertyFlagBits::eHostCoherent,
+                        .logger = info.logger});
 
       {
          void* p_data = info.device.logical().mapMemory(staging_buffer.memory(), 0, size, {});
@@ -19,7 +20,7 @@ namespace cacao
          info.device.logical().unmapMemory(staging_buffer.memory());
       }
 
-      auto index_buffer = buffer(
+      auto index_buffer = cacao::buffer(
          {.device = info.device,
           .buffer_size = size,
           .usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
@@ -49,8 +50,8 @@ namespace cacao
                      m_index_count * sizeof(mannele::u32));
    }
 
-   auto index_buffer::value() const noexcept -> const buffer& { return m_buffer; }
-   auto index_buffer::value() noexcept -> buffer& { return m_buffer; }
+   auto index_buffer::buffer() const noexcept -> const cacao::buffer& { return m_buffer; }
+   auto index_buffer::buffer() noexcept -> cacao::buffer& { return m_buffer; }
 
    auto index_buffer::index_count() const noexcept -> mannele::u64 { return m_index_count; }
 } // namespace cacao

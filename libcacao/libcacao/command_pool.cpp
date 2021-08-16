@@ -2,7 +2,7 @@
 
 #include <libreglisse/try.hpp>
 
-#include <vulkan/vulkan_structs.hpp>
+#include <cassert>
 
 using namespace reglisse;
 
@@ -27,19 +27,29 @@ namespace cacao
       return std::error_condition({static_cast<int>(code), command_pool_category});
    }
 
+   auto allocate_buffers(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level,
+                         mannele::u32 count) -> std::vector<vk::CommandBuffer>
+   {
+      if (count > 0)
+      {
+         return device.allocateCommandBuffers(
+            {.commandPool = pool, .level = level, .commandBufferCount = count});
+      }
+
+      return {};
+   }
+
    command_pool::command_pool(const command_pool_create_info& info) :
       m_queue_index(info.queue_family_index
                        ? info.queue_family_index.borrow()
                        : info.device.get_queue_index(queue_flag_bits::graphics)),
       m_pool(info.device.logical().createCommandPoolUnique({.queueFamilyIndex = m_queue_index})),
-      m_primary_buffers(info.device.logical().allocateCommandBuffers(
-         {.commandPool = m_pool.get(),
-          .level = vk::CommandBufferLevel::ePrimary,
-          .commandBufferCount = info.primary_buffer_count})),
-      m_secondary_buffers(info.device.logical().allocateCommandBuffers(
-         {.commandPool = m_pool.get(),
-          .level = vk::CommandBufferLevel::eSecondary,
-          .commandBufferCount = info.secondary_buffer_count})),
+      m_primary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
+                                         vk::CommandBufferLevel::ePrimary,
+                                         info.primary_buffer_count)),
+      m_secondary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
+                                           vk::CommandBufferLevel::eSecondary,
+                                           info.secondary_buffer_count)),
       m_logger(info.logger)
    {
       m_logger.debug(
@@ -51,14 +61,12 @@ namespace cacao
                        ? info.queue_family_index.borrow()
                        : info.device.get_queue_index(queue_flag_bits::graphics)),
       m_pool(info.device.logical().createCommandPoolUnique({.queueFamilyIndex = m_queue_index})),
-      m_primary_buffers(info.device.logical().allocateCommandBuffers(
-         {.commandPool = m_pool.get(),
-          .level = vk::CommandBufferLevel::ePrimary,
-          .commandBufferCount = info.primary_buffer_count})),
-      m_secondary_buffers(info.device.logical().allocateCommandBuffers(
-         {.commandPool = m_pool.get(),
-          .level = vk::CommandBufferLevel::eSecondary,
-          .commandBufferCount = info.secondary_buffer_count})),
+      m_primary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
+                                         vk::CommandBufferLevel::ePrimary,
+                                         info.primary_buffer_count)),
+      m_secondary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
+                                           vk::CommandBufferLevel::eSecondary,
+                                           info.secondary_buffer_count)),
       m_logger(info.logger)
    {
       m_logger.debug(
@@ -88,6 +96,8 @@ namespace cacao
                                                              mannele::u32 count)
       -> std::vector<vk::UniqueCommandBuffer>
    {
+      assert(count != 0); // NOLINT
+
       return device.logical().allocateCommandBuffersUnique(
          {.commandPool = pool.value(), .level = to_vk_level(level), .commandBufferCount = count});
    }

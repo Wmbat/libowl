@@ -5,8 +5,6 @@
 
 #include <range/v3/range/conversion.hpp>
 
-#include <vulkan/vulkan_structs.hpp>
-
 #include <span>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
@@ -94,8 +92,8 @@ namespace cacao
                                                                          info)},
       m_debug_utils{create_debug_utils(info.logger)}, m_logger{info.logger}
    {
-      m_logger.info("[cacao] general context created.");
-      m_logger.info("[cacao] using vulkan version: {}.{}.{}.", VK_VERSION_MAJOR(m_api_version),
+      m_logger.debug("general vulkan context created.");
+      m_logger.debug("using vulkan version: {}.{}.{}.", VK_VERSION_MAJOR(m_api_version),
                     VK_VERSION_MINOR(m_api_version), VK_VERSION_PATCH(m_api_version));
    }
 
@@ -111,10 +109,11 @@ namespace cacao
    {
       vk::DynamicLoader loader{};
 
-      VULKAN_HPP_DEFAULT_DISPATCHER.init(
-         loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
+      auto vk_get_instance_proc_addr =
+         loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+      VULKAN_HPP_DEFAULT_DISPATCHER.init(vk_get_instance_proc_addr);
 
-      logger.info("[cacao] core functionalities loaded");
+      logger.debug("core vulkan functionalities loaded");
 
       return loader;
    }
@@ -170,12 +169,12 @@ namespace cacao
 
       for (const char* name : ext_names)
       {
-         logger.info("[cacao] instance extension: {}", name);
+         logger.debug("instance extension: {}", name);
       }
 
       for (const char* name : layer_names)
       {
-         logger.info("[cacao] instance layer: {}", name);
+         logger.debug("instance layer: {}", name);
       }
 
       const auto app_info = vk::ApplicationInfo{.apiVersion = m_api_version};
@@ -192,15 +191,16 @@ namespace cacao
    auto context::create_debug_utils(util::log_ptr logger) const -> vk::UniqueDebugUtilsMessengerEXT
    {
       return m_instance->createDebugUtilsMessengerEXTUnique(
-         vk::DebugUtilsMessengerCreateInfoEXT{}
-            .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-            .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
-            .setPfnUserCallback(debug_callback)
-            .setPUserData(static_cast<void*>(logger.get())));
+         vk::DebugUtilsMessengerCreateInfoEXT{
+            .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+               vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+               vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+            .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+               vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+               vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+            .pfnUserCallback = debug_callback,
+            .pUserData = static_cast<void*>(logger.get())},
+         nullptr, VULKAN_HPP_DEFAULT_DISPATCHER);
    }
 
    auto check_layer_support(std::span<const vk::LayerProperties> layers, std::string_view name)

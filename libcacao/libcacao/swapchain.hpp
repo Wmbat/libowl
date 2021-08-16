@@ -44,7 +44,6 @@ namespace cacao
    public:
       swapchain() = default;
       swapchain(const swapchain_create_info& info);
-      swapchain(swapchain_create_info&& info);
 
       [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
       [[nodiscard]] auto format() const noexcept -> vk::Format;

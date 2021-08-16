@@ -35,11 +35,11 @@ private:
 
    void setup_offscreen();
 
-   auto create_main_pipeline() -> pipeline_index_t;
-   auto create_offscreen_pipeline() -> pipeline_index_t;
+   auto create_main_pipeline() -> mannele::u64;
+   auto create_offscreen_pipeline() -> mannele::u64;
 
-   auto setup_onscreen_camera(pipeline_index_t index) -> camera;
-   auto setup_offscreen_camera(pipeline_index_t index) -> camera;
+   auto setup_onscreen_camera(mannele::u64 index) -> camera;
+   auto setup_offscreen_camera(mannele::u64 index) -> camera;
 
    auto compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices;
 
@@ -59,7 +59,7 @@ private:
 
    settings m_settings;
 
-   ui::window m_window;
+   cacao::window m_window;
 
    render_system m_render_system;
 
@@ -68,10 +68,10 @@ private:
    shader_registry m_shaders;
    pipeline_registry m_pipelines;
 
-   crl::dynamic_array<render_pass> m_render_passes;
+   std::vector<render_pass> m_render_passes;
 
-   pipeline_index_t m_main_pipeline_key{};
-   pipeline_index_t m_offscreen_pipeline_key{};
+   mannele::u64 m_main_pipeline_key{};
+   mannele::u64 m_offscreen_pipeline_key{};
 
    entt::registry m_registry;
 
@@ -81,14 +81,14 @@ private:
    sph::system m_sph_system;
    collision::system m_collision_system{};
 
-   crl::dynamic_array<particle> m_particles;
+   std::vector<particle> m_particles;
 
    std::string m_vert_shader_key{"resources/shaders/test_vert.spv"};
    std::string m_frag_shader_key{"resources/shaders/test_frag.spv"};
 
    offscreen m_offscreen;
 
-   crl::dynamic_array<std::uint8_t> m_image_pixels;
+   std::vector<mannele::u8> m_image_pixels;
    bool has_offscreen_render{false};
    std::future<void> m_image_write_fut;
 

@@ -92,11 +92,11 @@ namespace cacao
       const auto physical_properties = m_physical.getProperties();
 
       util::log_ptr logger = info.logger;
-      logger.info("[cacao] Physical device {} used", physical_properties.deviceName);
+      logger.info("GPU: {}", physical_properties.deviceName);
 
       for (const auto& queue : m_queues)
       {
-         logger.info("[cacao] Device queue supporting {} created.", to_string(queue.type));
+         logger.debug("Device queue supporting {} created.", to_string(queue.type));
       }
    }
 
@@ -219,7 +219,7 @@ namespace cacao
 
       for (const char* name : extensions)
       {
-         logger.info("[cacao] Device extension: {0}", name);
+         logger.debug("Device extension: {0}", name);
       }
 
       return m_physical.createDeviceUnique(

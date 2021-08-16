@@ -25,15 +25,15 @@ namespace cacao
    public:
       index_buffer(const index_buffer_create_info& info);
 
-      [[nodiscard]] auto value() const noexcept -> const buffer&;
-      auto value() noexcept -> buffer&;
+      [[nodiscard]] auto buffer() const noexcept -> const cacao::buffer&;
+      auto buffer() noexcept -> cacao::buffer&;
 
       [[nodiscard]] auto index_count() const noexcept -> mannele::u64;
 
    private:
       mannele::u64 m_index_count;
 
-      buffer m_buffer;
+      cacao::buffer m_buffer;
 
       util::log_ptr m_logger;
    };

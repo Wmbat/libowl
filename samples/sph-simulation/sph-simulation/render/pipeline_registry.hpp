@@ -10,18 +10,14 @@ enum struct pipeline_registry_error
    pipeline_not_found
 };
 
-auto to_string(pipeline_registry_error err) -> std::string;
-auto to_err_code(pipeline_registry_error err) -> util::error_t;
-
-using pipeline_index_t =
-   cacao::strong_type<std::size_t, struct pipeline_index_tag, cacao::arithmetic>;
+auto make_error_condition(pipeline_registry_error err) -> std::error_condition;
 
 class pipeline_registry
 {
    using graphics_map = std::unordered_map<std::size_t, graphics_pipeline>;
 
 public:
-   using key_type = pipeline_index_t;
+   using key_type = mannele::u64;
    using value_type = graphics_pipeline;
 
    class lookup_v
@@ -62,16 +58,17 @@ public:
    };
 
 public:
-   pipeline_registry(util::logger_wrapper logger);
+   pipeline_registry(util::log_ptr logger);
 
-   auto insert(graphics_pipeline_create_info&& info) -> result<insert_kv>;
-   auto lookup(const key_type& key) -> result<lookup_v>;
-   auto remove(const key_type& key) -> result<remove_v>;
+   auto insert(graphics_pipeline_create_info&& info)
+      -> reglisse::result<insert_kv, pipeline_registry_error>;
+   auto lookup(const key_type& key) -> reglisse::result<lookup_v, pipeline_registry_error>;
+   auto remove(const key_type& key) -> reglisse::result<remove_v, pipeline_registry_error>;
 
 private:
    graphics_map m_graphics_pipelines;
 
-   util::logger_wrapper m_logger;
+   util::log_ptr m_logger;
 
-   std::size_t id_counter{0};
+   mannele::u64 id_counter{0};
 };

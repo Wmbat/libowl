@@ -2,8 +2,7 @@
 
 using namespace reglisse;
 
-auto to_format_feature_flags(const vk::ImageUsageFlags& flags) noexcept
-   -> vk::FormatFeatureFlagBits
+auto to_format_feature_flags(const vk::ImageUsageFlags& flags) noexcept -> vk::FormatFeatureFlagBits
 {
    if ((flags & vk::ImageUsageFlagBits::eColorAttachment) ==
        vk::ImageUsageFlagBits::eColorAttachment)
@@ -122,4 +121,21 @@ auto image::dimensions() const noexcept -> const mannele::dimension_u32&
 {
    return m_dimensions;
 }
+auto image::subresource_layers() const -> vk::ImageSubresourceLayers
+{
+   return {.aspectMask = m_subresource_range.aspectMask,
+           .mipLevel = m_subresource_range.baseMipLevel,
+           .baseArrayLayer = m_subresource_range.baseArrayLayer,
+           .layerCount = m_subresource_range.layerCount};
+};
 
+auto find_depth_format(const cacao::device& device) -> reglisse::maybe<vk::Format>
+{
+   return find_supported_formats(depth_formats, vk::ImageTiling::eOptimal,
+                                 vk::FormatFeatureFlagBits::eDepthStencilAttachment, device);
+}
+auto find_colour_format(const cacao::device& device) -> reglisse::maybe<vk::Format>
+{
+   return find_supported_formats(colour_formats, vk::ImageTiling::eOptimal,
+                                 vk::FormatFeatureFlagBits::eColorAttachment, device);
+}

@@ -106,8 +106,8 @@ namespace cacao
    auto vertex_buffer::operator->() const noexcept -> const vulkan::buffer* { return &m_buffer; }
 
    auto vertex_buffer::operator*() noexcept -> vulkan::buffer& { return value(); }
-   auto vertex_buffer::operator*() const noexcept -> const vulkan::buffer& { return value(); }
+   auto vertex_buffer::operator*() const noexcept -> const vulkan::buffer& { return buffer(); }
 
    auto vertex_buffer::value() noexcept -> vulkan::buffer& { return m_buffer; }
-   auto vertex_buffer::value() const noexcept -> const vulkan::buffer& { return m_buffer; }
+   auto vertex_buffer::buffer() const noexcept -> const vulkan::buffer& { return m_buffer; }
 } // namespace cacao

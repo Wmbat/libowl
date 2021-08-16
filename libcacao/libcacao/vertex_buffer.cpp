@@ -6,7 +6,7 @@ namespace cacao
    {
       const mannele::u64 size = sizeof(vertex) * std::size(info.vertices);
 
-      auto staging_buffer = buffer({.device = info.device,
+      auto staging_buffer = cacao::buffer({.device = info.device,
                                     .buffer_size = size,
                                     .usage = vk::BufferUsageFlagBits::eTransferSrc,
                                     .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
@@ -19,7 +19,7 @@ namespace cacao
          info.device.logical().unmapMemory(staging_buffer.memory());
       }
 
-      auto vertex_buffer = buffer(
+      auto vertex_buffer = cacao::buffer(
          {.device = info.device,
           .buffer_size = size,
           .usage = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
@@ -49,8 +49,8 @@ namespace cacao
                      m_vertex_count * sizeof(vertex));
    }
 
-   auto vertex_buffer::value() const noexcept -> const buffer& { return m_buffer; }
-   auto vertex_buffer::value() noexcept -> buffer& { return m_buffer; }
+   auto vertex_buffer::buffer() const noexcept -> const cacao::buffer& { return m_buffer; }
+   auto vertex_buffer::buffer() noexcept -> cacao::buffer& { return m_buffer; }
 
    auto vertex_buffer::vertex_count() const noexcept -> mannele::u64 { return m_vertex_count; }
 } // namespace cacao

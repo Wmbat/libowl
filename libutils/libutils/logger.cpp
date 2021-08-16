@@ -51,11 +51,7 @@ namespace util
       file_sink->set_level(spdlog::level::trace);
 
       log = spdlog::logger(std::string{name}, {console_sink, file_sink});
-#if defined(CACAO_DEBUG_LOGGING)
       log.set_level(spdlog::level::trace);
-#else
-      log.set_level(spdlog::level::info);
-#endif
    }
 
    void logger::debug(const std::string& msg) { log.debug(msg); }

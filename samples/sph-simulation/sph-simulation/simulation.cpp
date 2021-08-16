@@ -21,27 +21,28 @@
 namespace chrono = std::chrono;
 namespace vi = ranges::views;
 
+using namespace reglisse;
+
 struct mesh_data
 {
    glm::mat4 model;
    glm::vec3 colour;
 };
 
-auto get_main_framebuffers(const render_system& system, util::logger_wrapper logger)
-   -> crl::dynamic_array<framebuffer::create_info>
+auto get_main_framebuffers(const render_system& system, util::log_ptr logger)
+   -> std::vector<framebuffer_create_info>
 {
-   crl::dynamic_array<framebuffer::create_info> infos;
+   std::vector<framebuffer_create_info> infos;
 
    const auto swap_extent = system.swapchain().extent();
    for (auto& image_view : system.swapchain().image_views())
    {
-      infos.append(
-         framebuffer::create_info{.device = system.device().logical(),
-                                  .attachments = {image_view.get(), system.get_depth_attachment()},
-                                  .width = swap_extent.width,
-                                  .height = swap_extent.height,
-                                  .layers = 1,
-                                  .logger = logger});
+      infos.push_back(
+         framebuffer_create_info{.device = system.device().logical(),
+                                 .attachments = {image_view, system.get_depth_attachment()},
+                                 .dimensions = {swap_extent.width, swap_extent.height},
+                                 .layers = 1,
+                                 .logger = logger});
    }
 
    return infos;
@@ -61,9 +62,9 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
 
 auto offscreen_colour_attachment(cacao::device& device) -> vk::AttachmentDescription
 {
-   if (auto res = cacao::find_colour_format(device))
+   if (auto res = find_colour_format(device))
    {
-      return {.format = res.value(),
+      return {.format = res.borrow(),
               .samples = vk::SampleCountFlagBits::e1,
               .loadOp = vk::AttachmentLoadOp::eClear,
               .storeOp = vk::AttachmentStoreOp::eStore,
@@ -78,9 +79,9 @@ auto offscreen_colour_attachment(cacao::device& device) -> vk::AttachmentDescrip
 
 auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
 {
-   if (auto val = cacao::find_depth_format(device))
+   if (auto val = find_depth_format(device))
    {
-      return {.format = val.value(),
+      return {.format = val.borrow(),
               .samples = vk::SampleCountFlagBits::e1,
               .loadOp = vk::AttachmentLoadOp::eClear,
               .storeOp = vk::AttachmentStoreOp::eDontCare,
@@ -94,24 +95,24 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
 }
 
 simulation::simulation(const settings& settings) :
-   m_logger{"fluid_simulation"}, m_settings{settings}, m_window{"Fluid Simulation", 1080, 720},
-   m_render_system{check_err(render_system::make({.logger = &m_logger, .p_window = &m_window}))},
-   m_shaders{m_render_system, &m_logger}, m_pipelines{&m_logger}, m_main_pipeline_key{},
-   m_sphere{create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))},
-   m_box{create_renderable(m_render_system, load_obj("resources/meshes/box.obj"))}
+   m_logger("fluid_simulation"), m_settings(settings), m_window({"Fluid Simulation", {1080, 720}}),
+   m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
+   m_pipelines(&m_logger),
+   m_sphere(create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))),
+   m_box(create_renderable(m_render_system, load_obj("resources/meshes/box.obj")))
 {
    m_image_pixels.resize(sizeof(glm::u8vec4) * image_height * image_width);
 
-   check_err(m_shaders.insert(m_vert_shader_key, vkn::shader_type::vertex));
-   check_err(m_shaders.insert(m_frag_shader_key, vkn::shader_type::fragment));
+   m_shaders.insert(m_vert_shader_key, cacao::shader_type::vertex);
+   m_shaders.insert(m_frag_shader_key, cacao::shader_type::fragment);
 
-   m_render_passes.append(render_pass{
-      {.device = m_render_system.device().logical(),
-       .swapchain = m_render_system.swapchain().value(),
-       .colour_attachment = main_colour_attachment(m_render_system.swapchain().format()),
-       .depth_stencil_attachment = main_depth_attachment(m_render_system.device()),
-       .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
-       .logger = &m_logger}});
+   m_render_passes.emplace_back(render_pass_create_info{
+      .device = m_render_system.device().logical(),
+      .swapchain = m_render_system.swapchain().value(),
+      .colour_attachment = some(main_colour_attachment(m_render_system.swapchain().format())),
+      .depth_stencil_attachment = some(main_depth_attachment(m_render_system.device())),
+      .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
+      .logger = &m_logger});
 
    m_main_pipeline_key = create_main_pipeline();
 
@@ -234,8 +235,8 @@ void simulation::render()
 
    if (has_offscreen_render)
    {
-      m_render_system.device().logical().waitForFences({m_offscreen.in_flight_fence.get()}, true,
-                                                       std::numeric_limits<std::uint64_t>::max());
+      [[maybe_unused]] auto _ = m_render_system.device().logical().waitForFences(
+         {m_offscreen.in_flight_fence.get()}, true, std::numeric_limits<std::uint64_t>::max());
 
       const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
       m_image_write_fut = std::async(&simulation::write_image_to_disk, this, filename);
@@ -273,21 +274,21 @@ void simulation::onscreen_render()
 
    {
       auto extent = m_render_system.swapchain().extent();
-      m_camera.update(image_index.value(), compute_matrices(extent.width, extent.height));
+      m_camera.update(image_index, compute_matrices(extent.width, extent.height));
    }
 
-   m_render_passes.lookup(0).record_render_calls([&](vk::CommandBuffer buffer) {
-      auto& pipeline = check_err(m_pipelines.lookup(m_main_pipeline_key)).value();
+   m_render_passes.at(0).record_render_calls([&](vk::CommandBuffer buffer) {
+      auto& pipeline = m_pipelines.lookup(m_main_pipeline_key).borrow().value();
 
       buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
 
       buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
-                                {m_camera.lookup_set(image_index.value())}, {});
+                                {m_camera.lookup_set(image_index)}, {});
 
       auto view = m_registry.view<component::render, component::transform>();
 
-      buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
-      buffer.bindIndexBuffer(m_box.m_index_buffer->get(), 0, vk::IndexType::eUint32);
+      buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
+      buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
       for (auto entity : view | vi::filter([&](auto e) {
                             return view.get<component::render>(e).p_mesh == &m_box;
@@ -307,8 +308,8 @@ void simulation::onscreen_render()
                             0);
       }
 
-      buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
-      buffer.bindIndexBuffer(m_sphere.m_index_buffer->get(), 0, vk::IndexType::eUint32);
+      buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
+      buffer.bindIndexBuffer(m_sphere.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
       for (auto& particle : m_sph_system.particles())
       {
@@ -345,12 +346,12 @@ void simulation::offscreen_render()
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
    clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
 
-   for (auto cmd : m_offscreen.command_pool.primary_cmd_buffers())
+   for (auto cmd : m_offscreen.command_pool.primary_buffers())
    {
       cmd.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
 
       m_offscreen.pass.record_render_calls([&](vk::CommandBuffer buffer) {
-         auto& pipeline = check_err(m_pipelines.lookup(m_offscreen_pipeline_key)).value();
+         auto& pipeline = m_pipelines.lookup(m_offscreen_pipeline_key).borrow().value();
 
          buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
 
@@ -359,8 +360,8 @@ void simulation::offscreen_render()
 
          auto view = m_registry.view<component::render, component::transform>();
 
-         buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_box.m_index_buffer->get(), 0, vk::IndexType::eUint32);
+         buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
          for (auto entity : view | vi::filter([&](auto e) {
                                return view.get<component::render>(e).p_mesh == &m_box;
@@ -380,8 +381,10 @@ void simulation::offscreen_render()
                                0, 0);
          }
 
-         buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer->get()}, {vk::DeviceSize{0}});
-         buffer.bindIndexBuffer(m_sphere.m_index_buffer->get(), 0, vk::IndexType::eUint32);
+         buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer.buffer().value()},
+                                  {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(m_sphere.m_index_buffer.buffer().value(), 0,
+                                vk::IndexType::eUint32);
 
          for (auto& particle : m_sph_system.particles())
          {
@@ -403,15 +406,14 @@ void simulation::offscreen_render()
       });
 
       m_offscreen.pass.submit_render_calls(
-         cmd, cacao::index_t{0}, {.extent = {.width = image_width, .height = image_height}},
-         clear_values);
+         cmd, 0, {.extent = {.width = image_width, .height = image_height}}, clear_values);
 
       cmd.end();
    }
 
    const std::array wait_semaphores{m_offscreen.image_available_semaphore.get()};
    const std::array signal_semaphores{m_offscreen.render_finished_semaphore.get()};
-   const std::array command_buffers{m_offscreen.command_pool.primary_cmd_buffers().lookup(0)};
+   const std::array command_buffers{m_offscreen.command_pool.primary_buffers()[0]};
    const std::array<vk::PipelineStageFlags, 1> wait_stages{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -443,8 +445,10 @@ void simulation::offscreen_render()
       std::terminate();
    }
 
-   auto buffer = check_err(m_offscreen.command_pool.create_primary_buffer());
-   buffer->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+   auto buffers = cacao::create_standalone_command_buffers(
+      m_render_system.device(), m_offscreen.command_pool, cacao::command_buffer_level::primary, 1u);
+
+   buffers[0]->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
    std::array copy_regions{vk::BufferImageCopy{
       .bufferOffset = 0,
@@ -454,14 +458,14 @@ void simulation::offscreen_render()
       .imageOffset = {.x = 0, .y = 0, .z = 0},
       .imageExtent = {.width = image_width, .height = image_height, .depth = 1}}};
 
-   buffer->copyImageToBuffer(m_offscreen.colour.value(), vk::ImageLayout::eTransferSrcOptimal,
-                             m_offscreen.image_buffer.get(), std::size(copy_regions),
+   buffers[0]->copyImageToBuffer(m_offscreen.colour.value(), vk::ImageLayout::eTransferSrcOptimal,
+                             m_offscreen.image_buffer.value(), std::size(copy_regions),
                              std::data(copy_regions));
-   buffer->end();
+   buffers[0]->end();
 
    try
    {
-      const std::array copy_command_buffers{buffer.get()};
+      const std::array copy_command_buffers{buffers[0].get()};
       const std::array<vk::PipelineStageFlags, 1> copy_wait_stages{
          vk::PipelineStageFlagBits::eTransfer};
 
@@ -489,43 +493,41 @@ void simulation::setup_offscreen()
 {
    auto& device = m_render_system.device();
 
-   m_offscreen.colour = {
-      {.logger = &m_logger,
-       .device = device,
-       .formats = {std::begin(cacao::colour_formats), std::end(cacao::colour_formats)},
+   m_offscreen.colour = image(
+      {.device = device,
+       .formats = {std::begin(colour_formats), std::end(colour_formats)},
        .tiling = vk::ImageTiling::eOptimal,
        .usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
        .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
-       .width = image_width,
-       .height = image_height}};
-   m_offscreen.depth = {
-      {.logger = &m_logger,
-       .device = device,
-       .formats = {std::begin(cacao::depth_formats), std::end(cacao::depth_formats)},
-       .tiling = vk::ImageTiling::eOptimal,
-       .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
-       .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
-       .width = image_width,
-       .height = image_height}};
+       .dimensions = {image_width, image_height},
+       .logger = &m_logger});
+
+   m_offscreen.depth = image({.device = device,
+                              .formats = {std::begin(depth_formats), std::end(depth_formats)},
+                              .tiling = vk::ImageTiling::eOptimal,
+                              .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                              .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+                              .dimensions = {image_width, image_height},
+                              .logger = &m_logger});
+
    m_offscreen.pass =
-      render_pass{{.device = device.logical(),
-                   .colour_attachment = offscreen_colour_attachment(device),
-                   .depth_stencil_attachment = main_depth_attachment(device),
-                   .framebuffer_create_infos = {framebuffer::create_info{
+      render_pass({.device = device.logical(),
+                   .colour_attachment = some(offscreen_colour_attachment(device)),
+                   .depth_stencil_attachment = some(main_depth_attachment(device)),
+                   .framebuffer_create_infos = {framebuffer_create_info{
                       .device = device.logical(),
                       .attachments = {m_offscreen.colour.view(), m_offscreen.depth.view()},
-                      .width = image_width,
-                      .height = image_height,
+                      .dimensions = {image_width, image_height},
                       .layers = 1,
                       .logger = &m_logger}},
-                   .logger = &m_logger}};
+                   .logger = &m_logger});
    m_offscreen_pipeline_key = create_offscreen_pipeline();
    m_offscreen.cam = setup_offscreen_camera(m_offscreen_pipeline_key);
-   m_offscreen.command_pool = check_err(
-      vkn::command_pool::builder{device, &m_logger}
-         .set_queue_family_index(device.get_queue(cacao::queue_flag_bits::graphics).family_index)
-         .set_primary_buffer_count(1U)
-         .build());
+   m_offscreen.command_pool = cacao::command_pool(cacao::command_pool_create_info{
+      .device = device,
+      .queue_family_index = some(device.get_queue(cacao::queue_flag_bits::graphics).family_index),
+      .primary_buffer_count = 1u,
+      .logger = &m_logger});
    m_offscreen.in_flight_fence = m_render_system.device().logical().createFenceUnique(
       vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
    m_offscreen.render_finished_semaphore =
@@ -533,12 +535,12 @@ void simulation::setup_offscreen()
    m_offscreen.image_available_semaphore =
       m_render_system.device().logical().createSemaphoreUnique({});
    m_offscreen.image_buffer =
-      cacao::vulkan::buffer{{.device = device,
-                             .buffer_size = sizeof(glm::u8vec4) * image_width * image_height,
-                             .usage = vk::BufferUsageFlagBits::eTransferDst,
-                             .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
-                                vk::MemoryPropertyFlagBits::eHostCoherent,
-                             .logger = &m_logger}};
+      cacao::buffer({.device = device,
+                     .buffer_size = sizeof(glm::u8vec4) * image_width * image_height,
+                     .usage = vk::BufferUsageFlagBits::eTransferDst,
+                     .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
+                        vk::MemoryPropertyFlagBits::eHostCoherent,
+                     .logger = &m_logger});
 }
 
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
@@ -560,10 +562,12 @@ void simulation::add_box(const glm::vec3& position, const glm::vec3& dimensions,
       component::transform{.translate = glm::translate(glm::mat4{1}, position),
                            .scale = glm::scale(glm::mat4{1}, dimensions)});
 }
-auto simulation::create_main_pipeline() -> pipeline_index_t
+auto simulation::create_main_pipeline() -> mannele::u64
 {
-   auto vert_shader_info = check_err(m_shaders.lookup(m_vert_shader_key));
-   auto frag_shader_info = check_err(m_shaders.lookup(m_frag_shader_key));
+   // TODO: Actually handle errors
+
+   auto vert_shader_info = m_shaders.lookup(m_vert_shader_key).borrow();
+   auto frag_shader_info = m_shaders.lookup(m_frag_shader_key).borrow();
 
    const pipeline_shader_data vertex_shader_data{
       .p_shader = &vert_shader_info.value(),
@@ -575,31 +579,33 @@ auto simulation::create_main_pipeline() -> pipeline_index_t
 
    const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
 
-   crl::dynamic_array<vk::Viewport> pipeline_viewports;
-   pipeline_viewports.append(m_render_system.viewport());
+   std::vector<vk::Viewport> pipeline_viewports;
+   pipeline_viewports.push_back(m_render_system.viewport());
 
-   crl::dynamic_array<vk::Rect2D> pipeline_scissors;
-   pipeline_scissors.append(m_render_system.scissor());
+   std::vector<vk::Rect2D> pipeline_scissors;
+   pipeline_scissors.push_back(m_render_system.scissor());
 
-   crl::dynamic_array<pipeline_shader_data> pipeline_shader_data;
-   pipeline_shader_data.append(vertex_shader_data);
-   pipeline_shader_data.append(fragment_shader_data);
+   std::vector<pipeline_shader_data> pipeline_shader_data;
+   pipeline_shader_data.push_back(vertex_shader_data);
+   pipeline_shader_data.push_back(fragment_shader_data);
 
-   auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
-                                             .pass = m_render_passes.lookup(0),
-                                             .logger = &m_logger,
-                                             .bindings = m_render_system.vertex_bindings(),
-                                             .attributes = m_render_system.vertex_attributes(),
-                                             .viewports = pipeline_viewports,
-                                             .scissors = pipeline_scissors,
-                                             .shader_infos = pipeline_shader_data}));
+   auto info = m_pipelines.insert({.device = m_render_system.device(),
+                                   .pass = m_render_passes.at(0),
+                                   .logger = &m_logger,
+                                   .bindings = m_render_system.vertex_bindings(),
+                                   .attributes = m_render_system.vertex_attributes(),
+                                   .viewports = pipeline_viewports,
+                                   .scissors = pipeline_scissors,
+                                   .shader_infos = pipeline_shader_data});
 
-   return info.key();
+   return info.borrow().key();
 }
-auto simulation::create_offscreen_pipeline() -> pipeline_index_t
+auto simulation::create_offscreen_pipeline() -> mannele::u64
 {
-   auto vert_shader_info = check_err(m_shaders.lookup(m_vert_shader_key));
-   auto frag_shader_info = check_err(m_shaders.lookup(m_frag_shader_key));
+   // TODO: Handle errors
+
+   auto vert_shader_info = m_shaders.lookup(m_vert_shader_key).borrow();
+   auto frag_shader_info = m_shaders.lookup(m_frag_shader_key).borrow();
 
    const pipeline_shader_data vertex_shader_data{
       .p_shader = &vert_shader_info.value(),
@@ -611,42 +617,44 @@ auto simulation::create_offscreen_pipeline() -> pipeline_index_t
 
    const pipeline_shader_data fragment_shader_data{.p_shader = &frag_shader_info.value()};
 
-   crl::dynamic_array<vk::Viewport> pipeline_viewports;
-   pipeline_viewports.append(vk::Viewport{.x = 0.0F,
-                                          .y = 0.0F,
-                                          .width = static_cast<float>(image_width),
-                                          .height = static_cast<float>(image_height),
-                                          .minDepth = 0.0F,
-                                          .maxDepth = 1.0F});
+   std::vector<vk::Viewport> pipeline_viewports;
+   pipeline_viewports.push_back(vk::Viewport{.x = 0.0F,
+                                             .y = 0.0F,
+                                             .width = static_cast<float>(image_width),
+                                             .height = static_cast<float>(image_height),
+                                             .minDepth = 0.0F,
+                                             .maxDepth = 1.0F});
 
-   crl::dynamic_array<vk::Rect2D> pipeline_scissors;
-   pipeline_scissors.append(vk::Rect2D{.offset = {0, 0}, .extent = {image_width, image_height}});
+   std::vector<vk::Rect2D> pipeline_scissors;
+   pipeline_scissors.push_back(vk::Rect2D{.offset = {0, 0}, .extent = {image_width, image_height}});
 
-   crl::dynamic_array<pipeline_shader_data> pipeline_shader_data;
-   pipeline_shader_data.append(vertex_shader_data);
-   pipeline_shader_data.append(fragment_shader_data);
+   std::vector<pipeline_shader_data> pipeline_shader_data;
+   pipeline_shader_data.push_back(vertex_shader_data);
+   pipeline_shader_data.push_back(fragment_shader_data);
 
-   auto info = check_err(m_pipelines.insert({.device = m_render_system.device(),
-                                             .pass = m_offscreen.pass,
-                                             .logger = &m_logger,
-                                             .bindings = m_render_system.vertex_bindings(),
-                                             .attributes = m_render_system.vertex_attributes(),
-                                             .viewports = pipeline_viewports,
-                                             .scissors = pipeline_scissors,
-                                             .shader_infos = pipeline_shader_data}));
+   auto info = m_pipelines
+                  .insert({.device = m_render_system.device(),
+                           .pass = m_offscreen.pass,
+                           .logger = &m_logger,
+                           .bindings = m_render_system.vertex_bindings(),
+                           .attributes = m_render_system.vertex_attributes(),
+                           .viewports = pipeline_viewports,
+                           .scissors = pipeline_scissors,
+                           .shader_infos = pipeline_shader_data})
+                  .borrow();
 
    return info.key();
 }
 
-auto simulation::setup_onscreen_camera(pipeline_index_t index) -> camera
+auto simulation::setup_onscreen_camera(mannele::u64 index) -> camera
 {
-   auto pipeline_info = check_err(m_pipelines.lookup(index));
+   auto pipeline_info = m_pipelines.lookup(index).borrow();
 
    return create_camera(m_render_system, pipeline_info.value(), &m_logger);
 }
-auto simulation::setup_offscreen_camera(pipeline_index_t index) -> camera
+auto simulation::setup_offscreen_camera(mannele::u64 index) -> camera
 {
-   auto pipeline_info = check_err(m_pipelines.lookup(index));
+   auto pipeline_info = m_pipelines.lookup(index).borrow();
 
    return create_offscreen_camera(m_render_system, pipeline_info.value(), &m_logger);
 }
