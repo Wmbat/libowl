@@ -25,7 +25,7 @@ namespace cacao
    {
       if (value == queue_flag_bits::none)
       {
-         return "{none}";
+         return "{ none }";
       }
 
       std::string result;
@@ -39,7 +39,7 @@ namespace cacao
       if (value & queue_flag_bits::transfer)
          result += "transfer | ";
 
-      return "{" + result.substr(0, result.size() - 3) + "}";
+      return "{ " + result.substr(0, result.size() - 3) + " }";
    }
 
    namespace detail

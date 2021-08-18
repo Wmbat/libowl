@@ -45,7 +45,7 @@ namespace cacao
    vertex_buffer::vertex_buffer(const vertex_buffer_create_info& info) :
       m_vertex_count(std::size(info.vertices)), m_buffer(create_buffer(info)), m_logger(info.logger)
    {
-      m_logger.debug("Index buffer containing {} indices ({} bytes) created", m_vertex_count,
+      m_logger.debug("Vertex buffer containing {} vertices ({} bytes) created", m_vertex_count,
                      m_vertex_count * sizeof(vertex));
    }
 

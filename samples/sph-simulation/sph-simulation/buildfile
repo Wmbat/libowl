@@ -10,6 +10,13 @@ import libs += tinyobjloader%lib{tinyobjloader}
 tbb = libtbb%lib{tbb}
 
 exe{sph-simulation}: {hxx ixx txx cxx}{**} $libs $tbb
+exe{sph-simulation}: resources/file{**}
 
 cxx.poptions =+ "-I$out_root" "-I$src_root"
 cxx.poptions += -DVULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+
+resources/file{**}:
+{
+    install = "$install.bin/resources/"
+    install.subdirs = true
+}

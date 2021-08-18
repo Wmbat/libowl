@@ -148,7 +148,7 @@ namespace cacao
                                   .layerCount = 1u}}));
       }
 
-      m_logger.info("Swapchain created with {} {}x{} images", std::size(m_images),
+      m_logger.debug("Swapchain created with {} {}x{} images", std::size(m_images),
                     info.desired_dimensions.width, info.desired_dimensions.height);
    }
 

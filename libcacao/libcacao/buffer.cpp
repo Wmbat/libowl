@@ -39,7 +39,7 @@ namespace cacao
 
       logical.bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
 
-      m_logger.info("Buffer created");
+      m_logger.debug("Buffer created with usage: {}", vk::to_string(info.usage));
    }
    buffer::buffer(buffer_create_info&& info) :
       m_buffer(create_buffer(info.device.logical(), info)),
@@ -50,7 +50,7 @@ namespace cacao
 
       logical.bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
 
-      m_logger.info("Buffer created");
+      m_logger.debug("Buffer created with usage: {}", vk::to_string(info.usage));
    }
 
    auto buffer::value() const noexcept -> vk::Buffer { return m_buffer.get(); }
