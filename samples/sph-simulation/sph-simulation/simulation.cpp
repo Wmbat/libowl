@@ -35,11 +35,11 @@ auto get_main_framebuffers(const render_system& system, util::log_ptr logger)
    std::vector<framebuffer_create_info> infos;
 
    const auto swap_extent = system.swapchain().extent();
-   for (auto& image_view : system.swapchain().image_views())
+   for (const auto& image_view : system.swapchain().image_views())
    {
       infos.push_back(
          framebuffer_create_info{.device = system.device().logical(),
-                                 .attachments = {image_view, system.get_depth_attachment()},
+                                 .attachments = {image_view.get(), system.get_depth_attachment()},
                                  .dimensions = {swap_extent.width, swap_extent.height},
                                  .layers = 1,
                                  .logger = logger});
@@ -98,8 +98,8 @@ simulation::simulation(const settings& settings) :
    m_logger("fluid_simulation"), m_settings(settings), m_window({"Fluid Simulation", {1080, 720}}),
    m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
    m_pipelines(&m_logger),
-   m_sphere(create_renderable(m_render_system, load_obj("resources/meshes/sphere.obj"))),
-   m_box(create_renderable(m_render_system, load_obj("resources/meshes/box.obj")))
+   m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
+   m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/box.obj")))
 {
    m_image_pixels.resize(sizeof(glm::u8vec4) * image_height * image_width);
 

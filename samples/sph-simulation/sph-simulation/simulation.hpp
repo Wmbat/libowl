@@ -83,8 +83,8 @@ private:
 
    std::vector<particle> m_particles;
 
-   std::string m_vert_shader_key{"resources/shaders/test_vert.spv"};
-   std::string m_frag_shader_key{"resources/shaders/test_frag.spv"};
+   std::string m_vert_shader_key{"shaders/test_vert.spv"};
+   std::string m_frag_shader_key{"shaders/test_frag.spv"};
 
    offscreen m_offscreen;
 

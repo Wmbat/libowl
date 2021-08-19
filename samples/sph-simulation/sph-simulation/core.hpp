@@ -21,21 +21,10 @@ using namespace std::literals::chrono_literals;
 
 using filepath = std::filesystem::path;
 
+inline static const auto asset_default_dir = filepath("../assets/"); // NOLINT
+
 template <typename Any, typename Ratio = std::ratio<1>>
 using duration = std::chrono::duration<Any, Ratio>;
-
-template <typename Any>
-auto handle_err(Any&& result, util::log_ptr logger)
-{
-   if (auto err = result.error())
-   {
-      logger.error("{} error: {}", err->value().category().name(), err->value().message());
-
-      std::exit(EXIT_FAILURE);
-   }
-
-   return std::forward<Any>(result).value().value();
-}
 
 template <std::ranges::input_range Range, typename Fun>
 auto parallel_for(Range&& range, Fun&& fun)

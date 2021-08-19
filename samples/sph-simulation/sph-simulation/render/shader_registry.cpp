@@ -18,7 +18,7 @@ auto shader_registry::insert(const filepath& path, cacao::shader_type type)
 {
    using file_it = std::istreambuf_iterator<char>;
 
-   std::ifstream file{path, std::ios::binary};
+   std::ifstream file{asset_default_dir / path, std::ios::binary};
    if (!file.is_open())
    {
       return err(shader_registry_error::failed_to_open_file);
