@@ -9,7 +9,6 @@ struct sim_variables
    float surface_tension_coefficient;
    float gravity_multiplier;
    float kernel_multiplier;
-   float scale_factor;
 
    float water_radius;
    float water_mass;

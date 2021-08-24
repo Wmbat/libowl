@@ -21,7 +21,7 @@ namespace sph
          glm::vec3 center;
          glm::vec3 dimensions;
 
-         sim_variables variables;
+         settings variables;
       };
 
    public:
@@ -71,7 +71,7 @@ namespace sph
 
       util::log_ptr m_logger{};
 
-      sim_variables m_variables;
+      settings m_variables;
 
       float m_kernel_radius{};
 

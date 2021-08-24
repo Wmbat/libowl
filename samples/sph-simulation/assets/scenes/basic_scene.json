@@ -7,14 +7,13 @@
       },
       "frame_count": 600,
       "time_step": 1,
-      "constants": {
+      "variables": {
          "gas_contant": 2000.0,
          "rest_density": 1000.0,
          "viscosity_constant": 300.0,
          "surface_tension_coefficient": 0.5,
          "gravity_multiplier": 1.0,
          "kernel_multiplier": 5.0,
-         "scale_factor": 0.25,
          "water_radius": 0.20
       }
    }

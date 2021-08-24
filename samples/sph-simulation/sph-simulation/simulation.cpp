@@ -95,7 +95,7 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-simulation::simulation(const scene_data& scene) :
+simulation::simulation(const settings& scene) :
    m_logger("fluid_simulation"), m_scene(scene), m_window({"Fluid Simulation", {1080, 720}}),
    m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
    m_pipelines(&m_logger),
@@ -130,12 +130,12 @@ simulation::simulation(const scene_data& scene) :
                          half(y_edges.x - y_edges.y),  // NOLINT
                          half(z_edges.x - z_edges.y)}; // NOLINT
 
-      float h = compute_kernel_radius(m_scene.variables);
+      float h = m_scene.kernel_radius();
       m_sph_system = sph::system{{.p_registry = util::make_non_null(&m_registry),
                                   .p_logger = util::make_non_null(&m_logger),
                                   .center = halfs,
                                   .dimensions = halfs + h,
-                                  .variables = m_scene.variables}};
+                                  .variables = m_scene}};
 
       m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry),
                                               .p_sph_system = util::make_non_null(&m_sph_system)}};
@@ -147,9 +147,9 @@ simulation::simulation(const scene_data& scene) :
 
    m_particles.reserve(x_count * y_count * z_count);
 
-   float distance_x = m_scene.variables.water_radius * 1.20f; // NOLINT
-   float distance_y = m_scene.variables.water_radius * 1.20f; // NOLINT
-   float distance_z = m_scene.variables.water_radius * 1.20f; // NOLINT
+   float distance_x = m_scene.water_radius * 1.20f; // NOLINT
+   float distance_y = m_scene.water_radius * 1.20f; // NOLINT
+   float distance_z = m_scene.water_radius * 1.20f; // NOLINT
 
    for (auto i : vi::iota(0U, x_count))
    {
@@ -164,8 +164,8 @@ simulation::simulation(const scene_data& scene) :
             const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
             m_sph_system.emit({.position = {x, y, z},
-                               .radius = m_scene.variables.water_radius,
-                               .mass = m_scene.variables.water_mass});
+                               .radius = m_scene.water_radius,
+                               .mass = m_scene.water_mass});
          }
       }
    }
@@ -183,10 +183,10 @@ simulation::simulation(const scene_data& scene) :
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
       "{}\n\t-> kernel radius = {}\n\t-> rest density = {}\n\t-> viscosity constant = {}\n\t-> "
       "surface tension coefficient = {}\n\t-> time step = {}ms",
-      std::size(m_sph_system.particles()), m_scene.variables.water_mass,
-      m_scene.variables.water_radius, compute_kernel_radius(m_scene.variables),
-      m_scene.variables.rest_density, m_scene.variables.viscosity_constant,
-      m_scene.variables.surface_tension_coefficient, m_scene.time_step.count());
+      std::size(m_sph_system.particles()), m_scene.water_mass,
+      m_scene.water_radius, m_scene.kernel_radius(),
+      m_scene.rest_density, m_scene.viscosity_constant,
+      m_scene.surface_tension_coefficient, m_scene.time_step.count());
 
    std::filesystem::remove_all("frames");
    std::filesystem::create_directory("frames");
@@ -315,7 +315,7 @@ void simulation::onscreen_render()
 
       for (auto& particle : m_sph_system.particles())
       {
-         auto scale = glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.variables.scale_factor);
+         auto scale = glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.scale_factor);
          auto translate = glm::translate(glm::mat4{1}, particle.position);
 
          glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
@@ -390,7 +390,7 @@ void simulation::offscreen_render()
          for (auto& particle : m_sph_system.particles())
          {
             auto scale =
-               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.variables.scale_factor);
+               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.scale_factor);
             auto translate = glm::translate(glm::mat4{1}, particle.position);
 
             glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT

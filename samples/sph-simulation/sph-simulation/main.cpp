@@ -1,6 +1,6 @@
 #include <sph-simulation/simulation.hpp>
 
-#include <sph-simulation/scene_parser.hpp>
+#include <sph-simulation/sim_config_parser.hpp>
 
 #include <libutils/logger.hpp>
 
@@ -32,11 +32,11 @@ auto main(int argc, char** argv) -> int
       return EXIT_FAILURE;
    }
 
-   if (auto config = parse_scene_json(arguments[0]))
+   if (auto config = parse_sim_config_json(arguments[0]))
    {
       glfwInit();
 
-      auto sim = simulation(config.borrow());
+      auto sim = simulation(settings{});
       sim.run();
    }
    else

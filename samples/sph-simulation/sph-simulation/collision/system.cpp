@@ -30,13 +30,15 @@ namespace collision
    }
 
    system::system(create_info&& info) :
-      mp_registry{info.p_registry.get()},
-      mp_system{info.p_sph_system.get()}
+      mp_registry{info.p_registry.get()}, mp_system{info.p_sph_system.get()}
    {}
 
-   void system::update(duration<float> time_step) { resolve_particle_to_box_collision(time_step); }
+   void system::update(std::chrono::duration<float, std::milli> time_step)
+   {
+      resolve_particle_to_box_collision(time_step);
+   }
 
-   void system::resolve_particle_to_box_collision(duration<float> time_step)
+   void system::resolve_particle_to_box_collision(std::chrono::duration<float, std::milli> time_step)
    {
       /*
       auto view = mp_registry->view<sph::component::particle>();

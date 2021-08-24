@@ -48,10 +48,10 @@ namespace collision
       system() = default;
       system(create_info&& info);
 
-      void update(duration<float> time_step);
+      void update(std::chrono::duration<float, std::milli> time_step);
 
    private:
-      void resolve_particle_to_box_collision(duration<float> time_step);
+      void resolve_particle_to_box_collision(std::chrono::duration<float, std::milli> time_step);
 
    private:
       entt::registry* mp_registry;
