@@ -1,0 +1,7 @@
+project = libmannele
+
+using version
+using config
+using test
+using install
+using dist
