@@ -4,6 +4,7 @@
 #include <sph-simulation/components.hpp>
 #include <sph-simulation/physics/kernel.hpp>
 #include <sph-simulation/render/camera.hpp>
+#include <sph-simulation/sim_variables.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
@@ -94,8 +95,8 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-simulation::simulation(const settings& settings) :
-   m_logger("fluid_simulation"), m_settings(settings), m_window({"Fluid Simulation", {1080, 720}}),
+simulation::simulation(const scene_data& scene) :
+   m_logger("fluid_simulation"), m_scene(scene), m_window({"Fluid Simulation", {1080, 720}}),
    m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
    m_pipelines(&m_logger),
    m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
@@ -106,13 +107,13 @@ simulation::simulation(const settings& settings) :
    m_shaders.insert(m_vert_shader_key, cacao::shader_type::vertex);
    m_shaders.insert(m_frag_shader_key, cacao::shader_type::fragment);
 
-   m_render_passes.emplace_back(render_pass_create_info{
-      .device = m_render_system.device().logical(),
-      .swapchain = m_render_system.swapchain().value(),
-      .colour_attachment = some(main_colour_attachment(m_render_system.swapchain().format())),
-      .depth_stencil_attachment = some(main_depth_attachment(m_render_system.device())),
-      .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
-      .logger = &m_logger});
+   m_render_passes.push_back(render_pass(
+      {.device = m_render_system.device().logical(),
+       .swapchain = m_render_system.swapchain().value(),
+       .colour_attachment = some(main_colour_attachment(m_render_system.swapchain().format())),
+       .depth_stencil_attachment = some(main_depth_attachment(m_render_system.device())),
+       .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
+       .logger = &m_logger}));
 
    m_main_pipeline_key = create_main_pipeline();
 
@@ -129,12 +130,12 @@ simulation::simulation(const settings& settings) :
                          half(y_edges.x - y_edges.y),  // NOLINT
                          half(z_edges.x - z_edges.y)}; // NOLINT
 
-      float h = m_settings.kernel_radius();
+      float h = compute_kernel_radius(m_scene.variables);
       m_sph_system = sph::system{{.p_registry = util::make_non_null(&m_registry),
                                   .p_logger = util::make_non_null(&m_logger),
                                   .center = halfs,
                                   .dimensions = halfs + h,
-                                  .system_settings = settings}};
+                                  .variables = m_scene.variables}};
 
       m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry),
                                               .p_sph_system = util::make_non_null(&m_sph_system)}};
@@ -146,9 +147,9 @@ simulation::simulation(const settings& settings) :
 
    m_particles.reserve(x_count * y_count * z_count);
 
-   float distance_x = settings.water_radius * 1.20f; // NOLINT
-   float distance_y = settings.water_radius * 1.20f; // NOLINT
-   float distance_z = settings.water_radius * 1.20f; // NOLINT
+   float distance_x = m_scene.variables.water_radius * 1.20f; // NOLINT
+   float distance_y = m_scene.variables.water_radius * 1.20f; // NOLINT
+   float distance_z = m_scene.variables.water_radius * 1.20f; // NOLINT
 
    for (auto i : vi::iota(0U, x_count))
    {
@@ -163,8 +164,8 @@ simulation::simulation(const settings& settings) :
             const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
             m_sph_system.emit({.position = {x, y, z},
-                               .radius = m_settings.water_radius,
-                               .mass = m_settings.water_mass});
+                               .radius = m_scene.variables.water_radius,
+                               .mass = m_scene.variables.water_mass});
          }
       }
    }
@@ -182,9 +183,10 @@ simulation::simulation(const settings& settings) :
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
       "{}\n\t-> kernel radius = {}\n\t-> rest density = {}\n\t-> viscosity constant = {}\n\t-> "
       "surface tension coefficient = {}\n\t-> time step = {}ms",
-      std::size(m_sph_system.particles()), m_settings.water_mass, m_settings.water_radius,
-      m_settings.kernel_radius(), m_settings.rest_density, m_settings.viscosity_constant,
-      m_settings.surface_tension_coefficient, m_settings.time_step.count());
+      std::size(m_sph_system.particles()), m_scene.variables.water_mass,
+      m_scene.variables.water_radius, compute_kernel_radius(m_scene.variables),
+      m_scene.variables.rest_density, m_scene.variables.viscosity_constant,
+      m_scene.variables.surface_tension_coefficient, m_scene.time_step.count());
 
    std::filesystem::remove_all("frames");
    std::filesystem::create_directory("frames");
@@ -202,7 +204,7 @@ void simulation::run()
       update();
       render();
 
-      if (m_frame_count.value() >= max_frames)
+      if (m_frame_count >= max_frames)
       {
          m_logger.info("Render finished!");
 
@@ -217,7 +219,7 @@ void simulation::run()
          m_logger.debug("frametime = {}", delta_time.count());
       }
 
-      m_time_spent += m_settings.time_step;
+      m_time_spent += m_scene.time_step;
    }
 
    m_render_system.wait();
@@ -225,8 +227,8 @@ void simulation::run()
 
 void simulation::update()
 {
-   m_sph_system.update(m_settings.time_step);
-   m_collision_system.update(m_settings.time_step);
+   m_sph_system.update(m_scene.time_step);
+   m_collision_system.update(m_scene.time_step);
 }
 void simulation::render()
 {
@@ -238,7 +240,7 @@ void simulation::render()
       [[maybe_unused]] auto _ = m_render_system.device().logical().waitForFences(
          {m_offscreen.in_flight_fence.get()}, true, std::numeric_limits<std::uint64_t>::max());
 
-      const std::string filename = "frames/frame_" + std::to_string(m_frame_count.value()) + ".png";
+      const std::string filename = "frames/frame_" + std::to_string(m_frame_count) + ".png";
       m_image_write_fut = std::async(&simulation::write_image_to_disk, this, filename);
 
       has_offscreen_render = false;
@@ -250,14 +252,14 @@ void simulation::render()
    {
       has_offscreen_render = true;
 
-      if (m_frame_count.value() != 0)
+      if (m_frame_count != 0)
       {
          m_image_write_fut.get();
       }
 
-      m_logger.info(
-         "Render status {:0>6.2f}%",
-         100.0f * (static_cast<float>(m_frame_count.value()) / static_cast<float>(max_frames - 1)));
+      m_logger.info("Render status {:0>6.2f}%",
+                    100.0f *
+                       (static_cast<float>(m_frame_count) / static_cast<float>(max_frames - 1)));
 
       offscreen_render();
 
@@ -313,8 +315,7 @@ void simulation::onscreen_render()
 
       for (auto& particle : m_sph_system.particles())
       {
-         auto scale =
-            glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
+         auto scale = glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.variables.scale_factor);
          auto translate = glm::translate(glm::mat4{1}, particle.position);
 
          glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
@@ -340,7 +341,7 @@ void simulation::offscreen_render()
 
    device.logical().resetCommandPool(m_offscreen.command_pool.value(), {});
 
-   m_offscreen.cam.update(cacao::index_t{0u}, compute_matrices(image_width, image_height));
+   m_offscreen.cam.update(0u, compute_matrices(image_width, image_height));
 
    std::array<vk::ClearValue, 2> clear_values{};
    clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
@@ -389,7 +390,7 @@ void simulation::offscreen_render()
          for (auto& particle : m_sph_system.particles())
          {
             auto scale =
-               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_settings.scale_factor);
+               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.variables.scale_factor);
             auto translate = glm::translate(glm::mat4{1}, particle.position);
 
             glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
@@ -422,9 +423,9 @@ void simulation::offscreen_render()
    try
    {
       std::uint32_t wait_semaphore_count =
-         m_frame_count.value() == 0 ? 0 : static_cast<std::uint32_t>(std::size(wait_semaphores));
+         m_frame_count == 0 ? 0 : static_cast<std::uint32_t>(std::size(wait_semaphores));
       const vk::Semaphore* p_wait_semaphores =
-         m_frame_count.value() == 0 ? nullptr : std::data(wait_semaphores);
+         m_frame_count == 0 ? nullptr : std::data(wait_semaphores);
 
       const std::array render_submit_infos{
          vk::SubmitInfo{.waitSemaphoreCount = wait_semaphore_count,
@@ -459,8 +460,8 @@ void simulation::offscreen_render()
       .imageExtent = {.width = image_width, .height = image_height, .depth = 1}}};
 
    buffers[0]->copyImageToBuffer(m_offscreen.colour.value(), vk::ImageLayout::eTransferSrcOptimal,
-                             m_offscreen.image_buffer.value(), std::size(copy_regions),
-                             std::data(copy_regions));
+                                 m_offscreen.image_buffer.value(), std::size(copy_regions),
+                                 std::data(copy_regions));
    buffers[0]->end();
 
    try

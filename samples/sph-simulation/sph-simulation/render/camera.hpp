@@ -28,9 +28,9 @@ public:
    camera() = default;
    camera(const camera_create_info& info);
 
-   void update(cacao::index_t image_index, const matrices& matrices);
+   void update(mannele::u64 image_index, const matrices& matrices);
 
-   auto lookup_set(cacao::index_t image_index) -> vk::DescriptorSet;
+   auto lookup_set(mannele::u64 image_index) -> vk::DescriptorSet;
 
 private:
    std::vector<cacao::buffer> m_uniform_buffers;

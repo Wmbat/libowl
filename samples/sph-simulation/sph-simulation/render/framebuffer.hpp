@@ -25,6 +25,8 @@ struct framebuffer_create_info
 class framebuffer
 {
 public:
+   framebuffer() = default;
+   framebuffer(const framebuffer_create_info& info);
    framebuffer(framebuffer_create_info&& info);
 
    auto value() const -> vk::Framebuffer; // NOLINT

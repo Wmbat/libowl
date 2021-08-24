@@ -11,6 +11,7 @@ namespace cacao
             .setBindingCount(static_cast<std::uint32_t>(std::size(m_bindings)))
             .setPBindings(std::data(m_bindings)))}
    {
+      /*
       std::string msg = "Descriptor set layout created with:";
 
       msg += "\n\tbindings = {";
@@ -30,6 +31,7 @@ namespace cacao
       msg += "\n\t}";
 
       info.logger.info(fmt::runtime(msg));
+      */
    }
 
    auto descriptor_set_layout::value() const -> vk::DescriptorSetLayout

@@ -101,7 +101,7 @@ auto render_pass::create_framebuffers(const render_pass_create_info& info)
       auto& pass = framebuffer_infos.at(i);
       pass.pass = m_render_pass.get();
 
-      framebuffers.emplace_back(std::move(pass));
+      framebuffers.emplace_back(pass);
    }
 
    return framebuffers;

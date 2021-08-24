@@ -100,8 +100,11 @@ render_system::render_system(util::non_null<cacao::window*> p_window, util::log_
       create_render_finished_semaphores(m_device, std::size(m_swapchain.image_views()))),
    m_render_command_pools(create_render_command_pools(m_device, m_logger)),
    m_image_available_semaphores(create_image_available_semaphores(m_device)),
-   m_in_flight_fences(create_in_flight_fences(m_device))
-{}
+   m_in_flight_fences(create_in_flight_fences(m_device)),
+   m_depth_image(create_depth_buffer(m_logger, m_device, m_swapchain.extent()))
+{
+   m_images_in_flight.resize(std::size(m_swapchain.images()));
+}
 
 auto render_system::begin_frame() -> mannele::u32
 {

@@ -29,11 +29,13 @@ auto create_uniform_buffers(const camera_create_info& info) -> std::vector<cacao
 
 camera::camera(const camera_create_info& info) :
    m_uniform_buffers(create_uniform_buffers(info)),
-   m_descriptor_pool({.device = info.renderer.device(),
-                      .pool_sizes = {{.type = vk::DescriptorType::eUniformBuffer,
-                                      .descriptorCount = info.image_count}},
-                      .layouts = {info.pipeline.get_descriptor_set_layout("camera_layout").value()},
-                      .logger = info.logger})
+   m_descriptor_pool(
+      {.device = info.renderer.device(),
+       .pool_sizes = {{.type = vk::DescriptorType::eUniformBuffer,
+                       .descriptorCount = info.image_count}},
+       .layouts = std::vector(info.image_count, info.pipeline.get_descriptor_set_layout("camera_layout").value()),
+       .logger = info.logger}),
+   m_device(info.renderer.device().logical())
 {
    for (std::size_t i = 0; auto set : m_descriptor_pool.sets())
    {
@@ -53,19 +55,20 @@ camera::camera(const camera_create_info& info) :
    }
 }
 
-auto camera::lookup_set(cacao::index_t image_index) -> vk::DescriptorSet
+auto camera::lookup_set(mannele::u64 image_index) -> vk::DescriptorSet
 {
-   return m_descriptor_pool.sets()[image_index.value()];
+   return m_descriptor_pool.sets()[image_index];
 }
 
-void camera::update(cacao::index_t image_index, const matrices& matrices)
+void camera::update(mannele::u64 image_index, const matrices& matrices)
 {
    constexpr auto size = sizeof(matrices);
 
-   void* p_data =
-      m_device.mapMemory(m_uniform_buffers.at(image_index.value()).memory(), 0, size, {});
+   auto memory = m_uniform_buffers.at(image_index).memory();
+
+   void* p_data = m_device.mapMemory(memory, 0, size, {});
    memcpy(p_data, &matrices, size);
-   m_device.unmapMemory(m_uniform_buffers.at(image_index.value()).memory());
+   m_device.unmapMemory(m_uniform_buffers.at(image_index).memory());
 }
 
 auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log_ptr logger)

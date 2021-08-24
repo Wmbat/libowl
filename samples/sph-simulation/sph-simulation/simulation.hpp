@@ -11,6 +11,7 @@
 #include <sph-simulation/render/render_system.hpp>
 #include <sph-simulation/render/renderable.hpp>
 #include <sph-simulation/render/shader_registry.hpp>
+#include <sph-simulation/scene_parser.hpp>
 #include <sph-simulation/sph/system.hpp>
 
 #include <libcacao/window.hpp>
@@ -22,7 +23,7 @@
 class simulation
 {
 public:
-   simulation(const settings& settings);
+   simulation(const scene_data& scene);
 
    void run();
 
@@ -57,7 +58,7 @@ private:
 private:
    util::logger m_logger;
 
-   settings m_settings;
+   scene_data m_scene;
 
    cacao::window m_window;
 
@@ -97,5 +98,5 @@ private:
    duration<float, std::milli> m_time_per_frame = 16ms;
    duration<float, std::milli> m_time_spent = 0ms;
 
-   cacao::count64_t m_frame_count = 0;
+   mannele::u64 m_frame_count = 0;
 };

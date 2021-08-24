@@ -51,7 +51,7 @@ namespace cacao
       [[nodiscard]] auto images() const noexcept -> std::span<const vk::Image>;
 
       // TODO: BAD
-      [[nodiscard]] auto image_views() const noexcept -> std::vector<vk::ImageView>; 
+      [[nodiscard]] auto image_views() const noexcept -> std::span<const vk::UniqueImageView>; 
 
    private:
       vk::UniqueSwapchainKHR m_swapchain;

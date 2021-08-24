@@ -1,7 +1,6 @@
 #include <libcacao/device.hpp>
 
 #include <libcacao/error.hpp>
-#include <libcacao/util/assert.hpp>
 
 #include <libreglisse/operations/or_else.hpp>
 #include <libreglisse/try.hpp>

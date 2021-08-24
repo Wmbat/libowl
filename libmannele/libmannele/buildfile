@@ -1,6 +1,8 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
-#import xxxx_libs += libhello%lib{hello}
+
+import intf_libs += libreglisse%lib{reglisse}
+import intf_libs += magic_enum%lib{magic_enum}
 
 lib{mannele}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 

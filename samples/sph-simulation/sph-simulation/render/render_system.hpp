@@ -7,7 +7,6 @@
 #include <libcacao/context.hpp>
 #include <libcacao/index_buffer.hpp>
 #include <libcacao/swapchain.hpp>
-#include <libcacao/util/strong_type.hpp>
 #include <libcacao/vertex_buffer.hpp>
 #include <libcacao/window.hpp>
 

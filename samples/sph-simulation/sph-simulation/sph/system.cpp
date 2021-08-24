@@ -13,9 +13,9 @@
 namespace sph
 {
    system::system(create_info&& info) :
-      mp_registry{info.p_registry.get()}, m_logger{info.p_logger}, m_settings{info.system_settings},
-      m_kernel_radius{m_settings.kernel_radius()}, m_grid{m_settings.kernel_radius(),
-                                                          info.dimensions, info.p_logger}
+      mp_registry{info.p_registry.get()}, m_logger{info.p_logger}, m_variables{info.variables},
+      m_kernel_radius{compute_kernel_radius(m_variables)}, m_grid{m_kernel_radius, info.dimensions,
+                                                                  info.p_logger}
    {}
 
    void system::emit(particle&& particle) { m_particles.push_back(particle); }
@@ -53,7 +53,7 @@ namespace sph
 
             particle_i->density = density * kernel::poly6_constant(m_kernel_radius);
 
-            float ratio = particle_i->density / m_settings.rest_density;
+            float ratio = particle_i->density / m_variables.rest_density;
             particle_i->pressure = ratio < 1.0f ? 0.0f : std::pow(ratio, 7.0f) - 1.0f;
          });
       });
@@ -88,7 +88,7 @@ namespace sph
 
    void system::compute_forces()
    {
-      const glm::vec3 gravity_vector{0.0f, gravity * m_settings.gravity_multiplier, 0.0f};
+      const glm::vec3 gravity_vector{0.0f, gravity * m_variables.gravity_multiplier, 0.0f};
 
       parallel_for(m_grid.cells(), [&](auto& cell) {
          const auto neighbours = m_grid.lookup_neighbours(cell.grid_pos);
@@ -123,7 +123,7 @@ namespace sph
                         ((particle_j->velocity - particle_i->velocity) / particle_j->density) *
                         kernel::viscosity(m_kernel_radius, r);
 
-                     const float correction_factor = (2.0f * m_settings.rest_density) /
+                     const float correction_factor = (2.0f * m_variables.rest_density) /
                         (particle_i->density + particle_j->density);
 
                      cohesion_force += ((particle_i->position - particle_j->position) / r) *
@@ -137,11 +137,11 @@ namespace sph
             gravity_force += gravity_vector * particle_i->density;
             pressure_force *= kernel::spiky_constant(m_kernel_radius);
             viscosity_force *=
-               m_settings.viscosity_constant * kernel::viscosity_constant(m_kernel_radius);
+               m_variables.viscosity_constant * kernel::viscosity_constant(m_kernel_radius);
 
-            cohesion_force *= -m_settings.surface_tension_coefficient *
+            cohesion_force *= -m_variables.surface_tension_coefficient *
                kernel::cohesion_constant(m_kernel_radius) * square(particle_i->mass);
-            curvature_force *= -m_settings.surface_tension_coefficient;
+            curvature_force *= -m_variables.surface_tension_coefficient;
 
             particle_i->force =
                viscosity_force + pressure_force + cohesion_force + curvature_force + gravity_force;

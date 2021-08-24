@@ -83,8 +83,9 @@ namespace cacao
       m_inputs = extract_shader_input_ids(glsl, resources);
       m_uniforms = extract_uniform_buffer_ids(glsl, resources);
 
-      const auto create_info = vk::ShaderModuleCreateInfo{.codeSize = std::size(info.binary),
-                                                          .pCode = std::data(info.binary)};
+      const auto create_info =
+         vk::ShaderModuleCreateInfo{.codeSize = std::size(info.binary) * sizeof(mannele::u32),
+                                    .pCode = std::data(info.binary)};
 
       m_module = info.device.logical().createShaderModuleUnique(create_info);
    }

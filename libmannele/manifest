@@ -7,7 +7,9 @@ license: other: proprietary ; Not free/open source.
 description-file: README.md
 url: https://example.org/vermillon
 email: wmbat@protonmail.com
-#build-error-email: wmbat@protonmail.com
+
 depends: * build2 >= 0.13.0
 depends: * bpkg >= 0.13.0
-#depends: libhello ^1.0.0
+
+depends: libreglisse >= 0.1.2
+depends: magic_enum >= 0.7.3

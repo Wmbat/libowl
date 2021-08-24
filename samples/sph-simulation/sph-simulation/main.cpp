@@ -1,16 +1,48 @@
 #include <sph-simulation/simulation.hpp>
 
+#include <sph-simulation/scene_parser.hpp>
+
+#include <libutils/logger.hpp>
+
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/span.hpp>
+#include <range/v3/view/tail.hpp>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-auto main() -> int
+#include <cstdlib>
+
+auto main(int argc, char** argv) -> int
 {
-   settings settings;
+   // clang-format off
+   const std::vector arguments = ranges::span<char*>{argv, argc} 
+      | ranges::views::tail
+      | ranges::to<std::vector<std::string_view>>;
+   // clang-format on
 
-   glfwInit();
+   auto logger = util::logger("sph-simulation");
 
-   auto sim = simulation(settings);
-   sim.run();
+   if (arguments.empty())
+   {
+      logger.error(
+         "No command line arguments provided. Please provide path to scene settings (.json)");
+      logger.error("Exiting...");
 
-   return 0;
+      return EXIT_FAILURE;
+   }
+
+   if (auto config = parse_scene_json(arguments[0]))
+   {
+      glfwInit();
+
+      auto sim = simulation(config.borrow());
+      sim.run();
+   }
+   else
+   {
+      return EXIT_FAILURE;
+   }
+
+   return EXIT_SUCCESS;
 }

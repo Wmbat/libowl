@@ -71,6 +71,8 @@ graphics_pipeline::graphics_pipeline(graphics_pipeline_create_info&& info) :
    m_pipeline = create_pipeline(info.device, info.shader_infos, info.bindings, info.attributes,
                                 info.viewports, info.scissors, info.logger);
 
+   info.logger.debug("graphics pipeline cleated");
+   /*
    std::string msg = "Graphics pipeline created with:";
 
    msg += "\n\tset layouts = { ";
@@ -98,6 +100,7 @@ graphics_pipeline::graphics_pipeline(graphics_pipeline_create_info&& info) :
    msg += " }";
 
    info.logger.info(fmt::runtime(msg));
+   */
 }
 
 auto graphics_pipeline::value() const noexcept -> vk::Pipeline
@@ -131,8 +134,8 @@ auto graphics_pipeline::populate_push_constants(std::span<const pipeline_shader_
          ranges.insert_or_assign(
             push.name,
             vk::PushConstantRange{.stageFlags = cacao::to_shader_flag(info.p_shader->type()),
-                                  .offset = static_cast<uint32_t>(push.offset.value()),
-                                  .size = static_cast<uint32_t>(push.size.value())});
+                                  .offset = static_cast<uint32_t>(push.offset),
+                                  .size = static_cast<uint32_t>(push.size)});
       }
    }
 
@@ -152,9 +155,9 @@ auto graphics_pipeline::create_descriptor_set_layouts(
          auto bindings =
             set_info.bindings | ranges::views::transform([&](set_layout_binding binding) {
                vk::DescriptorSetLayoutBinding result;
-               result.binding = static_cast<std::uint32_t>(binding.binding.value());
+               result.binding = static_cast<std::uint32_t>(binding.binding);
                result.descriptorType = binding.descriptor_type;
-               result.descriptorCount = binding.descriptor_count.value();
+               result.descriptorCount = binding.descriptor_count;
                result.stageFlags = detail::to_shader_stage_flag(shader_info.p_shader->type());
 
                return result;
@@ -212,7 +215,7 @@ auto graphics_pipeline::create_pipeline(const cacao::device& device,
    std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_info{};
    shader_stage_info.reserve(std::size(shader_infos));
 
-   cacao::index_t vertex_shader_index{std::numeric_limits<std::size_t>::max()};
+   mannele::u64 vertex_shader_index{std::numeric_limits<std::size_t>::max()};
    for (std::uint32_t index = 0; const auto& info : shader_infos)
    {
       shader_stage_info.push_back(vk::PipelineShaderStageCreateInfo{}
@@ -231,7 +234,7 @@ auto graphics_pipeline::create_pipeline(const cacao::device& device,
       ++index;
    }
 
-   const auto* p_vertex_shader = shader_infos[vertex_shader_index.value()].p_shader;
+   const auto* p_vertex_shader = shader_infos[vertex_shader_index].p_shader;
    if (!detail::check_vertex_attribute_support(p_vertex_shader, attributes, logger))
    {
       // TODO: ERROR

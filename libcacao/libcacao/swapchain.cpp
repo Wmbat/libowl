@@ -156,12 +156,9 @@ namespace cacao
    auto swapchain::format() const noexcept -> vk::Format { return m_format; }
    auto swapchain::extent() const noexcept -> const vk::Extent2D& { return m_extent; }
    auto swapchain::images() const noexcept -> std::span<const vk::Image> { return m_images; }
-   auto swapchain::image_views() const noexcept -> std::vector<vk::ImageView>
+   auto swapchain::image_views() const noexcept -> std::span<const vk::UniqueImageView>
    {
-      return m_image_views | ranges::views::transform([](const vk::UniqueImageView& view) {
-                return view.get();
-             }) |
-         ranges::to_vector;
+      return m_image_views;
    }
 
    auto get_surface_capabilities(const device& device, const surface& surface)

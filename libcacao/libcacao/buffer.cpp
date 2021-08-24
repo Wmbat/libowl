@@ -25,7 +25,7 @@ namespace cacao
 
    inline static const buffer_error_category buffer_category{};
 
-   auto LIBCACAO_SYMEXPORT make_error_condition(buffer_error code) -> std::error_condition
+   auto make_error_condition(buffer_error code) -> std::error_condition
    {
       return std::error_condition({static_cast<int>(code), buffer_category});
    }

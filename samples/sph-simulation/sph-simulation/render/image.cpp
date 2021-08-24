@@ -60,9 +60,30 @@ auto find_memory_type(uint32_t type_filter, const vk::MemoryPropertyFlags& prope
    return none;
 }
 
+auto to_image_aspect_flag(const vk::ImageUsageFlags& flags) noexcept -> vk::ImageAspectFlagBits
+{
+   if ((flags & vk::ImageUsageFlagBits::eColorAttachment) ==
+       vk::ImageUsageFlagBits::eColorAttachment)
+   {
+      return vk::ImageAspectFlagBits::eColor;
+   }
+
+   if ((flags & vk::ImageUsageFlagBits::eDepthStencilAttachment) ==
+       vk::ImageUsageFlagBits::eDepthStencilAttachment)
+   {
+      return vk::ImageAspectFlagBits::eDepth;
+   }
+
+   return {};
+}
+
 image::image(const image_create_info& info) :
-   m_tiling(info.tiling), m_usage(info.usage), m_memory_properties(info.memory_properties),
-   m_dimensions(info.dimensions)
+   m_tiling(info.tiling), m_subresource_range{.aspectMask = to_image_aspect_flag(info.usage),
+                                              .baseMipLevel = 0,
+                                              .levelCount = 1,
+                                              .baseArrayLayer = 0,
+                                              .layerCount = 1},
+   m_usage(info.usage), m_memory_properties(info.memory_properties), m_dimensions(info.dimensions)
 {
    const auto logical = info.device.logical();
    const auto physical = info.device.physical();

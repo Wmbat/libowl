@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
+#include <sph-simulation/sim_variables.hpp>
 #include <sph-simulation/sph/grid.hpp>
 
 namespace sph
@@ -20,7 +21,7 @@ namespace sph
          glm::vec3 center;
          glm::vec3 dimensions;
 
-         settings system_settings;
+         sim_variables variables;
       };
 
    public:
@@ -70,7 +71,7 @@ namespace sph
 
       util::log_ptr m_logger{};
 
-      settings m_settings;
+      sim_variables m_variables;
 
       float m_kernel_radius{};
 

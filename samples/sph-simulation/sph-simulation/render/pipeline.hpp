@@ -5,7 +5,6 @@
 
 #include <libcacao/descriptor_set_layout.hpp>
 #include <libcacao/shader.hpp>
-#include <libcacao/util/strong_type.hpp>
 
 using vertex_bindings_array = std::vector<vk::VertexInputBindingDescription>;
 using vertex_attributes_array = std::vector<vk::VertexInputAttributeDescription>;
@@ -26,9 +25,9 @@ enum struct graphics_pipeline_error
 
 struct set_layout_binding
 {
-   cacao::index_t binding{};
+   mannele::u32 binding{};
    vk::DescriptorType descriptor_type{};
-   cacao::count32_t descriptor_count{};
+   mannele::u32 descriptor_count{};
 };
 
 struct set_layout_data
@@ -40,8 +39,8 @@ struct set_layout_data
 struct push_constant_data
 {
    std::string name{};
-   cacao::size_t size{};
-   cacao::size_t offset{};
+   mannele::u64 size{};
+   mannele::u64 offset{};
 };
 
 struct pipeline_shader_data
