@@ -1,0 +1,10 @@
+#ifndef LIBCACAO_VULKAN_HPP
+#define LIBCACAO_VULKAN_HPP
+
+#if !defined(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)
+#   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#endif
+
+#include <vulkan/vulkan.hpp>
+
+#endif // LIBCACAO_VULKAN_HPP

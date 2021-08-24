@@ -1,0 +1,20 @@
+: 1
+name: libcacao
+version: 0.1.0-a.0.z
+project: vermillon
+summary: Library that contains all friendly Vulkan API related abstractions
+license: MIT                ; MIT License
+description-file: README.md
+
+email: wmbat@protonmail.com
+
+depends: * build2 >= 0.13.0
+depends: * bpkg >= 0.13.0
+
+depends: libutils >= 0.0.1
+depends: libmannele >= 0.0.1
+depends: glfw >= 3.3.3
+depends: glm >= 0.9.9
+depends: gsl >= 3.1.0
+depends: Vulkan-Hpp >= 1.2.185
+depends: spirv-cross-glsl >= 2021.01.15

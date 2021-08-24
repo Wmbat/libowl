@@ -8,7 +8,7 @@ AlignEscapedNewlines: Right
 AlignOperands: false
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
@@ -42,9 +42,9 @@ BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: AfterColon
 BreakStringLiterals: true
+BreakBeforeConceptDeclarations: true
 ColumnLimit: 100
 CompactNamespaces: true
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 3
 ContinuationIndentWidth: 3
 Cpp11BracedListStyle: true
@@ -53,6 +53,7 @@ IndentCaseLabels: true
 IndentPPDirectives: AfterHash
 IndentWidth: 3
 IndentWrappedFunctionNames: false
+IndentRequires: true
 NamespaceIndentation: All
 PointerAlignment: Left
 SpaceBeforeAssignmentOperators: true
