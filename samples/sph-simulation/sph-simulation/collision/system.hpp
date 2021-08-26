@@ -41,7 +41,6 @@ namespace collision
       struct create_info
       {
          util::non_null<entt::registry*> p_registry;
-         util::non_null<sph::system*> p_sph_system;
       };
 
    public:
@@ -55,6 +54,5 @@ namespace collision
 
    private:
       entt::registry* mp_registry;
-      sph::system* mp_system;
    };
 } // namespace collision

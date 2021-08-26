@@ -3,7 +3,6 @@
 #include <sph-simulation/collision/primitive.hpp>
 #include <sph-simulation/collision/system.hpp>
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/particle.hpp>
 #include <sph-simulation/render/camera.hpp>
 #include <sph-simulation/render/offscreen.hpp>
 #include <sph-simulation/render/pipeline.hpp>
@@ -79,10 +78,7 @@ private:
    renderable m_sphere;
    renderable m_box;
 
-   sph::system m_sph_system;
    collision::system m_collision_system{};
-
-   std::vector<particle> m_particles;
 
    std::string m_vert_shader_key{"shaders/test_vert.spv"};
    std::string m_frag_shader_key{"shaders/test_frag.spv"};
@@ -92,8 +88,6 @@ private:
    std::vector<mannele::u8> m_image_pixels;
    bool has_offscreen_render{false};
    std::future<void> m_image_write_fut;
-
-   float m_max_density{0};
 
    duration<float, std::milli> m_time_per_frame = 16ms;
    duration<float, std::milli> m_time_spent = 0ms;

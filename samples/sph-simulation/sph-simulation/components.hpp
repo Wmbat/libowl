@@ -4,12 +4,13 @@
 
 #include <glm/glm.hpp>
 
-namespace component
+namespace render::component
 {
    struct transform
    {
-      glm::mat4 translate;
-      glm::mat4 scale;
+      glm::vec3 position;
+      glm::vec3 rotation;
+      glm::vec3 scale;
    };
 
    struct render
@@ -17,4 +18,4 @@ namespace component
       renderable* p_mesh;
       glm::vec3 colour;
    };
-} // namespace component
+} // namespace render::component

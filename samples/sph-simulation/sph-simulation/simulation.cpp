@@ -5,6 +5,10 @@
 #include <sph-simulation/physics/kernel.hpp>
 #include <sph-simulation/render/camera.hpp>
 #include <sph-simulation/sim_variables.hpp>
+#include <sph-simulation/sph/components.hpp>
+
+#include <sph-simulation/physics/components.hpp>
+#include <sph-simulation/physics/system.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
@@ -130,22 +134,12 @@ simulation::simulation(const settings& scene) :
                          half(y_edges.x - y_edges.y),  // NOLINT
                          half(z_edges.x - z_edges.y)}; // NOLINT
 
-      float h = m_scene.kernel_radius();
-      m_sph_system = sph::system{{.p_registry = util::make_non_null(&m_registry),
-                                  .p_logger = util::make_non_null(&m_logger),
-                                  .center = halfs,
-                                  .dimensions = halfs + h,
-                                  .variables = m_scene}};
-
-      m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry),
-                                              .p_sph_system = util::make_non_null(&m_sph_system)}};
+      m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry)}};
    }
 
-   constexpr std::size_t x_count = 25u;
-   constexpr std::size_t y_count = 35u; // 100u;
-   constexpr std::size_t z_count = 30u;
-
-   m_particles.reserve(x_count * y_count * z_count);
+   constexpr std::size_t x_count = 5u;
+   constexpr std::size_t y_count = 5u; // 100u;
+   constexpr std::size_t z_count = 5u;
 
    float distance_x = m_scene.water_radius * 1.20f; // NOLINT
    float distance_y = m_scene.water_radius * 1.20f; // NOLINT
@@ -163,9 +157,26 @@ simulation::simulation(const settings& scene) :
          {
             const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
 
-            m_sph_system.emit({.position = {x, y, z},
-                               .radius = m_scene.water_radius,
-                               .mass = m_scene.water_mass});
+            auto entity = m_registry.create();
+
+            auto& transform = m_registry.emplace<render::component::transform>(entity);
+            transform = {.position = {x, y, z},
+                         .rotation = {0, 0, 0},
+                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * m_scene.scale_factor};
+
+            auto& particle = m_registry.emplace<sph::component::particle_data>(entity);
+            particle = {.radius = m_scene.water_radius};
+
+            auto& rigid_body = m_registry.emplace<physics::component::rigid_body>(entity);
+            rigid_body = {.mass = m_scene.water_mass};
+
+            auto& render = m_registry.emplace<render::component::render>(entity);
+            render = {.p_mesh = &m_sphere,
+                      .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+
+            auto& collider = m_registry.emplace<physics::component::sphere_collider>(entity);
+            collider = {.volume = {.center = transform.position, .radius = m_scene.water_radius},
+                        .friction = 0.0f};
          }
       }
    }
@@ -183,9 +194,8 @@ simulation::simulation(const settings& scene) :
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
       "{}\n\t-> kernel radius = {}\n\t-> rest density = {}\n\t-> viscosity constant = {}\n\t-> "
       "surface tension coefficient = {}\n\t-> time step = {}ms",
-      std::size(m_sph_system.particles()), m_scene.water_mass,
-      m_scene.water_radius, m_scene.kernel_radius(),
-      m_scene.rest_density, m_scene.viscosity_constant,
+      x_count * y_count * z_count, m_scene.water_mass, m_scene.water_radius,
+      m_scene.kernel_radius(), m_scene.rest_density, m_scene.viscosity_constant,
       m_scene.surface_tension_coefficient, m_scene.time_step.count());
 
    std::filesystem::remove_all("frames");
@@ -227,14 +237,16 @@ void simulation::run()
 
 void simulation::update()
 {
-   m_sph_system.update(m_scene.time_step);
-   m_collision_system.update(m_scene.time_step);
+   auto particle_view =
+      m_registry.view<render::component::transform, physics::component::rigid_body,
+                      physics::component::sphere_collider, sph::component::particle_data>();
+
+   sph::update(particle_view, m_scene, m_scene.time_step);
+
+   // m_collision_system.update(m_scene.time_step);
 }
 void simulation::render()
 {
-   m_max_density =
-      ranges::max_element(m_sph_system.particles(), {}, &sph::particle::density)->density;
-
    if (has_offscreen_render)
    {
       [[maybe_unused]] auto _ = m_render_system.device().logical().waitForFences(
@@ -261,7 +273,7 @@ void simulation::render()
                     100.0f *
                        (static_cast<float>(m_frame_count) / static_cast<float>(max_frames - 1)));
 
-      offscreen_render();
+      // offscreen_render();
 
       // write_image_to_disk(filename);
 
@@ -287,20 +299,22 @@ void simulation::onscreen_render()
       buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                 {m_camera.lookup_set(image_index)}, {});
 
-      auto view = m_registry.view<component::render, component::transform>();
+      auto view = m_registry.view<render::component::render, render::component::transform>();
 
       buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
       for (auto entity : view | vi::filter([&](auto e) {
-                            return view.get<component::render>(e).p_mesh == &m_box;
+                            return view.get<render::component::render>(e).p_mesh == &m_box;
                          }))
       {
-         const auto& render = view.get<component::render>(entity);
-         const auto& transform = view.get<component::transform>(entity);
+         const auto& render = view.get<render::component::render>(entity);
+         const auto& transform = view.get<render::component::transform>(entity);
 
-         mesh_data md{.model = transform.translate * transform.scale,
-                      .colour = render.colour}; // NOLINT
+         const auto translate = glm::translate(glm::mat4(1), transform.position);
+         const auto scale = glm::scale(glm::mat4(1), transform.scale);
+
+         mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
 
          buffer.pushConstants(pipeline.layout(),
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -313,14 +327,17 @@ void simulation::onscreen_render()
       buffer.bindVertexBuffers(0, {m_sphere.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_sphere.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
-      for (auto& particle : m_sph_system.particles())
+      for (auto entity : view | vi::filter([&](auto e) {
+                            return view.get<render::component::render>(e).p_mesh == &m_sphere;
+                         }))
       {
-         auto scale = glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.scale_factor);
-         auto translate = glm::translate(glm::mat4{1}, particle.position);
+         const auto& render = view.get<render::component::render>(entity);
+         const auto& transform = view.get<render::component::transform>(entity);
 
-         glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
-         mesh_data md{.model = translate * scale,
-                      .colour = colour * (1 - (particle.density / m_max_density))};
+         const auto translate = glm::translate(glm::mat4(1), transform.position);
+         const auto scale = glm::scale(glm::mat4(1), transform.scale);
+
+         mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
 
          buffer.pushConstants(pipeline.layout(),
                               pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -359,20 +376,21 @@ void simulation::offscreen_render()
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                    {m_camera.lookup_set(0)}, {});
 
-         auto view = m_registry.view<component::render, component::transform>();
+         auto view = m_registry.view<render::component::render, render::component::transform>();
 
          buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
          buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
          for (auto entity : view | vi::filter([&](auto e) {
-                               return view.get<component::render>(e).p_mesh == &m_box;
+                               return view.get<render::component::render>(e).p_mesh == &m_box;
                             }))
          {
-            const auto& render = view.get<component::render>(entity);
-            const auto& transform = view.get<component::transform>(entity);
+            const auto& render = view.get<render::component::render>(entity);
+            const auto& transform = view.get<render::component::transform>(entity);
 
-            mesh_data md{.model = transform.translate * transform.scale,
-                         .colour = render.colour}; // NOLINT
+            const auto translate = glm::translate(glm::mat4(1), transform.position);
+            const auto scale = glm::scale(glm::mat4(1), transform.scale);
+            mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
 
             buffer.pushConstants(pipeline.layout(),
                                  pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -387,15 +405,17 @@ void simulation::offscreen_render()
          buffer.bindIndexBuffer(m_sphere.m_index_buffer.buffer().value(), 0,
                                 vk::IndexType::eUint32);
 
-         for (auto& particle : m_sph_system.particles())
+         for (auto entity : view | vi::filter([&](auto e) {
+                               return view.get<render::component::render>(e).p_mesh == &m_sphere;
+                            }))
          {
-            auto scale =
-               glm::scale(glm::mat4{1}, glm::vec3{1.0f, 1.0f, 1.0f} * m_scene.scale_factor);
-            auto translate = glm::translate(glm::mat4{1}, particle.position);
+            const auto& render = view.get<render::component::render>(entity);
+            const auto& transform = view.get<render::component::transform>(entity);
 
-            glm::vec3 colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}; // NOLINT
-            mesh_data md{.model = translate * scale,
-                         .colour = colour * (1 - (particle.density / m_max_density))};
+            const auto translate = glm::translate(glm::mat4(1), transform.position);
+            const auto scale = glm::scale(glm::mat4(1), transform.scale);
+
+            mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
 
             buffer.pushConstants(pipeline.layout(),
                                  pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -554,14 +574,14 @@ void simulation::add_box(const glm::vec3& position, const glm::vec3& dimensions,
                          const glm::vec3& colour)
 {
    auto entity = m_registry.create();
-   m_registry.emplace<component::render>(entity,
-                                         component::render{.p_mesh = &m_box, .colour = colour});
+   m_registry.emplace<render::component::render>(
+      entity, render::component::render{.p_mesh = &m_box, .colour = colour});
    m_registry.emplace<collision::component::box_collider>(
       entity, collision::component::box_collider{.center = position, .half_size = dimensions});
-   m_registry.emplace<component::transform>(
+   m_registry.emplace<render::component::transform>(
       entity,
-      component::transform{.translate = glm::translate(glm::mat4{1}, position),
-                           .scale = glm::scale(glm::mat4{1}, dimensions)});
+      render::component::transform{
+         .position = position, .rotation = {1, 1, 1}, .scale = dimensions});
 }
 auto simulation::create_main_pipeline() -> mannele::u64
 {
