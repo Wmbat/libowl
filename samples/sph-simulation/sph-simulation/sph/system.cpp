@@ -157,7 +157,7 @@ namespace sph
       compute_normals(particles, variables.kernel_radius());
       compute_forces(particles, variables.kernel_radius(), variables.rest_density,
                      variables.viscosity_constant, variables.surface_tension_coefficient,
-                     0);
+                     variables.gravity_multiplier);
       integrate(particles, time_step);
    }
 } // namespace sph

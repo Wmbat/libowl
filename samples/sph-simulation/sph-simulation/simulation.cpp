@@ -103,6 +103,7 @@ simulation::simulation(const settings& scene) :
    m_logger("fluid_simulation"), m_scene(scene), m_window({"Fluid Simulation", {1080, 720}}),
    m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
    m_pipelines(&m_logger),
+   m_plane(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/plane.obj"))),
    m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
    m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/box.obj")))
 {
@@ -137,9 +138,9 @@ simulation::simulation(const settings& scene) :
       m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry)}};
    }
 
-   constexpr std::size_t x_count = 5u;
-   constexpr std::size_t y_count = 5u; // 100u;
-   constexpr std::size_t z_count = 5u;
+   constexpr std::size_t x_count = 10u;
+   constexpr std::size_t y_count = 10u; // 100u;
+   constexpr std::size_t z_count = 10u;
 
    float distance_x = m_scene.water_radius * 1.20f; // NOLINT
    float distance_y = m_scene.water_radius * 1.20f; // NOLINT
@@ -175,20 +176,28 @@ simulation::simulation(const settings& scene) :
                       .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
 
             auto& collider = m_registry.emplace<physics::component::sphere_collider>(entity);
-            collider = {.volume = {.center = transform.position, .radius = m_scene.water_radius},
+            collider = {.volume = {.center = glm::vec3(), .radius = m_scene.water_radius},
                         .friction = 0.0f};
          }
       }
    }
 
+   add_plane(-3.0f, glm::vec3(-1, 0, 0)); // X
+   add_plane(-5.0f, glm::vec3(1, 0, 0)); // X
+   add_plane(0.0f, glm::vec3(0, 1, 0));  // Y
+   add_plane(-2.5f, glm::vec3(0, 0, 1)); // Z
+   add_plane(-2.5f, glm::vec3(0, 0, -1));  // Z
+
    // add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
    // add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
 
+   /*
    add_invisible_wall({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
    add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
    add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
    add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
+   */
 
    m_logger.info(
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
@@ -237,16 +246,20 @@ void simulation::run()
 
 void simulation::update()
 {
-   auto particle_view =
-      m_registry.view<render::component::transform, physics::component::rigid_body,
-                      physics::component::sphere_collider, sph::component::particle_data>();
+   auto particle_view = m_registry.view<PARTICLE_COMPONENTS>();
+   auto sphere_view = m_registry.view<SPHERE_COMPONENTS>();
+   auto plane_view = m_registry.view<PLANE_COMPONENTS>();
+   auto box_view = m_registry.view<BOX_COMPONENTS>();
 
    sph::update(particle_view, m_scene, m_scene.time_step);
-
-   // m_collision_system.update(m_scene.time_step);
+   physics::update({.spheres = sphere_view,
+                    .planes = plane_view,
+                    .boxes = box_view,
+                    .time_step = m_scene.time_step});
 }
 void simulation::render()
 {
+   /*
    if (has_offscreen_render)
    {
       [[maybe_unused]] auto _ = m_render_system.device().logical().waitForFences(
@@ -257,9 +270,11 @@ void simulation::render()
 
       has_offscreen_render = false;
    }
+   */
 
    onscreen_render();
 
+   /*
    if (m_time_spent.count() >= m_time_per_frame.count())
    {
       has_offscreen_render = true;
@@ -273,13 +288,14 @@ void simulation::render()
                     100.0f *
                        (static_cast<float>(m_frame_count) / static_cast<float>(max_frames - 1)));
 
-      // offscreen_render();
+      offscreen_render();
 
       // write_image_to_disk(filename);
 
       m_time_spent = 0ms;
       ++m_frame_count;
    }
+   */
 }
 
 void simulation::onscreen_render()
@@ -562,6 +578,15 @@ void simulation::setup_offscreen()
                      .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
                         vk::MemoryPropertyFlagBits::eHostCoherent,
                      .logger = &m_logger});
+}
+
+void simulation::add_plane(float offset, const glm::vec3& normal)
+{
+   auto entity = m_registry.create();
+
+   auto& collider = m_registry.emplace<physics::component::plane_collider>(entity);
+   collider = {
+      .volume = {.normal = normal, .offset = offset}, .friction = 0.0f, .restitution = 1.0f};
 }
 
 void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)

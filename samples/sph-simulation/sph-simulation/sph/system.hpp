@@ -8,11 +8,13 @@
 
 #include <entt/entt.hpp>
 
+#define PARTICLE_COMPONENTS                                                                        \
+   render::component::transform, physics::component::rigid_body,                                   \
+      physics::component::sphere_collider, sph::component::particle_data
+
 namespace sph
 {
-   using particle_view =
-      entt::view<entt::exclude_t<>, render::component::transform, physics::component::rigid_body,
-                 physics::component::sphere_collider, sph::component::particle_data>;
+   using particle_view = entt::view<entt::exclude_t<>, PARTICLE_COMPONENTS>;
 
    void update(particle_view& test, const settings& variables, duration<float> time_step);
 } // namespace sph

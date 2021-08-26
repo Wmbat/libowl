@@ -13,7 +13,14 @@ namespace physics
 
    struct box_volume
    {
+      glm::vec3 center;
+      glm::vec3 half_dimensions;
+   };
 
+   struct plane_volume
+   {
+      glm::vec3 normal;
+      float offset;
    };
 } // namespace physics
 

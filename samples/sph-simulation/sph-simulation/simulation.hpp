@@ -43,6 +43,7 @@ private:
 
    auto compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices;
 
+   void add_plane(float offset, const glm::vec3& normal);
    void add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions);
    void add_box(const glm::vec3& position, const glm::vec3& dimensions, const glm::vec3& colour);
 
@@ -75,6 +76,7 @@ private:
 
    entt::registry m_registry;
 
+   renderable m_plane;
    renderable m_sphere;
    renderable m_box;
 

@@ -18,6 +18,13 @@ namespace physics::component
       float friction;
       float restitution;
    };
+
+   struct plane_collider
+   {
+      plane_volume volume;
+      float friction;
+      float restitution;
+   };
    
    struct rigid_body
    {
