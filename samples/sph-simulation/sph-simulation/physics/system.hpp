@@ -3,15 +3,16 @@
 
 #include <sph-simulation/components.hpp>
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/physics/components.hpp>
+#include <sph-simulation/physics/collision/colliders.hpp>
+#include <sph-simulation/physics/rigid_body.hpp>
+#include <sph-simulation/physics/sph/solver.hpp>
 
 #include <entt/entt.hpp>
 
 #define SPHERE_COMPONENTS                                                                          \
-   render::component::transform, physics::component::sphere_collider, physics::component::rigid_body
-#define BOX_COMPONENTS                                                                             \
-   render::component::transform, physics::component::box_collider, physics::component::rigid_body
-#define PLANE_COMPONENTS physics::component::plane_collider
+   render::component::transform, physics::sphere_collider, physics::rigid_body
+#define BOX_COMPONENTS render::component::transform, physics::box_collider, physics::rigid_body
+#define PLANE_COMPONENTS physics::plane_collider
 
 namespace physics
 {
@@ -21,9 +22,12 @@ namespace physics
 
    struct system_update_info
    {
+      sph::particle_view particles;
       sphere_view spheres;
       plane_view planes;
       box_view boxes;
+
+      const sim_variables& variables;
 
       duration<float> time_step;
    };

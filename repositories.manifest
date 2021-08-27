@@ -19,12 +19,8 @@ location: https://github.com/Wmbat/libreglisse.git
 
 :
 role: prerequisite
-location: https://github.com/Wmbat/SPIRV-Cross.git#main
+location: https://github.com/Wmbat/build2-SPIRV-Cross.git#main
 
 :
 role: prerequisite
 location: https://github.com/Wmbat/build2-tinyobjloader.git#main
-
-:
-role: prerequisite
-location: https://github.com/Swat-SomeBug/glfw.git#master

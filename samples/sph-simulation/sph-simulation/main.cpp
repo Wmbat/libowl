@@ -36,11 +36,13 @@ auto main(int argc, char** argv) -> int
    {
       glfwInit();
 
-      auto sim = simulation(config.borrow());
+      auto sim = simulation(config.borrow(), &logger);
       sim.run();
    }
    else
    {
+      logger.error("Failed to parse json: {}", arguments[0]);
+
       return EXIT_FAILURE;
    }
 

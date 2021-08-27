@@ -2,7 +2,7 @@
 #define SPH_SIMULATION_PHYSICS_COLLISION_CONTACT_HPP
 
 #include <sph-simulation/components.hpp>
-#include <sph-simulation/physics/components.hpp>
+#include <sph-simulation/physics/rigid_body.hpp>
 
 #include <glm/ext/vector_float3.hpp>
 
@@ -19,7 +19,7 @@ namespace physics
       float friction;
       float restitution;
 
-      std::array<physics::component::rigid_body*, 2> bodies;
+      std::array<physics::rigid_body*, 2> bodies;
       std::array<render::component::transform*, 2> transforms;
    };
 } // namespace physics

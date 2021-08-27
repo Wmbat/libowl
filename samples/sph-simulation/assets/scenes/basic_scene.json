@@ -2,8 +2,8 @@
    "sph": {
       "name": "default_scene",
       "dimensions": {
-         "width": 1920,
-         "height": 1080
+         "width": 1080,
+         "height": 720
       },
       "frame_count": 600,
       "time_step": 1,

@@ -1,4 +1,4 @@
-#include <sph-simulation/physics/kernel.hpp>
+#include <sph-simulation/physics/sph/kernel.hpp>
 
 namespace kernel
 {

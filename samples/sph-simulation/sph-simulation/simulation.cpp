@@ -1,13 +1,11 @@
 #include <sph-simulation/simulation.hpp>
 
-#include <sph-simulation/collision/primitive.hpp>
 #include <sph-simulation/components.hpp>
-#include <sph-simulation/physics/kernel.hpp>
 #include <sph-simulation/render/camera.hpp>
 #include <sph-simulation/sim_variables.hpp>
-#include <sph-simulation/sph/components.hpp>
 
-#include <sph-simulation/physics/components.hpp>
+#include <sph-simulation/physics/collision/colliders.hpp>
+#include <sph-simulation/physics/rigid_body.hpp>
 #include <sph-simulation/physics/system.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
@@ -99,10 +97,10 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-simulation::simulation(const sim_config& scene) :
-   m_logger("fluid_simulation"), m_config(scene), m_window({"Fluid Simulation", {1080, 720}}),
-   m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
-   m_pipelines(&m_logger),
+simulation::simulation(sim_config scene, util::log_ptr logger) :
+   m_logger(logger), m_config(std::move(scene)),
+   m_window({"Fluid Simulation", m_config.dimensions}), m_render_system(&m_window, m_logger),
+   m_shaders(m_render_system, m_logger), m_pipelines(m_logger),
    m_plane(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/plane.obj"))),
    m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
    m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/box.obj")))
@@ -117,26 +115,14 @@ simulation::simulation(const sim_config& scene) :
        .swapchain = m_render_system.swapchain().value(),
        .colour_attachment = some(main_colour_attachment(m_render_system.swapchain().format())),
        .depth_stencil_attachment = some(main_depth_attachment(m_render_system.device())),
-       .framebuffer_create_infos = get_main_framebuffers(m_render_system, &m_logger),
-       .logger = &m_logger}));
+       .framebuffer_create_infos = get_main_framebuffers(m_render_system, m_logger),
+       .logger = m_logger}));
 
    m_main_pipeline_key = create_main_pipeline();
 
    m_camera = setup_onscreen_camera(m_main_pipeline_key);
 
    setup_offscreen();
-
-   glm::vec2 x_edges = {5.0f, -5.0f}; // NOLINT
-   glm::vec2 y_edges = {20.0f, 0.0f}; // NOLINT
-   glm::vec2 z_edges = {5.0f, -5.0f}; // NOLINT
-
-   {
-      glm::vec3 halfs = {half(x_edges.x - x_edges.y),  // NOLINT
-                         half(y_edges.x - y_edges.y),  // NOLINT
-                         half(z_edges.x - z_edges.y)}; // NOLINT
-
-      m_collision_system = collision::system{{.p_registry = util::make_non_null(&m_registry)}};
-   }
 
    constexpr std::size_t x_count = 10u;
    constexpr std::size_t y_count = 10u; // 100u;
@@ -148,7 +134,7 @@ simulation::simulation(const sim_config& scene) :
 
    for (auto i : vi::iota(0U, x_count))
    {
-      const float x = x_edges.y + 1.0f + distance_x * static_cast<float>(i); // NOLINT
+      const float x = -4.0f + distance_x * static_cast<float>(i); // NOLINT
 
       for (auto j : vi::iota(0U, y_count))
       {
@@ -165,20 +151,19 @@ simulation::simulation(const sim_config& scene) :
                          .rotation = {0, 0, 0},
                          .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f};
 
-            auto& particle = m_registry.emplace<sph::component::particle_data>(entity);
-            particle = {.radius = m_config.variables.water_radius};
-
-            auto& rigid_body = m_registry.emplace<physics::component::rigid_body>(entity);
-            rigid_body = {.mass = m_config.variables.water_mass};
+            auto& particle = m_registry.emplace<physics::sph::particle>(entity);
+            particle = {.radius = m_config.variables.water_radius,
+                        .mass = m_config.variables.water_mass};
 
             auto& render = m_registry.emplace<render::component::render>(entity);
             render = {.p_mesh = &m_sphere,
                       .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
 
-            auto& collider = m_registry.emplace<physics::component::sphere_collider>(entity);
-            collider = {.volume = {.center = glm::vec3(), .radius = m_config.variables.water_radius},
-                        .friction = 0.0f,
-                        .restitution = 0.5f};
+            auto& collider = m_registry.emplace<physics::sphere_collider>(entity);
+            collider = {
+               .volume = {.center = glm::vec3(), .radius = m_config.variables.water_radius},
+               .friction = 0.0f,
+               .restitution = 0.5f};
          }
       }
    }
@@ -188,17 +173,6 @@ simulation::simulation(const sim_config& scene) :
    add_plane(0.0f, glm::vec3(0, 1, 0));   // Y // NOLINT
    add_plane(-2.5f, glm::vec3(0, 0, 1));  // Z // NOLINT
    add_plane(-2.5f, glm::vec3(0, 0, -1)); // Z // NOLINT
-
-   // add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
-   // add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
-
-   /*
-   add_invisible_wall({0.0, -1.5f, 0.0f}, {100.0f, 1.5f, 100.0f});             // NOLINT
-   add_invisible_wall({x_edges.x + 1.5f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
-   add_invisible_wall({x_edges.y - 1.0f, 0.0f, 0.0f}, {1.5f, 100.0f, 100.0f}); // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.x + 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
-   add_invisible_wall({0.0, 0.0f, z_edges.y - 1.5f}, {100.0f, 100.0f, 1.5f});  // NOLINT
-   */
 
    m_logger.info(
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
@@ -253,10 +227,11 @@ void simulation::update()
    auto plane_view = m_registry.view<PLANE_COMPONENTS>();
    auto box_view = m_registry.view<BOX_COMPONENTS>();
 
-   sph::update(particle_view, m_config.variables, m_config.time_step);
-   physics::update({.spheres = sphere_view,
+   physics::update({.particles = particle_view,
+                    .spheres = sphere_view,
                     .planes = plane_view,
                     .boxes = box_view,
+                    .variables = m_config.variables,
                     .time_step = m_config.time_step});
 }
 void simulation::render()
@@ -539,7 +514,7 @@ void simulation::setup_offscreen()
        .usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc,
        .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
        .dimensions = {image_width, image_height},
-       .logger = &m_logger});
+       .logger = m_logger});
 
    m_offscreen.depth = image({.device = device,
                               .formats = {std::begin(depth_formats), std::end(depth_formats)},
@@ -547,7 +522,7 @@ void simulation::setup_offscreen()
                               .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
                               .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
                               .dimensions = {image_width, image_height},
-                              .logger = &m_logger});
+                              .logger = m_logger});
 
    m_offscreen.pass =
       render_pass({.device = device.logical(),
@@ -558,15 +533,15 @@ void simulation::setup_offscreen()
                       .attachments = {m_offscreen.colour.view(), m_offscreen.depth.view()},
                       .dimensions = {image_width, image_height},
                       .layers = 1,
-                      .logger = &m_logger}},
-                   .logger = &m_logger});
+                      .logger = m_logger}},
+                   .logger = m_logger});
    m_offscreen_pipeline_key = create_offscreen_pipeline();
    m_offscreen.cam = setup_offscreen_camera(m_offscreen_pipeline_key);
    m_offscreen.command_pool = cacao::command_pool(cacao::command_pool_create_info{
       .device = device,
       .queue_family_index = some(device.get_queue(cacao::queue_flag_bits::graphics).family_index),
       .primary_buffer_count = 1u,
-      .logger = &m_logger});
+      .logger = m_logger});
    m_offscreen.in_flight_fence = m_render_system.device().logical().createFenceUnique(
       vk::FenceCreateInfo{}.setFlags(vk::FenceCreateFlagBits::eSignaled));
    m_offscreen.render_finished_semaphore =
@@ -579,37 +554,18 @@ void simulation::setup_offscreen()
                      .usage = vk::BufferUsageFlagBits::eTransferDst,
                      .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
                         vk::MemoryPropertyFlagBits::eHostCoherent,
-                     .logger = &m_logger});
+                     .logger = m_logger});
 }
 
 void simulation::add_plane(float offset, const glm::vec3& normal)
 {
    auto entity = m_registry.create();
 
-   auto& collider = m_registry.emplace<physics::component::plane_collider>(entity);
+   auto& collider = m_registry.emplace<physics::plane_collider>(entity);
    collider = {
       .volume = {.normal = normal, .offset = offset}, .friction = 0.0f, .restitution = 1.0f};
 }
 
-void simulation::add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions)
-{
-   auto entity = m_registry.create();
-   m_registry.emplace<collision::component::box_collider>(
-      entity, collision::component::box_collider{.center = position, .half_size = dimensions});
-}
-void simulation::add_box(const glm::vec3& position, const glm::vec3& dimensions,
-                         const glm::vec3& colour)
-{
-   auto entity = m_registry.create();
-   m_registry.emplace<render::component::render>(
-      entity, render::component::render{.p_mesh = &m_box, .colour = colour});
-   m_registry.emplace<collision::component::box_collider>(
-      entity, collision::component::box_collider{.center = position, .half_size = dimensions});
-   m_registry.emplace<render::component::transform>(
-      entity,
-      render::component::transform{
-         .position = position, .rotation = {1, 1, 1}, .scale = dimensions});
-}
 auto simulation::create_main_pipeline() -> mannele::u64
 {
    // TODO: Actually handle errors
@@ -639,7 +595,7 @@ auto simulation::create_main_pipeline() -> mannele::u64
 
    auto info = m_pipelines.insert({.device = m_render_system.device(),
                                    .pass = m_render_passes.at(0),
-                                   .logger = &m_logger,
+                                   .logger = m_logger,
                                    .bindings = m_render_system.vertex_bindings(),
                                    .attributes = m_render_system.vertex_attributes(),
                                    .viewports = pipeline_viewports,
@@ -683,7 +639,7 @@ auto simulation::create_offscreen_pipeline() -> mannele::u64
    auto info = m_pipelines
                   .insert({.device = m_render_system.device(),
                            .pass = m_offscreen.pass,
-                           .logger = &m_logger,
+                           .logger = m_logger,
                            .bindings = m_render_system.vertex_bindings(),
                            .attributes = m_render_system.vertex_attributes(),
                            .viewports = pipeline_viewports,
@@ -698,13 +654,13 @@ auto simulation::setup_onscreen_camera(mannele::u64 index) -> camera
 {
    auto pipeline_info = m_pipelines.lookup(index).borrow();
 
-   return create_camera(m_render_system, pipeline_info.value(), &m_logger);
+   return create_camera(m_render_system, pipeline_info.value(), m_logger);
 }
 auto simulation::setup_offscreen_camera(mannele::u64 index) -> camera
 {
    auto pipeline_info = m_pipelines.lookup(index).borrow();
 
-   return create_offscreen_camera(m_render_system, pipeline_info.value(), &m_logger);
+   return create_offscreen_camera(m_render_system, pipeline_info.value(), m_logger);
 }
 
 auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices

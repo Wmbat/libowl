@@ -13,7 +13,7 @@ depends: * bpkg >= 0.13.0
 
 depends: libutils >= 0.0.1
 depends: libmannele >= 0.0.1
-depends: glfw >= 3.3.3
+depends: glfw >= 3.3.4
 depends: glm >= 0.9.9
 depends: gsl >= 3.1.0
 depends: Vulkan-Hpp >= 1.2.185

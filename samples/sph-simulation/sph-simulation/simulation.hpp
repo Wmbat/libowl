@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sph-simulation/collision/primitive.hpp>
-#include <sph-simulation/collision/system.hpp>
 #include <sph-simulation/core.hpp>
 #include <sph-simulation/render/camera.hpp>
 #include <sph-simulation/render/offscreen.hpp>
@@ -11,7 +9,6 @@
 #include <sph-simulation/render/renderable.hpp>
 #include <sph-simulation/render/shader_registry.hpp>
 #include <sph-simulation/sim_config.hpp>
-#include <sph-simulation/sph/system.hpp>
 
 #include <libcacao/window.hpp>
 
@@ -22,7 +19,7 @@
 class simulation
 {
 public:
-   simulation(const sim_config& config);
+   simulation(sim_config config, util::log_ptr logger);
 
    void run();
 
@@ -44,8 +41,6 @@ private:
    auto compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices;
 
    void add_plane(float offset, const glm::vec3& normal);
-   void add_invisible_wall(const glm::vec3& position, const glm::vec3& dimensions);
-   void add_box(const glm::vec3& position, const glm::vec3& dimensions, const glm::vec3& colour);
 
    void write_image_to_disk(std::string_view name);
 
@@ -56,7 +51,7 @@ private:
    }
 
 private:
-   util::logger m_logger;
+   util::log_ptr m_logger;
 
    sim_config m_config;
 
@@ -79,8 +74,6 @@ private:
    renderable m_plane;
    renderable m_sphere;
    renderable m_box;
-
-   collision::system m_collision_system{};
 
    std::string m_vert_shader_key{"shaders/test_vert.spv"};
    std::string m_frag_shader_key{"shaders/test_frag.spv"};

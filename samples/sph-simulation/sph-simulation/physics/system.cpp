@@ -1,11 +1,8 @@
 #include <sph-simulation/physics/system.hpp>
 
 #include <sph-simulation/components.hpp>
+#include <sph-simulation/physics/collision/colliders.hpp>
 #include <sph-simulation/physics/collision/contact.hpp>
-#include <sph-simulation/physics/components.hpp>
-#include <sph-simulation/sph/components.hpp>
-
-#include <sph-simulation/collision/system.hpp>
 
 #include <entt/entt.hpp>
 
@@ -26,40 +23,6 @@ namespace physics
       return {x, y, z};
    }
 
-   /**
-    * Look into fixing tunneling problem.
-    */
-   void detect_sphere_and_box_collision(sphere_view& spheres, box_view& boxes)
-   {
-      for (auto sphere_entity : spheres)
-      {
-         const auto& sphere_transform = spheres.get<render::component::transform>(sphere_entity);
-         auto& sphere_collider = spheres.get<component::sphere_collider>(sphere_entity);
-
-         const auto sphere_center = sphere_collider.volume.center + sphere_transform.position;
-
-         for (auto box_entity : boxes)
-         {
-            const auto& box_transform = boxes.get<render::component::transform>(box_entity);
-            auto& box_collider = boxes.get<physics::component::box_collider>(box_entity);
-
-            const auto box_center = sphere_collider.volume.center + box_transform.position;
-
-            const auto closest_point =
-               get_closest_point(sphere_collider.volume, box_collider.volume);
-            const auto distance = glm::length(closest_point - sphere_collider.volume.center);
-
-            if (distance - sphere_collider.volume.radius < collision::epsilon)
-            {
-               const auto contact_data = contact{
-                  .point = closest_point,
-                  .normal = glm::normalize(sphere_collider.volume.center - closest_point),
-               };
-            }
-         }
-      }
-   }
-
    auto rotate_vec3(const glm::vec3& target, const glm::vec3& rotation) -> glm::vec3
    {
       const auto rotated_x = glm::rotateX(target, rotation.x);    // NOLINT
@@ -75,14 +38,14 @@ namespace physics
       for (auto sphere_entity : spheres)
       {
          auto& sphere_transform = spheres.get<render::component::transform>(sphere_entity);
-         const auto& sphere_collider = spheres.get<component::sphere_collider>(sphere_entity);
-         auto& sphere_rigid_boy = spheres.get<component::rigid_body>(sphere_entity);
+         const auto& sphere_collider = spheres.get<physics::sphere_collider>(sphere_entity);
+         auto& sphere_rigid_boy = spheres.get<rigid_body>(sphere_entity);
 
          const auto sphere_position = sphere_collider.volume.center + sphere_transform.position;
 
          for (auto plane_entity : planes)
          {
-            const auto& plane_collider = planes.get<component::plane_collider>(plane_entity);
+            const auto& plane_collider = planes.get<physics::plane_collider>(plane_entity);
 
             const auto plane_normal = plane_collider.volume.normal;
 
@@ -107,9 +70,16 @@ namespace physics
       return contacts;
    }
 
+   auto detect_collisions(const system_update_info& info)
+   {
+      return detect_sphere_and_plane_collision(info.spheres, info.planes);
+   }
+
    void update(const system_update_info& info)
    {
-      auto contacts = detect_sphere_and_plane_collision(info.spheres, info.planes);
+      sph::solve(info.particles, info.variables, info.time_step);
+
+      const auto contacts = detect_collisions(info);
 
       for (auto contact_data : contacts)
       {

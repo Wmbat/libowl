@@ -1,9 +1,9 @@
-#ifndef SPH_SIMULATION_PHYSICS_COMPONENTS_HPP
-#define SPH_SIMULATION_PHYSICS_COMPONENTS_HPP
+#ifndef SPH_SIMULATION_PHYSICS_COLLISION_COLLIDERS_HPP
+#define SPH_SIMULATION_PHYSICS_COLLISION_COLLIDERS_HPP
 
 #include <sph-simulation/physics/bounding_volume.hpp>
 
-namespace physics::component
+namespace physics
 {
    struct sphere_collider
    {
@@ -25,15 +25,6 @@ namespace physics::component
       float friction;
       float restitution;
    };
-   
-   struct rigid_body
-   {
-      glm::vec3 velocity{};
-      glm::vec3 force{};
+} // namespace physics
 
-      float mass{1.0F};
-      float density{0.0F};
-   };
-} // namespace physics::component
-
-#endif // SPH_SIMULATION_PHYSICS_COMPONENTS_HPP
+#endif // SPH_SIMULATION_PHYSICS_COLLISION_COLLIDERS_HPP
