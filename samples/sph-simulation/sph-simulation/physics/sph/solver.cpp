@@ -11,14 +11,14 @@ namespace physics::sph
                                  float rest_density)
    {
       parallel_for(particles, [&](const entt::entity& entity_i) {
-         const auto& i_transform = particles.get<render::component::transform>(entity_i);
+         const auto& i_transform = particles.get<transform>(entity_i);
          auto& i_particle = particles.get<physics::sph::particle>(entity_i);
 
          float density = 0.0f;
 
          for (auto& entity_j : particles)
          {
-            const auto& j_transform = particles.get<render::component::transform>(entity_j);
+            const auto& j_transform = particles.get<transform>(entity_j);
             const auto& j_particle = particles.get<physics::sph::particle>(entity_j);
 
             const auto r_ij = i_transform.position - j_transform.position;
@@ -40,14 +40,14 @@ namespace physics::sph
    void compute_normals(const particle_view& particles, float kernel_radius)
    {
       parallel_for(particles, [&](const entt::entity& entity_i) {
-         const auto& i_transform = particles.get<render::component::transform>(entity_i);
+         const auto& i_transform = particles.get<transform>(entity_i);
          auto& i_particle = particles.get<physics::sph::particle>(entity_i);
 
          glm::vec3 normal{0.0f, 0.0f, 0.0f};
 
          for (auto& entity_j : particles)
          {
-            const auto& j_transform = particles.get<render::component::transform>(entity_j);
+            const auto& j_transform = particles.get<transform>(entity_j);
             const auto& j_particle = particles.get<physics::sph::particle>(entity_j);
 
             const auto r_ij = i_transform.position - j_transform.position;
@@ -72,7 +72,7 @@ namespace physics::sph
       const glm::vec3 gravity_vector{0.0f, gravity * gravity_mult, 0.0f};
 
       parallel_for(view, [&](const entt::entity& entity_i) {
-         const auto& transform_i = view.get<render::component::transform>(entity_i);
+         const auto& transform_i = view.get<transform>(entity_i);
          auto& particle_i = view.get<physics::sph::particle>(entity_i);
 
          glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
@@ -83,7 +83,7 @@ namespace physics::sph
 
          for (auto& entity_j : view)
          {
-            const auto& transform_j = view.get<render::component::transform>(entity_j);
+            const auto& transform_j = view.get<transform>(entity_j);
             const auto& particle_j = view.get<physics::sph::particle>(entity_j);
 
             if (entity_i != entity_j)
@@ -133,7 +133,7 @@ namespace physics::sph
    void integrate(const particle_view& particles, duration<float> time_step)
    {
       parallel_for(particles, [&](const entt::entity& entity) {
-         auto& transform = particles.get<render::component::transform>(entity);
+         auto& transform = particles.get<::transform>(entity);
          auto& particle = particles.get<physics::sph::particle>(entity);
 
          particle.velocity += time_step.count() * particle.force / particle.density;

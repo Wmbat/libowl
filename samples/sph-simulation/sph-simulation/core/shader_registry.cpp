@@ -1,4 +1,4 @@
-#include <sph-simulation/render/shader_registry.hpp>
+#include <sph-simulation/core/shader_registry.hpp>
 
 #include <libreglisse/operations/transform_err.hpp>
 #include <libreglisse/try.hpp>

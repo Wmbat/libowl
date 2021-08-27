@@ -37,9 +37,9 @@ namespace physics
 
       for (auto sphere_entity : spheres)
       {
-         auto& sphere_transform = spheres.get<render::component::transform>(sphere_entity);
-         const auto& sphere_collider = spheres.get<physics::sphere_collider>(sphere_entity);
+         auto& sphere_transform = spheres.get<transform>(sphere_entity);
          auto& sphere_rigid_boy = spheres.get<rigid_body>(sphere_entity);
+         const auto& sphere_collider = spheres.get<physics::sphere_collider>(sphere_entity);
 
          const auto sphere_position = sphere_collider.volume.center + sphere_transform.position;
 

@@ -1,4 +1,4 @@
-#include <sph-simulation/render/image.hpp>
+#include <sph-simulation/render/core/image.hpp>
 
 using namespace reglisse;
 

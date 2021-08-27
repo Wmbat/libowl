@@ -3,15 +3,16 @@
 
 #include <sph-simulation/components.hpp>
 #include <sph-simulation/core.hpp>
+#include <sph-simulation/transform.hpp>
+
 #include <sph-simulation/physics/collision/colliders.hpp>
 #include <sph-simulation/physics/rigid_body.hpp>
 #include <sph-simulation/physics/sph/solver.hpp>
 
 #include <entt/entt.hpp>
 
-#define SPHERE_COMPONENTS                                                                          \
-   render::component::transform, physics::sphere_collider, physics::rigid_body
-#define BOX_COMPONENTS render::component::transform, physics::box_collider, physics::rigid_body
+#define SPHERE_COMPONENTS transform, physics::sphere_collider, physics::rigid_body
+#define BOX_COMPONENTS transform, physics::box_collider, physics::rigid_body
 #define PLANE_COMPONENTS physics::plane_collider
 
 namespace physics

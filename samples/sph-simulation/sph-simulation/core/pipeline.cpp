@@ -1,4 +1,4 @@
-#include <sph-simulation/render/pipeline.hpp>
+#include <sph-simulation/core/pipeline.hpp>
 
 #include <libreglisse/try.hpp>
 

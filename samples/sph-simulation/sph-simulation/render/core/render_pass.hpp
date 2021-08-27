@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/framebuffer.hpp>
+#include <sph-simulation/render/core/framebuffer.hpp>
 
 #include <libmannele/core.hpp>
 

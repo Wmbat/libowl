@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sph-simulation/maths.hpp>
+#include <sph-simulation/core/maths.hpp>
 
 #include <libutils/logger.hpp>
 

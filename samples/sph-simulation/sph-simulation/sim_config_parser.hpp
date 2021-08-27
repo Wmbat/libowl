@@ -1,5 +1,5 @@
-#ifndef SPH_SIMULATION_SCENE_PARSER_HPP
-#define SPH_SIMULATION_SCENE_PARSER_HPP
+#ifndef SPH_SIMULATION_SIM_CONFIG_PARSER_HPP
+#define SPH_SIMULATION_SIM_CONFIG_PARSER_HPP
 
 #include <sph-simulation/sim_config.hpp>
 
@@ -31,4 +31,4 @@ auto open_file(const std::filesystem::path& filepath) -> std::string;
 auto parse_sim_config_json(const std::filesystem::path& filepath)
    -> reglisse::result<sim_config, mannele::runtime_error>;
 
-#endif // SPH_SIMULATION_SCENE_PARSER_HPP
+#endif // SPH_SIMULATION_SIM_CONFIG_PARSER_HPP

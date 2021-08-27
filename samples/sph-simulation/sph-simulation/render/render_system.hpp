@@ -1,7 +1,7 @@
 #pragma once
 
-#include <sph-simulation/render/image.hpp>
-#include <sph-simulation/render/render_pass.hpp>
+#include <sph-simulation/render/core/image.hpp>
+#include <sph-simulation/render/core/render_pass.hpp>
 
 #include <libcacao/command_pool.hpp>
 #include <libcacao/context.hpp>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/render_pass.hpp>
+#include <sph-simulation/render/core/render_pass.hpp>
 
 #include <libcacao/descriptor_set_layout.hpp>
 #include <libcacao/shader.hpp>

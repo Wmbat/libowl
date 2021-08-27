@@ -1,13 +1,13 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/camera.hpp>
+#include <sph-simulation/core/pipeline.hpp>
+#include <sph-simulation/core/pipeline_registry.hpp>
+#include <sph-simulation/core/shader_registry.hpp>
+#include <sph-simulation/render/core/camera.hpp>
 #include <sph-simulation/render/offscreen.hpp>
-#include <sph-simulation/render/pipeline.hpp>
-#include <sph-simulation/render/pipeline_registry.hpp>
 #include <sph-simulation/render/render_system.hpp>
 #include <sph-simulation/render/renderable.hpp>
-#include <sph-simulation/render/shader_registry.hpp>
 #include <sph-simulation/sim_config.hpp>
 
 #include <libcacao/window.hpp>

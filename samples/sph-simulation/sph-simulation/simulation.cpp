@@ -1,12 +1,14 @@
 #include <sph-simulation/simulation.hpp>
 
 #include <sph-simulation/components.hpp>
-#include <sph-simulation/render/camera.hpp>
 #include <sph-simulation/sim_variables.hpp>
+#include <sph-simulation/transform.hpp>
 
 #include <sph-simulation/physics/collision/colliders.hpp>
 #include <sph-simulation/physics/rigid_body.hpp>
 #include <sph-simulation/physics/system.hpp>
+
+#include <sph-simulation/render/core/camera.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
@@ -146,7 +148,7 @@ simulation::simulation(sim_config scene, util::log_ptr logger) :
 
             auto entity = m_registry.create();
 
-            auto& transform = m_registry.emplace<render::component::transform>(entity);
+            auto& transform = m_registry.emplace<::transform>(entity);
             transform = {.position = {x, y, z},
                          .rotation = {0, 0, 0},
                          .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f};
@@ -292,7 +294,7 @@ void simulation::onscreen_render()
       buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                 {m_camera.lookup_set(image_index)}, {});
 
-      auto view = m_registry.view<render::component::render, render::component::transform>();
+      auto view = m_registry.view<render::component::render, transform>();
 
       buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
@@ -302,7 +304,7 @@ void simulation::onscreen_render()
                          }))
       {
          const auto& render = view.get<render::component::render>(entity);
-         const auto& transform = view.get<render::component::transform>(entity);
+         const auto& transform = view.get<::transform>(entity);
 
          const auto translate = glm::translate(glm::mat4(1), transform.position);
          const auto scale = glm::scale(glm::mat4(1), transform.scale);
@@ -325,7 +327,7 @@ void simulation::onscreen_render()
                          }))
       {
          const auto& render = view.get<render::component::render>(entity);
-         const auto& transform = view.get<render::component::transform>(entity);
+         const auto& transform = view.get<::transform>(entity);
 
          const auto translate = glm::translate(glm::mat4(1), transform.position);
          const auto scale = glm::scale(glm::mat4(1), transform.scale);
@@ -369,7 +371,7 @@ void simulation::offscreen_render()
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                    {m_camera.lookup_set(0)}, {});
 
-         auto view = m_registry.view<render::component::render, render::component::transform>();
+         auto view = m_registry.view<render::component::render, ::transform>();
 
          buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
          buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
@@ -379,7 +381,7 @@ void simulation::offscreen_render()
                             }))
          {
             const auto& render = view.get<render::component::render>(entity);
-            const auto& transform = view.get<render::component::transform>(entity);
+            const auto& transform = view.get<::transform>(entity);
 
             const auto translate = glm::translate(glm::mat4(1), transform.position);
             const auto scale = glm::scale(glm::mat4(1), transform.scale);
@@ -403,7 +405,7 @@ void simulation::offscreen_render()
                             }))
          {
             const auto& render = view.get<render::component::render>(entity);
-            const auto& transform = view.get<render::component::transform>(entity);
+            const auto& transform = view.get<::transform>(entity);
 
             const auto translate = glm::translate(glm::mat4(1), transform.position);
             const auto scale = glm::scale(glm::mat4(1), transform.scale);

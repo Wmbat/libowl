@@ -1,8 +1,8 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/camera.hpp>
-#include <sph-simulation/render/render_pass.hpp>
+#include <sph-simulation/render/core/camera.hpp>
+#include <sph-simulation/render/core/render_pass.hpp>
 
 #include <libcacao/command_pool.hpp>
 

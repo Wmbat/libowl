@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sph-simulation/render/pipeline.hpp>
+#include <sph-simulation/core/pipeline.hpp>
 #include <sph-simulation/render/render_system.hpp>
 
 #include <libcacao/descriptor_pool.hpp>

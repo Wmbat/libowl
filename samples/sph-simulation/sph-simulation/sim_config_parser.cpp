@@ -1,6 +1,6 @@
 #include <sph-simulation/sim_config_parser.hpp>
 
-#include <sph-simulation/maths.hpp>
+#include <sph-simulation/core/maths.hpp>
 
 #include <libmannele/io/read_file.hpp>
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/pipeline.hpp>
+#include <sph-simulation/core/pipeline.hpp>
 #include <sph-simulation/render/render_system.hpp>
 
 enum struct pipeline_registry_error

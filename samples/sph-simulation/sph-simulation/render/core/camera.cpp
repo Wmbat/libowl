@@ -1,4 +1,4 @@
-#include <sph-simulation/render/camera.hpp>
+#include <sph-simulation/render/core/camera.hpp>
 
 #include <sph-simulation/core.hpp>
 

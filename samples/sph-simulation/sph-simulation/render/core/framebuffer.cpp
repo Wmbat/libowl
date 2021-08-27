@@ -1,4 +1,4 @@
-#include <sph-simulation/render/framebuffer.hpp>
+#include <sph-simulation/render/core/framebuffer.hpp>
 
 framebuffer::framebuffer(const framebuffer_create_info& info) :
    m_dimensions(info.dimensions), m_layers(info.layers),
