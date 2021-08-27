@@ -16,5 +16,5 @@ namespace sph
 {
    using particle_view = entt::view<entt::exclude_t<>, PARTICLE_COMPONENTS>;
 
-   void update(particle_view& test, const settings& variables, duration<float> time_step);
+   void update(particle_view& test, const sim_variables& variables, duration<float> time_step);
 } // namespace sph

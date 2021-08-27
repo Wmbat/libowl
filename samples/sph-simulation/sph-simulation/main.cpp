@@ -36,7 +36,7 @@ auto main(int argc, char** argv) -> int
    {
       glfwInit();
 
-      auto sim = simulation(settings{});
+      auto sim = simulation(config.borrow());
       sim.run();
    }
    else

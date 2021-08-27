@@ -99,8 +99,8 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-simulation::simulation(const settings& scene) :
-   m_logger("fluid_simulation"), m_scene(scene), m_window({"Fluid Simulation", {1080, 720}}),
+simulation::simulation(const sim_config& scene) :
+   m_logger("fluid_simulation"), m_config(scene), m_window({"Fluid Simulation", {1080, 720}}),
    m_render_system(&m_window, &m_logger), m_shaders(m_render_system, &m_logger),
    m_pipelines(&m_logger),
    m_plane(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/plane.obj"))),
@@ -142,9 +142,9 @@ simulation::simulation(const settings& scene) :
    constexpr std::size_t y_count = 10u; // 100u;
    constexpr std::size_t z_count = 10u;
 
-   float distance_x = m_scene.water_radius * 1.20f; // NOLINT
-   float distance_y = m_scene.water_radius * 1.20f; // NOLINT
-   float distance_z = m_scene.water_radius * 1.20f; // NOLINT
+   float distance_x = m_config.variables.water_radius * 1.20f; // NOLINT
+   float distance_y = m_config.variables.water_radius * 1.20f; // NOLINT
+   float distance_z = m_config.variables.water_radius * 1.20f; // NOLINT
 
    for (auto i : vi::iota(0U, x_count))
    {
@@ -163,30 +163,31 @@ simulation::simulation(const settings& scene) :
             auto& transform = m_registry.emplace<render::component::transform>(entity);
             transform = {.position = {x, y, z},
                          .rotation = {0, 0, 0},
-                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * m_scene.scale_factor};
+                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f};
 
             auto& particle = m_registry.emplace<sph::component::particle_data>(entity);
-            particle = {.radius = m_scene.water_radius};
+            particle = {.radius = m_config.variables.water_radius};
 
             auto& rigid_body = m_registry.emplace<physics::component::rigid_body>(entity);
-            rigid_body = {.mass = m_scene.water_mass};
+            rigid_body = {.mass = m_config.variables.water_mass};
 
             auto& render = m_registry.emplace<render::component::render>(entity);
             render = {.p_mesh = &m_sphere,
                       .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
 
             auto& collider = m_registry.emplace<physics::component::sphere_collider>(entity);
-            collider = {.volume = {.center = glm::vec3(), .radius = m_scene.water_radius},
-                        .friction = 0.0f};
+            collider = {.volume = {.center = glm::vec3(), .radius = m_config.variables.water_radius},
+                        .friction = 0.0f,
+                        .restitution = 0.5f};
          }
       }
    }
 
-   add_plane(-3.0f, glm::vec3(-1, 0, 0)); // X
-   add_plane(-5.0f, glm::vec3(1, 0, 0)); // X
-   add_plane(0.0f, glm::vec3(0, 1, 0));  // Y
-   add_plane(-2.5f, glm::vec3(0, 0, 1)); // Z
-   add_plane(-2.5f, glm::vec3(0, 0, -1));  // Z
+   add_plane(-3.0f, glm::vec3(-1, 0, 0)); // X // NOLINT
+   add_plane(-5.0f, glm::vec3(1, 0, 0));  // X // NOLINT
+   add_plane(0.0f, glm::vec3(0, 1, 0));   // Y // NOLINT
+   add_plane(-2.5f, glm::vec3(0, 0, 1));  // Z // NOLINT
+   add_plane(-2.5f, glm::vec3(0, 0, -1)); // Z // NOLINT
 
    // add_box({3.5f, 2.0f, 2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
    // add_box({7.5f, 2.0f, -2.0f}, {1.0f, 2.5f, 3.0f}, {1.0f, 0.0f, 0.0f});
@@ -203,9 +204,10 @@ simulation::simulation(const settings& scene) :
       "Scene settings:\n\t-> particle count = {}\n\t-> particle mass = {}\n\t-> particle radius = "
       "{}\n\t-> kernel radius = {}\n\t-> rest density = {}\n\t-> viscosity constant = {}\n\t-> "
       "surface tension coefficient = {}\n\t-> time step = {}ms",
-      x_count * y_count * z_count, m_scene.water_mass, m_scene.water_radius,
-      m_scene.kernel_radius(), m_scene.rest_density, m_scene.viscosity_constant,
-      m_scene.surface_tension_coefficient, m_scene.time_step.count());
+      x_count * y_count * z_count, m_config.variables.water_mass, m_config.variables.water_radius,
+      compute_kernel_radius(m_config.variables), m_config.variables.rest_density,
+      m_config.variables.viscosity_constant, m_config.variables.surface_tension_coefficient,
+      m_config.time_step.count());
 
    std::filesystem::remove_all("frames");
    std::filesystem::create_directory("frames");
@@ -238,7 +240,7 @@ void simulation::run()
          m_logger.debug("frametime = {}", delta_time.count());
       }
 
-      m_time_spent += m_scene.time_step;
+      m_time_spent += m_config.time_step;
    }
 
    m_render_system.wait();
@@ -251,11 +253,11 @@ void simulation::update()
    auto plane_view = m_registry.view<PLANE_COMPONENTS>();
    auto box_view = m_registry.view<BOX_COMPONENTS>();
 
-   sph::update(particle_view, m_scene, m_scene.time_step);
+   sph::update(particle_view, m_config.variables, m_config.time_step);
    physics::update({.spheres = sphere_view,
                     .planes = plane_view,
                     .boxes = box_view,
-                    .time_step = m_scene.time_step});
+                    .time_step = m_config.time_step});
 }
 void simulation::render()
 {

@@ -22,7 +22,7 @@
 class simulation
 {
 public:
-   simulation(const settings& config);
+   simulation(const sim_config& config);
 
    void run();
 
@@ -58,7 +58,7 @@ private:
 private:
    util::logger m_logger;
 
-   settings m_scene;
+   sim_config m_config;
 
    cacao::window m_window;
 

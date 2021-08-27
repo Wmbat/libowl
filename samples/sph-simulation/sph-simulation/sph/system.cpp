@@ -151,13 +151,14 @@ namespace sph
       });
    }
 
-   void update(particle_view& particles, const settings& variables, duration<float> time_step)
+   void update(particle_view& particles, const sim_variables& variables, duration<float> time_step)
    {
-      compute_density_pressure(particles, variables.kernel_radius(), variables.rest_density);
-      compute_normals(particles, variables.kernel_radius());
-      compute_forces(particles, variables.kernel_radius(), variables.rest_density,
-                     variables.viscosity_constant, variables.surface_tension_coefficient,
-                     variables.gravity_multiplier);
+      const auto kernel_radius = compute_kernel_radius(variables);
+
+      compute_density_pressure(particles, kernel_radius, variables.rest_density);
+      compute_normals(particles, kernel_radius);
+      compute_forces(particles, kernel_radius, variables.rest_density, variables.viscosity_constant,
+                     variables.surface_tension_coefficient, variables.gravity_multiplier);
       integrate(particles, time_step);
    }
 } // namespace sph
