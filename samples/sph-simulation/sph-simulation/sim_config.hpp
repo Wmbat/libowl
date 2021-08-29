@@ -12,6 +12,9 @@ struct sim_config
 {
    std::string name;
 
+   bool is_onscreen_rendering_enabled;
+   bool is_offscreen_rendering_enabled;
+
    mannele::dimension_u32 dimensions;
    mannele::u32 frame_count;
 

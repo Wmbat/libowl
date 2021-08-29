@@ -16,11 +16,11 @@
 
 enum class scene_parse_error
 {
-   e_missing_marker_id,
    e_no_name_provided,
    e_dimension_field_error,
-   e_no_frame_count_provided,
-   e_no_time_step_provided,
+   e_rendering_field_error,
+   e_framecount_field_error,
+   e_time_step_field_error,
    e_variables_field_error
 };
 

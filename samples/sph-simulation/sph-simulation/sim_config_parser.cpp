@@ -31,20 +31,6 @@ auto make_error_condition(scene_parse_error code) -> std::error_condition
    return std::error_condition({static_cast<int>(code), buffer_category});
 }
 
-auto parse_json(std::string&& data) -> result<nlohmann::basic_json<>, mannele::runtime_error>
-{
-   const auto json = nlohmann::json::parse(data);
-
-   if (!json.contains("sph"))
-   {
-      return err(
-         mannele::runtime_error(make_error_condition(scene_parse_error::e_missing_marker_id),
-                                "Failed to find \"sph\" designator in json file"));
-   }
-
-   return ok(json["sph"]);
-}
-
 auto extract_dimensions(const nlohmann::basic_json<>& dimensions)
    -> result<mannele::dimension_u32, mannele::runtime_error>
 {
@@ -208,13 +194,67 @@ auto extract_simulation_constants(const nlohmann::basic_json<>& variable)
                            .water_mass = rest_density * cube(water_radius * 2)});
 }
 
-auto extract_scene_data(nlohmann::basic_json<>&& sph) -> result<sim_config, mannele::runtime_error>
+auto extract_rendering_data(const nlohmann::basic_json<>& rendering)
+   -> result<std::pair<bool, bool>, mannele::runtime_error>
 {
+   const auto err_cond = make_error_condition(scene_parse_error::e_rendering_field_error);
+
+   bool is_onscreen_enabled = false;
+   if (const auto it = rendering.find("enable_onscreen"); it == std::end(rendering))
+   {
+      if (it->is_boolean())
+      {
+         is_onscreen_enabled = *it;
+      }
+      else
+      {
+         return err(
+            mannele::runtime_error(err_cond, "The \"enable_onscreen\" field is not a bool"));
+      }
+   }
+   else
+   {
+      is_onscreen_enabled = true;
+   }
+
+   bool is_offscreen_enabled = false;
+   if (const auto it = rendering.find("enable_offscreen"); it == std::end(rendering))
+   {
+      if (it->is_boolean())
+      {
+         is_offscreen_enabled = *it;
+      }
+      else
+      {
+         return err(
+            mannele::runtime_error(err_cond, "The \"enable_offscreen\" field is not a bool"));
+      }
+   }
+   else
+   {
+      is_offscreen_enabled = true;
+   }
+
+   return ok(std::pair(is_onscreen_enabled, is_offscreen_enabled));
+}
+
+auto extract_scene_data(std::string&& str) -> result<sim_config, mannele::runtime_error>
+{
+   const auto sph = nlohmann::json::parse(str);
+
    const auto it_name = sph.find("name");
    if (it_name == std::end(sph))
    {
       return err(mannele::runtime_error(make_error_condition(scene_parse_error::e_no_name_provided),
                                         "The id \"name\" with it value string was not provided"));
+   }
+
+   const auto it_rendering = sph.find("rendering");
+   if (it_rendering == std::end(sph))
+   {
+      return err(
+         mannele::runtime_error(make_error_condition(scene_parse_error::e_rendering_field_error),
+                                "The \"rendering\" object was not found"));
    }
 
    const auto it_dimensions = sph.find("dimensions");
@@ -229,7 +269,7 @@ auto extract_scene_data(nlohmann::basic_json<>&& sph) -> result<sim_config, mann
    if (it_frame_count == std::end(sph))
    {
       return err(
-         mannele::runtime_error(make_error_condition(scene_parse_error::e_no_frame_count_provided),
+         mannele::runtime_error(make_error_condition(scene_parse_error::e_framecount_field_error),
                                 "The id \"frame_count\" with it's integer value was not provided"));
    }
 
@@ -237,7 +277,7 @@ auto extract_scene_data(nlohmann::basic_json<>&& sph) -> result<sim_config, mann
    if (it_time_step == std::end(sph))
    {
       return err(
-         mannele::runtime_error(make_error_condition(scene_parse_error::e_no_time_step_provided),
+         mannele::runtime_error(make_error_condition(scene_parse_error::e_time_step_field_error),
                                 "The id \"time_step\" with it's integer value was not provided"));
    }
 
@@ -253,6 +293,16 @@ auto extract_scene_data(nlohmann::basic_json<>&& sph) -> result<sim_config, mann
    data.name = *it_name;
    data.frame_count = *it_frame_count;
    data.time_step = std::chrono::duration<float, std::milli>(*it_time_step);
+
+   if (auto rendering = extract_rendering_data(*it_rendering))
+   {
+      data.is_onscreen_rendering_enabled = rendering.borrow().first;
+      data.is_offscreen_rendering_enabled = rendering.borrow().second;
+   }
+   else
+   {
+      return err(rendering.borrow_err());
+   }
 
    if (auto dimensions = extract_dimensions(*it_dimensions))
    {
@@ -280,8 +330,7 @@ auto parse_sim_config_json(const std::filesystem::path& filepath)
 {
    // clang-format on
 
-   return mannele::unbuffered_file_read(filepath) | and_then(parse_json) |
-      and_then(extract_scene_data);
+   return mannele::unbuffered_file_read(filepath) | and_then(extract_scene_data);
 
    // clang-format off
 }

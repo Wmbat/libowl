@@ -55,6 +55,8 @@ namespace cacao
       bool m_is_resizable{};
 
       glfw_ptr p_window_handle;
+
+      inline static bool is_glfw_initialized = false; // NOLINT
    };
 } // namespace cacao
 

@@ -71,7 +71,6 @@ private:
 
    entt::registry m_registry;
 
-   renderable m_plane;
    renderable m_sphere;
    renderable m_box;
 
@@ -89,3 +88,12 @@ private:
 
    mannele::u64 m_frame_count = 0;
 };
+
+struct simulation_info
+{
+   sim_config config;
+
+   util::log_ptr logger;    
+};
+
+void start_simulation(const simulation_info& info);

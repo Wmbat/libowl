@@ -7,7 +7,6 @@
 
 #include <sph-simulation/physics/collision/colliders.hpp>
 #include <sph-simulation/physics/rigid_body.hpp>
-#include <sph-simulation/physics/sph/solver.hpp>
 
 #include <entt/entt.hpp>
 
@@ -23,12 +22,9 @@ namespace physics
 
    struct system_update_info
    {
-      sph::particle_view particles;
       sphere_view spheres;
       plane_view planes;
       box_view boxes;
-
-      const sim_variables& variables;
 
       duration<float> time_step;
    };

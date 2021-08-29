@@ -8,6 +8,8 @@
 #include <sph-simulation/physics/rigid_body.hpp>
 #include <sph-simulation/physics/system.hpp>
 
+#include <sph-simulation/sph/system.hpp>
+
 #include <sph-simulation/render/core/camera.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
@@ -103,9 +105,8 @@ simulation::simulation(sim_config scene, util::log_ptr logger) :
    m_logger(logger), m_config(std::move(scene)),
    m_window({"Fluid Simulation", m_config.dimensions}), m_render_system(&m_window, m_logger),
    m_shaders(m_render_system, m_logger), m_pipelines(m_logger),
-   m_plane(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/plane.obj"))),
    m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
-   m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/box.obj")))
+   m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/cube.obj")))
 {
    m_image_pixels.resize(sizeof(glm::u8vec4) * image_height * image_width);
 
@@ -153,7 +154,7 @@ simulation::simulation(sim_config scene, util::log_ptr logger) :
                          .rotation = {0, 0, 0},
                          .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f};
 
-            auto& particle = m_registry.emplace<physics::sph::particle>(entity);
+            auto& particle = m_registry.emplace<sph::particle>(entity);
             particle = {.radius = m_config.variables.water_radius,
                         .mass = m_config.variables.water_mass};
 
@@ -229,11 +230,15 @@ void simulation::update()
    auto plane_view = m_registry.view<PLANE_COMPONENTS>();
    auto box_view = m_registry.view<BOX_COMPONENTS>();
 
-   physics::update({.particles = particle_view,
-                    .spheres = sphere_view,
+   sph::update({.particles = particle_view,
+                .spheres = sphere_view,
+                .planes = plane_view,
+                .boxes = box_view,
+                .variables = m_config.variables,
+                .time_step = m_config.time_step});
+   physics::update({.spheres = sphere_view,
                     .planes = plane_view,
                     .boxes = box_view,
-                    .variables = m_config.variables,
                     .time_step = m_config.time_step});
 }
 void simulation::render()
@@ -691,3 +696,10 @@ void simulation::write_image_to_disk(std::string_view name)
                   image_width * 4);
 }
 
+void start_simulation(const simulation_info& info)
+{
+   auto logger = info.logger;
+   auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
+                                  .use_window = info.config.is_onscreen_rendering_enabled,
+                                  .logger = logger});
+}

@@ -7,6 +7,12 @@ namespace cacao
    window::window(const window_create_info& info) :
       m_title(info.title), m_dimension(info.dimension), m_is_resizable(info.is_resizable)
    {
+      if (!is_glfw_initialized)
+      {
+         glfwInit();
+         is_glfw_initialized = true;
+      }
+
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, m_is_resizable ? GLFW_TRUE : GLFW_FALSE);
 
@@ -17,6 +23,12 @@ namespace cacao
    window::window(window_create_info&& info) :
       m_title(std::move(info.title)), m_dimension(info.dimension), m_is_resizable(info.is_resizable)
    {
+      if (!is_glfw_initialized)
+      {
+         glfwInit();
+         is_glfw_initialized = true;
+      }
+
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, m_is_resizable ? GLFW_TRUE : GLFW_FALSE);
 

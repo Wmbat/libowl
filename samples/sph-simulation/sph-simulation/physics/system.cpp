@@ -77,8 +77,6 @@ namespace physics
 
    void update(const system_update_info& info)
    {
-      sph::solve(info.particles, info.variables, info.time_step);
-
       const auto contacts = detect_collisions(info);
 
       for (auto contact_data : contacts)

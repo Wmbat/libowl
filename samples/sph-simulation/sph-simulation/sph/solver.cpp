@@ -1,25 +1,25 @@
-#include <sph-simulation/physics/sph/solver.hpp>
+#include <sph-simulation/sph/solver.hpp>
 
-#include <sph-simulation/physics/sph/kernel.hpp>
+#include <sph-simulation/sph/kernel.hpp>
 
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/gtx/norm.hpp>
 
-namespace physics::sph
+namespace sph
 {
    void compute_density_pressure(const particle_view& particles, float m_kernel_radius,
                                  float rest_density)
    {
       parallel_for(particles, [&](const entt::entity& entity_i) {
          const auto& i_transform = particles.get<transform>(entity_i);
-         auto& i_particle = particles.get<physics::sph::particle>(entity_i);
+         auto& i_particle = particles.get<sph::particle>(entity_i);
 
          float density = 0.0f;
 
          for (auto& entity_j : particles)
          {
             const auto& j_transform = particles.get<transform>(entity_j);
-            const auto& j_particle = particles.get<physics::sph::particle>(entity_j);
+            const auto& j_particle = particles.get<sph::particle>(entity_j);
 
             const auto r_ij = i_transform.position - j_transform.position;
             const auto r2 = glm::length2(r_ij);
@@ -33,7 +33,7 @@ namespace physics::sph
          i_particle.density = density * kernel::poly6_constant(m_kernel_radius);
 
          float ratio = i_particle.density / rest_density;
-         i_particle.pressure = ratio < 1.0f ? 0.0f : std::pow(ratio, 7.0f) - 1.0f;
+         i_particle.pressure = ratio < 1.0f ? 0.0f : std::pow(ratio, 7.0f) - 1.0f; // NOLINT
       });
    }
 
@@ -41,14 +41,14 @@ namespace physics::sph
    {
       parallel_for(particles, [&](const entt::entity& entity_i) {
          const auto& i_transform = particles.get<transform>(entity_i);
-         auto& i_particle = particles.get<physics::sph::particle>(entity_i);
+         auto& i_particle = particles.get<sph::particle>(entity_i);
 
          glm::vec3 normal{0.0f, 0.0f, 0.0f};
 
          for (auto& entity_j : particles)
          {
             const auto& j_transform = particles.get<transform>(entity_j);
-            const auto& j_particle = particles.get<physics::sph::particle>(entity_j);
+            const auto& j_particle = particles.get<sph::particle>(entity_j);
 
             const auto r_ij = i_transform.position - j_transform.position;
             const auto r2 = glm::length2(r_ij);
@@ -73,7 +73,7 @@ namespace physics::sph
 
       parallel_for(view, [&](const entt::entity& entity_i) {
          const auto& transform_i = view.get<transform>(entity_i);
-         auto& particle_i = view.get<physics::sph::particle>(entity_i);
+         auto& particle_i = view.get<sph::particle>(entity_i);
 
          glm::vec3 pressure_force{0.0f, 0.0f, 0.0f};
          glm::vec3 viscosity_force{0.0f, 0.0f, 0.0f};
@@ -84,7 +84,7 @@ namespace physics::sph
          for (auto& entity_j : view)
          {
             const auto& transform_j = view.get<transform>(entity_j);
-            const auto& particle_j = view.get<physics::sph::particle>(entity_j);
+            const auto& particle_j = view.get<sph::particle>(entity_j);
 
             if (entity_i != entity_j)
             {
@@ -101,7 +101,7 @@ namespace physics::sph
                {
                   pressure_force += glm::normalize(r_ij) *
                      (particle_j.mass * (particle_i.pressure + particle_j.pressure) /
-                      (2.0f * particle_j.density) * kernel::spiky(kernel_radius, r));
+                      (2.0f * particle_j.density) * kernel::spiky(kernel_radius, r)); // NOLINT
 
                   viscosity_force += particle_j.mass *
                      ((particle_j.velocity - particle_i.velocity) / particle_j.density) *
@@ -134,7 +134,7 @@ namespace physics::sph
    {
       parallel_for(particles, [&](const entt::entity& entity) {
          auto& transform = particles.get<::transform>(entity);
-         auto& particle = particles.get<physics::sph::particle>(entity);
+         auto& particle = particles.get<sph::particle>(entity);
 
          particle.velocity += time_step.count() * particle.force / particle.density;
          transform.position += time_step.count() * particle.velocity;
@@ -152,4 +152,4 @@ namespace physics::sph
       integrate(particles, time_step);
    }
 
-} // namespace physics::sph
+} // namespace sph

@@ -1,10 +1,13 @@
-#ifndef SPH_SIMULATION_PHYSICS_SPH_PARTICLE_HPP
-#define SPH_SIMULATION_PHYSICS_SPH_PARTICLE_HPP
+#ifndef SPH_SIMULATION_SPH_PARTICLE_HPP
+#define SPH_SIMULATION_SPH_PARTICLE_HPP
 
 #include <glm/ext/vector_float3.hpp>
 
-namespace physics::sph
+namespace sph
 {
+   /**
+    * @brief Data necessary to perform the SPH computations on a particle of fluid.
+    */
    struct particle
    {
       glm::vec3 velocity{};
@@ -15,8 +18,7 @@ namespace physics::sph
       float mass{1.0F};
       float density{0.0F};
       float pressure{0.0F};
-      float restitution{0.5f};
    };
-} // namespace physics::sph
+} // namespace sph
 
-#endif // SPH_SIMULATION_PHYSICS_SPH_PARTICLE_HPP
+#endif // SPH_SIMULATION_SPH_PARTICLE_HPP
