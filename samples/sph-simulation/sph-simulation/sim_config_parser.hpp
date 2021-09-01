@@ -6,8 +6,6 @@
 #include <libmannele/dimension.hpp>
 #include <libmannele/error/runtime_error.hpp>
 
-#include <libutils/logger.hpp>
-
 #include <libreglisse/result.hpp>
 
 #include <filesystem>

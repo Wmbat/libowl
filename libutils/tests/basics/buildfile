@@ -1,3 +1,0 @@
-import libs = libutils%lib{utils}
-
-exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

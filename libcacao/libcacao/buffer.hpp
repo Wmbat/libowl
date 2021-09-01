@@ -32,7 +32,7 @@ namespace cacao
 
       bool set_concurrent{false};
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class LIBCACAO_SYMEXPORT buffer
@@ -60,6 +60,6 @@ namespace cacao
       vk::UniqueBuffer m_buffer;
       vk::UniqueDeviceMemory m_memory;
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 } // namespace cacao

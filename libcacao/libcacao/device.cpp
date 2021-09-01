@@ -90,7 +90,7 @@ namespace cacao
 
       const auto physical_properties = m_physical.getProperties();
 
-      util::log_ptr logger = info.logger;
+      mannele::log_ptr logger = info.logger;
       logger.info("GPU: {}", physical_properties.deviceName);
 
       for (const auto& queue : m_queues)
@@ -181,7 +181,7 @@ namespace cacao
    }
    auto device::create_logical_device(const device_create_info& info) const -> vk::UniqueDevice
    {
-      util::log_ptr logger = info.logger;
+      mannele::log_ptr logger = info.logger;
 
       const auto features = m_physical.getFeatures();
 

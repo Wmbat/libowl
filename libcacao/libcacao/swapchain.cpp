@@ -109,7 +109,7 @@ namespace cacao
       const bool same_family = info.graphics_queue_index == info.present_queue_index;
 
       const auto create_info = vk::SwapchainCreateInfoKHR{
-         .surface = info.surface.value(),
+         .surface = info.surface,
          .minImageCount = image_count,
          .imageFormat = format.format,
          .imageColorSpace = format.colorSpace,
@@ -149,7 +149,7 @@ namespace cacao
       }
 
       m_logger.debug("Swapchain created with {} {}x{} images", std::size(m_images),
-                    info.desired_dimensions.width, info.desired_dimensions.height);
+                     info.desired_dimensions.width, info.desired_dimensions.height);
    }
 
    auto swapchain::value() const noexcept -> vk::SwapchainKHR { return m_swapchain.get(); }
@@ -161,22 +161,41 @@ namespace cacao
       return m_image_views;
    }
 
-   auto get_surface_capabilities(const device& device, const surface& surface)
+   auto get_surface_capabilities(const device& device, vk::SurfaceKHR surface)
    {
-      return device.physical().getSurfaceCapabilitiesKHR(surface.value());
+      return device.physical().getSurfaceCapabilitiesKHR(surface);
    }
 
-   auto get_surface_format(const device& device, const surface& surface)
+   auto get_surface_format(const device& device, vk::SurfaceKHR surface)
    {
-      return device.physical().getSurfaceFormatsKHR(surface.value());
+      return device.physical().getSurfaceFormatsKHR(surface);
    }
 
-   auto get_surface_present_mode(const device& device, const surface& surface)
+   auto get_surface_present_mode(const device& device, vk::SurfaceKHR surface)
    {
-      return device.physical().getSurfacePresentModesKHR(surface.value());
+      return device.physical().getSurfacePresentModesKHR(surface);
    }
 
-   auto query_surface_support(const device& device, const surface& surface)
+   class surface_support_error_category : public std::error_category
+   {
+      [[nodiscard]] auto name() const noexcept -> const char* override
+      {
+         return "cacao_surface_support";
+      }
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return std::string(magic_enum::enum_name(static_cast<surface_support_error>(err)));
+      }
+   };
+
+   inline static const surface_support_error_category surface_support_category{};
+
+   auto to_error_condition(surface_support_error code) -> std::error_condition
+   {
+      return std::error_condition({static_cast<int>(code), surface_support_category});
+   }
+
+   auto query_surface_support(const device& device, vk::SurfaceKHR surface)
       -> reglisse::result<surface_support, surface_support_error>
    {
       const auto surface_capabilities_res =

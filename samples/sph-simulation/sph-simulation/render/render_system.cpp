@@ -10,7 +10,7 @@
 
 using namespace reglisse;
 
-auto create_render_command_pools(const cacao::device& device, util::log_ptr logger)
+auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>
 {
    std::array<cacao::command_pool, max_frames_in_flight> pools;
@@ -68,7 +68,7 @@ auto create_render_finished_semaphores(const cacao::device& device, mannele::u64
    return semaphores;
 }
 
-auto create_depth_buffer(util::log_ptr logger, cacao::device& device, vk::Extent2D extent) -> image
+auto create_depth_buffer(mannele::log_ptr logger, cacao::device& device, vk::Extent2D extent) -> image
 {
    return image({.device = device,
                  .formats = {std::begin(depth_formats), std::end(depth_formats)},
@@ -79,15 +79,15 @@ auto create_depth_buffer(util::log_ptr logger, cacao::device& device, vk::Extent
                  .logger = logger});
 }
 
-render_system::render_system(util::non_null<cacao::window*> p_window, util::log_ptr logger) :
-   m_logger(logger), mp_window(p_window.get()),
+render_system::render_system(cacao::window* p_window, mannele::log_ptr logger) :
+   m_logger(logger), mp_window(p_window),
    m_context(
       {.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0), .use_window = true, .logger = m_logger}),
    m_surface(p_window->create_surface(m_context).take()),
-   m_device({.ctx = m_context, .surface = m_surface.value(), .logger = m_logger}),
+   m_device({.ctx = m_context, .surface = m_surface.get(), .logger = m_logger}),
    m_swapchain(cacao::swapchain_create_info{
       .device = m_device,
-      .surface = m_surface,
+      .surface = m_surface.get(),
       .desired_formats = {{vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear}},
       .desired_present_modes = {vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo},
       .desired_dimensions = p_window->dimension(),

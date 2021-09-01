@@ -1,3 +1,0 @@
-# libutils
-
-C++ library

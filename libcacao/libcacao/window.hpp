@@ -4,7 +4,6 @@
 #include <libcacao/context.hpp>
 #include <libcacao/error.hpp>
 #include <libcacao/export.hpp>
-#include <libcacao/surface.hpp>
 
 #include <libmannele/dimension.hpp>
 
@@ -41,7 +40,7 @@ namespace cacao
       void poll_events();
 
       [[nodiscard]] auto create_surface(const cacao::context& context) const
-         -> reglisse::result<surface, error_code>;
+         -> reglisse::result<vk::UniqueSurfaceKHR, error_code>;
 
       [[nodiscard]] auto title() const -> std::string_view;
       [[nodiscard]] auto dimension() const -> const mannele::dimension_u32&;

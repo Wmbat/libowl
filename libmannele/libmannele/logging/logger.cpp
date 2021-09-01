@@ -16,14 +16,14 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/logger.hpp>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <memory>
 
-namespace util
+namespace mannele
 {
    logger::logger() : log("Default logger")
    {
@@ -71,15 +71,4 @@ namespace util
 
    auto logger::get_logger() -> spdlog::logger& { return log; }
    auto logger::get_logger() const -> const spdlog::logger& { return log; }
-
-   log_ptr::log_ptr(util::logger* p_logger) : mp_logger{p_logger} {}
-
-   auto log_ptr::get() const -> util::logger* { return mp_logger; }
-   auto log_ptr::take() -> util::logger*
-   {
-      auto* temp = mp_logger;
-      mp_logger = nullptr;
-
-      return temp;
-   }
-} // namespace util
+} // namespace mannele

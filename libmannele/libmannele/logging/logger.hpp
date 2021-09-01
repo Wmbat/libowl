@@ -16,16 +16,15 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <libutils/pointer.hpp>
+#ifndef LIBMANNELE_LOGGING_LOGGER_HPP
+#define LIBMANNELE_LOGGING_LOGGER_HPP
 
 #include <spdlog/spdlog.h>
 
 #include <cstring>
 #include <string_view>
 
-namespace util
+namespace mannele 
 {
    class logger
    {
@@ -69,51 +68,6 @@ namespace util
    private:
       spdlog::logger log;
    };
+} // namespace mannele
 
-   class log_ptr
-   {
-   public:
-      log_ptr(util::logger* p_logger = nullptr);
-
-      template <typename... Args>
-      void info(fmt::format_string<Args...> msg, Args&&... args)
-      {
-         if (mp_logger)
-         {
-            mp_logger->info(msg, std::forward<Args>(args)...);
-         }
-      }
-      template <typename... Args>
-      void debug(fmt::format_string<Args...> msg, Args&&... args)
-      {
-         if (mp_logger)
-         {
-            mp_logger->debug(msg, std::forward<Args>(args)...);
-         }
-      }
-      template <typename... Args>
-      void warning(fmt::format_string<Args...> msg, Args&&... args)
-      {
-         if (mp_logger)
-         {
-            mp_logger->warning(msg, std::forward<Args>(args)...);
-         }
-      }
-      template <typename... Args>
-      void error(fmt::format_string<Args...> msg, Args&&... args)
-      {
-         if (mp_logger)
-         {
-            mp_logger->error(msg, std::forward<Args>(args)...);
-         }
-      }
-
-      auto get() const -> util::logger*; // NOLINT
-
-      [[nodiscard]] auto take() -> util::logger*;
-
-   private:
-      util::logger* mp_logger;
-   };
-
-} // namespace util
+#endif // LIBMANNELE_LOGGING_LOGGER_HPP

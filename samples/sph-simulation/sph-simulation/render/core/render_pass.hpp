@@ -19,7 +19,7 @@ struct render_pass_create_info
 
    std::vector<framebuffer_create_info> framebuffer_create_infos{};
 
-   util::log_ptr logger{nullptr};
+   mannele::log_ptr logger{nullptr};
 };
 
 class render_pass

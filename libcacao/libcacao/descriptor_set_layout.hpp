@@ -13,7 +13,7 @@ namespace cacao
 
       std::vector<vk::DescriptorSetLayoutBinding> bindings;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class descriptor_set_layout

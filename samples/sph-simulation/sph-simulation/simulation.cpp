@@ -19,8 +19,18 @@
 
 #include <glm/ext/matrix_transform.hpp>
 
+#if defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wsign-compare"
+#   pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
+
+#if defined(__GNUC__)
+#   pragma GCC diagnostic pop
+#endif
 
 #include <execution>
 #include <future>
@@ -36,7 +46,7 @@ struct mesh_data
    glm::vec3 colour;
 };
 
-auto get_main_framebuffers(const render_system& system, util::log_ptr logger)
+auto get_main_framebuffers(const render_system& system, mannele::log_ptr logger)
    -> std::vector<framebuffer_create_info>
 {
    std::vector<framebuffer_create_info> infos;
@@ -101,7 +111,7 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-simulation::simulation(sim_config scene, util::log_ptr logger) :
+simulation::simulation(sim_config scene, mannele::log_ptr logger) :
    m_logger(logger), m_config(std::move(scene)),
    m_window({"Fluid Simulation", m_config.dimensions}), m_render_system(&m_window, m_logger),
    m_shaders(m_render_system, m_logger), m_pipelines(m_logger),
@@ -696,10 +706,42 @@ void simulation::write_image_to_disk(std::string_view name)
                   image_width * 4);
 }
 
-void start_simulation(const simulation_info& info)
+auto create_window(const sim_config& config) -> maybe<cacao::window>
+{
+   if (config.is_onscreen_rendering_enabled)
+   {
+      return some(cacao::window(
+         {.title = config.name, .dimension = config.dimensions, .is_resizable = false}));
+   }
+
+   return none;
+}
+
+auto start_simulation(const simulation_info& info) -> int
 {
    auto logger = info.logger;
    auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
                                   .use_window = info.config.is_onscreen_rendering_enabled,
                                   .logger = logger});
+
+   maybe<cacao::window> window = create_window(info.config);
+   vk::UniqueSurfaceKHR surface;
+   if (info.config.is_onscreen_rendering_enabled)
+   {
+      if (auto res = window.borrow().create_surface(context))
+      {
+         surface = std::move(res).take();
+      }
+      else
+      {
+         logger.error("failed to create surface: {}", magic_enum::enum_name(res.borrow_err()));
+
+         return EXIT_FAILURE;
+      }
+   }
+
+   auto device = cacao::device(
+      cacao::device_create_info{.ctx = context, .surface = surface.get(), .logger = logger});
+
+   return EXIT_SUCCESS;
 }

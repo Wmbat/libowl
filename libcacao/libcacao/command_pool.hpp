@@ -4,7 +4,7 @@
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/log_ptr.hpp>
 
 #include <libreglisse/maybe.hpp>
 
@@ -34,7 +34,7 @@ namespace cacao
       mannele::u32 primary_buffer_count = 0;
       mannele::u32 secondary_buffer_count = 0;
 
-      util::log_ptr logger = nullptr;
+      mannele::log_ptr logger = nullptr;
    };
 
    class LIBCACAO_SYMEXPORT command_pool
@@ -55,7 +55,7 @@ namespace cacao
       std::vector<vk::CommandBuffer> m_primary_buffers;
       std::vector<vk::CommandBuffer> m_secondary_buffers;
 
-      util::log_ptr m_logger = nullptr;
+      mannele::log_ptr m_logger = nullptr;
    };
 
    auto LIBCACAO_SYMEXPORT create_standalone_command_buffers(const device& device,

@@ -5,7 +5,17 @@
 
 #include <magic_enum.hpp>
 
+#if defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wdouble-promotion"
+#   pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
+
 #include <spirv_glsl.hpp>
+
+#if defined(__GCC__)
+#   pragma GCC diagnostic pop
+#endif
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>

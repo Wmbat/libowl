@@ -65,40 +65,11 @@ public:
    };
 
 public:
-   shader_registry(render_system& renderer, util::log_ptr logger);
+   shader_registry(render_system& renderer, mannele::log_ptr logger);
 
-   /**
-    * @brief Insert and construct a `vkn::shader` into the registry.
-    *
-    * @param path The path to the spirv shader binary
-    * @param type The type of shader to insert
-    *
-    * @return A `result` holding one of two things:
-    * * A `util::error_t` holding relevant information about the error that happened during insert.
-    * * A struct giving access to the `key_type` & `value_type` that have been inserted into the
-    * registry.
-    */
    auto insert(const filepath& path, cacao::shader_type type)
       -> reglisse::result<insert_kv, shader_registry_error>;
-   /**
-    * @brief Finds a `value_type` from it's associated `key_type`
-    *
-    * @param key The key used for finding the associated `value_type`
-    *
-    * @return A `result` holding one of two things:
-    * * A `util::error_t` holding relevant information about the error that happened during lookup.
-    * * A struct giving access to `value_type` object stored within the registry.
-    */
    auto lookup(const key_type& key) -> reglisse::result<lookup_v, shader_registry_error>;
-   /**
-    * @brief Remove a `value_type` from the registry using it's associated `key_type`
-    *
-    * @param key The key used for finding the associated `value_type`
-    *
-    * @return A `result` holding one of two things:
-    * * A `util::error_t` holding relevant information about the error that happened during removal.
-    * * A struct giving ownership of the `value_type` object stored within the registry.
-    */
    auto remove(const key_type& key) -> reglisse::result<remove_v, shader_registry_error>;
 
 private:
@@ -106,5 +77,5 @@ private:
 
    render_system& m_renderer;
 
-   util::log_ptr m_logger;
+   mannele::log_ptr m_logger;
 };

@@ -4,7 +4,7 @@
 #include <libcacao/export.hpp>
 #include <libcacao/vulkan.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/log_ptr.hpp>
 
 #include <span>
 #include <vector>
@@ -22,7 +22,7 @@ namespace cacao
       std::uint32_t min_vulkan_version = VK_MAKE_VERSION(1, 1, 0);
       bool use_window = true;
 
-      util::log_ptr logger{nullptr};
+      mannele::log_ptr logger{nullptr};
    };
 
    class LIBCACAO_SYMEXPORT context
@@ -37,12 +37,12 @@ namespace cacao
       [[nodiscard]] auto enumerate_physical_devices() const -> std::vector<vk::PhysicalDevice>;
 
    private:
-      [[nodiscard]] auto load_vulkan_core(util::log_ptr logger) const -> vk::DynamicLoader;
+      [[nodiscard]] auto load_vulkan_core(mannele::log_ptr logger) const -> vk::DynamicLoader;
       [[nodiscard]] auto get_vulkan_api_version(std::uint32_t minimum_version) const
          -> std::uint32_t;
       [[nodiscard]] auto create_instance(const context_create_info& info) const
          -> vk::UniqueInstance;
-      [[nodiscard]] auto create_debug_utils(util::log_ptr logger) const
+      [[nodiscard]] auto create_debug_utils(mannele::log_ptr logger) const
          -> vk::UniqueDebugUtilsMessengerEXT;
 
    private:
@@ -53,7 +53,7 @@ namespace cacao
       vk::UniqueInstance m_instance{nullptr};
       vk::UniqueDebugUtilsMessengerEXT m_debug_utils{nullptr};
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 
    auto LIBCACAO_SYMEXPORT check_layer_support(std::span<const vk::LayerProperties> layers,

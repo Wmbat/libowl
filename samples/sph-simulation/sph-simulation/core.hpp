@@ -2,7 +2,7 @@
 
 #include <sph-simulation/core/maths.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/logger.hpp>
 
 #include <libreglisse/result.hpp>
 
@@ -16,6 +16,9 @@
 #include <execution>
 #include <filesystem>
 #include <numbers>
+
+#define IS_GCC (defined(__GNUC__) && !defined(__clang__))
+#define IS_CLANG defined(__clang__)
 
 using namespace std::literals::chrono_literals;
 

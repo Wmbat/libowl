@@ -9,7 +9,7 @@
 
 using namespace reglisse;
 
-shader_registry::shader_registry(render_system& renderer, util::log_ptr logger) :
+shader_registry::shader_registry(render_system& renderer, mannele::log_ptr logger) :
    m_renderer{renderer}, m_logger{logger}
 {}
 

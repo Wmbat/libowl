@@ -71,7 +71,7 @@ void camera::update(mannele::u64 image_index, const matrices& matrices)
    m_device.unmapMemory(m_uniform_buffers.at(image_index).memory());
 }
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log_ptr logger)
+auto create_camera(render_system& system, graphics_pipeline& pipeline, mannele::log_ptr logger)
    -> camera
 {
    return camera({.renderer = system,
@@ -80,7 +80,7 @@ auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log
                   .logger = logger});
 }
 auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             util::log_ptr logger) -> camera
+                             mannele::log_ptr logger) -> camera
 {
    return camera({.renderer = system, .pipeline = pipeline, .image_count = 1, .logger = logger});
 }

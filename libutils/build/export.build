@@ -1,6 +1,0 @@
-$out_root/
-{
-  include libutils/
-}
-
-export $out_root/libutils/$import.target

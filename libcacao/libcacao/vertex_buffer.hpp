@@ -15,7 +15,7 @@ namespace cacao
 
       std::span<const vertex> vertices;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class LIBCACAO_SYMEXPORT vertex_buffer
@@ -33,7 +33,7 @@ namespace cacao
 
       cacao::buffer m_buffer;
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 } // namespace cacao
 

@@ -58,7 +58,7 @@ public:
    };
 
 public:
-   pipeline_registry(util::log_ptr logger);
+   pipeline_registry(mannele::log_ptr logger);
 
    auto insert(graphics_pipeline_create_info&& info)
       -> reglisse::result<insert_kv, pipeline_registry_error>;
@@ -68,7 +68,7 @@ public:
 private:
    graphics_map m_graphics_pipelines;
 
-   util::log_ptr m_logger;
+   mannele::log_ptr m_logger;
 
    mannele::u64 id_counter{0};
 };

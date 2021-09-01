@@ -4,7 +4,7 @@
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/log_ptr.hpp>
 
 namespace cacao
 {
@@ -15,7 +15,7 @@ namespace cacao
       std::vector<vk::DescriptorPoolSize> pool_sizes;
       std::vector<vk::DescriptorSetLayout> layouts;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class descriptor_pool
@@ -31,7 +31,7 @@ namespace cacao
       vk::UniqueDescriptorPool m_pool{};
       std::vector<vk::DescriptorSet> m_sets{};
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 } // namespace cacao
 

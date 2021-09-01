@@ -65,7 +65,7 @@ namespace cacao
       bool use_transfer_queue = false;
       bool use_compute_queue = false;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    struct queue

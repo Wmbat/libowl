@@ -2,7 +2,6 @@
 
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
-#include <libcacao/surface.hpp>
 
 #include <libmannele/dimension.hpp>
 
@@ -17,7 +16,8 @@ namespace cacao
    struct LIBCACAO_SYMEXPORT swapchain_create_info
    {
       const cacao::device& device;
-      const cacao::surface& surface;
+
+      vk::SurfaceKHR surface;
 
       std::vector<vk::SurfaceFormatKHR> desired_formats;
       std::vector<vk::PresentModeKHR> desired_present_modes;
@@ -34,7 +34,7 @@ namespace cacao
 
       swapchain* old_swapchain;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class LIBCACAO_SYMEXPORT swapchain
@@ -51,7 +51,7 @@ namespace cacao
       [[nodiscard]] auto images() const noexcept -> std::span<const vk::Image>;
 
       // TODO: BAD
-      [[nodiscard]] auto image_views() const noexcept -> std::span<const vk::UniqueImageView>; 
+      [[nodiscard]] auto image_views() const noexcept -> std::span<const vk::UniqueImageView>;
 
    private:
       vk::UniqueSwapchainKHR m_swapchain;
@@ -61,9 +61,25 @@ namespace cacao
       vk::Format m_format{};
       vk::Extent2D m_extent{};
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 
-   auto LIBCACAO_SYMEXPORT query_surface_support(const device& device, const surface& surface)
+   struct surface_support
+   {
+      vk::SurfaceCapabilitiesKHR capabilities;
+      std::vector<vk::SurfaceFormatKHR> formats;
+      std::vector<vk::PresentModeKHR> present_modes;
+   };
+ 
+   enum class surface_support_error
+   {
+      failed_to_get_surface_capabilities,
+      failed_to_enumerate_formats,
+      failed_to_enumerate_present_modes
+   };
+
+   auto LIBCACAO_SYMEXPORT to_error_condition(surface_support_error code) -> std::error_condition;
+
+   auto LIBCACAO_SYMEXPORT query_surface_support(const device& device, vk::SurfaceKHR surface)
       -> reglisse::result<surface_support, surface_support_error>;
 } // namespace cacao

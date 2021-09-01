@@ -2,7 +2,7 @@
 
 #include <sph-simulation/sim_config_parser.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/logger.hpp>
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/span.hpp>
@@ -21,7 +21,7 @@ auto main(int argc, char** argv) -> int
       | ranges::to<std::vector<std::string_view>>;
    // clang-format on
 
-   auto logger = util::logger("sph-simulation");
+   auto logger = mannele::logger("sph-simulation");
 
    if (arguments.empty())
    {

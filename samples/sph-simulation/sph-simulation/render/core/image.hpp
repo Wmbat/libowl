@@ -17,7 +17,7 @@ struct image_create_info
 
    mannele::dimension_u32 dimensions;
 
-   util::log_ptr logger;
+   mannele::log_ptr logger;
 };
 
 class image

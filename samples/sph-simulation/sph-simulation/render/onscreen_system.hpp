@@ -14,8 +14,6 @@ class onscreen_renderer
 {
 public:
 private:
-   cacao::window m_window;
-
    cacao::swapchain m_swapchain;
 
    std::vector<vk::UniqueSemaphore> m_render_finished_semaphores;

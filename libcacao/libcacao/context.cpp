@@ -16,7 +16,7 @@ static VKAPI_ATTR auto VKAPI_CALL debug_callback(
 {
    assert(p_user_data != nullptr); // NOLINT
 
-   auto* p_logger = static_cast<util::logger*>(p_user_data);
+   auto* p_logger = static_cast<mannele::logger*>(p_user_data);
 
    std::string type;
    if (messageType == VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
@@ -105,7 +105,7 @@ namespace cacao
       return m_instance->enumeratePhysicalDevices();
    }
 
-   auto context::load_vulkan_core(util::log_ptr logger) const -> vk::DynamicLoader
+   auto context::load_vulkan_core(mannele::log_ptr logger) const -> vk::DynamicLoader
    {
       vk::DynamicLoader loader{};
 
@@ -135,7 +135,7 @@ namespace cacao
    }
    auto context::create_instance(const context_create_info& info) const -> vk::UniqueInstance
    {
-      util::log_ptr logger = info.logger;
+      mannele::log_ptr logger = info.logger;
 
       std::vector layer_properties = vk::enumerateInstanceLayerProperties();
       std::vector extension_properties = vk::enumerateInstanceExtensionProperties();
@@ -188,7 +188,7 @@ namespace cacao
 
       return instance;
    }
-   auto context::create_debug_utils(util::log_ptr logger) const -> vk::UniqueDebugUtilsMessengerEXT
+   auto context::create_debug_utils(mannele::log_ptr logger) const -> vk::UniqueDebugUtilsMessengerEXT
    {
       return m_instance->createDebugUtilsMessengerEXTUnique(
          vk::DebugUtilsMessengerCreateInfoEXT{

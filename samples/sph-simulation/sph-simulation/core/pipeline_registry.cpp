@@ -7,7 +7,7 @@
 
 using namespace reglisse;
 
-pipeline_registry::pipeline_registry(util::log_ptr logger) : m_logger{logger} {}
+pipeline_registry::pipeline_registry(mannele::log_ptr logger) : m_logger{logger} {}
 
 auto pipeline_registry::insert(graphics_pipeline_create_info&& info)
    -> reglisse::result<insert_kv, pipeline_registry_error>

@@ -1,8 +1,17 @@
 #pragma once
 
+#if defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wvolatile"
+#endif
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
+
+#if defined(__GNUC__)
+#   pragma GCC diagnostic pop
+#endif
 
 #include <vector>
 

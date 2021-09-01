@@ -40,7 +40,7 @@ namespace cacao
    void window::poll_events() { glfwPollEvents(); }
 
    auto window::create_surface(const cacao::context& context) const
-      -> reglisse::result<surface, error_code>
+      -> reglisse::result<vk::UniqueSurfaceKHR, error_code>
    {
       VkInstance h_instance = context.instance();
       VkSurfaceKHR h_surface = VK_NULL_HANDLE;
@@ -52,7 +52,7 @@ namespace cacao
          return err(error_code::failed_to_create_window_surface);
       }
 
-      return ok(surface(context, h_surface));
+      return ok(vk::UniqueSurfaceKHR(h_surface, context.instance()));
    }
 
    auto window::title() const -> std::string_view { return m_title; }

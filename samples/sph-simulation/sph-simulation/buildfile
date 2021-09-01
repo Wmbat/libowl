@@ -1,7 +1,6 @@
 libs =
 import libs += libcacao%lib{cacao}
 import libs += libmannele%lib{mannele}
-import libs += libutils%lib{utils}
 
 import libs += entt%lib{entt}
 import libs += stb_image_write%lib{stb_image_write}

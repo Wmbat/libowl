@@ -34,7 +34,7 @@ namespace detail
    auto
    check_vertex_attribute_support(const cacao::shader* p_shader,
                                   std::span<const vk::VertexInputAttributeDescription> attributes,
-                                  util::log_ptr logger) -> bool
+                                  mannele::log_ptr logger) -> bool
    {
       std::span inputs = p_shader->input_ids();
       for (const auto& attrib : attributes)
@@ -144,7 +144,7 @@ auto graphics_pipeline::populate_push_constants(std::span<const pipeline_shader_
 
 auto graphics_pipeline::create_descriptor_set_layouts(
    const cacao::device& device, std::span<const pipeline_shader_data> shader_infos,
-   util::log_ptr logger) -> set_layout_map
+   mannele::log_ptr logger) -> set_layout_map
 {
    set_layout_map set_layouts;
 
@@ -207,7 +207,7 @@ auto graphics_pipeline::create_pipeline(const cacao::device& device,
                                         std::span<vk::VertexInputBindingDescription> bindings,
                                         std::span<vk::VertexInputAttributeDescription> attributes,
                                         std::span<vk::Viewport> viewports,
-                                        std::span<vk::Rect2D> scissors, util::log_ptr logger)
+                                        std::span<vk::Rect2D> scissors, mannele::log_ptr logger)
    -> vk::UniquePipeline
 {
    const auto logical = device.logical();

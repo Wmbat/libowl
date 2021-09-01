@@ -4,7 +4,7 @@
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
-#include <libutils/logger.hpp>
+#include <libmannele/logging/logger.hpp>
 
 #include <string>
 #include <string_view>
@@ -46,7 +46,7 @@ namespace cacao
       shader_type type;
       std::vector<std::uint32_t> binary;
 
-      util::log_ptr logger;
+      mannele::log_ptr logger;
    };
 
    class LIBCACAO_SYMEXPORT shader
@@ -70,7 +70,7 @@ namespace cacao
 
       vk::UniqueShaderModule m_module;
 
-      util::log_ptr m_logger;
+      mannele::log_ptr m_logger;
    };
 
    auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags;

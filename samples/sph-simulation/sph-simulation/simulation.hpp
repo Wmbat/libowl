@@ -19,7 +19,7 @@
 class simulation
 {
 public:
-   simulation(sim_config config, util::log_ptr logger);
+   simulation(sim_config config, mannele::log_ptr logger);
 
    void run();
 
@@ -51,7 +51,7 @@ private:
    }
 
 private:
-   util::log_ptr m_logger;
+   mannele::log_ptr m_logger;
 
    sim_config m_config;
 
@@ -93,7 +93,7 @@ struct simulation_info
 {
    sim_config config;
 
-   util::log_ptr logger;    
+   mannele::log_ptr logger;    
 };
 
-void start_simulation(const simulation_info& info);
+auto start_simulation(const simulation_info& info) -> int;

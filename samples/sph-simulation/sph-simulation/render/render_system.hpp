@@ -22,7 +22,7 @@ class render_system
 {
 public:
    render_system() = default;
-   render_system(util::non_null<cacao::window*> p_window, util::log_ptr logger);
+   render_system(cacao::window* p_window, mannele::log_ptr logger);
 
    auto begin_frame() -> mannele::u32;
    void render(std::span<render_pass> passes);
@@ -49,12 +49,12 @@ public:
       -> cacao::index_buffer;
 
 private:
-   util::log_ptr m_logger;
+   mannele::log_ptr m_logger;
 
    cacao::window* mp_window{};
 
    cacao::context m_context;
-   cacao::surface m_surface;
+   vk::UniqueSurfaceKHR m_surface;
    cacao::device m_device;
    cacao::swapchain m_swapchain;
 

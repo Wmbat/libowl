@@ -1,7 +1,6 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import intf_libs += libutils%lib{utils}
 import intf_libs += libmannele%lib{mannele}
 import intf_libs += glfw%lib{glfw}
 import intf_libs += glm%lib{glm}

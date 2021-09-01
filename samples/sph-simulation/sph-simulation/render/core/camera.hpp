@@ -12,7 +12,7 @@ struct camera_create_info
 
    mannele::u32 image_count{};
 
-   util::log_ptr logger{};
+   mannele::log_ptr logger{};
 };
 
 class camera
@@ -40,7 +40,7 @@ private:
    vk::Device m_device;
 };
 
-auto create_camera(render_system& system, graphics_pipeline& pipeline, util::log_ptr logger)
+auto create_camera(render_system& system, graphics_pipeline& pipeline, mannele::log_ptr logger)
    -> camera;
 auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             util::log_ptr logger) -> camera;
+                             mannele::log_ptr logger) -> camera;

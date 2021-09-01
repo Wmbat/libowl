@@ -55,7 +55,7 @@ struct graphics_pipeline_create_info
    const cacao::device& device;
    const render_pass& pass;
 
-   util::log_ptr logger{};
+   mannele::log_ptr logger{};
 
    vertex_bindings_array bindings{};
    vertex_attributes_array attributes{};
@@ -89,14 +89,14 @@ private:
       -> push_constant_map;
    auto create_descriptor_set_layouts(const cacao::device& device,
                                       std::span<const pipeline_shader_data> shader_infos,
-                                      util::log_ptr logger) -> set_layout_map;
+                                      mannele::log_ptr logger) -> set_layout_map;
    auto create_pipeline_layout(const cacao::device& device) -> vk::UniquePipelineLayout;
    auto create_pipeline(const cacao::device& device,
                         std::span<const pipeline_shader_data> shader_infos,
                         std::span<vk::VertexInputBindingDescription> bindings,
                         std::span<vk::VertexInputAttributeDescription> attributes,
                         std::span<vk::Viewport> viewports, std::span<vk::Rect2D> scissors,
-                        util::log_ptr logger) -> vk::UniquePipeline;
+                        mannele::log_ptr logger) -> vk::UniquePipeline;
 
 private:
    vk::UniquePipeline m_pipeline{nullptr};

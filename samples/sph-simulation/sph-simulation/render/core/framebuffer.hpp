@@ -4,6 +4,7 @@
 
 #include <libcacao/vulkan.hpp>
 
+#include <libmannele/logging/log_ptr.hpp>
 #include <libmannele/dimension.hpp>
 
 /**
@@ -19,7 +20,7 @@ struct framebuffer_create_info
    mannele::dimension_u32 dimensions;
    mannele::u32 layers;
 
-   util::log_ptr logger;
+   mannele::log_ptr logger;
 };
 
 class framebuffer
