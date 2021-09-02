@@ -1,3 +1,11 @@
+/**
+ * @file libmannele/logging/log_ptr.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Wednesday, 1st of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #ifndef LIBMANNELE_LOGGING_LOG_PTR_HPP
 #define LIBMANNELE_LOGGING_LOG_PTR_HPP
 
@@ -5,6 +13,9 @@
 
 namespace mannele
 {
+   /**
+    * @brief lightweight pointer to a mannele::logger
+    */
    class log_ptr
    {
    public:

@@ -1,3 +1,11 @@
+/**
+ * @file libmannele/logging/log_ptr.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Wednesday, 1st of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libmannele/logging/log_ptr.hpp>
 
 namespace mannele
