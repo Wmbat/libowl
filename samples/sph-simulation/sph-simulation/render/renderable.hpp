@@ -1,10 +1,9 @@
 #pragma once
 
+#include <sph-simulation/data_types/vertex.hpp>
+#include <sph-simulation/render/core/index_buffer.hpp>
+#include <sph-simulation/render/core/vertex_buffer.hpp>
 #include <sph-simulation/render/render_system.hpp>
-
-#include <libcacao/gfx/data_types.hpp>
-#include <libcacao/index_buffer.hpp>
-#include <libcacao/vertex_buffer.hpp>
 
 #include <glm/mat4x4.hpp>
 
@@ -14,13 +13,25 @@
 
 struct renderable
 {
-   cacao::vertex_buffer m_vertex_buffer;
-   cacao::index_buffer m_index_buffer;
+   vertex_buffer m_vertex_buffer;
+   index_buffer m_index_buffer;
 
    glm::mat4 m_model{};
 };
 
-inline auto create_renderable(const render_system& system, const cacao::renderable_data& data)
+inline auto create_renderable(const cacao::device& device, const cacao::command_pool& pool,
+                              const renderable_data& data, mannele::log_ptr logger)
+   -> renderable
+{
+   return renderable{
+      .m_vertex_buffer = vertex_buffer(
+         {.device = device, .pool = pool, .vertices = data.vertices, .logger = logger}),
+      .m_index_buffer = index_buffer(
+         {.device = device, .pool = pool, .indices = data.indices, .logger = logger}),
+      .m_model = data.model};
+}
+
+inline auto create_renderable(const render_system& system, const renderable_data& data)
    -> renderable
 {
    return renderable{.m_vertex_buffer = system.create_vertex_buffer(data.vertices),
@@ -28,7 +39,7 @@ inline auto create_renderable(const render_system& system, const cacao::renderab
                      .m_model = data.model};
 }
 
-inline auto load_obj(const std::filesystem::path& path) -> cacao::renderable_data
+inline auto load_obj(const std::filesystem::path& path) -> renderable_data
 {
    tinyobj::attrib_t attrib;
 
@@ -41,16 +52,16 @@ inline auto load_obj(const std::filesystem::path& path) -> cacao::renderable_dat
       throw std::runtime_error(err);
    }
 
-   std::unordered_map<cacao::vertex, std::uint32_t> unique_vertices{};
+   std::unordered_map<vertex, std::uint32_t> unique_vertices{};
 
-   std::vector<cacao::vertex> vertices;
+   std::vector<vertex> vertices;
    std::vector<std::uint32_t> indices;
 
    for (const auto& shape : shapes)
    {
       for (const auto& index : shape.mesh.indices)
       {
-         cacao::vertex vertex{
+         vertex vertex{
             .position = {attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 0u],
                          attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 1u],
                          attrib.vertices[3u * static_cast<std::size_t>(index.vertex_index) + 2u]},

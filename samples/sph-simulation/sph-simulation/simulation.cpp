@@ -11,6 +11,7 @@
 #include <sph-simulation/sph/system.hpp>
 
 #include <sph-simulation/render/core/camera.hpp>
+#include <sph-simulation/render/onscreen_frame_manager.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
@@ -21,6 +22,7 @@
 
 #if defined(__GNUC__)
 #   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wconversion"
 #   pragma GCC diagnostic ignored "-Wsign-compare"
 #   pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
@@ -114,7 +116,7 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
 simulation::simulation(sim_config scene, mannele::log_ptr logger) :
    m_logger(logger), m_config(std::move(scene)),
    m_window({"Fluid Simulation", m_config.dimensions}), m_render_system(&m_window, m_logger),
-   m_shaders(m_render_system, m_logger), m_pipelines(m_logger),
+   m_shaders(m_render_system.device(), m_logger), m_pipelines(m_logger),
    m_sphere(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/sphere.obj"))),
    m_box(create_renderable(m_render_system, load_obj(asset_default_dir / "meshes/cube.obj")))
 {
@@ -124,8 +126,7 @@ simulation::simulation(sim_config scene, mannele::log_ptr logger) :
    m_shaders.insert(m_frag_shader_key, cacao::shader_type::fragment);
 
    m_render_passes.push_back(render_pass(
-      {.device = m_render_system.device().logical(),
-       .swapchain = m_render_system.swapchain().value(),
+      {.device = m_render_system.device(),
        .colour_attachment = some(main_colour_attachment(m_render_system.swapchain().format())),
        .depth_stencil_attachment = some(main_depth_attachment(m_render_system.device())),
        .framebuffer_create_infos = get_main_framebuffers(m_render_system, m_logger),
@@ -162,21 +163,21 @@ simulation::simulation(sim_config scene, mannele::log_ptr logger) :
             auto& transform = m_registry.emplace<::transform>(entity);
             transform = {.position = {x, y, z},
                          .rotation = {0, 0, 0},
-                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f};
+                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f}; // NOLINT
 
             auto& particle = m_registry.emplace<sph::particle>(entity);
             particle = {.radius = m_config.variables.water_radius,
                         .mass = m_config.variables.water_mass};
 
-            auto& render = m_registry.emplace<render::component::render>(entity);
-            render = {.p_mesh = &m_sphere,
-                      .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+            auto& mesh = m_registry.emplace<component::mesh>(entity);
+            mesh = {.p_mesh = &m_sphere,
+                    .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
 
             auto& collider = m_registry.emplace<physics::sphere_collider>(entity);
             collider = {
                .volume = {.center = glm::vec3(), .radius = m_config.variables.water_radius},
                .friction = 0.0f,
-               .restitution = 0.5f};
+               .restitution = 0.5f}; // NOLINT
          }
       }
    }
@@ -309,16 +310,16 @@ void simulation::onscreen_render()
       buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                 {m_camera.lookup_set(image_index)}, {});
 
-      auto view = m_registry.view<render::component::render, transform>();
+      auto view = m_registry.view<component::mesh, transform>();
 
       buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
       buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
       for (auto entity : view | vi::filter([&](auto e) {
-                            return view.get<render::component::render>(e).p_mesh == &m_box;
+                            return view.get<component::mesh>(e).p_mesh == &m_box;
                          }))
       {
-         const auto& render = view.get<render::component::render>(entity);
+         const auto& render = view.get<component::mesh>(entity);
          const auto& transform = view.get<::transform>(entity);
 
          const auto translate = glm::translate(glm::mat4(1), transform.position);
@@ -338,10 +339,10 @@ void simulation::onscreen_render()
       buffer.bindIndexBuffer(m_sphere.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
       for (auto entity : view | vi::filter([&](auto e) {
-                            return view.get<render::component::render>(e).p_mesh == &m_sphere;
+                            return view.get<component::mesh>(e).p_mesh == &m_sphere;
                          }))
       {
-         const auto& render = view.get<render::component::render>(entity);
+         const auto& render = view.get<component::mesh>(entity);
          const auto& transform = view.get<::transform>(entity);
 
          const auto translate = glm::translate(glm::mat4(1), transform.position);
@@ -386,21 +387,21 @@ void simulation::offscreen_render()
          buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
                                    {m_camera.lookup_set(0)}, {});
 
-         auto view = m_registry.view<render::component::render, ::transform>();
+         auto view = m_registry.view<component::mesh, ::transform>();
 
          buffer.bindVertexBuffers(0, {m_box.m_vertex_buffer.buffer().value()}, {vk::DeviceSize{0}});
          buffer.bindIndexBuffer(m_box.m_index_buffer.buffer().value(), 0, vk::IndexType::eUint32);
 
          for (auto entity : view | vi::filter([&](auto e) {
-                               return view.get<render::component::render>(e).p_mesh == &m_box;
+                               return view.get<component::mesh>(e).p_mesh == &m_box;
                             }))
          {
-            const auto& render = view.get<render::component::render>(entity);
+            const auto& mesh = view.get<component::mesh>(entity);
             const auto& transform = view.get<::transform>(entity);
 
             const auto translate = glm::translate(glm::mat4(1), transform.position);
             const auto scale = glm::scale(glm::mat4(1), transform.scale);
-            mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
+            mesh_data md{.model = translate * scale, .colour = mesh.colour}; // NOLINT
 
             buffer.pushConstants(pipeline.layout(),
                                  pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -416,16 +417,16 @@ void simulation::offscreen_render()
                                 vk::IndexType::eUint32);
 
          for (auto entity : view | vi::filter([&](auto e) {
-                               return view.get<render::component::render>(e).p_mesh == &m_sphere;
+                               return view.get<component::mesh>(e).p_mesh == &m_sphere;
                             }))
          {
-            const auto& render = view.get<render::component::render>(entity);
+            const auto& mesh = view.get<component::mesh>(entity);
             const auto& transform = view.get<::transform>(entity);
 
             const auto translate = glm::translate(glm::mat4(1), transform.position);
             const auto scale = glm::scale(glm::mat4(1), transform.scale);
 
-            mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
+            mesh_data md{.model = translate * scale, .colour = mesh.colour}; // NOLINT
 
             buffer.pushConstants(pipeline.layout(),
                                  pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
@@ -542,7 +543,7 @@ void simulation::setup_offscreen()
                               .logger = m_logger});
 
    m_offscreen.pass =
-      render_pass({.device = device.logical(),
+      render_pass({.device = device,
                    .colour_attachment = some(offscreen_colour_attachment(device)),
                    .depth_stencil_attachment = some(main_depth_attachment(device)),
                    .framebuffer_create_infos = {framebuffer_create_info{
@@ -706,6 +707,138 @@ void simulation::write_image_to_disk(std::string_view name)
                   image_width * 4);
 }
 
+struct renderer_data
+{
+   std::unique_ptr<i_frame_manager> p_frame_manager;
+
+   std::vector<render_pass> render_passes;
+};
+
+auto create_window(const sim_config& config) -> maybe<cacao::window>;
+auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
+   -> std::array<cacao::command_pool, max_frames_in_flight>;
+
+struct update_info
+{
+   entt::registry& registry;
+
+   const sim_variables& variables;
+   duration<float> time_step;
+};
+
+struct render_info
+{
+   std::span<renderer_data> renderers;
+   std::span<cacao::command_pool> pools;
+
+   entt::registry& registry;
+};
+
+void update(const update_info& info);
+void render(const render_info& info);
+
+auto start_simulation(const simulation_info& info) -> int
+{
+   auto logger = info.logger;
+   auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
+                                  .use_window = info.config.is_onscreen_rendering_enabled,
+                                  .logger = logger});
+
+   maybe<cacao::window> window = create_window(info.config);
+   maybe<vk::UniqueSurfaceKHR> surface = none;
+   if (info.config.is_onscreen_rendering_enabled)
+   {
+      if (auto res = window.borrow().create_surface(context))
+      {
+         surface = some(std::move(res).take());
+      }
+      else
+      {
+         logger.error("failed to create surface: {}", magic_enum::enum_name(res.borrow_err()));
+
+         return EXIT_FAILURE;
+      }
+   }
+
+   maybe surface_ptr = surface ? maybe(some(surface.borrow().get())) : maybe<vk::SurfaceKHR>(none);
+   auto device = cacao::device(
+      {.ctx = context, .surface = surface_ptr, .use_transfer_queue = true, .logger = logger});
+
+   std::array render_command_pools = create_render_command_pools(device, logger);
+
+   auto shaders = shader_registry(device, logger);
+   shaders.insert("shaders/test_vert.spv", cacao::shader_type::vertex);
+   shaders.insert("shaders/test_frag.spv", cacao::shader_type::fragment);
+
+   auto pipelines = pipeline_registry(logger);
+
+   entt::registry entity_registry;
+
+   std::vector<renderable> renderables;
+   renderables.push_back(create_renderable(
+      device, render_command_pools[0], load_obj(asset_default_dir / "meshes/sphere.obj"), logger));
+   renderables.push_back(create_renderable(
+      device, render_command_pools[0], load_obj(asset_default_dir / "meshes/cube.obj"), logger));
+
+   std::vector<renderer_data> renderers;
+   if (info.config.is_onscreen_rendering_enabled)
+   {
+      renderers.push_back(
+         renderer_data{.p_frame_manager = std::make_unique<onscreen_frame_manager>(
+                          onscreen_frame_manager_create_info{.window = window.borrow(),
+                                                             .device = device,
+                                                             .surface = surface_ptr.borrow(),
+                                                             .logger = logger})});
+   }
+
+   logger.info("Starting render...");
+
+   mannele::u32 current_frame = 0;
+   while (current_frame < info.config.frame_count)
+   {
+      update({.registry = entity_registry,
+              .variables = info.config.variables,
+              .time_step = info.config.time_step});
+      render({.renderers = renderers, .pools = render_command_pools, .registry = entity_registry});
+
+      ++current_frame;
+
+      const float completion_rate =
+         static_cast<float>(current_frame) / static_cast<float>(info.config.frame_count);
+      logger.info("Render status: {:0>6.2f}%", 100.0f * completion_rate);
+   }
+
+   return EXIT_SUCCESS;
+}
+
+void update(const update_info& info)
+{
+   auto particle_view = info.registry.view<PARTICLE_COMPONENTS>();
+   auto sphere_view = info.registry.view<SPHERE_COMPONENTS>();
+   auto plane_view = info.registry.view<PLANE_COMPONENTS>();
+   auto box_view = info.registry.view<BOX_COMPONENTS>();
+
+   sph::update({.particles = particle_view,
+                .spheres = sphere_view,
+                .planes = plane_view,
+                .boxes = box_view,
+                .variables = info.variables,
+                .time_step = info.time_step});
+   physics::update({.spheres = sphere_view,
+                    .planes = plane_view,
+                    .boxes = box_view,
+                    .time_step = info.time_step});
+}
+void render(const render_info& info)
+{
+   for (renderer_data& renderer : info.renderers)
+   {
+      auto image_index = renderer.p_frame_manager->begin_frame(info.pools);
+
+      renderer.p_frame_manager->end_frame(info.pools);
+   }
+}
+
 auto create_window(const sim_config& config) -> maybe<cacao::window>
 {
    if (config.is_onscreen_rendering_enabled)
@@ -716,32 +849,21 @@ auto create_window(const sim_config& config) -> maybe<cacao::window>
 
    return none;
 }
-
-auto start_simulation(const simulation_info& info) -> int
+auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
+   -> std::array<cacao::command_pool, max_frames_in_flight>
 {
-   auto logger = info.logger;
-   auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
-                                  .use_window = info.config.is_onscreen_rendering_enabled,
-                                  .logger = logger});
+   std::array<cacao::command_pool, max_frames_in_flight> pools;
 
-   maybe<cacao::window> window = create_window(info.config);
-   vk::UniqueSurfaceKHR surface;
-   if (info.config.is_onscreen_rendering_enabled)
+   for (auto& pool : pools)
    {
-      if (auto res = window.borrow().create_surface(context))
-      {
-         surface = std::move(res).take();
-      }
-      else
-      {
-         logger.error("failed to create surface: {}", magic_enum::enum_name(res.borrow_err()));
+      const std::uint32_t family_index =
+         device.get_queue_index(cacao::queue_flag_bits::graphics | cacao::queue_flag_bits::present);
 
-         return EXIT_FAILURE;
-      }
+      pool = cacao::command_pool({.device = device,
+                                  .queue_family_index = some(family_index),
+                                  .primary_buffer_count = 1,
+                                  .logger = logger});
    }
 
-   auto device = cacao::device(
-      cacao::device_create_info{.ctx = context, .surface = surface.get(), .logger = logger});
-
-   return EXIT_SUCCESS;
+   return pools;
 }

@@ -1,17 +1,17 @@
 #pragma once
 
 #include <sph-simulation/render/core/image.hpp>
+#include <sph-simulation/render/core/index_buffer.hpp>
 #include <sph-simulation/render/core/render_pass.hpp>
+#include <sph-simulation/render/core/vertex_buffer.hpp>
 
 #include <libcacao/command_pool.hpp>
 #include <libcacao/context.hpp>
-#include <libcacao/index_buffer.hpp>
 #include <libcacao/swapchain.hpp>
-#include <libcacao/vertex_buffer.hpp>
 #include <libcacao/window.hpp>
 
-static constexpr std::size_t max_frames_in_flight = 2;
-static constexpr std::size_t expected_image_count = 3;
+static constexpr std::size_t max_frames_in_flight_t = 2;
+static constexpr std::size_t expected_image_count_t = 3;
 
 using framebuffer_array = std::vector<framebuffer>;
 
@@ -43,10 +43,10 @@ public:
    auto viewport() const -> vk::Viewport; // NOLINT
    auto scissor() const -> vk::Rect2D;    // NOLINT
 
-   [[nodiscard]] auto create_vertex_buffer(std::span<const cacao::vertex> vertices) const
-      -> cacao::vertex_buffer;
+   [[nodiscard]] auto create_vertex_buffer(std::span<const vertex> vertices) const
+      -> vertex_buffer;
    [[nodiscard]] auto create_index_buffer(std::span<const mannele::u32> indices) const
-      -> cacao::index_buffer;
+      -> index_buffer;
 
 private:
    mannele::log_ptr m_logger;
@@ -60,9 +60,9 @@ private:
 
    std::vector<vk::UniqueSemaphore> m_render_finished_semaphores;
 
-   std::array<cacao::command_pool, max_frames_in_flight> m_render_command_pools;
-   std::array<vk::UniqueSemaphore, max_frames_in_flight> m_image_available_semaphores;
-   std::array<vk::UniqueFence, max_frames_in_flight> m_in_flight_fences;
+   std::array<cacao::command_pool, max_frames_in_flight_t> m_render_command_pools;
+   std::array<vk::UniqueSemaphore, max_frames_in_flight_t> m_image_available_semaphores;
+   std::array<vk::UniqueFence, max_frames_in_flight_t> m_in_flight_fences;
 
    std::vector<vk::Fence> m_images_in_flight{};
 

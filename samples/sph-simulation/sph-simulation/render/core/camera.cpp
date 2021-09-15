@@ -42,7 +42,7 @@ camera::camera(const camera_create_info& info) :
       const std::array buf_info = {
          vk::DescriptorBufferInfo{.buffer = m_uniform_buffers.at(i++).value(),
                                   .offset = 0,
-                                  .range = sizeof(cacao::camera_matrices)}};
+                                  .range = sizeof(camera_matrices)}};
 
       vk::WriteDescriptorSet write{.dstSet = set,
                                    .dstBinding = 0,

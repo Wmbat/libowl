@@ -15,6 +15,12 @@ struct camera_create_info
    mannele::log_ptr logger{};
 };
 
+struct camera_matrices
+{
+   glm::mat4 perspective;
+   glm::mat4 view;
+};
+
 class camera
 {
 public:

@@ -34,8 +34,11 @@ auto main(int argc, char** argv) -> int
 
    if (auto config = parse_sim_config_json(arguments[0]))
    {
+      return start_simulation({.config = config.borrow(), .logger = &logger});
+      /*
       auto sim = simulation(config.borrow(), &logger);
       sim.run();
+      */
    }
    else
    {

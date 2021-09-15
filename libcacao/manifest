@@ -1,6 +1,6 @@
 : 1
 name: libcacao
-version: 0.1.0-a.0.z
+version: 0.1.1-a.0.z
 project: vermillon
 summary: Library that contains all friendly Vulkan API related abstractions
 license: MIT                ; MIT License

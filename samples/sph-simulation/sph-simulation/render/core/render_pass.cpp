@@ -79,7 +79,7 @@ auto render_pass::create_render_pass(const render_pass_create_info& info) -> vk:
        .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite |
           vk::AccessFlagBits::eDepthStencilAttachmentWrite}};
 
-   return info.device.createRenderPassUnique(
+   return info.device.logical().createRenderPassUnique(
       {.attachmentCount = static_cast<std::uint32_t>(std::size(attachment_descriptions)),
        .pAttachments = std::data(attachment_descriptions),
        .subpassCount = static_cast<std::uint32_t>(std::size(descriptions)),

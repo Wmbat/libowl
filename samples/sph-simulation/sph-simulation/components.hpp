@@ -4,11 +4,11 @@
 
 #include <glm/glm.hpp>
 
-namespace render::component
+namespace component
 {
-   struct render
+   struct mesh
    {
       renderable* p_mesh;
       glm::vec3 colour;
    };
-} // namespace render::component
+} // namespace component

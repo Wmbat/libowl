@@ -200,7 +200,7 @@ auto extract_rendering_data(const nlohmann::basic_json<>& rendering)
    const auto err_cond = make_error_condition(scene_parse_error::e_rendering_field_error);
 
    bool is_onscreen_enabled = false;
-   if (const auto it = rendering.find("enable_onscreen"); it == std::end(rendering))
+   if (const auto it = rendering.find("enable_onscreen"); it != std::end(rendering))
    {
       if (it->is_boolean())
       {
@@ -218,7 +218,7 @@ auto extract_rendering_data(const nlohmann::basic_json<>& rendering)
    }
 
    bool is_offscreen_enabled = false;
-   if (const auto it = rendering.find("enable_offscreen"); it == std::end(rendering))
+   if (const auto it = rendering.find("enable_offscreen"); it != std::end(rendering))
    {
       if (it->is_boolean())
       {

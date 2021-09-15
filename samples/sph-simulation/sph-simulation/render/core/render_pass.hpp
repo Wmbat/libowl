@@ -3,6 +3,8 @@
 #include <sph-simulation/core.hpp>
 #include <sph-simulation/render/core/framebuffer.hpp>
 
+#include <libcacao/device.hpp>
+
 #include <libmannele/core.hpp>
 
 #include <libreglisse/maybe.hpp>
@@ -11,8 +13,7 @@
 
 struct render_pass_create_info
 {
-   vk::Device device;
-   vk::SwapchainKHR swapchain;
+   cacao::device& device;
 
    reglisse::maybe<vk::AttachmentDescription> colour_attachment;
    reglisse::maybe<vk::AttachmentDescription> depth_stencil_attachment;

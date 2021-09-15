@@ -3,17 +3,17 @@
 #include <libcacao/command_pool.hpp>
 #include <libcacao/device.hpp>
 
-#include <utility>
-
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
 
+#include <utility>
+
 using namespace reglisse;
 
-auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
-   -> std::array<cacao::command_pool, max_frames_in_flight>
+auto create_render_command_pools_t(const cacao::device& device, mannele::log_ptr logger)
+   -> std::array<cacao::command_pool, max_frames_in_flight_t>
 {
-   std::array<cacao::command_pool, max_frames_in_flight> pools;
+   std::array<cacao::command_pool, max_frames_in_flight_t> pools;
 
    for (auto& pool : pools)
    {
@@ -30,10 +30,10 @@ auto create_render_command_pools(const cacao::device& device, mannele::log_ptr l
    return pools;
 }
 
-auto create_in_flight_fences(const cacao::device& device)
-   -> std::array<vk::UniqueFence, max_frames_in_flight>
+auto create_in_flight_fences_t(const cacao::device& device)
+   -> std::array<vk::UniqueFence, max_frames_in_flight_t>
 {
-   std::array<vk::UniqueFence, max_frames_in_flight> fences;
+   std::array<vk::UniqueFence, max_frames_in_flight_t> fences;
    for (auto& fence : fences)
    {
       fence = device.logical().createFenceUnique({.flags = vk::FenceCreateFlagBits::eSignaled});
@@ -42,10 +42,10 @@ auto create_in_flight_fences(const cacao::device& device)
    return fences;
 }
 
-auto create_image_available_semaphores(const cacao::device& device)
-   -> std::array<vk::UniqueSemaphore, max_frames_in_flight>
+auto create_image_available_semaphores_t(const cacao::device& device)
+   -> std::array<vk::UniqueSemaphore, max_frames_in_flight_t>
 {
-   std::array<vk::UniqueSemaphore, max_frames_in_flight> semaphores;
+   std::array<vk::UniqueSemaphore, max_frames_in_flight_t> semaphores;
 
    for (auto& semaphore : semaphores)
    {
@@ -55,7 +55,7 @@ auto create_image_available_semaphores(const cacao::device& device)
    return semaphores;
 }
 
-auto create_render_finished_semaphores(const cacao::device& device, mannele::u64 count)
+auto create_render_finished_semaphores_t(const cacao::device& device, mannele::u64 count)
    -> std::vector<vk::UniqueSemaphore>
 {
    std::vector<vk::UniqueSemaphore> semaphores;
@@ -68,7 +68,8 @@ auto create_render_finished_semaphores(const cacao::device& device, mannele::u64
    return semaphores;
 }
 
-auto create_depth_buffer(mannele::log_ptr logger, cacao::device& device, vk::Extent2D extent) -> image
+auto create_depth_buffer(mannele::log_ptr logger, cacao::device& device, vk::Extent2D extent)
+   -> image
 {
    return image({.device = device,
                  .formats = {std::begin(depth_formats), std::end(depth_formats)},
@@ -84,7 +85,7 @@ render_system::render_system(cacao::window* p_window, mannele::log_ptr logger) :
    m_context(
       {.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0), .use_window = true, .logger = m_logger}),
    m_surface(p_window->create_surface(m_context).take()),
-   m_device({.ctx = m_context, .surface = m_surface.get(), .logger = m_logger}),
+   m_device({.ctx = m_context, .surface = some(m_surface.get()), .logger = m_logger}),
    m_swapchain(cacao::swapchain_create_info{
       .device = m_device,
       .surface = m_surface.get(),
@@ -97,10 +98,10 @@ render_system::render_system(cacao::window* p_window, mannele::log_ptr logger) :
       .old_swapchain = nullptr,
       .logger = m_logger}),
    m_render_finished_semaphores(
-      create_render_finished_semaphores(m_device, std::size(m_swapchain.image_views()))),
-   m_render_command_pools(create_render_command_pools(m_device, m_logger)),
-   m_image_available_semaphores(create_image_available_semaphores(m_device)),
-   m_in_flight_fences(create_in_flight_fences(m_device)),
+      create_render_finished_semaphores_t(m_device, std::size(m_swapchain.image_views()))),
+   m_render_command_pools(create_render_command_pools_t(m_device, m_logger)),
+   m_image_available_semaphores(create_image_available_semaphores_t(m_device)),
+   m_in_flight_fences(create_in_flight_fences_t(m_device)),
    m_depth_image(create_depth_buffer(m_logger, m_device, m_swapchain.extent()))
 {
    m_images_in_flight.resize(std::size(m_swapchain.images()));
@@ -209,7 +210,7 @@ void render_system::end_frame()
       std::terminate();
    }
 
-   m_current_frame_index = (m_current_frame_index + 1) % max_frames_in_flight;
+   m_current_frame_index = (m_current_frame_index + 1) % max_frames_in_flight_t;
 }
 
 void render_system::wait()
@@ -241,23 +242,22 @@ auto render_system::get_depth_attachment() const -> vk::ImageView
 
 auto render_system::vertex_bindings() -> vertex_bindings_array
 {
-   return {
-      {.binding = 0, .stride = sizeof(cacao::vertex), .inputRate = vk::VertexInputRate::eVertex}};
+   return {{.binding = 0, .stride = sizeof(vertex), .inputRate = vk::VertexInputRate::eVertex}};
 }
 auto render_system::vertex_attributes() -> vertex_attributes_array
 {
    return {{.location = 0,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(cacao::vertex, position)},
+            .offset = offsetof(vertex, position)},
            {.location = 1,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(cacao::vertex, normal)},
+            .offset = offsetof(vertex, normal)},
            {.location = 2,
             .binding = 0,
             .format = vk::Format::eR32G32B32Sfloat,
-            .offset = offsetof(cacao::vertex, colour)}};
+            .offset = offsetof(vertex, colour)}};
 }
 
 auto render_system::viewport() const -> vk::Viewport
@@ -274,19 +274,18 @@ auto render_system::scissor() const -> vk::Rect2D
    return {.offset = {0, 0}, .extent = m_swapchain.extent()};
 }
 
-auto render_system::create_vertex_buffer(std::span<const cacao::vertex> vertices) const
-   -> cacao::vertex_buffer
+auto render_system::create_vertex_buffer(std::span<const vertex> vertices) const -> vertex_buffer
 {
-   return cacao::vertex_buffer({.device = m_device,
-                                .pool = m_render_command_pools[0],
-                                .vertices = vertices,
-                                .logger = m_logger});
+   return vertex_buffer({.device = m_device,
+                         .pool = m_render_command_pools[0],
+                         .vertices = vertices,
+                         .logger = m_logger});
 }
 auto render_system::create_index_buffer(std::span<const std::uint32_t> indices) const
-   -> cacao::index_buffer
+   -> index_buffer
 {
-   return cacao::index_buffer({.device = m_device,
-                               .pool = m_render_command_pools[0],
-                               .indices = indices,
-                               .logger = m_logger});
+   return index_buffer({.device = m_device,
+                        .pool = m_render_command_pools[0],
+                        .indices = indices,
+                        .logger = m_logger});
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <sph-simulation/core.hpp>
-#include <sph-simulation/render/render_system.hpp>
 
 #include <libcacao/shader.hpp>
 
@@ -65,7 +64,7 @@ public:
    };
 
 public:
-   shader_registry(render_system& renderer, mannele::log_ptr logger);
+   shader_registry(cacao::device& device, mannele::log_ptr logger);
 
    auto insert(const filepath& path, cacao::shader_type type)
       -> reglisse::result<insert_kv, shader_registry_error>;
@@ -75,7 +74,7 @@ public:
 private:
    shader_map m_shaders;
 
-   render_system& m_renderer;
+   cacao::device& m_device;
 
    mannele::log_ptr m_logger;
 };

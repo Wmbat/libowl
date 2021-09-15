@@ -9,8 +9,8 @@
 
 using namespace reglisse;
 
-shader_registry::shader_registry(render_system& renderer, mannele::log_ptr logger) :
-   m_renderer{renderer}, m_logger{logger}
+shader_registry::shader_registry(cacao::device& device, mannele::log_ptr logger) :
+   m_device(device), m_logger{logger}
 {}
 
 auto shader_registry::insert(const filepath& path, cacao::shader_type type)
@@ -33,7 +33,7 @@ auto shader_registry::insert(const filepath& path, cacao::shader_type type)
                sizeof(std::uint32_t) * data.size());
 
    const auto [it, res] = m_shaders.try_emplace(path.string(),
-                                                cacao::shader({.device = m_renderer.device(),
+                                                cacao::shader({.device = m_device,
                                                                .name = path.string(),
                                                                .type = type,
                                                                .binary = data,
