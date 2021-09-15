@@ -1,4 +1,13 @@
-#pragma once
+/**
+ * @file libcacao/export.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_EXPORT_HPP_
+#define LIBCACAO_EXPORT_HPP_
 
 // Normally we don't export class templates (but do complete specializations),
 // inline functions, and classes with only inline member functions. Exporting
@@ -17,13 +26,13 @@
 #    define LIBCACAO_SYMEXPORT __declspec(dllimport)
 #  else
 #    define LIBCACAO_SYMEXPORT
-#  endif
+#  endif // _WIN32
 #elif defined(LIBCACAO_SHARED_BUILD) // Building shared.
 #  ifdef _WIN32
 #    define LIBCACAO_SYMEXPORT __declspec(dllexport)
 #  else
 #    define LIBCACAO_SYMEXPORT
-#  endif
+#  endif // _WIN32
 #else
 // If none of the above macros are defined, then we assume we are being used
 // by some third-party build system that cannot/doesn't signal the library
@@ -37,3 +46,5 @@
 #  define LIBCACAO_SYMEXPORT         // Using static or shared.
 // #  error define LIBCACAO_STATIC or LIBCACAO_SHARED preprocessor macro to signal libcacao library type being linked
 #endif
+
+#endif // LIBCACAO_EXPORT_HPP_

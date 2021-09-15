@@ -1,14 +1,26 @@
-#ifndef LIBCACAO_SHADER_HPP
-#define LIBCACAO_SHADER_HPP
+/**
+ * @file libcacao/shader.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_SHADER_HPP_
+#define LIBCACAO_SHADER_HPP_
 
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
+// Engine Libraries
+
 #include <libmannele/logging/logger.hpp>
+
+// C++ Standard Libraries
 
 #include <string>
 #include <string_view>
-#include <system_error>
+#include <system_error> // NOLINT
 #include <vector>
 
 namespace cacao
@@ -52,8 +64,8 @@ namespace cacao
    class LIBCACAO_SYMEXPORT shader
    {
    public:
-      shader(const shader_create_info& info);
-      shader(shader_create_info&& info);
+      explicit shader(const shader_create_info& info);
+      explicit shader(shader_create_info&& info);
 
       [[nodiscard]] auto name() const noexcept -> std::string_view;
       [[nodiscard]] auto module() const noexcept -> vk::ShaderModule;
@@ -76,4 +88,4 @@ namespace cacao
    auto to_shader_flag(shader_type type) noexcept -> vk::ShaderStageFlags;
 } // namespace cacao
 
-#endif // LIBCACAO_SHADER_HPP
+#endif // LIBCACAO_SHADER_HPP_

@@ -1,15 +1,27 @@
-#ifndef LIBCACAO_WINDOW_HPP
-#define LIBCACAO_WINDOW_HPP
+/**
+ * @file libcacao/window.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_WINDOW_HPP_
+#define LIBCACAO_WINDOW_HPP_
 
 #include <libcacao/context.hpp>
 #include <libcacao/error.hpp>
 #include <libcacao/export.hpp>
 
+// Third Party Libraries
+
+#include <GLFW/glfw3.h>
+
 #include <libmannele/dimension.hpp>
 
 #include <libreglisse/result.hpp>
 
-#include <GLFW/glfw3.h>
+// C++ Standard Library
 
 #include <functional>
 #include <memory>
@@ -34,8 +46,8 @@ namespace cacao
 
    public:
       window() = default;
-      window(const window_create_info& info);
-      window(window_create_info&& info);
+      explicit window(const window_create_info& info);
+      explicit window(window_create_info&& info);
 
       void poll_events();
 
@@ -59,4 +71,4 @@ namespace cacao
    };
 } // namespace cacao
 
-#endif // LIBCACAO_WINDOW_HPP
+#endif // LIBCACAO_WINDOW_HPP_

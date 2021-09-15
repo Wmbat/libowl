@@ -1,4 +1,13 @@
-#pragma once
+/**
+ * @file libcacao/util/flags.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_UTIL_FLAGS_HPP_
+#define LIBCACAO_UTIL_FLAGS_HPP_
 
 #include <type_traits>
 
@@ -42,7 +51,7 @@ namespace cacao
       using mask_type = typename std::underlying_type<BitType>::type;
 
       constexpr flags() = default;
-      constexpr flags(BitType bit) noexcept : m_mask(static_cast<mask_type>(bit)) {}
+      constexpr flags(BitType bit) noexcept : m_mask(static_cast<mask_type>(bit)) {} // NOLINT
       constexpr explicit flags(mask_type flags) noexcept : m_mask(flags) {}
 
       constexpr auto operator<=>(const flags&) const = default;
@@ -126,4 +135,6 @@ namespace cacao
    constexpr auto operator~(flag_type::bit_type bits) noexcept->queue_flags                        \
    {                                                                                               \
       return ~(flag_type(bits));                                                                   \
-   }                                                                                               
+   }
+
+#endif // LIBCACAO_UTIL_FLAGS_HPP_

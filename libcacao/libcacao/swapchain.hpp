@@ -1,11 +1,24 @@
-#pragma once
+/**
+ * @file libcacao/swapchain.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_SWAPCHAIN_HPP_
+#define LIBCACAO_SWAPCHAIN_HPP_
 
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
+// Third Party Libraries
+
 #include <libmannele/dimension.hpp>
 
 #include <libreglisse/result.hpp>
+
+// C++ Standard Library
 
 #include <vector>
 
@@ -43,14 +56,14 @@ namespace cacao
 
    public:
       swapchain() = default;
-      swapchain(const swapchain_create_info& info);
+      explicit swapchain(const swapchain_create_info& info);
 
       [[nodiscard]] auto value() const noexcept -> vk::SwapchainKHR;
       [[nodiscard]] auto format() const noexcept -> vk::Format;
       [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D&;
       [[nodiscard]] auto images() const noexcept -> std::span<const vk::Image>;
 
-      // TODO: BAD
+      // TODO(wmbat): Do image views belong in the swapchain class?
       [[nodiscard]] auto image_views() const noexcept -> std::span<const vk::UniqueImageView>;
 
    private:
@@ -83,3 +96,5 @@ namespace cacao
    auto LIBCACAO_SYMEXPORT query_surface_support(const device& device, vk::SurfaceKHR surface)
       -> reglisse::result<surface_support, surface_support_error>;
 } // namespace cacao
+
+#endif // LIBCACAO_SWAPCHAIN_HPP_

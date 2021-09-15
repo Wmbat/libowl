@@ -1,11 +1,24 @@
-#pragma once
+/**
+ * @file libcacao/buffer.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_BUFFER_HPP_
+#define LIBCACAO_BUFFER_HPP_
 
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
+// Third Party Libraries
+
 #include <libreglisse/maybe.hpp>
 
-#include <system_error>
+// C++ Standard Library
+
+#include <system_error> // NOLINT
 
 namespace cacao
 {
@@ -39,8 +52,8 @@ namespace cacao
    {
    public:
       buffer() = default;
-      buffer(const buffer_create_info& info);
-      buffer(buffer_create_info&& info);
+      explicit buffer(const buffer_create_info& info);
+      explicit buffer(buffer_create_info&& info);
 
       [[nodiscard]] auto value() const noexcept -> vk::Buffer;
       [[nodiscard]] auto memory() const noexcept -> vk::DeviceMemory;
@@ -63,3 +76,5 @@ namespace cacao
       mannele::log_ptr m_logger;
    };
 } // namespace cacao
+
+#endif // LIBCACAO_BUFFER_HPP_

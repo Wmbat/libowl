@@ -1,10 +1,22 @@
+/**
+ * @file libcacao/command_pool.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/command_pool.hpp>
+
+// Third Party Libraries
 
 #include <libreglisse/try.hpp>
 
-#include <cassert>
+// C++ Standard Library
 
-using namespace reglisse;
+#include <cassert>
+#include <string>
+#include <vector>
 
 namespace cacao
 {

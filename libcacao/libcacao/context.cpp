@@ -1,11 +1,24 @@
+/**
+ * @file libcacao/context.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/context.hpp>
 
 #include <libcacao/error.hpp>
 #include <libcacao/runtime_error.hpp>
 
+// Third Party Library
+
 #include <range/v3/range/conversion.hpp>
 
+// Standard Library
+
 #include <span>
+#include <string>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
 

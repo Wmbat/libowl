@@ -1,14 +1,27 @@
-#ifndef LIBCACAO_DEVICE_HPP
-#define LIBCACAO_DEVICE_HPP
+/**
+ * @file libcacao/device.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_DEVICE_HPP_
+#define LIBCACAO_DEVICE_HPP_
 
 #include <libcacao/context.hpp>
 #include <libcacao/runtime_error.hpp>
 #include <libcacao/util/flags.hpp>
 
+// Third Party Libraries
+
 #include <libreglisse/maybe.hpp>
+
+// C++ Standard Library
 
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace cacao
 {
@@ -57,7 +70,7 @@ namespace cacao
    {
       const context& ctx;
 
-      vk::SurfaceKHR surface{nullptr};
+      reglisse::maybe<vk::SurfaceKHR> surface = reglisse::none;
 
       std::function<std::int32_t(vk::PhysicalDevice)> physical_device_rating_fun{
          rate_physical_device};
@@ -79,7 +92,7 @@ namespace cacao
    {
    public:
       device() = default;
-      device(device_create_info&& info);
+      explicit device(device_create_info&& info);
 
       [[nodiscard]] auto logical() const -> vk::Device;
       [[nodiscard]] auto physical() const -> vk::PhysicalDevice;
@@ -108,13 +121,16 @@ namespace cacao
       std::vector<queue> m_queues{};
    };
 
-   auto get_dedicated_queue_index(const queue_flags& flags, std::span<const queue> queues)
+   auto find_dedicated_queue_index(std::span<const queue> queues, const queue_flags& flags)
       -> reglisse::maybe<std::uint32_t>;
    auto get_specialized_queue_index(const queue_flags& desired, const queue_flags& unwanted,
                                     std::span<const queue> queues)
       -> reglisse::maybe<std::uint32_t>;
    auto get_queue_index(const queue_flags& desired, std::span<const queue> queues)
       -> reglisse::maybe<std::uint32_t>;
+
+   auto find_best_queue_index(std::span<const queue> queues, const queue_flags& desired,
+                              const queue_flags& unwanted) -> reglisse::maybe<mannele::u32>;
 } // namespace cacao
 
-#endif // LIBCACAO_DEVICE_HPP
+#endif // LIBCACAO_DEVICE_HPP_

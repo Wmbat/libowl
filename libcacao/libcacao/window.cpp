@@ -1,6 +1,20 @@
+/**
+ * @file libcacao/window.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/window.hpp>
 
-using namespace reglisse;
+// C++ Standard library
+
+#include <utility>
+
+using reglisse::err;
+using reglisse::ok;
+using reglisse::result;
 
 namespace cacao
 {
@@ -16,7 +30,8 @@ namespace cacao
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, m_is_resizable ? GLFW_TRUE : GLFW_FALSE);
 
-      p_window_handle = glfw_ptr(glfwCreateWindow((int)m_dimension.width, (int)m_dimension.height,
+      p_window_handle = glfw_ptr(glfwCreateWindow(static_cast<int>(m_dimension.width),
+                                                  static_cast<int>(m_dimension.height),
                                                   m_title.c_str(), nullptr, nullptr),
                                  glfwDestroyWindow);
    }
@@ -32,7 +47,8 @@ namespace cacao
       glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
       glfwWindowHint(GLFW_RESIZABLE, m_is_resizable ? GLFW_TRUE : GLFW_FALSE);
 
-      p_window_handle = glfw_ptr(glfwCreateWindow((int)m_dimension.width, (int)m_dimension.height,
+      p_window_handle = glfw_ptr(glfwCreateWindow(static_cast<int>(m_dimension.width),
+                                                 static_cast<int>(m_dimension.height),
                                                   m_title.c_str(), nullptr, nullptr),
                                  glfwDestroyWindow);
    }
@@ -40,7 +56,7 @@ namespace cacao
    void window::poll_events() { glfwPollEvents(); }
 
    auto window::create_surface(const cacao::context& context) const
-      -> reglisse::result<vk::UniqueSurfaceKHR, error_code>
+      -> result<vk::UniqueSurfaceKHR, error_code>
    {
       VkInstance h_instance = context.instance();
       VkSurfaceKHR h_surface = VK_NULL_HANDLE;

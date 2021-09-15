@@ -1,10 +1,24 @@
-#ifndef LIBCACAO_DESCRIPTOR_POOL_HPP
-#define LIBCACAO_DESCRIPTOR_POOL_HPP
+/**
+ * @file libcacao/descriptor_pool.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_DESCRIPTOR_POOL_HPP_
+#define LIBCACAO_DESCRIPTOR_POOL_HPP_
 
 #include <libcacao/device.hpp>
 #include <libcacao/export.hpp>
 
+// Third Party Libraries
+
 #include <libmannele/logging/log_ptr.hpp>
+
+// Standard Library
+
+#include <vector>
 
 namespace cacao
 {
@@ -22,7 +36,7 @@ namespace cacao
    {
    public:
       descriptor_pool() = default;
-      descriptor_pool(const descriptor_pool_create_info& info);
+      explicit descriptor_pool(const descriptor_pool_create_info& info);
 
       [[nodiscard]] auto pool() const noexcept -> const vk::DescriptorPool;
       [[nodiscard]] auto sets() const noexcept -> std::span<const vk::DescriptorSet>;
@@ -35,4 +49,4 @@ namespace cacao
    };
 } // namespace cacao
 
-#endif // LIBCACAO_DESCRIPTOR_POOL_HPP
+#endif // LIBCACAO_DESCRIPTOR_POOL_HPP_

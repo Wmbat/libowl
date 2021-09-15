@@ -1,26 +1,40 @@
+/**
+ * @file libcacao/shader.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/shader.hpp>
+
+// Third Party Libraries
 
 #include <libreglisse/result.hpp>
 #include <libreglisse/try.hpp>
 
 #include <magic_enum.hpp>
 
+// Ignore warnings from the spirv_glsl header
 #if defined(__GNUC__)
 #   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wdouble-promotion"
+#   pragma GCC diagnostic ignored "-Wconversion"
 #   pragma GCC diagnostic ignored "-Wdeprecated"
 #endif
 
 #include <spirv_glsl.hpp>
 
-#if defined(__GCC__)
+#if defined(__GNUC__)
 #   pragma GCC diagnostic pop
 #endif
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 
-using namespace reglisse;
+// C++ Standard Library
+
+#include <algorithm>
+#include <utility>
 
 namespace cacao
 {

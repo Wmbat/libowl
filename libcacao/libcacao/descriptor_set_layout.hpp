@@ -1,9 +1,20 @@
-#ifndef LIBCACAO_DESCRIPTOR_SET_LAYOUT
-#define LIBCACAO_DESCRIPTOR_SET_LAYOUT
+/**
+ * @file libcacao/descriptor_set_layout.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_DESCRIPTOR_SET_LAYOUT_HPP_
+#define LIBCACAO_DESCRIPTOR_SET_LAYOUT_HPP_
 
 #include <libcacao/device.hpp>
 
+// Standard Library
+
 #include <span>
+#include <vector>
 
 namespace cacao 
 {
@@ -20,7 +31,7 @@ namespace cacao
    {
    public:
       descriptor_set_layout() = default;
-      descriptor_set_layout(descriptor_set_layout_create_info&& info);
+      explicit descriptor_set_layout(descriptor_set_layout_create_info&& info);
 
       [[nodiscard]] auto value() const -> vk::DescriptorSetLayout;
       [[nodiscard]] auto bindings() const -> std::span<const vk::DescriptorSetLayoutBinding>;
@@ -32,4 +43,4 @@ namespace cacao
    };
 } // namespace cacao
 
-#endif // LIBCACAO_DESCRIPTOR_SET_LAYOUT
+#endif // LIBCACAO_DESCRIPTOR_SET_LAYOUT_HPP_

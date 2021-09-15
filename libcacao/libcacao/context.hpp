@@ -1,10 +1,22 @@
-#ifndef LIBCACAO_CONTEXT_HPP
-#define LIBCACAO_CONTEXT_HPP
+/**
+ * @file libcacao/context.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_CONTEXT_HPP_
+#define LIBCACAO_CONTEXT_HPP_
 
 #include <libcacao/export.hpp>
 #include <libcacao/vulkan.hpp>
 
+// Third Party Libraries
+
 #include <libmannele/logging/log_ptr.hpp>
+
+// Standard Library
 
 #include <span>
 #include <vector>
@@ -29,7 +41,7 @@ namespace cacao
    {
    public:
       context() = default;
-      context(context_create_info&& info);
+      explicit context(context_create_info&& info);
 
       [[nodiscard]] auto instance() const noexcept -> vk::Instance;
       [[nodiscard]] auto vulkan_version() const noexcept -> std::uint32_t;
@@ -62,4 +74,4 @@ namespace cacao
       std::span<const vk::ExtensionProperties> extensions, std::string_view name) -> bool;
 } // namespace cacao
 
-#endif // LIBCACAO_CONTEXT_HPP
+#endif // LIBCACAO_CONTEXT_HPP_

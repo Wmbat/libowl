@@ -1,14 +1,28 @@
-#pragma once
+/**
+ * @file libcacao/error.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBCACAO_ERROR_HPP_
+#define LIBCACAO_ERROR_HPP_
 
 #include <libcacao/export.hpp>
+
+// Third Party Libraries
 
 #include <libmannele/core.hpp>
 
 #include <magic_enum.hpp>
 
+// C++ Standard Library
+
 #include <array>
+#include <string>
 #include <string_view>
-#include <system_error>
+#include <system_error> // NOLINT
 
 namespace cacao
 {
@@ -32,3 +46,5 @@ namespace cacao
 
    auto LIBCACAO_SYMEXPORT to_error_condition(error_code code) -> std::error_condition;
 } // namespace cacao
+
+#endif // LIBCACAO_ERROR_HPP_

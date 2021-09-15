@@ -1,3 +1,11 @@
+/**
+ * @file libcacao/descriptor_pool.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/descriptor_pool.hpp>
 
 namespace cacao

@@ -1,10 +1,26 @@
+/**
+ * @file libcacao/buffer.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/buffer.hpp>
+
+// Third Party Libraries
 
 #include <libreglisse/try.hpp>
 
 #include <magic_enum.hpp>
 
-using namespace reglisse;
+// C++ Standard Library
+
+#include <string>
+
+using reglisse::some;
+using reglisse::none;
+using reglisse::maybe;
 
 namespace cacao
 {
@@ -95,7 +111,7 @@ namespace cacao
 
    auto buffer::find_memory_requirements(vk::PhysicalDevice physical, std::uint32_t type_filter,
                                          const vk::MemoryPropertyFlags& properties) const noexcept
-      -> reglisse::maybe<std::uint32_t>
+      -> maybe<std::uint32_t>
    {
       const auto mem_properties = physical.getMemoryProperties();
 

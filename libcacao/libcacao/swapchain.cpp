@@ -1,4 +1,14 @@
+/**
+ * @file libcacao/swapchain.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/swapchain.hpp>
+
+// Third Party Libraries
 
 #include <libmannele/dimension.hpp>
 
@@ -8,8 +18,15 @@
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 
-using namespace reglisse;
-using namespace mannele;
+// C++ Standard Library
+
+#include <limits>
+#include <string>
+
+using reglisse::err;
+using reglisse::ok;
+using reglisse::result;
+using reglisse::try_wrap;
 
 namespace cacao
 {

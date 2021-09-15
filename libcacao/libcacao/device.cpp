@@ -1,6 +1,16 @@
+/**
+ * @file libcacao/device.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 14th of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libcacao/device.hpp>
 
 #include <libcacao/error.hpp>
+
+// Third Party Libraries
 
 #include <libreglisse/operations/or_else.hpp>
 #include <libreglisse/try.hpp>
@@ -12,11 +22,18 @@
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
 
+// C++ Standard Library
+
+#include <algorithm>
 #include <map>
+#include <vector>
 
 namespace vi = ranges::views;
 
-using namespace reglisse;
+using reglisse::or_else;
+using reglisse::maybe;
+using reglisse::some;
+using reglisse::none;
 
 namespace cacao
 {
@@ -108,7 +125,7 @@ namespace cacao
    {
       // clang-format off
 
-      const auto queue_index = get_dedicated_queue_index(type, m_queues) 
+      const auto queue_index = find_dedicated_queue_index(m_queues, type) 
          | or_else([&] { 
                return get_specialized_queue_index(type, queue_flag_bits::graphics, m_queues);
             }) 
@@ -135,7 +152,7 @@ namespace cacao
    {
       // clang-format off
 
-      const auto queue_index = get_dedicated_queue_index(type, m_queues) 
+      const auto queue_index = find_dedicated_queue_index(m_queues, type) 
          | or_else([&] {
                return get_specialized_queue_index(type, queue_flag_bits::graphics, m_queues);
             })
@@ -258,7 +275,8 @@ namespace cacao
          if (info.surface)
          {
             vk::Bool32 present_support = VK_FALSE;
-            if (m_physical.getSurfaceSupportKHR(static_cast<std::uint32_t>(index), info.surface,
+            if (m_physical.getSurfaceSupportKHR(static_cast<std::uint32_t>(index),
+                                                info.surface.borrow(),
                                                 &present_support) == vk::Result::eSuccess)
             {
                has_present = present_support == VK_TRUE;
@@ -287,7 +305,7 @@ namespace cacao
       return queue_infos;
    }
 
-   auto get_dedicated_queue_index(const queue_flags& desired, std::span<const queue> queues)
+   auto find_dedicated_queue_index(std::span<const queue> queues, const queue_flags& desired)
       -> maybe<std::uint32_t>
    {
       for (const auto& queue : queues)
@@ -325,5 +343,17 @@ namespace cacao
       }
 
       return none;
+   }
+
+   auto find_best_queue_index(std::span<const queue> queues, const queue_flags& desired,
+                              const queue_flags& unwanted) -> reglisse::maybe<mannele::u32>
+   {
+      // clang-format off
+
+      return find_dedicated_queue_index(queues, desired) 
+         | or_else([&] { return get_specialized_queue_index(desired, unwanted, queues); }) 
+         | or_else([&] { return get_queue_index(desired, queues); });
+
+      // clang-format on
    }
 } // namespace cacao
