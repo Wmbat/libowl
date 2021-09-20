@@ -4,6 +4,8 @@
 #include <sph-simulation/sim_variables.hpp>
 #include <sph-simulation/transform.hpp>
 
+#include <sph-simulation/core/pipeline.hpp>
+
 #include <sph-simulation/physics/collision/colliders.hpp>
 #include <sph-simulation/physics/rigid_body.hpp>
 #include <sph-simulation/physics/system.hpp>
@@ -11,7 +13,7 @@
 #include <sph-simulation/sph/system.hpp>
 
 #include <sph-simulation/render/core/camera.hpp>
-#include <sph-simulation/render/onscreen_frame_manager.hpp>
+#include <sph-simulation/render/frame_manager.hpp>
 
 #include <range/v3/algorithm/max_element.hpp>
 #include <range/v3/range/conversion.hpp>
@@ -302,6 +304,7 @@ void simulation::onscreen_render()
       m_camera.update(image_index, compute_matrices(extent.width, extent.height));
    }
 
+   /*
    m_render_passes.at(0).record_render_calls([&](vk::CommandBuffer buffer) {
       auto& pipeline = m_pipelines.lookup(m_main_pipeline_key).borrow().value();
 
@@ -358,6 +361,7 @@ void simulation::onscreen_render()
                             0, 0);
       }
    });
+   */
 
    m_render_system.render(m_render_passes);
 
@@ -379,6 +383,7 @@ void simulation::offscreen_render()
    {
       cmd.begin({.pNext = nullptr, .flags = {}, .pInheritanceInfo = nullptr});
 
+      /*
       m_offscreen.pass.record_render_calls([&](vk::CommandBuffer buffer) {
          auto& pipeline = m_pipelines.lookup(m_offscreen_pipeline_key).borrow().value();
 
@@ -436,6 +441,7 @@ void simulation::offscreen_render()
                                0, 0, 0);
          }
       });
+      */
 
       m_offscreen.pass.submit_render_calls(
          cmd, 0, {.extent = {.width = image_width, .height = image_height}}, clear_values);
@@ -709,14 +715,15 @@ void simulation::write_image_to_disk(std::string_view name)
 
 struct renderer_data
 {
-   std::unique_ptr<i_frame_manager> p_frame_manager;
-
    std::vector<render_pass> render_passes;
+
+   std::span<cacao::command_pool> pools;
 };
 
 auto create_window(const sim_config& config) -> maybe<cacao::window>;
 auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>;
+auto gather_main_pipeline_info() -> graphics_pipeline_create_info;
 
 struct update_info
 {
@@ -726,10 +733,22 @@ struct update_info
    duration<float> time_step;
 };
 
+struct render_pass_data
+{
+   render_pass pass;
+
+   vk::Rect2D render_area;
+   std::array<vk::ClearValue, 2> clear_values;
+};
+
 struct render_info
 {
-   std::span<renderer_data> renderers;
+   cacao::device& device;
+
+   frame_manager& frame_man;
    std::span<cacao::command_pool> pools;
+
+   std::span<render_pass_data> render_passes;
 
    entt::registry& registry;
 };
@@ -743,34 +762,17 @@ auto start_simulation(const simulation_info& info) -> int
    auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
                                   .use_window = info.config.is_onscreen_rendering_enabled,
                                   .logger = logger});
-
-   maybe<cacao::window> window = create_window(info.config);
-   maybe<vk::UniqueSurfaceKHR> surface = none;
-   if (info.config.is_onscreen_rendering_enabled)
-   {
-      if (auto res = window.borrow().create_surface(context))
-      {
-         surface = some(std::move(res).take());
-      }
-      else
-      {
-         logger.error("failed to create surface: {}", magic_enum::enum_name(res.borrow_err()));
-
-         return EXIT_FAILURE;
-      }
-   }
-
-   maybe surface_ptr = surface ? maybe(some(surface.borrow().get())) : maybe<vk::SurfaceKHR>(none);
+   auto window = cacao::window(
+      {.title = info.config.name, .dimension = info.config.dimensions, .is_resizable = false});
+   auto surface = window.create_surface(context).take();
    auto device = cacao::device(
-      {.ctx = context, .surface = surface_ptr, .use_transfer_queue = true, .logger = logger});
+      {.ctx = context, .surface = surface.get(), .use_transfer_queue = true, .logger = logger});
 
    std::array render_command_pools = create_render_command_pools(device, logger);
 
    auto shaders = shader_registry(device, logger);
    shaders.insert("shaders/test_vert.spv", cacao::shader_type::vertex);
    shaders.insert("shaders/test_frag.spv", cacao::shader_type::fragment);
-
-   auto pipelines = pipeline_registry(logger);
 
    entt::registry entity_registry;
 
@@ -780,15 +782,73 @@ auto start_simulation(const simulation_info& info) -> int
    renderables.push_back(create_renderable(
       device, render_command_pools[0], load_obj(asset_default_dir / "meshes/cube.obj"), logger));
 
-   std::vector<renderer_data> renderers;
-   if (info.config.is_onscreen_rendering_enabled)
+   auto frame_man = frame_manager(
+      {.window = window, .device = device, .surface = surface.get(), .logger = logger});
+
+   auto pipelines = pipeline_registry(logger);
+
+   std::array<vk::ClearValue, 2> clear_values{};
+   clear_values[0].color = {std::array{0.0F, 0.0F, 0.0F, 0.0F}};
+   clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
+
+   std::vector<render_pass_data> render_passes;
+   render_passes.push_back(
+      {.pass =
+          render_pass({.device = device,
+                       .colour_attachment = some(main_colour_attachment(frame_man.frame_format())),
+                       .depth_stencil_attachment = some(main_depth_attachment(device)),
+                       .framebuffer_create_infos = frame_man.get_framebuffer_info(),
+                       .logger = logger}),
+       .render_area = {.offset = {0, 0}, .extent = frame_man.extent()},
+       .clear_values = clear_values});
+
    {
-      renderers.push_back(
-         renderer_data{.p_frame_manager = std::make_unique<onscreen_frame_manager>(
-                          onscreen_frame_manager_create_info{.window = window.borrow(),
-                                                             .device = device,
-                                                             .surface = surface_ptr.borrow(),
-                                                             .logger = logger})});
+      std::vector viewports = {vk::Viewport{.x = 0.0F,
+                                            .y = 0.0F,
+                                            .width = static_cast<float>(frame_man.extent().width),
+                                            .height = static_cast<float>(frame_man.extent().height),
+                                            .minDepth = 0.0F,
+                                            .maxDepth = 1.0F}};
+
+      std::vector scissors = {vk::Rect2D{.offset = {0, 0}, .extent = frame_man.extent()}};
+
+      auto vert_shader_info = shaders.lookup("shaders/test_vert.spv").borrow();
+      auto frag_shader_info = shaders.lookup("shaders/test_frag.spv").borrow();
+      std::vector shader_data = {
+         pipeline_shader_data{
+            .p_shader = &vert_shader_info.value(),
+            .set_layouts = {{.name = "camera_layout",
+                             .bindings = {{.binding = 0,
+                                           .descriptor_type = vk::DescriptorType::eUniformBuffer,
+                                           .descriptor_count = 1}}}},
+            .push_constants = {{.name = "mesh_data", .size = sizeof(mesh_data), .offset = 0}}},
+         pipeline_shader_data{.p_shader = &frag_shader_info.value()}};
+
+      std::vector bindings = {vk::VertexInputBindingDescription{
+         .binding = 0, .stride = sizeof(vertex), .inputRate = vk::VertexInputRate::eVertex}};
+
+      std::vector attributes = {
+         vk::VertexInputAttributeDescription{.location = 0,
+                                             .binding = 0,
+                                             .format = vk::Format::eR32G32B32Sfloat,
+                                             .offset = offsetof(vertex, position)},
+         vk::VertexInputAttributeDescription{.location = 1,
+                                             .binding = 0,
+                                             .format = vk::Format::eR32G32B32Sfloat,
+                                             .offset = offsetof(vertex, normal)},
+         vk::VertexInputAttributeDescription{.location = 2,
+                                             .binding = 0,
+                                             .format = vk::Format::eR32G32B32Sfloat,
+                                             .offset = offsetof(vertex, colour)}};
+
+      auto info = pipelines.insert({.device = device,
+                                    .pass = render_passes.at(0).pass,
+                                    .logger = logger,
+                                    .bindings = bindings,
+                                    .attributes = attributes,
+                                    .viewports = viewports,
+                                    .scissors = scissors,
+                                    .shader_infos = shader_data});
    }
 
    logger.info("Starting render...");
@@ -799,7 +859,11 @@ auto start_simulation(const simulation_info& info) -> int
       update({.registry = entity_registry,
               .variables = info.config.variables,
               .time_step = info.config.time_step});
-      render({.renderers = renderers, .pools = render_command_pools, .registry = entity_registry});
+      render({.device = device,
+              .frame_man = frame_man,
+              .pools = render_command_pools,
+              .render_passes = render_passes,
+              .registry = entity_registry});
 
       ++current_frame;
 
@@ -831,24 +895,29 @@ void update(const update_info& info)
 }
 void render(const render_info& info)
 {
-   for (renderer_data& renderer : info.renderers)
-   {
-      auto image_index = renderer.p_frame_manager->begin_frame(info.pools);
+   auto device = info.device.logical();
 
-      renderer.p_frame_manager->end_frame(info.pools);
+   // TODO(wmbat): make this more RAII friendly
+   auto [image_index, frame_index] = info.frame_man.begin_frame().take();
+
+   device.resetCommandPool(info.pools[frame_index].value(), {});
+
+   for (auto& buffer : info.pools[frame_index].primary_buffers())
+   {
+      buffer.begin(vk::CommandBufferBeginInfo{});
+
+      for (auto& render_pass : info.render_passes)
+      {
+         render_pass.pass.submit_render_calls(buffer, image_index, render_pass.render_area,
+                                              render_pass.clear_values);
+      }
+
+      buffer.end();
    }
+
+   info.frame_man.end_frame(info.pools);
 }
 
-auto create_window(const sim_config& config) -> maybe<cacao::window>
-{
-   if (config.is_onscreen_rendering_enabled)
-   {
-      return some(cacao::window(
-         {.title = config.name, .dimension = config.dimensions, .is_resizable = false}));
-   }
-
-   return none;
-}
 auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>
 {

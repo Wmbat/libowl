@@ -85,7 +85,7 @@ render_system::render_system(cacao::window* p_window, mannele::log_ptr logger) :
    m_context(
       {.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0), .use_window = true, .logger = m_logger}),
    m_surface(p_window->create_surface(m_context).take()),
-   m_device({.ctx = m_context, .surface = some(m_surface.get()), .logger = m_logger}),
+   m_device({.ctx = m_context, .surface = m_surface.get(), .logger = m_logger}),
    m_swapchain(cacao::swapchain_create_info{
       .device = m_device,
       .surface = m_surface.get(),

@@ -1,8 +1,8 @@
-#ifndef SPH_SIMULATION_RENDER_ONSCREEN_FRAME_MANAGER_HPP
-#define SPH_SIMULATION_RENDER_ONSCREEN_FRAME_MANAGER_HPP
+#ifndef SPH_SIMULATION_RENDER_FRAME_MANAGER_HPP
+#define SPH_SIMULATION_RENDER_FRAME_MANAGER_HPP
 
+#include <sph-simulation/render/core/framebuffer.hpp>
 #include <sph-simulation/render/core/image.hpp>
-#include <sph-simulation/render/i_frame_manager.hpp>
 
 #include <libcacao/command_pool.hpp>
 #include <libcacao/swapchain.hpp>
@@ -25,14 +25,25 @@ struct onscreen_frame_manager_create_info
    mannele::log_ptr logger;
 };
 
-class onscreen_frame_manager : public i_frame_manager
+struct frame_data
+{
+   mannele::u32 image_index;
+   mannele::u32 frame_index;
+};
+
+class frame_manager
 {
 public:
-   onscreen_frame_manager() = default;
-   onscreen_frame_manager(const onscreen_frame_manager_create_info& info);
+   frame_manager() = default;
+   frame_manager(const onscreen_frame_manager_create_info& info);
 
-   auto begin_frame(std::span<cacao::command_pool> pools) -> reglisse::maybe<mannele::u32> override;
-   void end_frame(std::span<cacao::command_pool> pools) override;
+   auto begin_frame() -> reglisse::maybe<frame_data>;
+   void end_frame(std::span<cacao::command_pool> pools);
+
+   [[nodiscard]] auto frame_format() const noexcept -> vk::Format;
+   [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D;
+
+   [[nodiscard]] auto get_framebuffer_info() const -> std::vector<framebuffer_create_info>;
 
 private:
    mannele::log_ptr m_logger;
@@ -53,4 +64,4 @@ private:
    mannele::u32 m_current_frame_index{};
 };
 
-#endif // SPH_SIMULATION_RENDER_ONSCREEN_FRAME_MANAGER_HPP
+#endif // SPH_SIMULATION_RENDER_FRAME_MANAGER_HPP

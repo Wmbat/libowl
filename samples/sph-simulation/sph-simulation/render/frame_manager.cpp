@@ -1,4 +1,4 @@
-#include <sph-simulation/render/onscreen_frame_manager.hpp>
+#include <sph-simulation/render/frame_manager.hpp>
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/generate_n.hpp>
@@ -15,7 +15,7 @@ auto create_image_available_semaphores(const cacao::device& device)
 auto create_in_flight_fences(const cacao::device& device)
    -> std::array<vk::UniqueFence, max_frames_in_flight>;
 
-onscreen_frame_manager::onscreen_frame_manager(const onscreen_frame_manager_create_info& info) :
+frame_manager::frame_manager(const onscreen_frame_manager_create_info& info) :
    m_logger(info.logger), mp_device(&info.device),
    m_swapchain(cacao::swapchain_create_info{
       .device = *mp_device,
@@ -33,13 +33,21 @@ onscreen_frame_manager::onscreen_frame_manager(const onscreen_frame_manager_crea
    m_render_finished_semaphores(
       create_render_finished_semaphores(*mp_device, std::size(m_swapchain.image_views()))),
    m_image_available_semaphores(create_image_available_semaphores(*mp_device)),
-   m_in_flight_fences(create_in_flight_fences(*mp_device))
+   m_in_flight_fences(create_in_flight_fences(*mp_device)),
+   m_depth_image({.device = info.device,
+                  .formats = {std::begin(depth_formats), std::end(depth_formats)},
+                  .tiling = vk::ImageTiling::eOptimal,
+                  .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                  .memory_properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+                  .dimensions = {m_swapchain.extent().width, m_swapchain.extent().height},
+                  .logger = info.logger}
+
+   )
 {
    m_images_in_flight.resize(std::size(m_swapchain.images()));
 }
 
-auto onscreen_frame_manager::begin_frame(std::span<cacao::command_pool> pools)
-   -> reglisse::maybe<mannele::u32>
+auto frame_manager::begin_frame() -> reglisse::maybe<frame_data>
 {
    const auto device = mp_device->logical();
 
@@ -67,16 +75,14 @@ auto onscreen_frame_manager::begin_frame(std::span<cacao::command_pool> pools)
 
    m_logger.debug(R"(swapchain image "{}" acquired)", image_index);
 
-   // NOLINTNEXTLINE
-   device.resetCommandPool(pools[m_current_frame_index].value(), {});
-
    m_current_image_index = image_index;
 
-   return some(m_current_image_index);
+   return some(
+      frame_data{.image_index = m_current_image_index, .frame_index = m_current_frame_index});
 }
 
-// TODO: REWORK
-void onscreen_frame_manager::end_frame(std::span<cacao::command_pool> pools)
+// TODO(wmbat): REWORK
+void frame_manager::end_frame(std::span<cacao::command_pool> pools)
 {
    const auto device = mp_device->logical();
 
@@ -134,6 +140,34 @@ void onscreen_frame_manager::end_frame(std::span<cacao::command_pool> pools)
    }
 
    m_current_frame_index = (m_current_frame_index + 1) % max_frames_in_flight;
+}
+
+auto frame_manager::frame_format() const noexcept -> vk::Format
+{
+   return m_swapchain.format();
+}
+
+auto frame_manager::extent() const noexcept -> const vk::Extent2D
+{
+   return m_swapchain.extent();
+}
+
+auto frame_manager::get_framebuffer_info() const -> std::vector<framebuffer_create_info>
+{
+   std::vector<framebuffer_create_info> infos;
+
+   const auto swap_extent = m_swapchain.extent();
+   for (const auto& image_view : m_swapchain.image_views())
+   {
+      infos.push_back(
+         framebuffer_create_info{.device = mp_device->logical(),
+                                 .attachments = {image_view.get(), m_depth_image.view()},
+                                 .dimensions = {swap_extent.width, swap_extent.height},
+                                 .layers = 1,
+                                 .logger = m_logger});
+   }
+
+   return infos;
 }
 
 auto create_render_finished_semaphores(const cacao::device& device, mannele::u64 count)

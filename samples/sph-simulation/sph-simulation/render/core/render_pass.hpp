@@ -49,7 +49,7 @@ public:
    /**
     * @brief
     */
-   void submit_render_calls(vk::CommandBuffer cmd_buffer, mannele::u64 framebuffer_index,
+   void submit_render_calls(vk::CommandBuffer buffer, mannele::u64 framebuffer_index,
                             vk::Rect2D render_area, std::span<const vk::ClearValue> clear_colours);
 
 private:

@@ -276,7 +276,7 @@ namespace cacao
          {
             vk::Bool32 present_support = VK_FALSE;
             if (m_physical.getSurfaceSupportKHR(static_cast<std::uint32_t>(index),
-                                                info.surface.borrow(),
+                                                info.surface,
                                                 &present_support) == vk::Result::eSuccess)
             {
                has_present = present_support == VK_TRUE;

@@ -70,7 +70,7 @@ namespace cacao
    {
       const context& ctx;
 
-      reglisse::maybe<vk::SurfaceKHR> surface = reglisse::none;
+      vk::SurfaceKHR surface = nullptr;
 
       std::function<std::int32_t(vk::PhysicalDevice)> physical_device_rating_fun{
          rate_physical_device};
