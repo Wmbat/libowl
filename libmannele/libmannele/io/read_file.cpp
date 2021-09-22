@@ -1,3 +1,11 @@
+/**
+ * @file libmannele/io/read_file.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 22nd of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libmannele/io/read_file.hpp>
 
 #include <libmannele/core.hpp>
@@ -7,7 +15,9 @@
 
 #include <fstream>
 
-using namespace reglisse;
+using reglisse::result;
+using reglisse::ok;
+using reglisse::err;
 
 struct file_reading_error_category : std::error_category
 {

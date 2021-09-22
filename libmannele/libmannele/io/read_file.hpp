@@ -1,5 +1,13 @@
-#ifndef LIBMANNELE_IO_READ_FILE_HPP
-#define LIBMANNELE_IO_READ_FILE_HPP
+/**
+ * @file libmannele/io/read_file.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 22nd of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBMANNELE_IO_READ_FILE_HPP_
+#define LIBMANNELE_IO_READ_FILE_HPP_
 
 #include <libmannele/error/runtime_error.hpp>
 
@@ -21,4 +29,4 @@ namespace mannele
       -> reglisse::result<std::string, runtime_error>;
 } // namespace mannele
 
-#endif // LIBMANNELE_IO_READ_FILE_HPP
+#endif // LIBMANNELE_IO_READ_FILE_HPP_

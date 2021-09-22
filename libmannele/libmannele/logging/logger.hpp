@@ -2,21 +2,27 @@
  * @file libmannele/logging/logger.hpp
  * @author wmbat wmbat@protonmail.com
  * @date Wednesday, 1st of September 2021
- * @brief 
+ * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
 
-#ifndef LIBMANNELE_LOGGING_LOGGER_HPP
-#define LIBMANNELE_LOGGING_LOGGER_HPP
+#ifndef LIBMANNELE_LOGGING_LOGGER_HPP_
+#define LIBMANNELE_LOGGING_LOGGER_HPP_
 
 #include <libmannele/export.hpp>
 
+// Third Party Libraries
+
 #include <spdlog/spdlog.h>
 
-#include <cstring>
-#include <string_view>
+// C++ Standard Library
 
-namespace mannele 
+#include <cstring>
+#include <string>
+#include <string_view>
+#include <utility>
+
+namespace mannele
 {
    /**
     * @brief A simple logging class built on top of spdlog
@@ -25,7 +31,7 @@ namespace mannele
    {
    public:
       logger();
-      logger(std::string_view name);
+      logger(std::string_view name); // NOLINT
 
       /**
        * @brief Log a debug message
@@ -118,4 +124,4 @@ namespace mannele
    };
 } // namespace mannele
 
-#endif // LIBMANNELE_LOGGING_LOGGER_HPP
+#endif // LIBMANNELE_LOGGING_LOGGER_HPP_

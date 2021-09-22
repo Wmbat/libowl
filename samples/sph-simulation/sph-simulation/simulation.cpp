@@ -733,66 +733,9 @@ struct renderer_data
 auto create_window(const sim_config& config) -> maybe<cacao::window>;
 auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>;
-auto compute_matrices(const vk::Extent2D& extent) -> camera::matrices
-{
-   const auto width = static_cast<float>(extent.width);
-   const auto height = static_cast<float>(extent.height);
-
-   camera::matrices matrices{};
-   matrices.projection =
-      glm::perspective(glm::radians(90.0F), width / height, 0.1F, 1000.0F); // NOLINT
-   matrices.view =
-      glm::lookAt(glm::vec3(10.0f, 8.0f, 15.0f), glm::vec3(3.0f, 2.0f, -1.0f), // NOLINT
-                  glm::vec3(0.0F, 1.0F, 0.0F));
-   matrices.projection[1][1] *= -1;
-
-   return matrices;
-}
-auto setup_particles(entt::registry& registry, const sim_variables& variables,
-                     const renderable& renderable)
-{
-   constexpr std::size_t x_count = 10u;
-   constexpr std::size_t y_count = 10u; // 100u;
-   constexpr std::size_t z_count = 10u;
-
-   float distance_x = variables.water_radius * 1.20f; // NOLINT
-   float distance_y = variables.water_radius * 1.20f; // NOLINT
-   float distance_z = variables.water_radius * 1.20f; // NOLINT
-
-   for (auto i : vi::iota(0U, x_count))
-   {
-      const float x = -4.0f + distance_x * static_cast<float>(i); // NOLINT
-
-      for (auto j : vi::iota(0U, y_count))
-      {
-         const float y = 0.5f + distance_y * static_cast<float>(j);
-
-         for (auto k : vi::iota(0U, z_count))
-         {
-            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
-
-            auto entity = registry.create();
-
-            auto& transform = registry.emplace<::transform>(entity);
-            transform = {.position = {x, y, z},
-                         .rotation = {0, 0, 0},
-                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f}; // NOLINT
-
-            auto& particle = registry.emplace<sph::particle>(entity);
-            particle = {.radius = variables.water_radius, .mass = variables.water_mass};
-
-            auto& mesh = registry.emplace<component::mesh>(entity);
-            mesh = {.p_mesh = &renderable,
-                    .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
-
-            auto& collider = registry.emplace<physics::sphere_collider>(entity);
-            collider = {.volume = {.center = glm::vec3(), .radius = variables.water_radius},
-                        .friction = 0.0f,
-                        .restitution = 0.5f}; // NOLINT
-         }
-      }
-   }
-}
+auto compute_matrices(const vk::Extent2D& extent) -> camera::matrices;
+void setup_particles(entt::registry& registry, const sim_variables& variables,
+                     const renderable& renderable);
 
 struct update_info
 {
@@ -1072,4 +1015,64 @@ auto create_render_command_pools(const cacao::device& device, mannele::log_ptr l
    }
 
    return pools;
+}
+auto compute_matrices(const vk::Extent2D& extent) -> camera::matrices
+{
+   const auto width = static_cast<float>(extent.width);
+   const auto height = static_cast<float>(extent.height);
+
+   camera::matrices matrices{};
+   matrices.projection =
+      glm::perspective(glm::radians(90.0F), width / height, 0.1F, 1000.0F); // NOLINT
+   matrices.view =
+      glm::lookAt(glm::vec3(10.0f, 8.0f, 15.0f), glm::vec3(3.0f, 2.0f, -1.0f), // NOLINT
+                  glm::vec3(0.0F, 1.0F, 0.0F));
+   matrices.projection[1][1] *= -1;
+
+   return matrices;
+}
+void setup_particles(entt::registry& registry, const sim_variables& variables,
+                     const renderable& renderable)
+{
+   constexpr std::size_t x_count = 10u;
+   constexpr std::size_t y_count = 10u; // 100u;
+   constexpr std::size_t z_count = 10u;
+
+   float distance_x = variables.water_radius * 1.20f; // NOLINT
+   float distance_y = variables.water_radius * 1.20f; // NOLINT
+   float distance_z = variables.water_radius * 1.20f; // NOLINT
+
+   for (auto i : vi::iota(0U, x_count))
+   {
+      const float x = -4.0f + distance_x * static_cast<float>(i); // NOLINT
+
+      for (auto j : vi::iota(0U, y_count))
+      {
+         const float y = 0.5f + distance_y * static_cast<float>(j);
+
+         for (auto k : vi::iota(0U, z_count))
+         {
+            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
+
+            auto entity = registry.create();
+
+            auto& transform = registry.emplace<::transform>(entity);
+            transform = {.position = {x, y, z},
+                         .rotation = {0, 0, 0},
+                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f}; // NOLINT
+
+            auto& particle = registry.emplace<sph::particle>(entity);
+            particle = {.radius = variables.water_radius, .mass = variables.water_mass};
+
+            auto& mesh = registry.emplace<component::mesh>(entity);
+            mesh = {.p_mesh = &renderable,
+                    .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+
+            auto& collider = registry.emplace<physics::sphere_collider>(entity);
+            collider = {.volume = {.center = glm::vec3(), .radius = variables.water_radius},
+                        .friction = 0.0f,
+                        .restitution = 0.5f}; // NOLINT
+         }
+      }
+   }
 }

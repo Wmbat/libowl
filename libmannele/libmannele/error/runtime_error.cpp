@@ -1,4 +1,16 @@
+/**
+ * @file libmannele/error/runtime_error.cpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 22nd of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libmannele/error/runtime_error.hpp>
+
+// C++ Standard Library
+
+#include <string>
 
 namespace mannele
 {

@@ -1,5 +1,13 @@
-#ifndef LIBMANNELE_DIMENSION_HPP
-#define LIBMANNELE_DIMENSION_HPP
+/**
+ * @file libmannele/dimension.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 22nd of September 2021
+ * @brief 
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBMANNELE_DIMENSION_HPP_
+#define LIBMANNELE_DIMENSION_HPP_
 
 #include <libmannele/concepts.hpp>
 #include <libmannele/core.hpp>
@@ -25,4 +33,4 @@ namespace mannele
    using dimension_u64 = dimension<u64>;
 } // namespace mannele
 
-#endif // LIBMANNELE_DIMENSION_HPP
+#endif // LIBMANNELE_DIMENSION_HPP_

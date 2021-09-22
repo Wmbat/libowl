@@ -1,4 +1,13 @@
-#pragma once
+/**
+ * @file libmannele/version.hpp
+ * @author wmbat wmbat@protonmail.com
+ * @date Monday, 22nd of September 2021
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
+#ifndef LIBMANNELE_VERSION_HPP_
+#define LIBMANNELE_VERSION_HPP_
 
 // The numeric version format is AAAAABBBBBCCCCCDDDE where:
 // 
@@ -32,3 +41,5 @@
 
 #define LIBMANNELE_SNAPSHOT_SN   $libmannele.version.snapshot_sn$ULL
 #define LIBMANNELE_SNAPSHOT_ID   "$libmannele.version.snapshot_id$"
+
+#endif // LIBMANNELE_VERSION_HPP_

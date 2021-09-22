@@ -6,10 +6,14 @@
  * @copyright Copyright (C) 2021 wmbat.
  */
 
-#ifndef LIBMANNELE_LOGGING_LOG_PTR_HPP
-#define LIBMANNELE_LOGGING_LOG_PTR_HPP
+#ifndef LIBMANNELE_LOGGING_LOG_PTR_HPP_
+#define LIBMANNELE_LOGGING_LOG_PTR_HPP_
 
 #include <libmannele/logging/logger.hpp>
+
+// C++ Standard Library
+
+#include <utility>
 
 namespace mannele
 {
@@ -19,7 +23,7 @@ namespace mannele
    class log_ptr
    {
    public:
-      log_ptr(logger* p_logger = nullptr);
+      log_ptr(logger* p_logger = nullptr); // NOLINT
 
       template <typename... Args>
       void info(fmt::format_string<Args...> msg, Args&&... args)
@@ -63,4 +67,4 @@ namespace mannele
    };
 } // namespace mannele 
 
-#endif // LIBMANNELE_LOGGING_LOG_PTR_HPP
+#endif // LIBMANNELE_LOGGING_LOG_PTR_HPP_
