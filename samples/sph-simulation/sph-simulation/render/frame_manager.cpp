@@ -1,5 +1,7 @@
 #include <sph-simulation/render/frame_manager.hpp>
 
+#include <libmannele/core.hpp>
+
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/generate_n.hpp>
 #include <range/v3/view/iota.hpp>
@@ -150,6 +152,10 @@ auto frame_manager::frame_format() const noexcept -> vk::Format
 auto frame_manager::extent() const noexcept -> const vk::Extent2D
 {
    return m_swapchain.extent();
+}
+auto frame_manager::image_count() const noexcept -> mannele::u64
+{
+   return std::size(m_swapchain.image_views());
 }
 
 auto frame_manager::get_framebuffer_info() const -> std::vector<framebuffer_create_info>

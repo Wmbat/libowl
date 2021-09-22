@@ -13,10 +13,10 @@
 
 struct renderable
 {
-   vertex_buffer m_vertex_buffer;
-   index_buffer m_index_buffer;
+   vertex_buffer vertex_buff;
+   index_buffer index_buff;
 
-   glm::mat4 m_model{};
+   glm::mat4 model{};
 };
 
 inline auto create_renderable(const cacao::device& device, const cacao::command_pool& pool,
@@ -24,19 +24,19 @@ inline auto create_renderable(const cacao::device& device, const cacao::command_
    -> renderable
 {
    return renderable{
-      .m_vertex_buffer = vertex_buffer(
+      .vertex_buff = vertex_buffer(
          {.device = device, .pool = pool, .vertices = data.vertices, .logger = logger}),
-      .m_index_buffer = index_buffer(
+      .index_buff = index_buffer(
          {.device = device, .pool = pool, .indices = data.indices, .logger = logger}),
-      .m_model = data.model};
+      .model = data.model};
 }
 
 inline auto create_renderable(const render_system& system, const renderable_data& data)
    -> renderable
 {
-   return renderable{.m_vertex_buffer = system.create_vertex_buffer(data.vertices),
-                     .m_index_buffer = system.create_index_buffer(data.indices),
-                     .m_model = data.model};
+   return renderable{.vertex_buff = system.create_vertex_buffer(data.vertices),
+                     .index_buff = system.create_index_buffer(data.indices),
+                     .model = data.model};
 }
 
 inline auto load_obj(const std::filesystem::path& path) -> renderable_data

@@ -7,8 +7,8 @@
 
 struct camera_create_info
 {
-   render_system& renderer;
-   graphics_pipeline& pipeline;
+   const cacao::device& device;
+   const cacao::descriptor_set_layout& layout;
 
    mannele::u32 image_count{};
 
@@ -45,8 +45,3 @@ private:
 
    vk::Device m_device;
 };
-
-auto create_camera(render_system& system, graphics_pipeline& pipeline, mannele::log_ptr logger)
-   -> camera;
-auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             mannele::log_ptr logger) -> camera;

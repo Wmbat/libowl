@@ -4,13 +4,15 @@
 
 #include <range/v3/view/iota.hpp>
 
+using mannele::u64;
+
 namespace vi = ranges::views;
 
 render_pass::render_pass(render_pass_create_info&& info)
 {
    m_render_pass = create_render_pass(info);
    m_framebuffers = create_framebuffers(info);
-   m_buff_calls = [](vk::CommandBuffer) {}; // NOLINT
+   m_buff_calls = [](vk::CommandBuffer, u64) {}; // NOLINT
 }
 
 auto render_pass::value() const -> vk::RenderPass
@@ -18,26 +20,26 @@ auto render_pass::value() const -> vk::RenderPass
    return m_render_pass.get();
 }
 
-void render_pass::record_render_calls(const std::function<void(vk::CommandBuffer)>& calls)
+void render_pass::record_render_calls(const std::function<void(vk::CommandBuffer, u64)>& calls)
 {
    m_buff_calls = calls;
 }
 
-void render_pass::submit_render_calls(vk::CommandBuffer buffer, mannele::u64 framebuffer_index,
+void render_pass::submit_render_calls(vk::CommandBuffer buffer, mannele::u64 image_index,
                                       vk::Rect2D render_area,
                                       std::span<const vk::ClearValue> clear_colours)
 {
-   assert(framebuffer_index < std::size(m_framebuffers)); // NOLINT
+   assert(image_index < std::size(m_framebuffers)); // NOLINT
 
    buffer.beginRenderPass({.pNext = nullptr,
-                            .renderPass = m_render_pass.get(),
-                            .framebuffer = m_framebuffers.at(framebuffer_index).value(),
-                            .renderArea = render_area,
-                            .clearValueCount = static_cast<std::uint32_t>(std::size(clear_colours)),
-                            .pClearValues = std::data(clear_colours)},
-                           vk::SubpassContents::eInline);
+                           .renderPass = m_render_pass.get(),
+                           .framebuffer = m_framebuffers.at(image_index).value(),
+                           .renderArea = render_area,
+                           .clearValueCount = static_cast<std::uint32_t>(std::size(clear_colours)),
+                           .pClearValues = std::data(clear_colours)},
+                          vk::SubpassContents::eInline);
 
-   std::invoke(m_buff_calls, buffer);
+   std::invoke(m_buff_calls, buffer, image_index);
 
    buffer.endRenderPass();
 }

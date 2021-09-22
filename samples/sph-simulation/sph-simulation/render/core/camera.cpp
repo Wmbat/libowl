@@ -11,7 +11,7 @@ namespace vi = ranges::views;
 auto create_uniform_buffers(const camera_create_info& info) -> std::vector<cacao::buffer>
 {
    const auto create_info =
-      cacao::buffer_create_info{.device = info.renderer.device(),
+      cacao::buffer_create_info{.device = info.device,
                                 .buffer_size = sizeof(camera::matrices),
                                 .usage = vk::BufferUsageFlagBits::eUniformBuffer,
                                 .desired_mem_flags = vk::MemoryPropertyFlagBits::eHostVisible |
@@ -29,13 +29,12 @@ auto create_uniform_buffers(const camera_create_info& info) -> std::vector<cacao
 
 camera::camera(const camera_create_info& info) :
    m_uniform_buffers(create_uniform_buffers(info)),
-   m_descriptor_pool(
-      {.device = info.renderer.device(),
-       .pool_sizes = {{.type = vk::DescriptorType::eUniformBuffer,
-                       .descriptorCount = info.image_count}},
-       .layouts = std::vector(info.image_count, info.pipeline.get_descriptor_set_layout("camera_layout").value()),
-       .logger = info.logger}),
-   m_device(info.renderer.device().logical())
+   m_descriptor_pool({.device = info.device,
+                      .pool_sizes = {{.type = vk::DescriptorType::eUniformBuffer,
+                                      .descriptorCount = info.image_count}},
+                      .layouts = std::vector(info.image_count, info.layout.value()),
+                      .logger = info.logger}),
+   m_device(info.device.logical())
 {
    for (std::size_t i = 0; auto set : m_descriptor_pool.sets())
    {
@@ -51,7 +50,7 @@ camera::camera(const camera_create_info& info) :
                                    .descriptorType = vk::DescriptorType::eUniformBuffer,
                                    .pBufferInfo = std::data(buf_info)};
 
-      info.renderer.device().logical().updateDescriptorSets({write}, {});
+      info.device.logical().updateDescriptorSets({write}, {});
    }
 }
 
@@ -69,18 +68,4 @@ void camera::update(mannele::u64 image_index, const matrices& matrices)
    void* p_data = m_device.mapMemory(memory, 0, size, {});
    memcpy(p_data, &matrices, size);
    m_device.unmapMemory(m_uniform_buffers.at(image_index).memory());
-}
-
-auto create_camera(render_system& system, graphics_pipeline& pipeline, mannele::log_ptr logger)
-   -> camera
-{
-   return camera({.renderer = system,
-                  .pipeline = pipeline,
-                  .image_count = static_cast<mannele::u32>(system.swapchain().images().size()),
-                  .logger = logger});
-}
-auto create_offscreen_camera(render_system& system, graphics_pipeline& pipeline,
-                             mannele::log_ptr logger) -> camera
-{
-   return camera({.renderer = system, .pipeline = pipeline, .image_count = 1, .logger = logger});
 }

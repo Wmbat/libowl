@@ -42,6 +42,7 @@ public:
 
    [[nodiscard]] auto frame_format() const noexcept -> vk::Format;
    [[nodiscard]] auto extent() const noexcept -> const vk::Extent2D;
+   [[nodiscard]] auto image_count() const noexcept -> mannele::u64;
 
    [[nodiscard]] auto get_framebuffer_info() const -> std::vector<framebuffer_create_info>;
 

@@ -44,7 +44,7 @@ public:
    /**
     * @brief
     */
-   void record_render_calls(const std::function<void(vk::CommandBuffer)>& calls);
+   void record_render_calls(const std::function<void(vk::CommandBuffer, mannele::u64)>& calls);
 
    /**
     * @brief
@@ -61,5 +61,5 @@ private:
 
    std::vector<framebuffer> m_framebuffers;
 
-   std::function<void(vk::CommandBuffer)> m_buff_calls;
+   std::function<void(vk::CommandBuffer, mannele::u64)> m_buff_calls;
 };

@@ -8,7 +8,7 @@ namespace component
 {
    struct mesh
    {
-      renderable* p_mesh;
+      const renderable* p_mesh;
       glm::vec3 colour;
    };
 } // namespace component

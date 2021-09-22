@@ -42,6 +42,9 @@
 namespace chrono = std::chrono;
 namespace vi = ranges::views;
 
+using mannele::u32;
+using mannele::u64;
+
 using namespace reglisse;
 
 struct mesh_data
@@ -677,14 +680,21 @@ auto simulation::create_offscreen_pipeline() -> mannele::u64
 auto simulation::setup_onscreen_camera(mannele::u64 index) -> camera
 {
    auto pipeline_info = m_pipelines.lookup(index).borrow();
+   std::size_t image_count = std::size(m_render_system.swapchain().image_views());
 
-   return create_camera(m_render_system, pipeline_info.value(), m_logger);
+   return camera({.device = m_render_system.device(),
+                  .layout = pipeline_info.value().get_descriptor_set_layout("camera_layout"),
+                  .image_count = static_cast<mannele::u32>(image_count),
+                  .logger = m_logger});
 }
 auto simulation::setup_offscreen_camera(mannele::u64 index) -> camera
 {
    auto pipeline_info = m_pipelines.lookup(index).borrow();
 
-   return create_offscreen_camera(m_render_system, pipeline_info.value(), m_logger);
+   return camera({.device = m_render_system.device(),
+                  .layout = pipeline_info.value().get_descriptor_set_layout("camera_layout"),
+                  .image_count = 1,
+                  .logger = m_logger});
 }
 
 auto simulation::compute_matrices(std::uint32_t width, std::uint32_t height) -> camera::matrices
@@ -723,7 +733,66 @@ struct renderer_data
 auto create_window(const sim_config& config) -> maybe<cacao::window>;
 auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>;
-auto gather_main_pipeline_info() -> graphics_pipeline_create_info;
+auto compute_matrices(const vk::Extent2D& extent) -> camera::matrices
+{
+   const auto width = static_cast<float>(extent.width);
+   const auto height = static_cast<float>(extent.height);
+
+   camera::matrices matrices{};
+   matrices.projection =
+      glm::perspective(glm::radians(90.0F), width / height, 0.1F, 1000.0F); // NOLINT
+   matrices.view =
+      glm::lookAt(glm::vec3(10.0f, 8.0f, 15.0f), glm::vec3(3.0f, 2.0f, -1.0f), // NOLINT
+                  glm::vec3(0.0F, 1.0F, 0.0F));
+   matrices.projection[1][1] *= -1;
+
+   return matrices;
+}
+auto setup_particles(entt::registry& registry, const sim_variables& variables,
+                     const renderable& renderable)
+{
+   constexpr std::size_t x_count = 10u;
+   constexpr std::size_t y_count = 10u; // 100u;
+   constexpr std::size_t z_count = 10u;
+
+   float distance_x = variables.water_radius * 1.20f; // NOLINT
+   float distance_y = variables.water_radius * 1.20f; // NOLINT
+   float distance_z = variables.water_radius * 1.20f; // NOLINT
+
+   for (auto i : vi::iota(0U, x_count))
+   {
+      const float x = -4.0f + distance_x * static_cast<float>(i); // NOLINT
+
+      for (auto j : vi::iota(0U, y_count))
+      {
+         const float y = 0.5f + distance_y * static_cast<float>(j);
+
+         for (auto k : vi::iota(0U, z_count))
+         {
+            const float z = (-distance_z * z_count / 2.0f) + distance_z * static_cast<float>(k);
+
+            auto entity = registry.create();
+
+            auto& transform = registry.emplace<::transform>(entity);
+            transform = {.position = {x, y, z},
+                         .rotation = {0, 0, 0},
+                         .scale = glm::vec3(1.0f, 1.0f, 1.0f) * 0.25f}; // NOLINT
+
+            auto& particle = registry.emplace<sph::particle>(entity);
+            particle = {.radius = variables.water_radius, .mass = variables.water_mass};
+
+            auto& mesh = registry.emplace<component::mesh>(entity);
+            mesh = {.p_mesh = &renderable,
+                    .colour = {65 / 255.0f, 105 / 255.0f, 225 / 255.0f}}; // NOLINT
+
+            auto& collider = registry.emplace<physics::sphere_collider>(entity);
+            collider = {.volume = {.center = glm::vec3(), .radius = variables.water_radius},
+                        .friction = 0.0f,
+                        .restitution = 0.5f}; // NOLINT
+         }
+      }
+   }
+}
 
 struct update_info
 {
@@ -750,6 +819,8 @@ struct render_info
 
    std::span<render_pass_data> render_passes;
 
+   camera& main_camera;
+
    entt::registry& registry;
 };
 
@@ -759,11 +830,11 @@ void render(const render_info& info);
 auto start_simulation(const simulation_info& info) -> int
 {
    auto logger = info.logger;
+   auto window = cacao::window(
+      {.title = info.config.name, .dimension = info.config.dimensions, .is_resizable = false});
    auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
                                   .use_window = info.config.is_onscreen_rendering_enabled,
                                   .logger = logger});
-   auto window = cacao::window(
-      {.title = info.config.name, .dimension = info.config.dimensions, .is_resizable = false});
    auto surface = window.create_surface(context).take();
    auto device = cacao::device(
       {.ctx = context, .surface = surface.get(), .use_transfer_queue = true, .logger = logger});
@@ -802,6 +873,7 @@ auto start_simulation(const simulation_info& info) -> int
        .render_area = {.offset = {0, 0}, .extent = frame_man.extent()},
        .clear_values = clear_values});
 
+   pipeline_registry::key_type main_pipeline_key = 0;
    {
       std::vector viewports = {vk::Viewport{.x = 0.0F,
                                             .y = 0.0F,
@@ -841,19 +913,77 @@ auto start_simulation(const simulation_info& info) -> int
                                              .format = vk::Format::eR32G32B32Sfloat,
                                              .offset = offsetof(vertex, colour)}};
 
-      auto info = pipelines.insert({.device = device,
-                                    .pass = render_passes.at(0).pass,
-                                    .logger = logger,
-                                    .bindings = bindings,
-                                    .attributes = attributes,
-                                    .viewports = viewports,
-                                    .scissors = scissors,
-                                    .shader_infos = shader_data});
+      auto insertion_result = pipelines.insert({.device = device,
+                                                .pass = render_passes.at(0).pass,
+                                                .logger = logger,
+                                                .bindings = bindings,
+                                                .attributes = attributes,
+                                                .viewports = viewports,
+                                                .scissors = scissors,
+                                                .shader_infos = shader_data});
+
+      if (insertion_result.is_ok())
+      {
+         main_pipeline_key = insertion_result.borrow().key();
+      }
+      else
+      {
+         logger.error("Failed to create main rendering pipeline");
+         logger.error("Application cannot proceed forward. Shutting down...");
+
+         return EXIT_FAILURE;
+      }
    }
+
+   auto& main_pipeline = pipelines.lookup(main_pipeline_key).borrow().value();
+   auto main_camera = camera({.device = device,
+                              .layout = main_pipeline.get_descriptor_set_layout("camera_layout"),
+                              .image_count = static_cast<u32>(frame_man.image_count()),
+                              .logger = logger});
+
+   render_passes[0].pass.record_render_calls([&](vk::CommandBuffer buffer, u64 image_index) {
+      auto& pipeline = pipelines.lookup(main_pipeline_key).borrow().value();
+
+      buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
+
+      buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.layout(), 0,
+                                {main_camera.lookup_set(image_index)}, {});
+
+      auto view = entity_registry.view<component::mesh, transform>();
+
+      for (auto& renderable : renderables)
+      {
+         buffer.bindVertexBuffers(0, {renderable.vertex_buff.buffer().value()},
+                                  {vk::DeviceSize{0}});
+         buffer.bindIndexBuffer(renderable.index_buff.buffer().value(), 0, vk::IndexType::eUint32);
+
+         for (auto entity : view | vi::filter([&](auto e) {
+                               return view.get<component::mesh>(e).p_mesh == &renderable;
+                            }))
+         {
+            const auto& render = view.get<component::mesh>(entity);
+            const auto& transform = view.get<::transform>(entity);
+
+            const auto translate = glm::translate(glm::mat4(1), transform.position);
+            const auto scale = glm::scale(glm::mat4(1), transform.scale);
+
+            mesh_data md{.model = translate * scale, .colour = render.colour}; // NOLINT
+
+            buffer.pushConstants(pipeline.layout(),
+                                 pipeline.get_push_constant_ranges("mesh_data").stageFlags, 0,
+                                 sizeof(mesh_data) * 1, &md);
+
+            buffer.drawIndexed(static_cast<std::uint32_t>(renderable.index_buff.index_count()), 1,
+                               0, 0, 0);
+         }
+      }
+   });
+
+   setup_particles(entity_registry, info.config.variables, renderables[0]);
 
    logger.info("Starting render...");
 
-   mannele::u32 current_frame = 0;
+   u32 current_frame = 0;
    while (current_frame < info.config.frame_count)
    {
       update({.registry = entity_registry,
@@ -863,6 +993,7 @@ auto start_simulation(const simulation_info& info) -> int
               .frame_man = frame_man,
               .pools = render_command_pools,
               .render_passes = render_passes,
+              .main_camera = main_camera,
               .registry = entity_registry});
 
       ++current_frame;
@@ -872,15 +1003,20 @@ auto start_simulation(const simulation_info& info) -> int
       logger.info("Render status: {:0>6.2f}%", 100.0f * completion_rate);
    }
 
+   logger.info("Render Finished");
+   logger.info("Closing program...");
+
+   device.logical().waitIdle();
+
    return EXIT_SUCCESS;
 }
 
 void update(const update_info& info)
 {
-   auto particle_view = info.registry.view<PARTICLE_COMPONENTS>();
-   auto sphere_view = info.registry.view<SPHERE_COMPONENTS>();
-   auto plane_view = info.registry.view<PLANE_COMPONENTS>();
-   auto box_view = info.registry.view<BOX_COMPONENTS>();
+   const auto particle_view = info.registry.view<PARTICLE_COMPONENTS>();
+   const auto sphere_view = info.registry.view<SPHERE_COMPONENTS>();
+   const auto plane_view = info.registry.view<PLANE_COMPONENTS>();
+   const auto box_view = info.registry.view<BOX_COMPONENTS>();
 
    sph::update({.particles = particle_view,
                 .spheres = sphere_view,
@@ -896,10 +1032,11 @@ void update(const update_info& info)
 void render(const render_info& info)
 {
    auto device = info.device.logical();
+   auto& main_camera = info.main_camera;
 
-   // TODO(wmbat): make this more RAII friendly
-   auto [image_index, frame_index] = info.frame_man.begin_frame().take();
+   const auto [image_index, frame_index] = info.frame_man.begin_frame().take();
 
+   main_camera.update(image_index, compute_matrices(info.frame_man.extent()));
    device.resetCommandPool(info.pools[frame_index].value(), {});
 
    for (auto& buffer : info.pools[frame_index].primary_buffers())
