@@ -66,23 +66,6 @@ auto main_colour_attachment(vk::Format format) -> vk::AttachmentDescription
            .finalLayout = vk::ImageLayout::ePresentSrcKHR};
 }
 
-auto offscreen_colour_attachment(cacao::device& device) -> vk::AttachmentDescription
-{
-   if (auto res = find_colour_format(device))
-   {
-      return {.format = res.borrow(),
-              .samples = vk::SampleCountFlagBits::e1,
-              .loadOp = vk::AttachmentLoadOp::eClear,
-              .storeOp = vk::AttachmentStoreOp::eStore,
-              .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-              .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-              .initialLayout = vk::ImageLayout::eUndefined,
-              .finalLayout = vk::ImageLayout::eTransferSrcOptimal};
-   }
-
-   return {};
-}
-
 auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
 {
    if (auto val = find_depth_format(device))
@@ -100,13 +83,6 @@ auto main_depth_attachment(cacao::device& device) -> vk::AttachmentDescription
    return {};
 }
 
-struct renderer_data
-{
-   std::vector<render_pass> render_passes;
-
-   std::span<cacao::command_pool> pools;
-};
-
 auto create_window(const sim_config& config) -> maybe<cacao::window>;
 auto create_render_command_pools(const cacao::device& device, mannele::log_ptr logger)
    -> std::array<cacao::command_pool, max_frames_in_flight>;
@@ -114,20 +90,20 @@ auto compute_matrices(const vk::Extent2D& extent) -> camera::matrices;
 void setup_particles(entt::registry& registry, const sim_variables& variables,
                      const renderable& renderable);
 
-struct update_info
-{
-   entt::registry& registry;
-
-   const sim_variables& variables;
-   duration<float> time_step;
-};
-
 struct render_pass_data
 {
    render_pass pass;
 
    vk::Rect2D render_area;
    std::array<vk::ClearValue, 2> clear_values;
+};
+
+struct update_info
+{
+   entt::registry& registry;
+
+   const sim_variables& variables;
+   duration<float> time_step;
 };
 
 struct render_info

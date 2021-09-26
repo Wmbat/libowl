@@ -25,7 +25,7 @@ auto main(int argc, char** argv) -> int
 
    if (arguments.empty())
    {
-	   logger.error(
+      logger.error(
          "No command line arguments provided. Please provide path to scene settings (.json)");
       logger.error("Exiting...");
 
@@ -35,17 +35,9 @@ auto main(int argc, char** argv) -> int
    if (auto config = parse_sim_config_json(arguments[0]))
    {
       return start_simulation({.config = config.borrow(), .logger = &logger});
-      /*
-      auto sim = simulation(config.borrow(), &logger);
-      sim.run();
-      */
-   }
-   else
-   {
-      logger.error("Failed to parse json: {}", arguments[0]);
-
-      return EXIT_FAILURE;
    }
 
-   return EXIT_SUCCESS;
+   logger.error("Failed to parse json: {}", arguments[0]);
+
+   return EXIT_FAILURE;
 }
