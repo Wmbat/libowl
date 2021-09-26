@@ -2,7 +2,7 @@
  * @file libmannele/logging/logger.cpp
  * @author wmbat wmbat@protonmail.com
  * @date Wednesday, 1st of September 2021
- * @brief 
+ * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
 
@@ -18,7 +18,11 @@ namespace mannele
    logger::logger() : log("Default logger")
    {
       auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+#if defined(LIBMANNELE_ENABLE_DEBUG_LOGGING)
       console_sink->set_level(spdlog::level::trace);
+#else //
+      console_sink->set_level(spdlog::level::info);
+#endif
       console_sink->set_pattern("[%n] [%^%l%$] %v");
 
       auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs.txt", true);
@@ -32,7 +36,11 @@ namespace mannele
    logger::logger(std::string_view name) : log("")
    {
       auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+#if defined(LIBMANNELE_ENABLE_DEBUG_LOGGING)
       console_sink->set_level(spdlog::level::trace);
+#else //
+      console_sink->set_level(spdlog::level::info);
+#endif
       console_sink->set_pattern("[%n] [%^%l%$] %v");
 
       auto file_sink =

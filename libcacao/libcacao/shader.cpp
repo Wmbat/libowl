@@ -16,16 +16,21 @@
 #include <magic_enum.hpp>
 
 // Ignore warnings from the spirv_glsl header
-#if defined(__GNUC__)
+#if defined(__GNUC__) || not defined(__clang__)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wconversion"
 #   pragma GCC diagnostic ignored "-Wdeprecated"
+#elif defined(__clang__)
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wsign-conversion"
 #endif
 
 #include <spirv_glsl.hpp>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || not defined(__clang__)
 #   pragma GCC diagnostic pop
+#elif defined(__clang__)
+#   pragma clang diagnostic pop
 #endif
 
 #include <range/v3/range/conversion.hpp>

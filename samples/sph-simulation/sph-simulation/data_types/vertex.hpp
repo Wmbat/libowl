@@ -11,17 +11,22 @@
 
 // Third Party Libraries
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && not defined(__clang__)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wvolatile"
+#elif defined(__clang__)
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-volatile"
 #endif
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && not defined(__clang__)
 #   pragma GCC diagnostic pop
+#elif defined(__clang__)
+#   pragma clang diagnostic pop
 #endif
 
 // C++ Standard Library

@@ -17,7 +17,7 @@ auto create_image_available_semaphores(const cacao::device& device)
 auto create_in_flight_fences(const cacao::device& device)
    -> std::array<vk::UniqueFence, max_frames_in_flight>;
 
-frame_manager::frame_manager(const onscreen_frame_manager_create_info& info) :
+frame_manager::frame_manager(const frame_manager_create_info& info) :
    m_logger(info.logger), mp_device(&info.device),
    m_swapchain(cacao::swapchain_create_info{
       .device = *mp_device,
@@ -27,7 +27,7 @@ frame_manager::frame_manager(const onscreen_frame_manager_create_info& info) :
       .desired_dimensions = info.window.dimension(),
       .graphics_queue_index = 0,
       .present_queue_index = 0,
-      .image_usage_flags = vk::ImageUsageFlagBits::eColorAttachment,
+      .image_usage_flags = info.image_usage,
       .composite_alpha_flags = vk::CompositeAlphaFlagBitsKHR::eOpaque,
       .should_clip = true,
       .old_swapchain = nullptr,
@@ -116,8 +116,8 @@ void frame_manager::end_frame(std::span<cacao::command_pool> pools)
 
    try
    {
-      const auto gfx_queue = mp_device->get_queue(cacao::queue_flag_bits::graphics).value;
-      gfx_queue.submit(submit_infos, m_in_flight_fences.at(m_current_frame_index).get());
+      const auto gfx_queue = mp_device->find_best_suited_queue(cacao::queue_flag_bits::graphics);
+      gfx_queue.value.submit(submit_infos, m_in_flight_fences.at(m_current_frame_index).get());
    }
    catch (const vk::SystemError& err)
    {
@@ -128,7 +128,7 @@ void frame_manager::end_frame(std::span<cacao::command_pool> pools)
 
    const std::array swapchains{m_swapchain.value()};
 
-   const auto present_queue = mp_device->get_queue(cacao::queue_flag_bits::present);
+   const auto present_queue = mp_device->find_best_suited_queue(cacao::queue_flag_bits::present);
    if (present_queue.value.presentKHR(
           vk::PresentInfoKHR{.waitSemaphoreCount = std::size(signal_semaphores),
                              .pWaitSemaphores = std::data(signal_semaphores),

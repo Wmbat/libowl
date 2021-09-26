@@ -13,14 +13,14 @@
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
 #include <vulkan/vulkan.hpp>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #   pragma GCC diagnostic pop
 #endif
 

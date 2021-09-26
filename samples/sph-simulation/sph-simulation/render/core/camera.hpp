@@ -1,9 +1,11 @@
 #pragma once
 
 #include <sph-simulation/core/pipeline.hpp>
-#include <sph-simulation/render/render_system.hpp>
 
+#include <libcacao/buffer.hpp>
 #include <libcacao/descriptor_pool.hpp>
+
+#include <glm/mat4x4.hpp>
 
 struct camera_create_info
 {

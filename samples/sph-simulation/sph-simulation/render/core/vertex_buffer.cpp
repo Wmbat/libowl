@@ -25,14 +25,14 @@ auto create_buffer(const vertex_buffer_create_info& info) -> cacao::buffer
        .desired_mem_flags = vk::MemoryPropertyFlagBits::eDeviceLocal,
        .logger = info.logger});
 
-   const auto cmd_buffer =
-      create_standalone_command_buffers(info.device, info.pool, cacao::command_buffer_level::primary, 1);
+   const auto cmd_buffer = create_standalone_command_buffers(
+      info.device, info.pool, cacao::command_buffer_level::primary, 1);
    cmd_buffer[0]->begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
    cmd_buffer[0]->copyBuffer(staging_buffer.value(), vertex_buffer.value(),
                              {vk::BufferCopy{.size = size}});
    cmd_buffer[0]->end();
 
-   const auto queue = info.device.get_queue(cacao::queue_flag_bits::transfer).value;
+   const auto queue = info.device.find_best_suited_queue(cacao::queue_flag_bits::transfer).value;
    queue.submit({vk::SubmitInfo{.commandBufferCount = 1, .pCommandBuffers = &cmd_buffer[0].get()}},
                 nullptr);
    queue.waitIdle();

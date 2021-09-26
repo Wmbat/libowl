@@ -3,7 +3,6 @@
 #include <sph-simulation/data_types/vertex.hpp>
 #include <sph-simulation/render/core/index_buffer.hpp>
 #include <sph-simulation/render/core/vertex_buffer.hpp>
-#include <sph-simulation/render/render_system.hpp>
 
 #include <glm/mat4x4.hpp>
 
@@ -29,14 +28,6 @@ inline auto create_renderable(const cacao::device& device, const cacao::command_
       .index_buff = index_buffer(
          {.device = device, .pool = pool, .indices = data.indices, .logger = logger}),
       .model = data.model};
-}
-
-inline auto create_renderable(const render_system& system, const renderable_data& data)
-   -> renderable
-{
-   return renderable{.vertex_buff = system.create_vertex_buffer(data.vertices),
-                     .index_buff = system.create_index_buffer(data.indices),
-                     .model = data.model};
 }
 
 inline auto load_obj(const std::filesystem::path& path) -> renderable_data

@@ -55,13 +55,6 @@ namespace cacao
    namespace detail
    {
       auto to_queue_flag_bits(const vk::QueueFlags& flags) -> queue_flags;
-
-      struct queue_info
-      {
-         queue_flags flag_bits{};
-         std::uint32_t family{};
-         std::vector<float> priorities;
-      };
    } // namespace detail
 
    auto rate_physical_device(vk::PhysicalDevice device) -> std::int32_t;
@@ -99,8 +92,7 @@ namespace cacao
 
       [[nodiscard]] auto vk_version() const -> std::uint32_t;
 
-      [[nodiscard]] auto get_queue_index(const queue_flags& type) const -> std::uint32_t;
-      [[nodiscard]] auto get_queue(const queue_flags& type) const -> const queue&;
+      [[nodiscard]] auto find_best_suited_queue(const queue_flags& flags) const -> queue;
 
    private:
       [[nodiscard]] auto find_physical_device(const device_create_info& info) const
@@ -108,9 +100,6 @@ namespace cacao
       [[nodiscard]] auto create_logical_device(const device_create_info& info) const
          -> vk::UniqueDevice;
       [[nodiscard]] auto create_queues(const device_create_info& info) const -> std::vector<queue>;
-
-      [[nodiscard]] auto get_queue_create_infos(const device_create_info& info) const
-         -> const std::vector<detail::queue_info>;
 
    private:
       vk::PhysicalDevice m_physical;
@@ -120,17 +109,6 @@ namespace cacao
 
       std::vector<queue> m_queues{};
    };
-
-   auto find_dedicated_queue_index(std::span<const queue> queues, const queue_flags& flags)
-      -> reglisse::maybe<std::uint32_t>;
-   auto get_specialized_queue_index(const queue_flags& desired, const queue_flags& unwanted,
-                                    std::span<const queue> queues)
-      -> reglisse::maybe<std::uint32_t>;
-   auto get_queue_index(const queue_flags& desired, std::span<const queue> queues)
-      -> reglisse::maybe<std::uint32_t>;
-
-   auto find_best_queue_index(std::span<const queue> queues, const queue_flags& desired,
-                              const queue_flags& unwanted) -> reglisse::maybe<mannele::u32>;
 } // namespace cacao
 
 #endif // LIBCACAO_DEVICE_HPP_

@@ -52,9 +52,10 @@ namespace cacao
    }
 
    command_pool::command_pool(const command_pool_create_info& info) :
-      m_queue_index(info.queue_family_index
-                       ? info.queue_family_index.borrow()
-                       : info.device.get_queue_index(queue_flag_bits::graphics)),
+      m_queue_index(
+         info.queue_family_index
+            ? info.queue_family_index.borrow()
+            : info.device.find_best_suited_queue(queue_flag_bits::graphics).family_index),
       m_pool(info.device.logical().createCommandPoolUnique({.queueFamilyIndex = m_queue_index})),
       m_primary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
                                          vk::CommandBufferLevel::ePrimary,
@@ -69,9 +70,10 @@ namespace cacao
          m_queue_index, info.primary_buffer_count, info.secondary_buffer_count);
    }
    command_pool::command_pool(command_pool_create_info&& info) :
-      m_queue_index(info.queue_family_index
-                       ? info.queue_family_index.borrow()
-                       : info.device.get_queue_index(queue_flag_bits::graphics)),
+      m_queue_index(
+         info.queue_family_index
+            ? info.queue_family_index.borrow()
+            : info.device.find_best_suited_queue(queue_flag_bits::graphics).family_index),
       m_pool(info.device.logical().createCommandPoolUnique({.queueFamilyIndex = m_queue_index})),
       m_primary_buffers(allocate_buffers(info.device.logical(), m_pool.get(),
                                          vk::CommandBufferLevel::ePrimary,

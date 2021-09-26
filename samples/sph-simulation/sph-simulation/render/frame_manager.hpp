@@ -16,11 +16,13 @@
 static constexpr std::size_t max_frames_in_flight = 2;
 static constexpr std::size_t expected_image_count = 3;
 
-struct onscreen_frame_manager_create_info
+struct frame_manager_create_info
 {
    cacao::window& window;
    cacao::device& device;
    vk::SurfaceKHR surface;
+
+   vk::ImageUsageFlags image_usage; 
 
    mannele::log_ptr logger;
 };
@@ -35,7 +37,7 @@ class frame_manager
 {
 public:
    frame_manager() = default;
-   frame_manager(const onscreen_frame_manager_create_info& info);
+   frame_manager(const frame_manager_create_info& info);
 
    auto begin_frame() -> reglisse::maybe<frame_data>;
    void end_frame(std::span<cacao::command_pool> pools);
