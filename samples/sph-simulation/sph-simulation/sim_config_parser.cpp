@@ -1,8 +1,7 @@
 #include <sph-simulation/sim_config_parser.hpp>
 
-#include <sph-simulation/core/maths.hpp>
-
 #include <libmannele/io/read_file.hpp>
+#include <libmannele/maths/maths.hpp>
 
 #include <libreglisse/maybe.hpp>
 #include <libreglisse/operations/and_then.hpp>
@@ -191,7 +190,7 @@ auto extract_simulation_constants(const nlohmann::basic_json<>& variable)
                            .gravity_multiplier = gravity_multiplier,
                            .kernel_multiplier = kernel_multiplier,
                            .water_radius = water_radius,
-                           .water_mass = rest_density * cube(water_radius * 2)});
+                           .water_mass = rest_density * mannele::cube(water_radius * 2)});
 }
 
 auto extract_rendering_data(const nlohmann::basic_json<>& rendering)

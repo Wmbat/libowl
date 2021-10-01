@@ -23,6 +23,9 @@ auto main(int argc, char** argv) -> int
 
    auto logger = mannele::logger("sph-simulation");
 
+   int* test = nullptr;
+   return *test;
+
    if (arguments.empty())
    {
       logger.error(

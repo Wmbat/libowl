@@ -1,8 +1,7 @@
 #pragma once
 
-#include <sph-simulation/core/maths.hpp>
-
 #include <libmannele/logging/logger.hpp>
+#include <libmannele/maths/maths.hpp>
 
 #include <libreglisse/result.hpp>
 

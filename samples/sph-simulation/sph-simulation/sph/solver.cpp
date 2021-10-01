@@ -24,7 +24,7 @@ namespace sph
             const auto r_ij = i_transform.position - j_transform.position;
             const auto r2 = glm::length2(r_ij);
 
-            if (r2 <= square(m_kernel_radius))
+            if (r2 <= mannele::square(m_kernel_radius))
             {
                density += j_particle.mass * kernel::poly6(m_kernel_radius, r2);
             }
@@ -52,12 +52,11 @@ namespace sph
 
             const auto r_ij = i_transform.position - j_transform.position;
             const auto r2 = glm::length2(r_ij);
-            const auto h2 = square(kernel_radius);
+            const auto h2 = mannele::square(kernel_radius);
 
             if (r2 <= h2)
             {
-               normal +=
-                  (j_particle.mass / j_particle.density) * kernel::poly6_grad(r_ij, h2, r2);
+               normal += (j_particle.mass / j_particle.density) * kernel::poly6_grad(r_ij, h2, r2);
             }
          }
 
@@ -121,8 +120,8 @@ namespace sph
          pressure_force *= kernel::spiky_constant(kernel_radius);
          viscosity_force *= viscosity * kernel::viscosity_constant(kernel_radius);
 
-         cohesion_force *=
-            -surface_tension * kernel::cohesion_constant(kernel_radius) * square(particle_i.mass);
+         cohesion_force *= -surface_tension * kernel::cohesion_constant(kernel_radius) *
+            mannele::square(particle_i.mass);
          curvature_force *= -surface_tension;
 
          particle_i.force =
@@ -141,7 +140,8 @@ namespace sph
       });
    }
 
-   void solve(const particle_view& particles, const sim_variables& variables, duration<float> time_step)
+   void solve(const particle_view& particles, const sim_variables& variables,
+              duration<float> time_step)
    {
       const auto kernel_radius = compute_kernel_radius(variables);
 
