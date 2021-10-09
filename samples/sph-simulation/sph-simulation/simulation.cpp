@@ -242,14 +242,16 @@ auto start_simulation(const simulation_info& info) -> int
       }
    }
 
-   auto& main_pipeline = pipelines.lookup(main_pipeline_key).borrow().value();
+   auto& main_pipeline =
+      pipelines.lookup<pipeline_type::graphics>(main_pipeline_key).borrow().value();
    auto main_camera = camera({.device = device,
                               .layout = main_pipeline.get_descriptor_set_layout("camera_layout"),
                               .image_count = static_cast<u32>(frame_man.image_count()),
                               .logger = logger});
 
    render_passes[0].pass.record_render_calls([&](vk::CommandBuffer buffer, u64 image_index) {
-      auto& pipeline = pipelines.lookup(main_pipeline_key).borrow().value();
+      auto& pipeline =
+         pipelines.lookup<pipeline_type::graphics>(main_pipeline_key).borrow().value();
 
       buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.value());
 

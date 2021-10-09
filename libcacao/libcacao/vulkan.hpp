@@ -13,15 +13,21 @@
 #   define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__) || not defined(__clang__)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wconversion"
+#elif defined(__clang__)
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wdeprecated-copy"
+#   pragma clang diagnostic ignored "-Wdefaulted-function-deleted"
 #endif
 
 #include <vulkan/vulkan.hpp>
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__) || not defined(__clang__)
 #   pragma GCC diagnostic pop
+#elif defined(__clang__)
+#   pragma clang diagnostic pop
 #endif
 
 #endif // LIBCACAO_VULKAN_HPP_
