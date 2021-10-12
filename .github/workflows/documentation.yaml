@@ -54,3 +54,18 @@ jobs:
 
       - name: Get Compilation Database
         run: b -vn clean update |& compiledb
+
+      - name: Get hdoc 
+        run: |
+          git clone https://github.com/hdoc/hdoc
+          cd hdoc
+          sudo meson build && sudo ninja -C build
+          cd ../
+          sudo hdoc/build/hdoc 
+          ls -lah
+
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./hdoc-output
