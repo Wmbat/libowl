@@ -16,6 +16,6 @@ output_dir = "hdoc-output"
 
 [ignore]
 paths = [
-    "libcacao/tests/basic/"
+    "libcacao/tests/basic/",
     "libmannele/tests/basic/"
 ]
