@@ -58,7 +58,7 @@ jobs:
         run: |
           bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
           b -vn clean update |& compiledb 
-          ls
+          cat compile_commands.json
 
       - name: Get hdoc 
         run: |
