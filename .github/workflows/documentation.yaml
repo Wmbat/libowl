@@ -11,6 +11,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo add-apt-repository ppa:pioneer19/ppa
+          sudo apt update
           sudo apt-get remove llvm-11 llvm-10 gcc-9
           sudo apt-get remove clang-11 clang-10
           sudo apt-get -y update
@@ -53,7 +54,6 @@ jobs:
 
       - name: Get Compilation Database
         run: |
-          bdep init -C ../vermillon-gcc-release cc config.c=gcc config.cxx=g++ config.cc.coptions="-O0"
           b -vn clean update |& compiledb 
           compile_commands.json
 
