@@ -50,6 +50,7 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-11 \
             --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 \
             --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
+          pip install compiledb
 
       - name: Get Compilation Database
         run: b -vn clean update |& compiledb
