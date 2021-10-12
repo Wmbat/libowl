@@ -1,6 +1,0 @@
-$out_root/
-{
-  include libcacao/
-}
-
-export $out_root/libcacao/$import.target

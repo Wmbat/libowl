@@ -1,7 +1,0 @@
-project = sph-simulation
-
-using version
-using config
-using test
-using install
-using dist

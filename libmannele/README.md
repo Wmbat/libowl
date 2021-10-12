@@ -1,3 +1,0 @@
-# libmannele
-
-C++ library

@@ -1,3 +1,0 @@
-# sph-simulation
-
-C++ executable

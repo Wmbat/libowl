@@ -1,3 +1,0 @@
-# libcacao
-
-C++ library
