@@ -1,0 +1,30 @@
+#version 460
+
+struct Particle
+{
+    vec3 position;
+    vec3 velocity;
+    vec3 force;
+    vec3 normal;
+
+    float radius;
+    float mass;
+    float density;
+    float pressure;
+};
+
+layout(binding = 0, std430) buffer ParticleBlock
+{
+    Particle particle[]
+};
+
+void main()
+{
+    uint index = gl_GlobalInvocationID.x ;
+
+    float density = 0.0f;
+    for (int j = 0; j < NUM_PARTICLES; j++)
+    {
+
+    }
+}

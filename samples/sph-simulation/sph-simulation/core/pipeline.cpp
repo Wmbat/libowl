@@ -265,8 +265,7 @@ namespace detail
    }
 
    auto create_compute_pipeline(const cacao::device& device, vk::PipelineLayout layout,
-                                const pipeline_shader_data& shader_info)
-      -> vk::UniquePipeline
+                                const pipeline_shader_data& shader_info) -> vk::UniquePipeline
    {
       const auto logical = device.logical();
 
@@ -295,6 +294,10 @@ detail::pipeline_base::pipeline_base(const cacao::device& device,
    m_set_layouts(detail::create_descriptor_set_layouts(device, shader_infos, logger)),
    m_push_constants(detail::populate_push_constants(shader_infos)),
    m_pipeline_layout(detail::create_pipeline_layout(device, m_set_layouts, m_push_constants))
+{}
+detail::pipeline_base::pipeline_base(const cacao::device& device,
+                                     const pipeline_shader_data& shader_infos,
+                                     mannele::log_ptr logger)
 {}
 
 [[nodiscard]] auto detail::pipeline_base::layout() const noexcept -> vk::PipelineLayout

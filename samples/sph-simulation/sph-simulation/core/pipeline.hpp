@@ -64,7 +64,7 @@ struct compute_pipeline_create_info
 {
    const cacao::device& device;
 
-   std::vector<pipeline_shader_data> shader_infos{};
+   pipeline_shader_data shader_infos{};
 
    mannele::log_ptr logger{};
 };
@@ -81,6 +81,8 @@ namespace detail
 
    public:
       pipeline_base(const cacao::device& device, std::span<const pipeline_shader_data> shader_infos,
+                    mannele::log_ptr logger);
+      pipeline_base(const cacao::device& device, const pipeline_shader_data& shader_infos,
                     mannele::log_ptr logger);
 
       [[nodiscard]] auto layout() const noexcept -> vk::PipelineLayout;
