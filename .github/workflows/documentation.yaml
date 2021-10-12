@@ -22,6 +22,7 @@ jobs:
           sudo bash -c "echo \"deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main\" >> /etc/apt/sources.list.d/llvm.list"
           sudo apt-get -y update
           sudo apt-get -y install \
+            libtbb-dev
             build-essential \
             meson \
             ninja-build \
