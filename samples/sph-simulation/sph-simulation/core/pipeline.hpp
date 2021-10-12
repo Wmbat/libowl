@@ -7,6 +7,8 @@
 #include <libcacao/device.hpp>
 #include <libcacao/shader.hpp>
 
+#include <span>
+
 using vertex_bindings_array = std::vector<vk::VertexInputBindingDescription>;
 using vertex_attributes_array = std::vector<vk::VertexInputAttributeDescription>;
 
@@ -64,7 +66,7 @@ struct compute_pipeline_create_info
 {
    const cacao::device& device;
 
-   pipeline_shader_data shader_infos{};
+   pipeline_shader_data shader_info{};
 
    mannele::log_ptr logger{};
 };
@@ -107,7 +109,7 @@ namespace detail
                                  mannele::log_ptr logger) -> vk::UniquePipeline;
 
    auto create_compute_pipeline(const cacao::device& device, vk::PipelineLayout layout,
-                                std::span<const pipeline_shader_data> shader_infos)
+                                const pipeline_shader_data& shader_info)
       -> vk::UniquePipeline;
 } // namespace detail
 
@@ -128,8 +130,8 @@ public:
       info.logger.debug("graphics pipeline created");
    }
    explicit pipeline(compute_pipeline_create_info&& info) requires(Type == pipeline_type::compute) :
-      base(info.device, info.shader_infos, info.logger),
-      m_pipeline(detail::create_compute_pipeline(info.device, base::layout(), info.shader_infos))
+      base(info.device, info.shader_info, info.logger),
+      m_pipeline(detail::create_compute_pipeline(info.device, base::layout(), info.shader_info))
    {
       info.logger.debug("compute pipeline created");
    }
