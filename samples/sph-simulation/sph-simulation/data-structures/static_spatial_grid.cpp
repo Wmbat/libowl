@@ -1,10 +1,10 @@
-#include "libmannele/core.hpp"
 #include <sph-simulation/data-structures/static_spatial_grid.hpp>
 
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/zip.hpp>
 
 #include <libmannele/maths/maths.hpp>
+#include <libmannele/core.hpp>
 
 namespace rv = ranges::views;
 

@@ -55,7 +55,7 @@ jobs:
 
       - name: Get Compilation Database
         run: |
-          bdep init -C ../gcc-release @gcc-release cc config.c=gcc config.cxx=g++ config.cc.coptions="-O0"
+          bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
           b -vn clean update |& compiledb 
           compile_commands.json
 
