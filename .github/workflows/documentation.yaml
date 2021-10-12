@@ -53,7 +53,7 @@ jobs:
           pip install compiledb
 
       - name: Get Compilation Database
-        run: b -vn clean update |& compiledb
+        run: b -vn clean update |& compiledb && cat compile_commands.json
 
       - name: Get hdoc 
         run: |
