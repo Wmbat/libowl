@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libash/
+}
+
+export $out_root/libash/$import.target

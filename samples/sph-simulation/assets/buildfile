@@ -1,7 +1,3 @@
-file{*}:
-{
-    install = "$install.share/assets/"
-    install.subdirs = true
-}
+import pkgs = {*/}
 
-./: file{** -buildfile}
+./: $pkgs

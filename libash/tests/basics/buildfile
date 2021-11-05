@@ -1,0 +1,3 @@
+import libs = libash%lib{ash}
+
+exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

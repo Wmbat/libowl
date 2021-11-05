@@ -153,7 +153,7 @@ namespace cacao
       std::vector layer_properties = vk::enumerateInstanceLayerProperties();
       std::vector extension_properties = vk::enumerateInstanceExtensionProperties();
 
-      if (info.use_window && !has_windowing_extensions(extension_properties))
+      if (!has_windowing_extensions(extension_properties))
       {
          throw runtime_error(
             to_error_condition(error_code::window_support_requested_but_not_found));

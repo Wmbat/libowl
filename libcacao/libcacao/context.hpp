@@ -32,7 +32,6 @@ namespace cacao
    struct LIBCACAO_SYMEXPORT context_create_info
    {
       std::uint32_t min_vulkan_version = VK_MAKE_VERSION(1, 1, 0);
-      bool use_window = true;
 
       mannele::log_ptr logger{nullptr};
    };

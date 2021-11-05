@@ -57,8 +57,9 @@ jobs:
       - name: Get Compilation Database
         run: |
           bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
-          b -vn clean update |& compiledb 
-          cat compile_commands.json
+          #b -v
+          #b -vn clean update |& compiledb 
+          #cat compile_commands.json
 
       - name: Get hdoc 
         run: |
@@ -67,7 +68,6 @@ jobs:
           sudo meson build && sudo ninja -C build
           cd ../
           sudo hdoc/build/hdoc 
-          ls -lah
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3

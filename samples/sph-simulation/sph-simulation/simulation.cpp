@@ -128,9 +128,8 @@ auto start_simulation(const simulation_info& info) -> int
    auto logger = info.logger;
    auto window = cacao::window(
       {.title = info.config.name, .dimension = info.config.dimensions, .is_resizable = false});
-   auto context = cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0),
-                                  .use_window = info.config.is_onscreen_rendering_enabled,
-                                  .logger = logger});
+   auto context =
+      cacao::context({.min_vulkan_version = VK_MAKE_VERSION(1, 0, 0), .logger = logger});
    auto surface = window.create_surface(context).take();
    auto device = cacao::device(
       {.ctx = context, .surface = surface.get(), .use_transfer_queue = true, .logger = logger});
