@@ -17,3 +17,7 @@
 *.exe.dlls/
 *.exe.manifest
 *.pc
+
+# Compiled vulkan shaders
+#
+*.spv
