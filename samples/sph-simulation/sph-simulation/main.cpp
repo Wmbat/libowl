@@ -16,9 +16,11 @@
 auto main(int argc, char** argv) -> int
 {
    // clang-format off
+
    const std::vector arguments = ranges::span<char*>{argv, argc} 
       | ranges::views::tail
       | ranges::to<std::vector<std::string_view>>;
+  
    // clang-format on
 
    auto logger = mannele::logger("sph-simulation");

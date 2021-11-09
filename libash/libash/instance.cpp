@@ -8,6 +8,7 @@
 
 #include <magic_enum.hpp>
 
+#include <cstring>
 #include <string_view>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
@@ -76,39 +77,34 @@ static VKAPI_ATTR auto VKAPI_CALL debug_callback(
 
 namespace ash::detail
 {
-   auto extract_extension_name(const vk::ExtensionProperties& property) -> const char*
+   auto is_layer_available(std::string_view name,
+                            std::span<const vk::LayerProperties> available_layers) -> bool
    {
-      return property.extensionName;
+      for (const auto& layer : available_layers)
+      {
+         return std::string_view(layer.layerName) == name;
+      }
+
+      return false;
    }
 
-   auto check_layer_support(std::span<const vk::LayerProperties> layers, std::string_view name)
-      -> bool
-   {
-      return std::ranges::find_if(
-                layers,
-                [name](const vk::LayerProperties& layer) {
-                   return strcmp(static_cast<const char*>(layer.layerName), name.data()) == 0;
-                })
-             != std::end(layers);
-   }
-
-   auto check_extension_support(std::span<const vk::ExtensionProperties> extensions,
+   auto is_extension_available(std::span<const vk::ExtensionProperties> extensions,
                                 std::string_view name) -> bool
    {
-      return std::ranges::find_if(
-                extensions,
-                [name](const auto& ext) {
-                   return strcmp(name.data(), static_cast<const char*>(ext.extensionName)) == 0;
-                })
-             != std::end(extensions);
+      for (const auto& ext : extensions)
+      {
+         return std::string_view(ext.extensionName) == name;
+      }
+
+      return false;
    }
 
    auto has_windowing_extensions(std::span<const vk::ExtensionProperties> properties) -> bool
    {
 #if defined(__linux__)
-      return check_extension_support(properties, "VK_KHR_xcb_surface")
-             || check_extension_support(properties, "VK_KHR_xlib_surface")
-             || check_extension_support(properties, "VK_KHR_wayland_surface");
+      return is_extension_available(properties, "VK_KHR_xcb_surface")
+             || is_extension_available(properties, "VK_KHR_xlib_surface")
+             || is_extension_available(properties, "VK_KHR_wayland_surface");
 #elif defined(_WIN32)
       return check_extension_support(properties, "VK_KHR_win32_surface");
 #else
@@ -139,24 +135,24 @@ namespace ash
    auto create_debug_utils(const vk::UniqueInstance& inst, mannele::log_ptr logger)
       -> vk::UniqueDebugUtilsMessengerEXT;
 
-   void check_all_extensions(std::span<const char*> ext_names,
-                             std::span<const vk::ExtensionProperties> extensions)
+   void check_for_unsupported_exts(std::span<const char*> ext_names,
+                                   std::span<const vk::ExtensionProperties> extensions)
    {
       for (const char* ext_name : ext_names)
       {
-         if (!detail::check_extension_support(extensions, ext_name))
+         if (!detail::is_extension_available(extensions, ext_name))
          {
             throw runtime_error(to_error_condition(instance_error::extension_support_not_found));
          }
       }
    }
 
-   void check_all_layers(std::span<const char*> layer_names,
-                         std::span<const vk::LayerProperties> layers)
+   void check_for_unsupported_layers(std::span<const char*> layer_names,
+                                     std::span<const vk::LayerProperties> layers)
    {
       for (const char* layer_name : layer_names)
       {
-         if (!detail::check_layer_support(layers, layer_name))
+         if (!detail::is_layer_available(layer_name, layers))
          {
             throw runtime_error(to_error_condition(instance_error::layer_support_not_found));
          }
@@ -164,6 +160,7 @@ namespace ash
    }
 
    auto format_char_array(std::span<const char*> arr)
+      -> fmt::basic_runtime<fmt::char_t<std::basic_string<char>>>
    {
       return fmt::runtime(fmt::format(fmt::runtime("Enabled Extensions: {}"), arr));
    }
@@ -206,7 +203,7 @@ namespace ash
 
       if constexpr (enable_validation_layers)
       {
-         if (detail::check_layer_support(layer_properties, "VK_LAYER_KHRONOS_validation"))
+         if (detail::is_layer_available("VK_LAYER_KHRONOS_validation", layer_properties))
          {
             layer_names.push_back("VK_LAYER_KHRONOS_validation");
          }
@@ -216,8 +213,8 @@ namespace ash
          }
       }
 
-      check_all_extensions(ext_names, extension_properties);
-      check_all_layers(layer_names, layer_properties);
+      check_for_unsupported_exts(ext_names, extension_properties);
+      check_for_unsupported_layers(layer_names, layer_properties);
 
       logger.debug(format_char_array(ext_names));
       logger.debug(format_char_array(layer_names));

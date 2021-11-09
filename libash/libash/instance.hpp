@@ -12,10 +12,10 @@
 
 namespace ash::detail
 {
-   auto check_layer_support(std::span<const vk::LayerProperties> layers, std::string_view name)
-      -> bool;
-   auto check_extension_support(std::span<const vk::ExtensionProperties> extensions,
-                                std::string_view name) -> bool;
+   auto is_layer_available(std::string_view name,
+                           std::span<const vk::LayerProperties> available_layers) -> bool;
+   auto is_extension_available(std::span<const vk::ExtensionProperties> extensions,
+                               std::string_view name) -> bool;
 } // namespace ash::detail
 
 namespace ash

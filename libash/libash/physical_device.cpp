@@ -4,6 +4,8 @@ namespace ash
 {
    struct physical_device_decs
    {
+      vk::PhysicalDevice device;
+
       vk::PhysicalDeviceFeatures features;
       vk::PhysicalDeviceProperties properties;
       vk::PhysicalDeviceMemoryProperties memory_properties;
@@ -14,7 +16,8 @@ namespace ash
 
    auto to_physical_device_desc(vk::PhysicalDevice device) -> physical_device_decs
    {
-      return {.features = device.getFeatures(),
+      return {.device = device,
+              .features = device.getFeatures(),
               .properties = device.getProperties(),
               .memory_properties = device.getMemoryProperties(),
               .queue_properties = device.getQueueFamilyProperties(),
@@ -22,8 +25,7 @@ namespace ash
    }
 
    auto check_extension_support(std::span<const vk::ExtensionProperties> properties,
-                                std::span<const char* const> names) -> std::vector<const char*>
-   {}
+                                std::span<const char* const> names) -> std::vector<const char*>;
 
    physical_device::operator vk::PhysicalDevice() const { return device; }
 
@@ -44,15 +46,25 @@ namespace ash
    }
 
    auto check_extension_support(std::span<const vk::ExtensionProperties> properties,
-                                std::span<const char*> names) -> std::vector<const char*>
+                                std::span<const char* const> names) -> std::vector<const char*>
    {
       std::vector<const char*> unsupported;
       unsupported.reserve(std::size(names));
 
       for (const char* name : names)
       {
+         bool is_found = false;
          for (const auto& property : properties)
          {
+            if (std::string_view(property.extensionName) == std::string_view(name))
+            {
+               is_found = true;
+            }
+         }
+
+         if (!is_found)
+         {
+            unsupported.push_back(name);  
          }
       }
 

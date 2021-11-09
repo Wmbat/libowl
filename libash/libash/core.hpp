@@ -25,6 +25,14 @@ namespace ash
 
    namespace detail
    {
+      /**
+       * @brief Converts a mannele::semantic_version into a single u32 value
+       * used by the vulkan API.
+       *
+       * @param [in] version The semantic version to convert into a single unsigned integer
+       *
+       * @return A 32 bit unsigned integer representation of the semantic version.
+       */
       auto to_vulkan_version(mannele::semantic_version version) -> u32;
    } // namespace detail
 } // namespace ash

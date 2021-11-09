@@ -1,17 +1,13 @@
+./: file{** -buildfile}
+
 # Compile all fragment, vertex and compute shaders
 #
 file{~'/(.+)\.vert\.spv/'}: file{~'/\1\.vert/'}
 {{
     diag glslc ($<[0])
 
-    filename = $path($<[0])
-
-    echo "glslc $filename"
-
-    glslc $filename -o $path($>[0])
+    $glslc $path($<[0]) -o $path($>[0])
 }}
-
-./: file{** -buildfile}
 
 # Find all compiled shader files and set them up for installation.
 # 
