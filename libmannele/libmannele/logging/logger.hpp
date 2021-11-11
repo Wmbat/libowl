@@ -1,6 +1,6 @@
 /**
  * @file libmannele/logging/logger.hpp
- * @author wmbat wmbat@protonmail.com
+ * @author wmbat wmbat-dev@protonmail.com
  * @date Wednesday, 1st of September 2021
  * @brief
  * @copyright Copyright (C) 2021 wmbat.

@@ -6,7 +6,7 @@ summary: sph-simulation C++ executable
 license: other: proprietary ; Not free/open source.
 description-file: README.md
 
-email: wmbat@protonmail.com
+email: wmbat-dev@protonmail.com
 
 depends: * build2 >= 0.13.0
 depends: * bpkg >= 0.13.0

@@ -1,6 +1,6 @@
 /**
  * @file sph-simulation/data_types/vertex.hpp
- * @author wmbat wmbat@protonmail.com
+ * @author wmbat wmbat-dev@protonmail.com
  * @date Monday, 14th of September 2021
  * @brief
  * @copyright Copyright (C) 2021 wmbat.

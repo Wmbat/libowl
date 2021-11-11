@@ -1,18 +1,21 @@
 ./: file{** -buildfile}
 
+for f: file{**.vert}
+{
+    n = $name($f)
+
+    info $(n).vert
+
+    file{$(n).vert.spv}: $s
+}
+
 # Compile all vertex shaders
 #
 file{~'/(.+)\.vert\.spv/'}: file{~'/\1\.vert/'}
 {{
     diag glslc ($<[0])
 
+    info 'glslc test'
+
     glslc -o $path($>[0]) $path($<[0])
 }} 
-
-# Find all compiled shader files and set them up for installation.
-# 
-file{~'/.*\.spv/'}:
-{
-    install = "$install.share/assets/shaders/"
-    install.subdirs = true
-}

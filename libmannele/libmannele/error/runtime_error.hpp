@@ -1,6 +1,6 @@
 /**
  * @file libmannele/error/runtime_error.hpp
- * @author wmbat wmbat@protonmail.com
+ * @author wmbat wmbat-dev@protonmail.com
  * @date Monday, 22nd of September 2021
  * @brief
  * @copyright Copyright (C) 2021 wmbat.

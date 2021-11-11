@@ -1,6 +1,6 @@
 /**
  * @file libmannele/maths/maths.hpp
- * @author wmbat wmbat@protonmail.com
+ * @author wmbat wmbat-dev@protonmail.com
  * @date Monday, 26th of September 2021
  * @brief
  * @copyright Copyright (C) 2021 wmbat.

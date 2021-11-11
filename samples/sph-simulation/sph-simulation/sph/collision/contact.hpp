@@ -1,6 +1,6 @@
 /**
  * @file sph/collision/contact.hpp
- * @author wmbat wmbat@protonmail.com
+ * @author wmbat wmbat-dev@protonmail.com
  * @date Saturday, 31st of august 2021
  * @brief 
  * @copyright Copyright (C) 2021 wmbat.

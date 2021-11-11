@@ -1,3 +1,11 @@
+/**
+ * @file 
+ * @author  wmbat-dev@protonmail.com
+ * @date 
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #ifndef LIBASH_PHYSICAL_DEVICE_HPP_
 #define LIBASH_PHYSICAL_DEVICE_HPP_
 
@@ -52,6 +60,14 @@ namespace ash
       operator vk::PhysicalDevice() const;
    };
 
+   /**
+    * @brief Finds a physical device that matches the selection information as well as possible. If
+    * no physical device could be found, the result will hold an error.
+    *
+    * @param [in] info Information used for selection the best suited physical device.
+    *
+    * @return
+    */
    auto find_most_suitable_gpu(const physical_device_select_info& info)
       -> reglisse::result<physical_device, u32>;
 } // namespace ash

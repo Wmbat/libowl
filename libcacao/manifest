@@ -6,7 +6,7 @@ summary: Library that contains all friendly Vulkan API related abstractions
 license: MIT                ; MIT License
 description-file: README.md
 
-email: wmbat@protonmail.com
+email: wmbat-dev@protonmail.com
 
 depends: * build2 >= 0.13.0
 depends: * bpkg >= 0.13.0
