@@ -6,3 +6,5 @@ location: libmannele/
 location: samples/sph-simulation/
 :
 location: libash/
+:
+location: libowl/

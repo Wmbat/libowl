@@ -1,7 +1,7 @@
 /**
- * @file 
+ * @file
  * @author  wmbat-dev@protonmail.com
- * @date 
+ * @date
  * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
@@ -24,6 +24,11 @@ namespace ash
       discrete = 2,
       virtual_gpu = 3,
       cpu = 4
+   };
+
+   enum struct physical_device_selection_error
+   {
+      no_suitable_device_found
    };
 
    struct physical_device_select_info
@@ -68,8 +73,8 @@ namespace ash
     *
     * @return
     */
-   auto find_most_suitable_gpu(const physical_device_select_info& info)
-      -> reglisse::result<physical_device, u32>;
+   auto find_most_suitable_gpu(physical_device_select_info&& info)
+      -> reglisse::result<physical_device, physical_device_selection_error>;
 } // namespace ash
 
 #endif // LIBASH_PHYSICAL_DEVICE_HPP_
