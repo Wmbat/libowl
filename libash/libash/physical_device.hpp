@@ -1,7 +1,7 @@
 /**
- * @file
- * @author  wmbat-dev@protonmail.com
- * @date
+ * @file libash/physical_device.hpp
+ * @author wmbat-dev@protonmail.com
+ * @date 
  * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
@@ -10,6 +10,7 @@
 #define LIBASH_PHYSICAL_DEVICE_HPP_
 
 #include <libash/instance.hpp>
+#include <libash/runtime_error.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
 
@@ -74,7 +75,7 @@ namespace ash
     * @return
     */
    auto find_most_suitable_gpu(physical_device_select_info&& info)
-      -> reglisse::result<physical_device, physical_device_selection_error>;
+      -> reglisse::result<physical_device, runtime_error>;
 } // namespace ash
 
 #endif // LIBASH_PHYSICAL_DEVICE_HPP_

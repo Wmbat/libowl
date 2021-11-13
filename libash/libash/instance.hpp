@@ -1,3 +1,11 @@
+/**
+ * @file libash/instance.hpp
+ * @author wmbat-dev@protonmail.com
+ * @date
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #ifndef LIBASH_INSTANCE_HPP_
 #define LIBASH_INSTANCE_HPP_
 

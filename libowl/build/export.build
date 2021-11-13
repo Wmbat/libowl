@@ -1,6 +1,0 @@
-$out_root/
-{
-  include libowl/
-}
-
-export $out_root/libowl/$import.target

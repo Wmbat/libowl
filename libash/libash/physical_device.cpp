@@ -2,6 +2,8 @@
 
 #include <libmannele/core/types.hpp>
 
+#include <magic_enum.hpp>
+
 #include <range/v3/action/sort.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/concat.hpp>
@@ -41,6 +43,24 @@ namespace ash
       i32 rating;
    };
 
+   struct physical_device_error_category : std::error_category
+   {
+      [[nodiscard]] auto name() const noexcept -> const char* override
+      {
+         return "ash::physical_device";
+      }
+      [[nodiscard]] auto message(int err) const -> std::string override
+      {
+         return std::string(
+            magic_enum::enum_name(static_cast<physical_device_selection_error>(err)));
+      }
+   };
+
+   auto to_error_condition(physical_device_selection_error err) -> std::error_condition
+   {
+      return std::error_condition({static_cast<int>(err), physical_device_error_category()});
+   }
+
    /**
     * @brief give a rating to a physical device based on its properties. If the physical device
     * doesn't meet the requirements, it will have a rating of -1.
@@ -52,7 +72,7 @@ namespace ash
                                   std::span<const char* const> names) -> std::vector<const char*>;
 
    auto find_most_suitable_gpu(physical_device_select_info&& info)
-      -> reglisse::result<physical_device, physical_device_selection_error>
+      -> reglisse::result<physical_device, runtime_error>
    {
       vk::Instance instance = info.instance;
 
@@ -72,7 +92,10 @@ namespace ash
 
       if (std::size(rated_devices) == 0 || rated_devices[0].rating < 0)
       {
-         return reglisse::err(physical_device_selection_error::no_suitable_device_found);
+         const auto err_code = physical_device_selection_error::no_suitable_device_found;
+         const auto err = runtime_error(to_error_condition(err_code));
+
+         return reglisse::err(err);
       }
 
       return reglisse::ok(std::move(rated_devices[0]).device);
