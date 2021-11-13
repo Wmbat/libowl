@@ -1,0 +1,21 @@
+[project]
+name = "vermillon"
+version = "0.0.0"
+
+# Optional, adding this will enable direct links from the documentation
+# to your source code.
+git_repo_url = "https://github.com/Wmbat/vermillon/tree/master/"
+
+[pages]
+homepage = "docs/homepage.md"
+pages = []
+
+[paths]
+compile_commands = "compile_commands.json"
+output_dir = "hdoc-output"
+
+[ignore]
+paths = [
+    "libcacao/tests/basic/",
+    "libmannele/tests/basic/"
+]

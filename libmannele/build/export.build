@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libmannele/
+}
+
+export $out_root/libmannele/$import.target

@@ -1,0 +1,19 @@
+: 1
+name: sph-simulation
+version: 0.1.0-a.0.z
+project: vermillon
+summary: sph-simulation C++ executable
+license: other: proprietary ; Not free/open source.
+description-file: README.md
+
+email: wmbat-dev@protonmail.com
+
+depends: * build2 >= 0.13.0
+depends: * bpkg >= 0.13.0
+
+depends: libcacao >= 0.0.1
+depends: libmannele >= 0.0.1
+depends: entt >= 3.7.1
+depends: stb_image_write >= 1.15.0
+depends: tinyobjloader >= 1.0.6
+depends: nlohmann-json >= 3.8.0

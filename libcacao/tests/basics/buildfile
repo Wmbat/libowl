@@ -1,0 +1,3 @@
+import libs = libcacao%lib{cacao}
+
+exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

@@ -5,10 +5,10 @@ AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignConsecutiveMacros: false
 AlignEscapedNewlines: Right
-AlignOperands: false
+AlignOperands: true
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
@@ -39,9 +39,11 @@ BraceWrapping:
    SplitEmptyRecord: true
    SplitEmptyNamespace: true
 BreakBeforeTernaryOperators: true
+BreakBeforeBinaryOperators: NonAssignment
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: AfterColon
 BreakStringLiterals: true
+BreakBeforeConceptDeclarations: true
 ColumnLimit: 100
 CompactNamespaces: true
 ConstructorInitializerIndentWidth: 3
@@ -52,6 +54,7 @@ IndentCaseLabels: true
 IndentPPDirectives: AfterHash
 IndentWidth: 3
 IndentWrappedFunctionNames: false
+IndentRequires: true
 NamespaceIndentation: All
 PointerAlignment: Left
 SpaceBeforeAssignmentOperators: true

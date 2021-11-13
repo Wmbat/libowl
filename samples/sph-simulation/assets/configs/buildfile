@@ -1,0 +1,7 @@
+./: file{** -buildfile}
+
+file{*}:
+{
+    install = "$install.share/assets/configs/"
+    install.subdirs = true
+}

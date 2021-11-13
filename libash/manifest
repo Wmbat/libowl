@@ -1,0 +1,16 @@
+: 1
+name: libash
+version: 0.1.0-a.0.z
+project: vermillon
+summary: ash C++ library
+license: other: proprietary ; Not free/open source.
+description-file: README.md
+url: https://example.org/vermillon
+email: wmbat-dev@protonmail.com
+#build-error-email: wmbat-dev@protonmail.com
+
+depends: * build2 >= 0.14.0-
+depends: * bpkg >= 0.14.0-
+
+depends: libmannele >= 0.0.1
+depends: Vulkan-Hpp >= 1.2.185
