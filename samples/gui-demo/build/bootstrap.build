@@ -1,0 +1,7 @@
+project = gui-demo
+
+using version
+using config
+using test
+using install
+using dist

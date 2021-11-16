@@ -3,8 +3,10 @@ location: libcacao/
 :
 location: libmannele/
 :
-location: samples/sph-simulation/
-:
 location: libash/
 :
 location: libowl/
+:
+location: samples/sph-simulation/
+:
+location: samples/gui-demo/

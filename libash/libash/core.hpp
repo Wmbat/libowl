@@ -34,6 +34,8 @@ namespace ash
        * @return A 32 bit unsigned integer representation of the semantic version.
        */
       auto to_vulkan_version(mannele::semantic_version version) -> u32;
+
+      auto from_vulkan_version(u32 version) -> mannele::semantic_version;
    } // namespace detail
 } // namespace ash
 

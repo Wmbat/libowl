@@ -3,6 +3,11 @@
 #include <libash/core.hpp>
 #include <libash/runtime_error.hpp>
 
+#include <libreglisse/maybe.hpp>
+
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/transform.hpp>
+
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
@@ -10,6 +15,12 @@
 
 #include <cstring>
 #include <string_view>
+
+using reglisse::maybe;
+using reglisse::none;
+using reglisse::some;
+
+namespace rv = ranges::views;
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
 
@@ -78,37 +89,70 @@ static VKAPI_ATTR auto VKAPI_CALL debug_callback(
 namespace ash::detail
 {
    auto is_layer_available(std::string_view name,
-                            std::span<const vk::LayerProperties> available_layers) -> bool
+                           std::span<const vk::LayerProperties> available_layers) -> bool
    {
+      bool is_layer_found = false;
       for (const auto& layer : available_layers)
       {
-         return std::string_view(layer.layerName) == name;
+         if (std::string_view(layer.layerName) == name)
+         {
+            is_layer_found = true;
+         }
       }
 
-      return false;
+      return is_layer_found;
    }
 
-   auto is_extension_available(std::span<const vk::ExtensionProperties> extensions,
-                                std::string_view name) -> bool
+   auto is_extension_available(std::string_view name,
+                               std::span<const vk::ExtensionProperties> extensions) -> bool
    {
+      bool is_extension_found = false;
       for (const auto& ext : extensions)
       {
-         return std::string_view(ext.extensionName) == name;
+         if (std::string_view(ext.extensionName) == name)
+         {
+            is_extension_found = true;
+         }
       }
 
-      return false;
+      return is_extension_found;
    }
 
-   auto has_windowing_extensions(std::span<const vk::ExtensionProperties> properties) -> bool
+   auto get_windowing_extensions(std::span<const vk::ExtensionProperties> properties)
+      -> reglisse::maybe<std::string_view>
    {
+      using namespace std::literals;
+
 #if defined(__linux__)
-      return is_extension_available(properties, "VK_KHR_xcb_surface")
-             || is_extension_available(properties, "VK_KHR_xlib_surface")
-             || is_extension_available(properties, "VK_KHR_wayland_surface");
+#   if defined(VK_USE_PLATFORM_XCB_KHR)
+      if (is_extension_available("VK_KHR_xcb_surface", properties))
+      {
+         return some("VK_KHR_xcb_surface"sv);
+      }
+#   elif defined(VK_USE_PLATFORM_XLIB_KHR)
+      if (is_extension_available("VK_KHR_xlib_surface", properties))
+      {
+         return some("VK_KHR_xlib_surface"sv);
+      }
+#   elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+      if (is_extension_available("VK_KHR_wayland_surface", properties))
+      {
+         return some("VK_KHR_wayland_surface"sv);
+      }
+#   endif
+
+      return none;
 #elif defined(_WIN32)
-      return check_extension_support(properties, "VK_KHR_win32_surface");
+      if (is_extension_available("VK_KHR_win32_surface", properties))
+      {
+         return some("VK_KHR_win32_surface"sv);
+      }
+      else
+      {
+         return none;
+      }
 #else
-      return false;
+      return none;
 #endif
    }
 } // namespace ash::detail
@@ -130,8 +174,9 @@ namespace ash
    }
 
    auto load_vulkan(mannele::log_ptr logger) -> vk::DynamicLoader;
-   auto create_vulkan_instance(const instance_create_info& info, u32 api_version,
-                               mannele::log_ptr logger) -> vk::UniqueInstance;
+   auto create_vulkan_instance(const instance_create_info& info,
+                               mannele::semantic_version api_version, mannele::log_ptr logger)
+      -> vk::UniqueInstance;
    auto create_debug_utils(const vk::UniqueInstance& inst, mannele::log_ptr logger)
       -> vk::UniqueDebugUtilsMessengerEXT;
 
@@ -140,7 +185,7 @@ namespace ash
    {
       for (const char* ext_name : ext_names)
       {
-         if (!detail::is_extension_available(extensions, ext_name))
+         if (!detail::is_extension_available(ext_name, extensions))
          {
             throw runtime_error(to_error_condition(instance_error::extension_support_not_found));
          }
@@ -166,14 +211,15 @@ namespace ash
    }
 
    instance::instance(const instance_create_info& info) :
-      m_loader(load_vulkan(info.logger)), m_api_version(vk::enumerateInstanceVersion()),
+      m_loader(load_vulkan(info.logger)),
+      m_api_version(detail::from_vulkan_version(vk::enumerateInstanceVersion())),
       m_instance(create_vulkan_instance(info, m_api_version, info.logger)),
       m_debug_utils(create_debug_utils(m_instance, info.logger))
    {}
 
-   instance::operator vk::Instance() { return m_instance.get(); }
+   instance::operator vk::Instance() const { return m_instance.get(); }
 
-   auto instance::version() const noexcept -> u32 { return m_api_version; }
+   auto instance::version() const noexcept -> mannele::semantic_version { return m_api_version; }
 
    auto load_vulkan(mannele::log_ptr logger) -> vk::DynamicLoader
    {
@@ -187,13 +233,16 @@ namespace ash
 
       return loader;
    }
-   auto create_vulkan_instance(const instance_create_info& info, u32 api_version,
-                               mannele::log_ptr logger) -> vk::UniqueInstance
+   auto create_vulkan_instance(const instance_create_info& info,
+                               mannele::semantic_version api_version, mannele::log_ptr logger)
+      -> vk::UniqueInstance
    {
       std::vector layer_properties = vk::enumerateInstanceLayerProperties();
       std::vector extension_properties = vk::enumerateInstanceExtensionProperties();
 
-      if (!info.is_headless and !detail::has_windowing_extensions(extension_properties))
+      const auto window_ext = detail::get_windowing_extensions(extension_properties);
+
+      if (!info.is_headless and window_ext.is_none())
       {
          throw runtime_error(to_error_condition(instance_error::window_support_not_found));
       }
@@ -211,29 +260,53 @@ namespace ash
          {
             logger.warning("Khronos validation layers not found");
          }
+
+         if (detail::is_extension_available("VK_EXT_debug_utils", extension_properties))
+         {
+            ext_names.push_back("VK_EXT_debug_utils");
+         }
+         else
+         {
+            logger.warning("Debug utils not supported by vulkan instance");
+         }
+      }
+
+      if (window_ext.is_some())
+      {
+         ext_names.push_back(window_ext.borrow().data());
       }
 
       check_for_unsupported_exts(ext_names, extension_properties);
       check_for_unsupported_layers(layer_names, layer_properties);
 
-      logger.debug(format_char_array(ext_names));
-      logger.debug(format_char_array(layer_names));
+      for (const char* name : ext_names)
+      {
+         logger.debug("enabled extension: {}", name);
+      }
+
+      for (const char* name : layer_names)
+      {
+         logger.debug("enabled layer: {}", name);
+      }
 
       const u32 app_version = detail::to_vulkan_version(info.app_info.version);
-      const u32 engine_version = detail::to_vulkan_version(info.engine_info.version);
+      const u32 engine_version = detail::to_vulkan_version(info.eng_info.version);
 
       const auto app_info = vk::ApplicationInfo()
-                               .setApiVersion(api_version)
+                               .setApiVersion(detail::to_vulkan_version(api_version))
                                .setPApplicationName(std::data(info.app_info.name))
                                .setApplicationVersion(app_version)
-                               .setPEngineName(std::data(info.engine_info.name))
+                               .setPEngineName(std::data(info.eng_info.name))
                                .setEngineVersion(engine_version);
       const auto create_info = vk::InstanceCreateInfo()
                                   .setPApplicationInfo(&app_info)
                                   .setPEnabledLayerNames(layer_names)
                                   .setPEnabledExtensionNames(ext_names);
+      auto instance = vk::createInstanceUnique(create_info);
 
-      return vk::createInstanceUnique(create_info);
+      VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
+
+      return instance;
    }
    auto create_debug_utils(const vk::UniqueInstance& inst, mannele::log_ptr logger)
       -> vk::UniqueDebugUtilsMessengerEXT
@@ -249,8 +322,22 @@ namespace ash
             .setPfnUserCallback(debug_callback)
             .setPUserData(static_cast<void*>(logger.get()));
 
-      return inst->createDebugUtilsMessengerEXTUnique(create_info, nullptr,
-                                                      VULKAN_HPP_DEFAULT_DISPATCHER);
+      if constexpr (enable_validation_layers)
+      {
+         std::vector extension_properties = vk::enumerateInstanceExtensionProperties();
+
+         if (detail::is_extension_available("VK_EXT_debug_utils", extension_properties))
+         {
+            return inst->createDebugUtilsMessengerEXTUnique(create_info, nullptr,
+                                                            VULKAN_HPP_DEFAULT_DISPATCHER);
+         }
+
+         return {};
+      }
+      else
+      {
+         return {};
+      }
    }
 
 } // namespace ash

@@ -8,4 +8,11 @@ namespace ash
    {
       return VK_MAKE_API_VERSION(0, version.major, version.minor, version.patch);
    }
+
+   auto detail::from_vulkan_version(u32 version) -> mannele::semantic_version
+   {
+      return {.major = VK_VERSION_MAJOR(version),
+              .minor = VK_VERSION_MINOR(version),
+              .patch = VK_VERSION_PATCH(version)};
+   }
 } // namespace ash

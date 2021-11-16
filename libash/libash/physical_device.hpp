@@ -1,7 +1,7 @@
 /**
  * @file libash/physical_device.hpp
  * @author wmbat-dev@protonmail.com
- * @date 
+ * @date
  * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
@@ -36,7 +36,7 @@ namespace ash
    {
       ash::instance& instance;
 
-      vk::UniqueSurfaceKHR surface;
+      vk::SurfaceKHR surface;
 
       physical_device_type prefered_type = physical_device_type::discrete;
 
@@ -55,7 +55,6 @@ namespace ash
    struct physical_device
    {
       vk::PhysicalDevice device;
-      vk::UniqueSurfaceKHR surface;
 
       vk::PhysicalDeviceFeatures features;
       vk::PhysicalDeviceProperties properties;

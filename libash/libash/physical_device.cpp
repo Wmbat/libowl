@@ -122,7 +122,6 @@ namespace ash
       const i32 rating = properties_rating + ext_rating;
 
       return {.device = physical_device{.device = device,
-                                        .surface = std::move(select_info.surface),
                                         .features = features,
                                         .properties = properties,
                                         .memory_properties = memory_properties,

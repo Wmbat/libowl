@@ -1,0 +1,5 @@
+gui-demo
+
+# Testscript output directory (can be symlink).
+#
+test-gui-demo

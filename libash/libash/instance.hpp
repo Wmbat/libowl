@@ -22,8 +22,8 @@ namespace ash::detail
 {
    auto is_layer_available(std::string_view name,
                            std::span<const vk::LayerProperties> available_layers) -> bool;
-   auto is_extension_available(std::span<const vk::ExtensionProperties> extensions,
-                               std::string_view name) -> bool;
+   auto is_extension_available(std::string_view name,
+                               std::span<const vk::ExtensionProperties> extensions) -> bool;
 } // namespace ash::detail
 
 namespace ash
@@ -52,7 +52,7 @@ namespace ash
    struct instance_create_info
    {
       application_info app_info;
-      engine_info engine_info;
+      engine_info eng_info;
 
       bool is_headless = false;
 
@@ -67,14 +67,14 @@ namespace ash
    public:
       instance(const instance_create_info& info);
 
-      operator vk::Instance();
+      operator vk::Instance() const;
 
-      [[nodiscard]] auto version() const noexcept -> u32;
+      [[nodiscard]] auto version() const noexcept -> mannele::semantic_version;
 
    private:
       vk::DynamicLoader m_loader{};
 
-      u32 m_api_version{};
+      mannele::semantic_version m_api_version{};
 
       vk::UniqueInstance m_instance{nullptr};
       vk::UniqueDebugUtilsMessengerEXT m_debug_utils{nullptr};
