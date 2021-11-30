@@ -18,16 +18,16 @@
 #include <span>
 #include <string_view>
 
-namespace ash::detail
+namespace ash::inline v0
 {
-   auto is_layer_available(std::string_view name,
-                           std::span<const vk::LayerProperties> available_layers) -> bool;
-   auto is_extension_available(std::string_view name,
-                               std::span<const vk::ExtensionProperties> extensions) -> bool;
-} // namespace ash::detail
+   namespace detail
+   {
+      auto is_layer_available(std::string_view name,
+                              std::span<const vk::LayerProperties> available_layers) -> bool;
+      auto is_extension_available(std::string_view name,
+                                  std::span<const vk::ExtensionProperties> extensions) -> bool;
+   } // namespace detail
 
-namespace ash
-{
    enum struct instance_error
    {
       window_support_not_found,
@@ -81,6 +81,6 @@ namespace ash
 
       mannele::log_ptr m_logger;
    };
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_INSTANCE_HPP_

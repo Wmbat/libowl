@@ -86,79 +86,79 @@ static VKAPI_ATTR auto VKAPI_CALL debug_callback(
    return VK_FALSE;
 }
 
-namespace ash::detail
+namespace ash::inline v0
 {
-   auto is_layer_available(std::string_view name,
-                           std::span<const vk::LayerProperties> available_layers) -> bool
+   namespace detail
    {
-      bool is_layer_found = false;
-      for (const auto& layer : available_layers)
+      auto is_layer_available(std::string_view name,
+                              std::span<const vk::LayerProperties> available_layers) -> bool
       {
-         if (std::string_view(layer.layerName) == name)
+         bool is_layer_found = false;
+         for (const auto& layer : available_layers)
          {
-            is_layer_found = true;
+            if (std::string_view(layer.layerName) == name)
+            {
+               is_layer_found = true;
+            }
          }
+
+         return is_layer_found;
       }
 
-      return is_layer_found;
-   }
-
-   auto is_extension_available(std::string_view name,
-                               std::span<const vk::ExtensionProperties> extensions) -> bool
-   {
-      bool is_extension_found = false;
-      for (const auto& ext : extensions)
+      auto is_extension_available(std::string_view name,
+                                  std::span<const vk::ExtensionProperties> extensions) -> bool
       {
-         if (std::string_view(ext.extensionName) == name)
+         bool is_extension_found = false;
+         for (const auto& ext : extensions)
          {
-            is_extension_found = true;
+            if (std::string_view(ext.extensionName) == name)
+            {
+               is_extension_found = true;
+            }
          }
+
+         return is_extension_found;
       }
 
-      return is_extension_found;
-   }
-
-   auto get_windowing_extensions(std::span<const vk::ExtensionProperties> properties)
-      -> reglisse::maybe<std::string_view>
-   {
-      using namespace std::literals;
+      auto get_windowing_extensions(std::span<const vk::ExtensionProperties> properties)
+         -> reglisse::maybe<std::string_view>
+      {
+         using namespace std::literals;
 
 #if defined(__linux__)
 #   if defined(VK_USE_PLATFORM_XCB_KHR)
-      if (is_extension_available("VK_KHR_xcb_surface", properties))
-      {
-         return some("VK_KHR_xcb_surface"sv);
-      }
+         if (is_extension_available("VK_KHR_xcb_surface", properties))
+         {
+            return some("VK_KHR_xcb_surface"sv);
+         }
 #   elif defined(VK_USE_PLATFORM_XLIB_KHR)
-      if (is_extension_available("VK_KHR_xlib_surface", properties))
-      {
-         return some("VK_KHR_xlib_surface"sv);
-      }
+         if (is_extension_available("VK_KHR_xlib_surface", properties))
+         {
+            return some("VK_KHR_xlib_surface"sv);
+         }
 #   elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-      if (is_extension_available("VK_KHR_wayland_surface", properties))
-      {
-         return some("VK_KHR_wayland_surface"sv);
-      }
+         if (is_extension_available("VK_KHR_wayland_surface", properties))
+         {
+            return some("VK_KHR_wayland_surface"sv);
+         }
 #   endif
 
-      return none;
-#elif defined(_WIN32)
-      if (is_extension_available("VK_KHR_win32_surface", properties))
-      {
-         return some("VK_KHR_win32_surface"sv);
-      }
-      else
-      {
          return none;
-      }
+#elif defined(_WIN32)
+         if (is_extension_available("VK_KHR_win32_surface", properties))
+         {
+            return some("VK_KHR_win32_surface"sv);
+         }
+         else
+         {
+            return none;
+         }
 #else
-      return none;
+         return none;
 #endif
-   }
-} // namespace ash::detail
+      }
+   } // namespace detail
 
-namespace ash
-{
    struct instance_error_category : std::error_category
    {
       [[nodiscard]] auto name() const noexcept -> const char* override { return "ash::instance"; }
@@ -340,4 +340,4 @@ namespace ash
       }
    }
 
-} // namespace ash
+} // namespace ash::inline v0

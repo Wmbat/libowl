@@ -2,7 +2,7 @@
 
 #include <libash/detail/vulkan.hpp>
 
-namespace ash
+namespace ash::inline v0
 {
    auto detail::to_vulkan_version(mannele::semantic_version version) -> u32
    {
@@ -15,4 +15,4 @@ namespace ash
               .minor = VK_VERSION_MINOR(version),
               .patch = VK_VERSION_PATCH(version)};
    }
-} // namespace ash
+} // namespace ash::inline v0

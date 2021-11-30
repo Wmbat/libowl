@@ -13,7 +13,7 @@
 namespace rv = ranges::views;
 namespace ra = ranges::actions;
 
-namespace ash
+namespace ash::inline v0
 {
    static constexpr i32 supported_extension_value = 1;
    static constexpr i32 preferred_api_version_value = 500;
@@ -255,4 +255,4 @@ namespace ash
    }
 
    physical_device::operator vk::PhysicalDevice() const { return device; }
-} // namespace ash
+} // namespace ash::inline v0

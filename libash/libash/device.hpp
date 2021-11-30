@@ -11,20 +11,18 @@
 
 #include <libash/physical_device.hpp>
 
-namespace ash
+namespace ash::inline v0
 {
    struct device_create_info
    {
       const physical_device& physical;
    };
 
-
-   class device 
+   class device
    {
    public:
-
    private:
    };
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_DEVICE_HPP_

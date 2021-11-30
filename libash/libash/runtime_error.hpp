@@ -6,7 +6,7 @@
 #include <string>
 #include <system_error>
 
-namespace ash
+namespace ash::inline v0
 {
    class runtime_error : public std::runtime_error
    {
@@ -24,6 +24,6 @@ namespace ash
    private:
       std::error_condition m_err;
    };
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_RUNTIME_ERROR_HPP_

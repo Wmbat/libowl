@@ -4,7 +4,7 @@
 #include <libmannele/core.hpp>
 #include <libmannele/core/semantic_version.hpp>
 
-namespace ash
+namespace ash::inline v0
 {
    using mannele::f32;
    using mannele::f64;
@@ -37,6 +37,6 @@ namespace ash
 
       auto from_vulkan_version(u32 version) -> mannele::semantic_version;
    } // namespace detail
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_CORE_HPP_

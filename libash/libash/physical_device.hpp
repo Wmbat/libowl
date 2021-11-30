@@ -16,7 +16,7 @@
 
 #include <libreglisse/result.hpp>
 
-namespace ash
+namespace ash::inline v0
 {
    enum struct physical_device_type
    {
@@ -75,6 +75,6 @@ namespace ash
     */
    auto find_most_suitable_gpu(physical_device_select_info&& info)
       -> reglisse::result<physical_device, runtime_error>;
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_PHYSICAL_DEVICE_HPP_
