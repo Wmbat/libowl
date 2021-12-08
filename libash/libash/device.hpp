@@ -11,17 +11,30 @@
 
 #include <libash/physical_device.hpp>
 
+#include <libmannele/core/semantic_version.hpp>
+#include <libmannele/logging/log_ptr.hpp>
+
 namespace ash::inline v0
 {
    struct device_create_info
    {
       const physical_device& physical;
+
+      mannele::log_ptr logger;
    };
 
    class device
    {
    public:
+      device() = default;
+      device(device_create_info&& info);
+
    private:
+      mannele::log_ptr m_logger;
+
+      mannele::semantic_version m_api_version{};
+
+      vk::UniqueDevice m_device;
    };
 } // namespace ash::inline v0
 

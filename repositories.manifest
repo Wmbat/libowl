@@ -25,6 +25,10 @@ location: https://github.com/Wmbat/libreglisse.git
 
 :
 role: prerequisite
+location: https://github.com/Wmbat/b2-asserts.git#main
+
+:
+role: prerequisite
 location: https://github.com/Wmbat/build2-SPIRV-Cross.git#main
 
 :

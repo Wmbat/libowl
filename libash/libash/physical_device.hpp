@@ -54,13 +54,15 @@ namespace ash::inline v0
 
    struct physical_device
    {
-      vk::PhysicalDevice device;
+      vk::PhysicalDevice device; // NOLINT
 
-      vk::PhysicalDeviceFeatures features;
-      vk::PhysicalDeviceProperties properties;
-      vk::PhysicalDeviceMemoryProperties memory_properties;
+      vk::PhysicalDeviceFeatures features;                  // NOLINT
+      vk::PhysicalDeviceProperties properties;              // NOLINT
+      vk::PhysicalDeviceMemoryProperties memory_properties; // NOLINT
 
-      std::vector<const char*> extensions_to_enable;
+      std::vector<vk::QueueFamilyProperties> queue_properties; // NOLINT
+
+      std::vector<const char*> extensions_to_enable; // NOLINT
 
       operator vk::PhysicalDevice() const;
    };

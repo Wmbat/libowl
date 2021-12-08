@@ -11,6 +11,8 @@ namespace owl::inline v0
    void window::set_physical_device(ash::physical_device&& device) noexcept
    {
       m_physical_device = std::move(device);
+      m_device =
+         ash::device(ash::device_create_info{.physical = m_physical_device, .logger = m_logger});
    }
 
    window::window(std::string_view title, mannele::log_ptr logger) :

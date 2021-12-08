@@ -1,9 +1,12 @@
 #include <libowl/window/x11_window.hpp>
 
+#include <libash/detail/vulkan.hpp>
+
+#include <assert.hpp>
+
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
 
-#include <libash/detail/vulkan.hpp>
 
 namespace owl::inline v0
 {
@@ -13,6 +16,8 @@ namespace owl::inline v0
          super(info.name, info.logger), mp_connection(info.connection.get()),
          m_window_handle(xcb_generate_id(mp_connection)), mp_target_monitor(info.p_target_monitor)
       {
+         assert(info.p_target_monitor != nullptr);
+
          const xcb_setup_t* p_setup = xcb_get_setup(mp_connection);
          xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(p_setup);
 
