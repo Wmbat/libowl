@@ -52,6 +52,13 @@ namespace ash::inline v0
       std::vector<const char*> desired_extensions;
    };
 
+   struct desired_queue_data
+   {
+      vk::QueueFlags flags;
+      u32 family;
+      u32 index;
+   };
+
    struct physical_device
    {
       vk::PhysicalDevice device; // NOLINT
@@ -60,9 +67,9 @@ namespace ash::inline v0
       vk::PhysicalDeviceProperties properties;              // NOLINT
       vk::PhysicalDeviceMemoryProperties memory_properties; // NOLINT
 
-      std::vector<vk::QueueFamilyProperties> queue_properties; // NOLINT
+      std::vector<desired_queue_data> queues_to_create; // NOLINT
 
-      std::vector<const char*> extensions_to_enable; // NOLINT
+      std::vector<std::string_view> extensions_to_enable; // NOLINT
 
       operator vk::PhysicalDevice() const;
    };

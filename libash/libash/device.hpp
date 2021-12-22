@@ -10,6 +10,7 @@
 #define LIBASH_DEVICE_HPP_
 
 #include <libash/physical_device.hpp>
+#include <libash/queue.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
 #include <libmannele/logging/log_ptr.hpp>
@@ -35,6 +36,7 @@ namespace ash::inline v0
       mannele::semantic_version m_api_version{};
 
       vk::UniqueDevice m_device;
+      std::vector<queue> m_queues;
    };
 } // namespace ash::inline v0
 

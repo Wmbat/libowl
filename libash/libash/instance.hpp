@@ -28,6 +28,9 @@ namespace ash::inline v0
                                   std::span<const vk::ExtensionProperties> extensions) -> bool;
    } // namespace detail
 
+   /**
+    * @brief Possible error that can be encountered when creating an ash::instance
+    */
    enum struct instance_error
    {
       window_support_not_found,
@@ -35,20 +38,34 @@ namespace ash::inline v0
       extension_support_not_found
    };
 
+   /**
+    * @brief Convert an ash::instance_error value into a std::error_condition.
+    *
+    * @param[in] The error code to convert
+    */
    auto to_error_condition(instance_error err) -> std::error_condition;
 
+   /**
+    * @brief Simple struct holding the user's application name and version.
+    */
    struct application_info
    {
       std::string_view name;
       mannele::semantic_version version;
    };
 
+   /**
+    * @brief Simple struct holding the user's engine name and version.
+    */
    struct engine_info
    {
       std::string_view name;
       mannele::semantic_version version;
    };
 
+   /**
+    * @brief Data used for the creation of an ash::instance object.
+    */
    struct instance_create_info
    {
       application_info app_info;
@@ -62,13 +79,27 @@ namespace ash::inline v0
       mannele::log_ptr logger;
    };
 
+   /**
+    * @brief Helper class to instantiate a vulkan instance.
+    */
    class instance
    {
    public:
+      /**
+       * @brief Construct an ash::instance using the data provided in ash::instance_create_info.
+       *
+       * The constructor may throw an ash::runtime_error containing a std::error_condition
+       */
       instance(const instance_create_info& info);
 
+      /**
+       * @brief Implicitely converts the a vulkan vk::Instance.
+       */
       operator vk::Instance() const;
 
+      /**
+       * @brief Access the underlying Vulkan instance version.
+       */
       [[nodiscard]] auto version() const noexcept -> mannele::semantic_version;
 
    private:

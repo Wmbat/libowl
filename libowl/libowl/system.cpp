@@ -45,13 +45,17 @@ namespace owl::inline v0
                                                                .p_target_monitor = &m_monitors[0],
                                                                .logger = m_logger});
 
-      auto phys_device_res = ash::find_most_suitable_gpu({.instance = m_instance,
-                                                          .surface = p_window->surface(),
-                                                          .require_transfer_queue = true,
-                                                          .require_compute_queue = true,
-                                                          .minimum_version = m_instance.version()});
+      auto phys_device_res = ash::find_most_suitable_gpu(
+         {.instance = m_instance,
+          .surface = p_window->surface(),
+          .require_transfer_queue = true,
+          .require_compute_queue = true,
+          .minimum_version = m_instance.version(),
+          .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME})});
+
       if (phys_device_res.is_err())
       {
+         m_logger.error("failed to find suitable GPU");
          // return an error
       }
 

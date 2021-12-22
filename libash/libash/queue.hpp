@@ -12,6 +12,8 @@
 #include <libash/core.hpp>
 #include <libash/detail/vulkan.hpp>
 
+#include <fmt/core.h>
+
 namespace ash::inline v0
 {
    struct queue
@@ -22,27 +24,21 @@ namespace ash::inline v0
       u32 family_index{};
       u32 queue_index{};
    };
-
-   namespace detail
-   {
-      struct queue_info
-      {
-         vk::QueueFlags flag;
-         u32 family;
-         u32 count;
-      };
-
-      auto to_queue_info(std::pair<u32, const vk::QueueFamilyProperties>&& p) -> detail::queue_info;
-
-      auto does_queue_support_type(const queue_info& q, const vk::QueueFlags& type) -> bool;
-      auto does_queue_support_graphics(const queue_info& q) -> bool;
-      auto does_queue_support_transfer(const queue_info& q) -> bool;
-      auto does_queue_support_compute(const queue_info& q) -> bool;
-
-      auto is_queue_dedicated_to_graphics(const queue_info& q) -> bool;
-      auto is_queue_dedicated_to_transfer(const queue_info& q) -> bool;
-      auto is_queue_dedicated_to_compute(const queue_info& q) -> bool;
-   } // namespace detail
 } // namespace ash::inline v0
+
+template <>
+struct fmt::formatter<ash::queue>
+{
+   constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+   template <typename FormatContext>
+   auto format(const ash::queue& queue, FormatContext& ctx)
+   {
+      return format_to(ctx.out(),
+                       "{{.value = {}, .type = {}, .family_index = {}, .queue_index = {}}}",
+                       reinterpret_cast<std::uintptr_t>(static_cast<VkQueue>(queue.value)),
+                       vk::to_string(queue.type), queue.family_index, queue.queue_index);
+   }
+};
 
 #endif // LIBASH_QUEUE_HPP_

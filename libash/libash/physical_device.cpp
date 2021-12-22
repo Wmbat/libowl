@@ -109,15 +109,15 @@ namespace ash::inline v0
 
       const auto [ext_to_enable, ext_rating] = rate_extension_support(extensions, select_info);
       const auto properties_rating = rate_properties_support(properties, select_info);
-      const auto queue_properties_rating = rate_queue_support(queue_properties, select_info);
+      const auto [queues, queue_rating] = rate_queue_support(queue_properties, select_info);
 
-      const i32 rating = tally_ratings(ext_rating, properties_rating, queue_properties_rating);
+      const i32 rating = tally_ratings(ext_rating, properties_rating, queue_rating);
 
       return {.device = physical_device{.device = device,
                                         .features = features,
                                         .properties = properties,
                                         .memory_properties = memory_properties,
-                                        .queue_properties = queue_properties,
+                                        .queues_to_create = queues,
                                         .extensions_to_enable = ext_to_enable},
               .rating = rating};
    }

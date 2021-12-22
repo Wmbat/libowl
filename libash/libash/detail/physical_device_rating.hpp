@@ -9,7 +9,14 @@ namespace ash::inline v0
 {
    namespace detail
    {
-      auto tally_ratings(std::signed_integral auto... values) -> decltype((... + values))
+      /**
+       * @brief Compute the sum of a variadic set of integer values.
+       *
+       * @param[in] values A set of integers
+       *
+       * @return The sum of all integer values passed as parameter or -1 if any is equal to -1.
+       */
+      constexpr auto tally_ratings(std::signed_integral auto... values) -> decltype((... + values))
       {
          if ((... || (-1 == values)))
          {
@@ -21,13 +28,38 @@ namespace ash::inline v0
          }
       }
 
+      /**
+       * @brief
+       *
+       * @param[in] properties
+       * @param[in] info
+       *
+       * @return
+       */
       auto rate_properties_support(const vk::PhysicalDeviceProperties& properties,
                                    const physical_device_select_info& info) -> i32;
-      auto rate_extension_support(std::span<const vk::ExtensionProperties> device_exts,
+      /**
+       * @brief
+       *
+       * @param[in] device_exts
+       * @param[in] info
+       *
+       * @return
+       */
+      auto rate_extension_support(std::span<const vk::ExtensionProperties> device_extensions,
                                   const physical_device_select_info& info)
-         -> std::pair<std::vector<const char*>, i32>;
+         -> std::pair<std::vector<std::string_view>, i32>;
+      /**
+       * @brief
+       *
+       * @param[in] queue_properties
+       * @param[in] info
+       *
+       * @return
+       */
       auto rate_queue_support(std::span<const vk::QueueFamilyProperties> queue_properties,
-                              const physical_device_select_info& info) -> i32;
+                              const physical_device_select_info& info)
+         -> std::pair<std::vector<desired_queue_data>, i32>;
    } // namespace detail
 } // namespace ash::inline v0
 
