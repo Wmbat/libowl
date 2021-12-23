@@ -36,7 +36,7 @@ struct fmt::formatter<ash::queue>
    {
       return format_to(ctx.out(),
                        "{{.value = {}, .type = {}, .family_index = {}, .queue_index = {}}}",
-                       reinterpret_cast<std::uintptr_t>(static_cast<VkQueue>(queue.value)),
+                       static_cast<void*>(static_cast<VkQueue>(queue.value)),
                        vk::to_string(queue.type), queue.family_index, queue.queue_index);
    }
 };
