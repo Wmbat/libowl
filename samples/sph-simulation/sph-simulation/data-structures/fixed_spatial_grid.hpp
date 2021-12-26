@@ -43,7 +43,7 @@ public:
    fixed_spatial_grid(const glm::vec2& bounds_x, const glm::vec2& bounds_y,
                       const glm::vec2& bounds_z, mannele::f32 unit_size);
 
-   void insert(entt::entity* particle) {}
+   void insert(entt::entity*) {}
 
 private:
    [[nodiscard]] auto all_grid_positions() const

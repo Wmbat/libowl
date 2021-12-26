@@ -23,6 +23,7 @@ namespace owl::inline v0
    namespace x11
    {
       using unique_connection = std::unique_ptr<xcb_connection_t, void (*)(xcb_connection_t*)>;
+      using unique_event = std::unique_ptr<xcb_generic_event_t, void (*)(void*)>;
 
       enum struct server_connection_code
       {
@@ -53,6 +54,11 @@ namespace owl::inline v0
        * @return
        */
       auto list_available_monitors(const unique_connection& connection) -> std::vector<monitor>;
+
+      /**
+       *
+       */
+      auto poll_for_event(const unique_connection& connection) -> unique_event;
    } // namespace x11
 } // namespace owl::inline v0
 

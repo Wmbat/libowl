@@ -90,13 +90,18 @@ namespace owl::inline v0
          return {};
       }
 
+      auto poll_for_event(const unique_connection& connection) -> unique_event
+      {
+         return {xcb_poll_for_event(connection.get()), free};
+      }
+
       auto request_resources(const unique_connection& connection, xcb_window_t window)
          -> screen_resources_reply
       {
          const auto cookie = xcb_randr_get_screen_resources(connection.get(), window);
          auto* p_reply = xcb_randr_get_screen_resources_reply(connection.get(), cookie, nullptr);
 
-         return screen_resources_reply(p_reply, free);
+         return {p_reply, free};
       }
 
       auto list_resource_outputs(const screen_resources_reply& reply)
@@ -105,7 +110,7 @@ namespace owl::inline v0
          const i32 count = xcb_randr_get_screen_resources_outputs_length(reply.get());
          const auto* p_outputs = xcb_randr_get_screen_resources_outputs(reply.get());
 
-         return std::span(p_outputs, count);
+         return {p_outputs, static_cast<u64>(count)};
       }
       auto query_resources_output(xcb_connection_t* p_connection, xcb_randr_output_t output)
          -> output_info_reply
@@ -113,7 +118,7 @@ namespace owl::inline v0
          const auto cookie = xcb_randr_get_output_info_unchecked(p_connection, output, 0);
          auto* p_reply = xcb_randr_get_output_info_reply(p_connection, cookie, nullptr);
 
-         return output_info_reply(p_reply, free);
+         return {p_reply, free};
       }
 
       auto find_resources_output_info_name(xcb_randr_get_output_info_reply_t* info)
@@ -130,7 +135,7 @@ namespace owl::inline v0
          const auto cookie = xcb_randr_get_crtc_info_unchecked(p_connection, info->crtc, 0);
          auto* p_crtc = xcb_randr_get_crtc_info_reply(p_connection, cookie, nullptr);
 
-         return crtc_info_reply(p_crtc, free);
+         return {p_crtc, free};
       }
 
       auto gather_output_info(xcb_connection_t* p_connection, output_info_reply&& info)
@@ -148,6 +153,5 @@ namespace owl::inline v0
                  .offset = {info.crtc->x, info.crtc->y},
                  .size = {info.crtc->width, info.crtc->height}};
       }
-
    } // namespace x11
 } // namespace owl::inline v0

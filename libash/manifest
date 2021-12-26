@@ -2,7 +2,7 @@
 name: libash
 version: 0.1.0-a.0.z
 project: vermillon
-summary: ash C++ library
+summary: A small boostrap library for Vulkan
 license: other: proprietary ; Not free/open source.
 description-file: README.md
 url: https://example.org/vermillon

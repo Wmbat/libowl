@@ -1,6 +1,7 @@
 #ifndef LIBOWL_SYSTEM_HPP_
 #define LIBOWL_SYSTEM_HPP_
 
+#include <libowl/chrono.hpp>
 #include <libowl/types.hpp>
 #include <libowl/version.hpp>
 #include <libowl/window/monitor.hpp>
@@ -30,7 +31,13 @@ namespace owl::inline v0
 
       auto run() -> i32;
 
-      auto make_window(std::string_view name) -> window*;
+      auto make_window(std::string_view name) -> window&;
+
+   private: 
+      void poll_events();
+      void render(std::chrono::nanoseconds delta_time);
+
+      auto add_window(std::unique_ptr<window>&& wnd) -> window&;
 
    private:
       mannele::log_ptr m_logger;

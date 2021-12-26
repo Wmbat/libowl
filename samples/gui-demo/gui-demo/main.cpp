@@ -7,7 +7,7 @@ auto main() -> int
    auto logger = mannele::logger(app_name);
 
    auto gui_system = owl::system(app_name, &logger);
-   auto* main_window = gui_system.make_window(app_name);
+   [[maybe_unused]] auto& main_window = gui_system.make_window(app_name);
 
    return gui_system.run();
 }

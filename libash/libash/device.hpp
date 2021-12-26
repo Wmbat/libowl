@@ -30,6 +30,8 @@ namespace ash::inline v0
       device() = default;
       device(device_create_info&& info);
 
+      [[nodiscard]] auto api_version() const noexcept -> mannele::semantic_version;
+
    private:
       mannele::log_ptr m_logger;
 

@@ -61,7 +61,7 @@ namespace ash::inline v0
             | ranges::to_vector;
          const auto queue_create_info = temporary_queue_info
             | rv::transform(to_device_queue_create_info)
-            | ranges::to_vector;   
+            | ranges::to_vector;
          // clang-format on
 
          return info.physical.device.createDeviceUnique(
@@ -84,7 +84,7 @@ namespace ash::inline v0
    } // namespace
 
    device::device(device_create_info&& info) :
-      m_logger(info.logger), m_device(create_vulkan_device(info)),
+      m_logger(info.logger), m_api_version(), m_device(create_vulkan_device(info)),
       m_queues(select_queues(info, m_device.get()))
    {
       m_logger.debug("vulkan logical device created");
@@ -93,4 +93,6 @@ namespace ash::inline v0
          m_logger.debug("queue = {}", queue);
       }
    }
+
+   auto device::api_version() const noexcept -> mannele::semantic_version { return m_api_version; }
 } // namespace ash::inline v0
