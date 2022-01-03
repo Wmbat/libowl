@@ -6,6 +6,18 @@ import intf_libs += libash%lib{ash}
 
 impl_libs += libxcb%lib{xcb}
 impl_libs += libxcb-randr%lib{xcb-randr}
+impl_libs += libxcb-keysyms%lib{xcb-keysyms}
+
+# Ad-Hoc recipe for generating a X server keysym to UTF-32 table for key presses
+./: hxx{detail/x11/keysym_to_code_point_table}: include = adhoc
+hxx{detail/x11/keysym_to_code_point_table}: detail/x11/generate_keysym_to_code_point_table.py
+
+hxx{detail/x11/keysym_to_code_point_table}: file{detail/x11/generate_keysym_to_code_point_table.py}
+{{
+   diag python ($<[0])
+
+   python $path($<[0])
+}}
 
 lib{owl}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 

@@ -1,3 +1,7 @@
 # Generated version header.
 #
 version.hpp
+
+# Generated keysym to UCS table
+#
+detail/x11/keysym_to_code_point_table.hpp

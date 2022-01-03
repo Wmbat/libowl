@@ -15,3 +15,6 @@ depends: libash ^0.1.0-
 depends: libmannele ^0.1.0-
 
 requires: libxcb ^1.1.0
+requires: libxcb-randr ^1.1.0
+requires: libxcb-keysyms ^1.1.0
+requires: python ^3.6.0

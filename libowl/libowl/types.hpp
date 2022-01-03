@@ -3,7 +3,7 @@
 
 #include <libmannele/core.hpp>
 
-namespace owl
+namespace owl::inline v0
 {
    using mannele::f32;
    using mannele::f64;
@@ -15,6 +15,6 @@ namespace owl
    using mannele::u32;
    using mannele::u64;
    using mannele::u8;
-} // namespace owl
+} // namespace owl::inlivev0
 
 #endif // LIBOWL_TYPES_HPP_

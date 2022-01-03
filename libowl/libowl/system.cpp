@@ -1,7 +1,7 @@
-#include <chrono>
 #include <libowl/system.hpp>
 
 #include <libowl/chrono.hpp>
+#include <libowl/detail/x11/keyboard.hpp>
 #include <libowl/version.hpp>
 #include <libowl/window.hpp>
 #include <libowl/window/x11_support.hpp>
@@ -16,6 +16,9 @@
 #include <fmt/chrono.h>
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_keysyms.h>
+
+#include <chrono>
 
 using reglisse::maybe;
 using reglisse::none;
@@ -24,19 +27,7 @@ namespace owl::inline v0
 {
    namespace
    {
-
    } // namespace
-
-   template <typename Type, typename Err>
-   auto throw_if_err(reglisse::result<Type, Err>&& res) -> Type
-   {
-      if (res.is_ok())
-      {
-         return std::move(res).take();
-
-         // throw
-      }
-   }
 
    system::system(std::string_view app_name, mannele::log_ptr logger) :
       m_logger(logger), m_instance({.app_info = {.name = app_name, .version = {}},
@@ -60,9 +51,7 @@ namespace owl::inline v0
          const auto delta_time = new_time - curr_time;
          curr_time = new_time;
 
-         poll_events();
-
-         // handle events
+         handle_events();
 
          render(delta_time);
       } while (not exit_code);
@@ -72,7 +61,7 @@ namespace owl::inline v0
       return exit_code.borrow();
    }
 
-   void system::poll_events()
+   void system::handle_events()
    {
       while (auto event = x11::poll_for_event(m_x11_connection))
       {
@@ -87,9 +76,17 @@ namespace owl::inline v0
             {
                // NOLINTNEXTLINE
                auto* key_press_event = reinterpret_cast<xcb_key_press_event_t*>(event.get());
+               const auto state = key_press_event->state;
+               const auto keycode = x11::keycode_t(key_press_event->detail);
 
-               m_logger.debug("key \"{}\" pressed at {}", key_press_event->detail,
-                              key_press_event->time);
+               const auto modifiers = x11::key_press_state_mask_to_modifiers(state);
+               const auto keysym = x11::find_correct_keysym(m_x11_connection, keycode, modifiers);
+               const auto ucs_value = x11::keysym_to_ucs(keysym);
+
+               const auto time = std::chrono::milliseconds(key_press_event->time);
+
+               m_logger.debug("key {}+{} pressed at {}", modifiers,
+                              static_cast<char32_t>(keysym.value()), time);
                break;
             }
             case XCB_KEY_RELEASE:
@@ -99,6 +96,7 @@ namespace owl::inline v0
             }
             case XCB_BUTTON_PRESS:
             {
+
                m_logger.debug("button press event");
                break;
             }

@@ -34,7 +34,7 @@ namespace owl::inline v0
       auto make_window(std::string_view name) -> window&;
 
    private: 
-      void poll_events();
+      void handle_events();
       void render(std::chrono::nanoseconds delta_time);
 
       auto add_window(std::unique_ptr<window>&& wnd) -> window&;
