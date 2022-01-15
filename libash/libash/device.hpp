@@ -13,7 +13,8 @@
 #include <libash/queue.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
-#include <libmannele/logging/log_ptr.hpp>
+
+#include <spdlog/spdlog.h>
 
 namespace ash::inline v0
 {
@@ -21,7 +22,7 @@ namespace ash::inline v0
    {
       const physical_device& physical;
 
-      mannele::log_ptr logger;
+      spdlog::logger& logger;
    };
 
    class device
@@ -33,7 +34,7 @@ namespace ash::inline v0
       [[nodiscard]] auto api_version() const noexcept -> mannele::semantic_version;
 
    private:
-      mannele::log_ptr m_logger;
+      spdlog::logger* mp_logger;
 
       mannele::semantic_version m_api_version{};
 

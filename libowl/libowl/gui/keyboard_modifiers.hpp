@@ -13,9 +13,10 @@
 
 namespace owl::inline v0
 {
-   namespace kbd
-   {
-      enum struct modifier_flag_bits : u32
+      /**
+       * @brief Possible keyboard key modifiers
+       */
+      enum struct key_modifiers_flag_bits : u32
       {
          shift = 0x001,
          caps_lock = 0x002,
@@ -27,28 +28,29 @@ namespace owl::inline v0
          mod_5 = 0x080,
       };
 
-      using modifier_flags = mannele::flags<modifier_flag_bits>;
+      /**
+       * @brief A flag type that operates on modifier_flag_bits
+       */
+      using key_modifier_flags = mannele::flags<key_modifiers_flag_bits>;
 
-      constexpr auto operator|(modifier_flag_bits bit0, modifier_flag_bits bit1) noexcept
-         -> modifier_flags
+      constexpr auto operator|(key_modifiers_flag_bits bit0, key_modifiers_flag_bits bit1) noexcept
+         -> key_modifier_flags
       {
-         return modifier_flags(bit0) | bit1;
+         return key_modifier_flags(bit0) | bit1;
       }
-      constexpr auto operator&(modifier_flag_bits bit0, modifier_flag_bits bit1) noexcept
-         -> modifier_flags
+      constexpr auto operator&(key_modifiers_flag_bits bit0, key_modifiers_flag_bits bit1) noexcept
+         -> key_modifier_flags
       {
-         return modifier_flags(bit0) & bit1;
+         return key_modifier_flags(bit0) & bit1;
       }
-
-   } // namespace kbd
 } // namespace owl::inline v0
 
 template <>
-struct mannele::flag_traits<owl::kbd::modifier_flag_bits>
+struct mannele::flag_traits<owl::key_modifiers_flag_bits>
 {
 private:
-   using bits = owl::kbd::modifier_flag_bits;
-   using mask_type = owl::kbd::modifier_flags::mask_type;
+   using bits = owl::key_modifiers_flag_bits;
+   using mask_type = owl::key_modifier_flags::mask_type;
 
 public:
    enum : u32
@@ -59,7 +61,7 @@ public:
 };
 
 template <>
-struct fmt::formatter<owl::kbd::modifier_flags>
+struct fmt::formatter<owl::key_modifier_flags>
 {
    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
    {
@@ -67,22 +69,22 @@ struct fmt::formatter<owl::kbd::modifier_flags>
    }
 
    template <typename FormatContext>
-   auto format(const owl::kbd::modifier_flags& flags, FormatContext& ctx) -> decltype(ctx.out())
+   auto format(const owl::key_modifier_flags& flags, FormatContext& ctx) -> decltype(ctx.out())
    {
-      using owl::kbd::modifier_flag_bits;
+      using owl::key_modifiers_flag_bits;
 
       std::string str;
-      if (flags & modifier_flag_bits::shift)
+      if (flags & key_modifiers_flag_bits::shift)
       {
          str += "Shift";
       }
 
-      if (flags & modifier_flag_bits::caps_lock)
+      if (flags & key_modifiers_flag_bits::caps_lock)
       {
          str += str.empty() ? "CapsLock" : "+CapsLock";
       }
 
-      if (flags & modifier_flag_bits::ctrl)
+      if (flags & key_modifiers_flag_bits::ctrl)
       {
          str += str.empty() ? "Ctrl" : "+Ctrl";
       }

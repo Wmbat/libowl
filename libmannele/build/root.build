@@ -14,3 +14,7 @@ hxx{*}: cxx.importable = true
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $cxx.target
+
+config [bool] config.libmannele.enable_debug_logging ?= false
+
+enable_debug_logging = ($config.libmannele.enable_debug_logging)

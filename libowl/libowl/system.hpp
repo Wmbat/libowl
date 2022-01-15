@@ -2,17 +2,18 @@
 #define LIBOWL_SYSTEM_HPP_
 
 #include <libowl/chrono.hpp>
+#include <libowl/gui/monitor.hpp>
 #include <libowl/types.hpp>
 #include <libowl/version.hpp>
-#include <libowl/window/monitor.hpp>
-
-#include <libowl/window/x11_support.hpp>
 
 #include <libash/instance.hpp>
 #include <libash/physical_device.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
-#include <libmannele/logging/log_ptr.hpp>
+
+#include <spdlog/spdlog.h>
+
+#include <thread>
 
 namespace owl::inline v0
 {
@@ -27,27 +28,31 @@ namespace owl::inline v0
    class system
    {
    public:
-      system(std::string_view app_name, mannele::log_ptr logger = nullptr);
+      system(std::string_view app_name);
 
       auto run() -> i32;
 
       auto make_window(std::string_view name) -> window&;
 
-   private: 
+      [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
+
+   private:
       void handle_events();
       void render(std::chrono::nanoseconds delta_time);
 
       auto add_window(std::unique_ptr<window>&& wnd) -> window&;
 
    private:
-      mannele::log_ptr m_logger;
+      spdlog::logger m_logger;
 
       ash::instance m_instance;
 
-      x11::unique_connection m_x11_connection;
+      x11::connection m_xserver_connection;
 
       std::vector<monitor> m_monitors;
       std::vector<std::unique_ptr<window>> m_windows;
+
+      std::thread::id m_thread_id;
    };
 } // namespace owl::inline v0
 

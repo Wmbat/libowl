@@ -84,13 +84,13 @@ namespace ash::inline v0
    } // namespace
 
    device::device(device_create_info&& info) :
-      m_logger(info.logger), m_api_version(), m_device(create_vulkan_device(info)),
+      mp_logger(&info.logger), m_api_version(), m_device(create_vulkan_device(info)),
       m_queues(select_queues(info, m_device.get()))
    {
-      m_logger.debug("vulkan logical device created");
+      mp_logger->debug("vulkan logical device created");
       for (const auto& queue : m_queues)
       {
-         m_logger.debug("queue = {}", queue);
+         mp_logger->debug("queue = {}", queue);
       }
    }
 

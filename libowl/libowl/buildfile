@@ -4,22 +4,39 @@ impl_libs = # Implementation dependencies.
 import intf_libs += libmannele%lib{mannele}
 import intf_libs += libash%lib{ash}
 
-impl_libs += libxcb%lib{xcb}
-impl_libs += libxcb-randr%lib{xcb-randr}
-impl_libs += libxcb-keysyms%lib{xcb-keysyms}
+# Library Target
+#
+lib{owl}: {hxx ixx txx cxx}{** -version -detail/x11/** -detail/wayland/**} hxx{version} \
+    $impl_libs $intf_libs
 
-# Ad-Hoc recipe for generating a X server keysym to UTF-32 table for key presses
-./: hxx{detail/x11/keysym_to_code_point_table}: include = adhoc
-hxx{detail/x11/keysym_to_code_point_table}: detail/x11/generate_keysym_to_code_point_table.py
+if $use_x11
+    x11_libs += libxcb%lib{xcb}
+    x11_libs += libxcb-randr%lib{xcb-randr}
+    x11_libs += libxcb-keysyms%lib{xcb-keysyms}
 
-hxx{detail/x11/keysym_to_code_point_table}: file{detail/x11/generate_keysym_to_code_point_table.py}
-{{
-   diag python ($<[0])
+    lib{owl}: {hxx ixx txx cxx}{detail/x11/**} $x11_libs
 
-   python $path($<[0])
-}}
+    # Ad-Hoc recipe for generating a X server keysym to UTF-32 table for key presses
+    #
+    ./: hxx{detail/x11/keysym_to_code_point_table}: include = adhoc
+    hxx{detail/x11/keysym_to_code_point_table}: detail/x11/generate_keysym_to_code_point_table.py
+    
+    hxx{detail/x11/keysym_to_code_point_table}: file{detail/x11/generate_keysym_to_code_point_table.py}
+    {{
+       diag python ($<[0])
+    
+       python $path($<[0])
+    }}
 
-lib{owl}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
+    cc.poptions += -DVK_USE_PLATFORM_XCB_KHR
+    cxx.poptions += -DLIBOWL_USE_X11
+
+if $use_wayland
+    wayland_libs = 
+
+    lib{owl}: {hxx ixx txx cxx}{detail/wayland/**} $wayland_libs
+    
+    cxx.poptions += -DLIBOWL_USE_WAYLAND
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that

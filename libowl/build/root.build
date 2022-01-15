@@ -18,3 +18,8 @@ hxx{*}: cxx.importable = true
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $cxx.target
+
+config [bool] config.libowl.use_wayland ?= false
+
+use_wayland = ($cc.target.class == 'linux' && $config.libowl.use_wayland == true)
+use_x11 = ($cc.target.class == 'linux' && !$config.libowl.use_wayland)

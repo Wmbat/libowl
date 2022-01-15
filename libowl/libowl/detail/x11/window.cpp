@@ -1,4 +1,6 @@
-#include <libowl/window/x11_window.hpp>
+#include <libowl/detail/x11/window.hpp>
+
+#include <libowl/system.hpp>
 
 #include <libash/detail/vulkan.hpp>
 
@@ -39,7 +41,7 @@ namespace owl::inline v0
    namespace x11
    {
       window::window(window_create_info&& info) :
-         super(info.name, info.logger), mp_connection(info.connection.get()),
+         super(*info.p_system, info.name, info.logger), mp_connection(info.conn.x_server.get()),
          m_window_handle(xcb_generate_id(mp_connection)), mp_target_monitor(info.p_target_monitor)
       {
          assert(info.p_target_monitor != nullptr); // NOLINT
@@ -66,11 +68,11 @@ namespace owl::inline v0
 
          xcb_map_window(mp_connection, m_window_handle);
          xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
-                             XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, super::title().size(),
-                             super::title().data());
+                             XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+                             static_cast<u32>(super::title().size()), super::title().data());
          xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
-                             XCB_ATOM_WM_CLASS, XCB_ATOM_STRING, 8, super::title().size(),
-                             super::title().data());
+                             XCB_ATOM_WM_CLASS, XCB_ATOM_STRING, 8,
+                             static_cast<u32>(super::title().size()), super::title().data());
          xcb_flush(mp_connection);
 
          const vk::Instance instance = info.instance;
@@ -79,6 +81,14 @@ namespace owl::inline v0
             render_surface(instance.createXcbSurfaceKHRUnique(vk::XcbSurfaceCreateInfoKHR()
                                                                  .setConnection(mp_connection)
                                                                  .setWindow(m_window_handle))));
+      }
+
+      void window::render(std::chrono::nanoseconds delta_time)
+      {
+         super::render(delta_time);
+
+         xcb_map_window(mp_connection, m_window_handle);
+         xcb_flush(mp_connection);
       }
    } // namespace x11
 } // namespace owl::inline v0

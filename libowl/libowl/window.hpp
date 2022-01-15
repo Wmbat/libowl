@@ -10,8 +10,8 @@
 #define LIBOWL_WINDOW_HPP_
 
 #include <libowl/gfx/render_surface.hpp>
+#include <libowl/gui/monitor.hpp>
 #include <libowl/system.hpp>
-#include <libowl/window/monitor.hpp>
 
 #include <libash/device.hpp>
 
@@ -28,6 +28,26 @@ namespace owl::inline v0
    class window
    {
    public:
+      window(const window& other) = delete;
+      window(window&& other) noexcept = delete;
+      virtual ~window() = default;
+
+      auto operator=(const window& other) = delete;
+      auto operator=(window&& other) noexcept = delete;
+
+      virtual void render(std::chrono::nanoseconds delta_time);
+
+      /**
+       * @brief Set the window's physical device used for rendering.
+       *
+       * @param[in] device The physical device.
+       */
+      void set_physical_device(ash::physical_device&& device) noexcept;
+
+      /**
+       * @brief
+       */
+      [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
 
       /**
        * @brief Get the window title
@@ -38,22 +58,17 @@ namespace owl::inline v0
        */
       [[nodiscard]] auto surface() const noexcept -> const render_surface&;
 
-      /**
-       * @brief Set the window's physical device used for rendering.
-       *
-       * @param[in] device The physical device.
-       */
-      void set_physical_device(ash::physical_device&& device) noexcept;
-
    protected:
-      window(std::string_view title, mannele::log_ptr logger);
+      window(system& system, std::string_view title, spdlog::logger& logger);
 
-      [[nodiscard]] auto logger() const noexcept -> mannele::log_ptr;
+      [[nodiscard]] auto logger() const noexcept -> spdlog::logger&;
 
       void set_surface(render_surface&& surface);
 
    private:
-      mannele::log_ptr m_logger;
+      system& m_system;
+
+      spdlog::logger& m_logger;
 
       std::string m_title;
 

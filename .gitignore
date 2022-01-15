@@ -13,7 +13,6 @@ tags
 
 documentation/
 
-.vimspector.json
 
 *.logs
 
@@ -23,6 +22,7 @@ documentation/
 .bdep/bdep.sqlite3
 .clangd/
 .vimspector.json
+-.json
 
 # Compiler/linker output.
 

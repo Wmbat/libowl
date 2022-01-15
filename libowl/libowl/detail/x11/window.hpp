@@ -1,5 +1,5 @@
-#ifndef LIBOWL_WINDOW_X11_WINDOW_HPP_
-#define LIBOWL_WINDOW_X11_WINDOW_HPP_
+#ifndef LIBOWL_WINDOW_DETAIL_X11_WINDOW_HPP_
+#define LIBOWL_WINDOW_DETAIL_X11_WINDOW_HPP_
 
 #include <libowl/window.hpp>
 
@@ -9,14 +9,16 @@ namespace owl::inline v0
    {
       struct window_create_info
       {
+         system* p_system;
+
          std::string_view name;
 
-         const unique_connection& connection;
+         const connection& conn;
          const ash::instance& instance;
 
          monitor* p_target_monitor;
 
-         mannele::log_ptr logger;
+         spdlog::logger& logger;
       };
 
       class window : public owl::window
@@ -25,6 +27,14 @@ namespace owl::inline v0
 
       public:
          window(window_create_info&& info);
+         window(const window& wnd) = delete;
+         window(window&& wnd) noexcept = delete;
+         ~window() override = default;
+
+         auto operator=(const window& wnd) = delete;
+         auto operator=(window&& wnd) noexcept = delete;
+
+         void render(std::chrono::nanoseconds delta_time) override;
 
       private:
          xcb_connection_t* mp_connection;
@@ -35,4 +45,4 @@ namespace owl::inline v0
    } // namespace x11
 } // namespace owl::inline v0
 
-#endif // LIBOWL_WINDOW_X11_WINDOW_HPP_
+#endif // LIBOWL_WINDOW_DETAIL_X11_WINDOW_HPP_

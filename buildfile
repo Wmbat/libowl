@@ -1,3 +1,3 @@
-import pkgs = {lib*/ samples/gui-demo/}
+import pkgs = {libmannele/ libowl/ libash/ samples/gui-demo/}
 
 ./: $pkgs

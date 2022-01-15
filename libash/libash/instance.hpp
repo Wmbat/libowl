@@ -13,7 +13,8 @@
 #include <libash/detail/vulkan.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
-#include <libmannele/logging/log_ptr.hpp>
+
+#include <spdlog/logger.h>
 
 #include <span>
 #include <string_view>
@@ -76,7 +77,7 @@ namespace ash::inline v0
       std::vector<const char*> enabled_extension_names;
       std::vector<const char*> enabled_layer_names;
 
-      mannele::log_ptr logger;
+      spdlog::logger& logger;
    };
 
    /**
@@ -90,7 +91,7 @@ namespace ash::inline v0
        *
        * The constructor may throw an ash::runtime_error containing a std::error_condition
        */
-      instance(const instance_create_info& info);
+      instance(instance_create_info&& info);
 
       /**
        * @brief Implicitely converts the a vulkan vk::Instance.
@@ -103,14 +104,14 @@ namespace ash::inline v0
       [[nodiscard]] auto version() const noexcept -> mannele::semantic_version;
 
    private:
+      spdlog::logger* mp_logger;
+
       vk::DynamicLoader m_loader{};
 
       mannele::semantic_version m_api_version{};
 
       vk::UniqueInstance m_instance{nullptr};
       vk::UniqueDebugUtilsMessengerEXT m_debug_utils{nullptr};
-
-      mannele::log_ptr m_logger;
    };
 } // namespace ash::inline v0
 

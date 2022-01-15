@@ -1,12 +1,8 @@
 :1
-location: libcacao/
-:
 location: libmannele/
 :
 location: libash/
 :
 location: libowl/
-:
-location: samples/sph-simulation/
 :
 location: samples/gui-demo/

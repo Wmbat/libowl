@@ -1,6 +1,9 @@
 """
-
-
+file: libowl/detail/x11/generate_keysym_to_code_point_table.py
+author: wmbat-dev@protonmail.com
+brief: Script used to fetch all key symbols to unicode code points supported by the X server and 
+create a lookup table mapping each key symbol to it's code point equivalent
+copyright: Copyright (C) 2022 wmbat.
 """
 
 import os
@@ -18,6 +21,20 @@ keysym_to_UCS_pattern_01 = re.compile(
         r'^\#define XK_([a-zA-z_0-9]+)\s+0x([0-9a-f]+)\s*\/\* U\+([0-9A-F]{4,6})(.*)\*\/\s*$')
 keysym_to_UCS_pattern_02 = re.compile(
         r'^\#define XK_([a-zA-Z_0-9]+)\s+0x([0-9a-f]+)\s*\/\*\(U\+([0-9A-F]{4,6}) (.*)\)\*\/\s*$')
+
+def file_description():
+    dir = '/' + output_dir;
+    dir = os.path.join(*(dir.split(os.path.sep)[2:]))
+    filepath = dir + '/' + output_filename
+
+    str = '/**\n'
+    str = str + f' * @file {filepath}\n'
+    str = str +  ' * @author wmbat-dev@protonmail.com\n'
+    str = str +  ' * brief Table of X server keysym to their unicode code point equivalent'
+    str = str +  ' * @copyright Copyright (C) 2022 wmbat\n */'
+
+    return str
+
 
 def header_guard():
     dir = '/' + output_dir;
@@ -64,12 +81,14 @@ def main():
     with open(output_filepath, 'w') as writer:
         data = ''
         for key, val in table_data:
-            str = 'keysym_ucs_pair{'
+            str = 'keysym_codepoint_pair{'
             str = str + f'.keysym = keysym_t({key}u),'
-            str = str + f'.code_point = detail::code_point_t({val}u)}},\n'
+            str = str + f'.code_point = owl::detail::code_point_t({val}u)}},\n'
             data = data + str
 
         header_guard_name = header_guard()
+
+        writer.write(f'{file_description()}\n\n')
 
         writer.write('#ifndef {}\n'.format(header_guard_name))
         writer.write('#define {}\n\n'.format(header_guard_name))
@@ -81,9 +100,9 @@ def main():
         writer.write('namespace owl::inline v0\n{')
         writer.write('namespace x11\n{')
 
-        writer.write('struct keysym_ucs_pair{keysym_t keysym; detail::code_point_t code_point;};')
+        writer.write('struct keysym_codepoint_pair{keysym_t keysym; owl::detail::code_point_t code_point;};')
  
-        writer.write('static constexpr std::array<keysym_ucs_pair, {}> keysym_to_UCS_table = '
+        writer.write('static constexpr std::array<keysym_codepoint_pair, {}> keysym_to_code_point_table = '
             .format(len(table_data)))
         writer.write('{{\n{}\n}};'.format(data[:-2] + '\n'))
 

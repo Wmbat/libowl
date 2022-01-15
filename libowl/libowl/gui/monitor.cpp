@@ -1,6 +1,4 @@
-#include <libowl/window/x11_support.hpp>
-
-#include <libowl/types.hpp>
+#include <libowl/gui/monitor.hpp>
 
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/remove.hpp>
@@ -8,8 +6,6 @@
 
 #include <xcb/randr.h>
 #include <xcb/xcb.h>
-
-#include <span>
 
 using reglisse::err;
 using reglisse::ok;
@@ -19,6 +15,8 @@ namespace rv = ranges::views;
 
 namespace owl::inline v0
 {
+#if defined(LIBOWL_USE_X11)
+
    namespace
    {
       template <typename Type>
@@ -33,7 +31,7 @@ namespace owl::inline v0
          crtc_info_reply crtc;
       };
 
-      auto request_resources(const x11::unique_connection& connection, xcb_window_t window)
+      auto request_resources(const x11::unique_x_connection& connection, xcb_window_t window)
          -> screen_resources_reply
       {
          const auto cookie = xcb_randr_get_screen_resources(connection.get(), window);
@@ -94,49 +92,26 @@ namespace owl::inline v0
 
    } // namespace
 
-   namespace x11
+
+   auto list_available_monitors(const x11::connection& conn) -> std::vector<monitor>
    {
-      auto connect_to_server(mannele::log_ptr logger)
-         -> reglisse::result<unique_connection, server_connection_code>
+      const xcb_setup_t* p_setup = xcb_get_setup(conn.x_server.get());
+      xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(p_setup);
+      xcb_window_t root_win = screen_iter.data->root;
+
+      if (const auto resources = request_resources(conn.x_server, root_win))
       {
-         auto* p_connection = xcb_connect(nullptr, nullptr);
-         const i32 error_code = xcb_connection_has_error(p_connection);
-
-         if (error_code == 0)
-         {
-            logger.debug("connected to X server");
-
-            return ok(unique_connection(p_connection, xcb_disconnect));
-         }
-         else
-         {
-            return err(static_cast<server_connection_code>(error_code));
-         }
+         return list_resource_outputs(resources) | rv::transform([&](xcb_randr_output_t output) {
+                   return query_resources_output(conn.x_server.get(), output);
+                })
+                | rv::transform([&](output_info_reply&& ptr) {
+                     return gather_output_info(conn.x_server.get(), std::move(ptr));
+                  })
+                | rv::remove_if(has_monitor) | rv::transform(to_monitor) | ranges::to_vector;
       }
 
-      auto list_available_monitors(const unique_connection& connection) -> std::vector<monitor>
-      {
-         const xcb_setup_t* p_setup = xcb_get_setup(connection.get());
-         xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(p_setup);
-         xcb_window_t root_win = screen_iter.data->root;
+      return {};
+   }
 
-         if (const auto resources = request_resources(connection, root_win))
-         {
-            return list_resource_outputs(resources) | rv::transform([&](xcb_randr_output_t output) {
-                      return query_resources_output(connection.get(), output);
-                   })
-                   | rv::transform([&](output_info_reply&& ptr) {
-                        return gather_output_info(connection.get(), std::move(ptr));
-                     })
-                   | rv::remove_if(has_monitor) | rv::transform(to_monitor) | ranges::to_vector;
-         }
-
-         return {};
-      }
-
-      auto poll_for_event(const unique_connection& connection) -> unique_event
-      {
-         return {xcb_poll_for_event(connection.get()), free};
-      }
-   } // namespace x11
+#endif // defined (LIBOWL_USE_X11)
 } // namespace owl::inline v0
