@@ -1,6 +1,7 @@
 #ifndef LIBOWL_SYSTEM_HPP_
 #define LIBOWL_SYSTEM_HPP_
 
+#include <libowl/window.hpp>
 #include <libowl/chrono.hpp>
 #include <libowl/gui/monitor.hpp>
 #include <libowl/types.hpp>
@@ -19,8 +20,6 @@ namespace owl::inline v0
 {
    static constexpr auto library_version = mannele::semantic_version{
       .major = LIBOWL_VERSION_MAJOR, .minor = LIBOWL_VERSION_MINOR, .patch = LIBOWL_VERSION_PATCH};
-
-   class window;
 
    /**
     * @brief Initializes

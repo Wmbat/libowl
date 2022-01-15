@@ -4,6 +4,8 @@
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/transform.hpp>
 
+#include <spdlog/spdlog.h>
+
 namespace rv = ranges::views;
 
 namespace ash::inline v0

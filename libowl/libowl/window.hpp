@@ -11,7 +11,6 @@
 
 #include <libowl/gfx/render_surface.hpp>
 #include <libowl/gui/monitor.hpp>
-#include <libowl/system.hpp>
 
 #include <libash/device.hpp>
 
@@ -22,6 +21,8 @@
 
 namespace owl::inline v0
 {
+   class system;
+
    /**
     * @brief
     */

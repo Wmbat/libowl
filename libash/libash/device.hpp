@@ -14,7 +14,7 @@
 
 #include <libmannele/core/semantic_version.hpp>
 
-#include <spdlog/spdlog.h>
+#include <spdlog/fwd.h>
 
 namespace ash::inline v0
 {

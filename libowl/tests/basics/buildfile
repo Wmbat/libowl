@@ -1,3 +1,0 @@
-import libs = libowl%lib{owl}
-
-exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}

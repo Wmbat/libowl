@@ -1,5 +1,7 @@
 #include <libowl/window.hpp>
 
+#include <libowl/system.hpp>
+
 namespace owl::inline v0
 {
    void window::render(std::chrono::nanoseconds) {}

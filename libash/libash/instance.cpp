@@ -8,6 +8,8 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+#include <spdlog/logger.h>
+
 #include <magic_enum.hpp>
 
 #include <cstring>
@@ -276,14 +278,12 @@ namespace ash::inline v0
 
       for (const char* name : ext_names)
       {
-         // TODO(wmbat): Remove fmt::format temporary workaround
-         p_logger->debug(fmt::format("enabled extension: {}", name));
+         p_logger->debug("enabled extension: {}", name);
       }
 
       for (const char* name : layer_names)
       {
-         // TODO(wmbat): Remove fmt::format temporary workaround
-         p_logger->debug(fmt::format("enabled layer: {}", name));
+         p_logger->debug("enabled layer: {}", name);
       }
 
       const u32 app_version = detail::to_vulkan_version(info.app_info.version);

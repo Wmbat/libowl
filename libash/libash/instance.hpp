@@ -14,7 +14,7 @@
 
 #include <libmannele/core/semantic_version.hpp>
 
-#include <spdlog/logger.h>
+#include <spdlog/fwd.h>
 
 #include <span>
 #include <string_view>
