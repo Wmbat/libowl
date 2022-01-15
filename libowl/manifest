@@ -11,10 +11,14 @@ email: wmbat@protonmail.com
 depends: * build2 >= 0.14.0
 depends: * bpkg >= 0.14.0
 
-depends: libash ^0.1.0-
-depends: libmannele ^0.1.0-
+depends: libash >= 0.1.0-
+depends: libmannele >= 0.1.0-
+depends: spdlog >= 1.9.1
+depends: magic_enum >= 0.7.3
+depends: range-v3 >= 0.11.0
+depends: asserts >= 0.1.0-
 
-requires: libxcb ^1.1.0
-requires: libxcb-randr ^1.1.0
-requires: libxcb-keysyms ^1.1.0
-requires: python ^3.6.0
+requires: libxcb >= 1.1.0
+requires: libxcb-randr >= 1.1.0
+requires: libxcb-keysyms >= 1.1.0
+requires: python >= 3.6.0

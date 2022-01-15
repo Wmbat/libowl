@@ -3,6 +3,10 @@ impl_libs = # Implementation dependencies.
 
 import intf_libs += libmannele%lib{mannele}
 import intf_libs += libash%lib{ash}
+import intf_libs += spdlog%lib{spdlog}
+import intf_libs += magic_enum%lib{magic_enum}
+import intf_libs += range-v3%lib{range-v3}
+import intf_libs += asserts%lib{asserts}
 
 # Library Target
 #

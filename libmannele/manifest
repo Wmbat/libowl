@@ -12,7 +12,6 @@ depends: * build2 >= 0.13.0
 depends: * bpkg >= 0.13.0
 
 depends: libreglisse >= 0.1.3
-depends: magic_enum >= 0.7.3
-depends: spdlog >= 1.9.1
 depends: range-v3 >= 0.11.0
-depends: asserts ~0.1.0-
+depends: magic_enum >= 0.7.3
+depends: asserts >= 0.1.0-
