@@ -5,7 +5,9 @@ namespace owl::inline v0
 {
    enum struct command
    {
-      close_window
+      render_window,
+      close_window,
+      ignore
    };
 }
 

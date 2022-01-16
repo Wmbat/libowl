@@ -1,11 +1,11 @@
 #ifndef LIBOWL_SYSTEM_HPP_
 #define LIBOWL_SYSTEM_HPP_
 
-#include <libowl/window.hpp>
 #include <libowl/chrono.hpp>
 #include <libowl/gui/monitor.hpp>
 #include <libowl/types.hpp>
 #include <libowl/version.hpp>
+#include <libowl/window.hpp>
 
 #include <libash/instance.hpp>
 #include <libash/physical_device.hpp>
@@ -39,7 +39,7 @@ namespace owl::inline v0
       void handle_events();
       void render(std::chrono::nanoseconds delta_time);
 
-      auto add_window(std::unique_ptr<window>&& wnd) -> window&;
+      auto add_window(unique_window&& wnd) -> window&;
 
    private:
       spdlog::logger m_logger;
@@ -49,7 +49,8 @@ namespace owl::inline v0
       x11::connection m_xserver_connection;
 
       std::vector<monitor> m_monitors;
-      std::vector<std::unique_ptr<window>> m_windows;
+      std::vector<unique_window> m_windows;
+      window* m_window_in_focus = nullptr;
 
       std::thread::id m_thread_id;
    };

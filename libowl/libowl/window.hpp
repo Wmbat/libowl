@@ -38,6 +38,8 @@ namespace owl::inline v0
 
       virtual void render(std::chrono::nanoseconds delta_time);
 
+      [[nodiscard]] virtual auto id() const noexcept -> u32 = 0;
+
       /**
        * @brief Set the window's physical device used for rendering.
        *
@@ -77,6 +79,8 @@ namespace owl::inline v0
       ash::physical_device m_physical_device;
       ash::device m_device;
    };
+
+   using unique_window = std::unique_ptr<window>;
 } // namespace owl::inline v0
 
 #endif // LIBOWL_WINDOW_HPP_

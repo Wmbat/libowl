@@ -1,8 +1,9 @@
 #include <libowl/system.hpp>
 
 #include <libowl/chrono.hpp>
+#include <libowl/detail/visit_helper.hpp>
 #include <libowl/detail/x11/window.hpp>
-#include <libowl/gui/event.hpp>
+#include <libowl/gui/event/event.hpp>
 #include <libowl/gui/monitor.hpp>
 #include <libowl/version.hpp>
 #include <libowl/window.hpp>
@@ -23,6 +24,7 @@
 
 using reglisse::maybe;
 using reglisse::none;
+using reglisse::some;
 
 namespace owl::inline v0
 {
@@ -31,11 +33,7 @@ namespace owl::inline v0
       auto create_logger(std::string_view name) -> spdlog::logger
       {
          auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-#if defined(LIBOWL_ENABLE_DEBUG_LOGGING)
          console_sink->set_level(spdlog::level::trace);
-#else //
-         console_sink->set_level(spdlog::level::info);
-#endif
          console_sink->set_pattern("[%n] [%^%l%$] %v");
 
          auto file_sink =
@@ -43,7 +41,9 @@ namespace owl::inline v0
          file_sink->set_pattern("[%H:%M:%S.%f] [%n] [%^%l%$] %v");
          file_sink->set_level(spdlog::level::trace);
 
-         return {std::string(name), {console_sink, file_sink}};
+         auto logger = spdlog::logger(std::string(name), {console_sink, file_sink});
+         logger.set_level(spdlog::level::trace);
+         return logger;
       }
    } // namespace
 
@@ -74,6 +74,13 @@ namespace owl::inline v0
          handle_events();
 
          render(delta_time);
+
+         if (std::empty(m_windows))
+         {
+            m_logger.info("No windows open");
+
+            exit_code = some(0);
+         }
       } while (not exit_code);
 
       m_logger.info("shutting down");
@@ -83,9 +90,36 @@ namespace owl::inline v0
 
    void system::handle_events()
    {
-      while (auto poll_result = poll_for_event(m_xserver_connection))
+      using detail::overloaded;
+
+      while (const auto event = poll_for_event(m_xserver_connection))
       {
-         const auto event = poll_result.borrow();
+         std::visit(overloaded{[](const key_event& e) {}, [](const mouse_button_event& e) {},
+                               [](const mouse_movement_event& e) {},
+                               [&](const focus_event& e) {
+                                  if (e.type == focus_type::in)
+                                  {
+                                     const auto it =
+                                        std::ranges::find(m_windows, e.window_id, &window::id);
+
+                                     if (it != std::end(m_windows))
+                                     {
+                                        m_window_in_focus = it->get();
+
+                                        m_logger.info("window \"{}\" is now in focus",
+                                                      m_window_in_focus->title());
+                                     }
+                                  }
+                                  else
+                                  {
+                                     m_logger.info("window \"{}\" is no longer in focus",
+                                                   m_window_in_focus->title());
+
+                                     m_window_in_focus = nullptr;
+                                  }
+                               },
+                               [](command c) {}},
+                    event.borrow());
       }
    }
    void system::render(std::chrono::nanoseconds delta_time)

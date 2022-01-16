@@ -31,6 +31,9 @@ namespace owl::inline v0
       {
          unique_x_connection x_server;
 
+         u32 window_protocol_atom;
+         u32 window_delete_atom;
+
          u8 min_keycode;
          u8 max_keycode;
          u8 keysyms_per_keycode;

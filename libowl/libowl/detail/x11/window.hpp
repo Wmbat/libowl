@@ -36,6 +36,8 @@ namespace owl::inline v0
 
          void render(std::chrono::nanoseconds delta_time) override;
 
+         [[nodiscard]] auto id() const noexcept -> u32 override;
+
       private:
          xcb_connection_t* mp_connection;
          xcb_window_t m_window_handle;
