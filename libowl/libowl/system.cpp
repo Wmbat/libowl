@@ -16,6 +16,8 @@
 
 #include <fmt/chrono.h>
 
+#include <range/v3/algorithm/remove.hpp>
+
 #include <chrono>
 
 #include <spdlog/logger.h>
@@ -94,34 +96,60 @@ namespace owl::inline v0
 
       while (const auto event = poll_for_event(m_xserver_connection))
       {
-         std::visit(overloaded{[](const key_event& e) {}, [](const mouse_button_event& e) {},
-                               [](const mouse_movement_event& e) {},
-                               [&](const focus_event& e) {
-                                  if (e.type == focus_type::in)
-                                  {
-                                     const auto it =
-                                        std::ranges::find(m_windows, e.window_id, &window::id);
-
-                                     if (it != std::end(m_windows))
-                                     {
-                                        m_window_in_focus = it->get();
-
-                                        m_logger.info("window \"{}\" is now in focus",
-                                                      m_window_in_focus->title());
-                                     }
-                                  }
-                                  else
-                                  {
-                                     m_logger.info("window \"{}\" is no longer in focus",
-                                                   m_window_in_focus->title());
-
-                                     m_window_in_focus = nullptr;
-                                  }
-                               },
-                               [](command c) {}},
-                    event.borrow());
+         // clang-format off
+         std::visit(
+            overloaded{
+               [](const key_event&) {}, 
+               [](const mouse_button_event&) {},
+               [](const mouse_movement_event&) {},
+               [&](const focus_event& e) { handle_focus_event(e); },
+               [&](command cmd) { handle_command(cmd); } },
+            event.borrow());
+         // clang-format on
       }
    }
+   void system::handle_focus_event(const focus_event& event)
+   {
+      if (event.type == focus_type::in)
+      {
+         const auto it = std::ranges::find(m_windows, event.window_id, &window::id);
+
+         if (it != std::end(m_windows))
+         {
+            m_window_in_focus = it->get();
+
+            m_logger.info("window \"{}\" is now in focus", m_window_in_focus->title());
+         }
+      }
+      else
+      {
+         if (m_window_in_focus)
+         {
+            m_logger.info("window \"{}\" is no longer in focus", m_window_in_focus->title());
+         }
+
+         m_window_in_focus = nullptr;
+      }
+   }
+   void system::handle_command(command cmd)
+   {
+      if (cmd == command::close_window)
+      {
+         m_logger.debug("closing window event");
+
+         if (m_window_in_focus)
+         {
+            const auto it = std::ranges::find(m_windows, m_window_in_focus, &unique_window::get);
+            if (it != std::end(m_windows))
+            {
+               m_windows.erase(ranges::remove(m_windows, m_window_in_focus, &unique_window::get),
+                               std::end(m_windows));
+               m_window_in_focus = nullptr;
+            }
+         }
+      }
+   }
+
    void system::render(std::chrono::nanoseconds delta_time)
    {
       for (const auto& window : m_windows)

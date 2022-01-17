@@ -11,6 +11,7 @@
 #include <span>
 
 struct xcb_connection_t;
+struct xcb_intern_atom_reply_t;
 
 namespace owl::inline v0
 {
@@ -27,17 +28,22 @@ namespace owl::inline v0
          parse_error = 5,
       };
 
+      struct protocol_property
+      {
+         u32 atom;
+         u32 delete_atom;
+      };
+
       struct connection
       {
          unique_x_connection x_server;
 
-         u32 window_protocol_atom;
-         u32 window_delete_atom;
+         protocol_property protocol_prop;
 
          u8 min_keycode;
          u8 max_keycode;
          u8 keysyms_per_keycode;
-         std::span<const u32> keysyms;
+         std::vector<u32> keysyms;
       };
 
       /**

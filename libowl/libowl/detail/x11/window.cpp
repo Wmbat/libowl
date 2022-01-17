@@ -35,7 +35,6 @@ namespace owl::inline v0
       {
          return {.masks = (masks.mask_category | ...), .values = {masks.values...}};
       }
-
    } // namespace
 
    namespace x11
@@ -66,13 +65,19 @@ namespace owl::inline v0
 
          super::logger().debug("window created on {}", *mp_target_monitor);
 
+         xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
+                             XCB_ATOM_WM_NAME, XCB_ATOM_STRING, sizeof(char8_t) * CHAR_BIT,
+                             static_cast<u32>(super::title().size()), super::title().data());
+         xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
+                             XCB_ATOM_WM_CLASS, XCB_ATOM_STRING, sizeof(char8_t) * CHAR_BIT,
+                             static_cast<u32>(super::title().size()), super::title().data());
+
+         const auto& protocol_prop = info.conn.protocol_prop;
+         xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
+                             protocol_prop.atom, XCB_ATOM_ATOM, sizeof(xcb_atom_t) * CHAR_BIT, 1,
+                             &(protocol_prop.delete_atom));
+
          xcb_map_window(mp_connection, m_window_handle);
-         xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
-                             XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-                             static_cast<u32>(super::title().size()), super::title().data());
-         xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
-                             XCB_ATOM_WM_CLASS, XCB_ATOM_STRING, 8,
-                             static_cast<u32>(super::title().size()), super::title().data());
          xcb_flush(mp_connection);
 
          const vk::Instance instance = info.instance;

@@ -2,10 +2,8 @@
 
 auto main() -> int
 {
-   std::string app_name = "gui-demo";
-
-   auto gui_system = owl::system(app_name);
-   auto& main_window = gui_system.make_window(app_name);
+   auto gui_system = owl::system("gui-demo");
+   auto& window_1 = gui_system.make_window("window 1");
 
    return gui_system.run();
 }

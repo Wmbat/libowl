@@ -99,12 +99,10 @@ namespace owl::inline v0
          }
          else if (event_type == XCB_ENTER_NOTIFY)
          {
-            fmt::print("mouse entered window");
             return some(event_variant(command::ignore));
          }
          else if (event_type == XCB_LEAVE_NOTIFY)
          {
-            fmt::print("mouse left window");
             return some(event_variant(command::ignore));
          }
          else if (event_type == XCB_EXPOSE)
@@ -115,8 +113,7 @@ namespace owl::inline v0
          {
             // NOLINTNEXTLINE
             auto *client_message = reinterpret_cast<xcb_client_message_event_t *>(event.get());
-            if (client_message->type == conn.window_protocol_atom
-                and client_message->data.data32[0] == conn.window_delete_atom)
+            if (client_message->data.data32[0] == conn.protocol_prop.delete_atom)
             {
                return some(event_variant(command::close_window));
             }
@@ -125,7 +122,7 @@ namespace owl::inline v0
          }
          else
          {
-            return some(event_variant(command::close_window));
+            return some(event_variant(command::ignore));
          }
       }
       else

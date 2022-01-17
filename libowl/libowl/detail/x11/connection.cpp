@@ -10,8 +10,26 @@ namespace owl::inline v0
 {
    namespace
    {
+      using unique_atom_reply = std::unique_ptr<xcb_intern_atom_reply_t, void (*)(void*)>;
       using kbd_mapping_reply_ptr =
          std::unique_ptr<xcb_get_keyboard_mapping_reply_t, void (*)(void*)>;
+
+      auto get_protocols_atom_reply(xcb_connection_t* p_conn) -> unique_atom_reply
+      {
+         using namespace std::literals;
+
+         const auto name = "WM_PROTOCOLS"sv;
+         auto cookie = xcb_intern_atom(p_conn, 0, std::size(name), std::data(name));
+         return {xcb_intern_atom_reply(p_conn, cookie, nullptr), free};
+      }
+      auto get_delete_atom_reply(xcb_connection_t* p_conn) -> unique_atom_reply
+      {
+         using namespace std::literals;
+
+         const auto name = "WM_DELETE_WINDOW"sv;
+         auto cookie = xcb_intern_atom(p_conn, 0, std::size(name), std::data(name));
+         return {xcb_intern_atom_reply(p_conn, cookie, nullptr), free};
+      }
 
       auto get_keyboard_mapping(xcb_connection_t* p_conn, const xcb_setup_t* p_setup)
          -> kbd_mapping_reply_ptr
@@ -41,11 +59,16 @@ namespace owl::inline v0
             const i32 keysym_count = xcb_get_keyboard_mapping_keysyms_length(kbd_mapping.get());
             const xcb_keysym_t* p_keysyms = xcb_get_keyboard_mapping_keysyms(kbd_mapping.get());
 
-            return ok(connection{.x_server = unique_x_connection(p_connection, xcb_disconnect),
-                                 .min_keycode = p_setup->min_keycode,
-                                 .max_keycode = p_setup->max_keycode,
-                                 .keysyms_per_keycode = kbd_mapping->keysyms_per_keycode,
-                                 .keysyms = std::span(p_keysyms, keysym_count)});
+            const auto protocol_reply = get_protocols_atom_reply(p_connection);
+            const auto delete_reply = get_delete_atom_reply(p_connection);
+
+            return ok(connection{
+               .x_server = unique_x_connection(p_connection, xcb_disconnect),
+               .protocol_prop = {.atom = protocol_reply->atom, .delete_atom = delete_reply->atom},
+               .min_keycode = p_setup->min_keycode,
+               .max_keycode = p_setup->max_keycode,
+               .keysyms_per_keycode = kbd_mapping->keysyms_per_keycode,
+               .keysyms = {p_keysyms, p_keysyms + keysym_count}}); // NOLINT
          }
          else
          {
