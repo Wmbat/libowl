@@ -14,29 +14,6 @@
 
 namespace owl::inline v0
 {
-   namespace
-   {
-      struct desired_event_masks
-      {
-         u32 mask_category;
-         u32 values;
-      };
-
-      template <u64 S>
-      struct event_masks
-      {
-         u32 masks;
-         std::array<u32, S> values;
-      };
-
-      template <std::same_as<desired_event_masks>... T>
-      consteval auto set_xcb_window_event_masks(T... masks)
-         -> event_masks<std::tuple_size_v<std::tuple<T...>>>
-      {
-         return {.masks = (masks.mask_category | ...), .values = {masks.values...}};
-      }
-   } // namespace
-
    namespace x11
    {
       window::window(window_create_info&& info) :
@@ -49,19 +26,20 @@ namespace owl::inline v0
 
          xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(p_setup);
 
-         constexpr auto window_masks = set_xcb_window_event_masks(desired_event_masks{
-            .mask_category = XCB_CW_EVENT_MASK,
-            .values = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE
-                      | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
-                      | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW
-                      | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_EXPOSURE});
+         const u32 window_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+         const std::array<u32, 2> window_values = {
+            screen_iter.data->black_pixel,
+            XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS
+               | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_ENTER_WINDOW
+               | XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE
+               | XCB_EVENT_MASK_EXPOSURE};
 
          xcb_create_window(mp_connection, XCB_COPY_FROM_PARENT, m_window_handle,
                            screen_iter.data->root, mp_target_monitor->offset.x,
                            mp_target_monitor->offset.y, mp_target_monitor->size.width,
                            mp_target_monitor->size.height, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                           screen_iter.data->root_visual, window_masks.masks,
-                           static_cast<const void*>(window_masks.values.data()));
+                           screen_iter.data->root_visual, window_mask,
+                           static_cast<const void*>(window_values.data()));
 
          super::logger().debug("window created on {}", *mp_target_monitor);
 
@@ -87,6 +65,7 @@ namespace owl::inline v0
                                                                  .setConnection(mp_connection)
                                                                  .setWindow(m_window_handle))));
       }
+      window::~window() { xcb_destroy_window(mp_connection, m_window_handle); }
 
       void window::render(std::chrono::nanoseconds delta_time)
       {

@@ -121,15 +121,6 @@ namespace owl::inline v0
             m_logger.info("window \"{}\" is now in focus", m_window_in_focus->title());
          }
       }
-      else
-      {
-         if (m_window_in_focus)
-         {
-            m_logger.info("window \"{}\" is no longer in focus", m_window_in_focus->title());
-         }
-
-         m_window_in_focus = nullptr;
-      }
    }
    void system::handle_command(command cmd)
    {
@@ -142,6 +133,8 @@ namespace owl::inline v0
             const auto it = std::ranges::find(m_windows, m_window_in_focus, &unique_window::get);
             if (it != std::end(m_windows))
             {
+               m_logger.info("window \"{}\" closed", m_window_in_focus->title());
+
                m_windows.erase(ranges::remove(m_windows, m_window_in_focus, &unique_window::get),
                                std::end(m_windows));
                m_window_in_focus = nullptr;
@@ -160,7 +153,7 @@ namespace owl::inline v0
 
    auto system::make_window(std::string_view name) -> window&
    {
-      std::unique_ptr p_window =
+      auto p_window =
          std::make_unique<x11::window>(x11::window_create_info{.p_system = this,
                                                                .name = name,
                                                                .conn = m_xserver_connection,

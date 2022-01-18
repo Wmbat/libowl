@@ -113,9 +113,16 @@ namespace owl::inline v0
          {
             // NOLINTNEXTLINE
             auto *client_message = reinterpret_cast<xcb_client_message_event_t *>(event.get());
-            if (client_message->data.data32[0] == conn.protocol_prop.delete_atom)
+            if (client_message->type == conn.protocol_prop.atom)
             {
-               return some(event_variant(command::close_window));
+               if (client_message->data.data32[0] == conn.protocol_prop.delete_atom)
+               {
+                  return some(event_variant(command::close_window));
+               }
+               else
+               {
+                  return some(event_variant(command::ignore));
+               }
             }
 
             return some(event_variant(command::ignore));

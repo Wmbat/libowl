@@ -29,7 +29,7 @@ namespace owl::inline v0
          window(window_create_info&& info);
          window(const window& wnd) = delete;
          window(window&& wnd) noexcept = delete;
-         ~window() override = default;
+         ~window() override;
 
          auto operator=(const window& wnd) = delete;
          auto operator=(window&& wnd) noexcept = delete;
