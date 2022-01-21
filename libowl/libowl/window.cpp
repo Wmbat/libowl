@@ -6,6 +6,8 @@ namespace owl::inline v0
 {
    void window::render(std::chrono::nanoseconds) {}
 
+   void window::handle_event(const key_event&) {}
+
    [[nodiscard]] auto window::is_gui_thread() const noexcept -> bool
    {
       return m_system.is_gui_thread();
@@ -16,6 +18,12 @@ namespace owl::inline v0
    {
       return m_surface;
    }
+   [[nodiscard]] auto window::monitor() const noexcept -> const owl::monitor&
+   {
+      assert(mp_target_monitor != nullptr); // NOLINT
+
+      return *mp_target_monitor;
+   }
 
    void window::set_physical_device(ash::physical_device&& device) noexcept
    {
@@ -25,7 +33,7 @@ namespace owl::inline v0
    }
 
    window::window(system& system, std::string_view title, spdlog::logger& logger) :
-      m_system(system), m_logger(logger), m_title(title)
+      m_system(system), m_logger(logger), m_title(title), mp_target_monitor(nullptr)
    {}
 
    [[nodiscard]] auto window::logger() const noexcept -> spdlog::logger& { return m_logger; }

@@ -41,8 +41,6 @@ namespace owl::inline v0
       private:
          xcb_connection_t* mp_connection;
          xcb_window_t m_window_handle;
-
-         monitor* mp_target_monitor;
       };
    } // namespace x11
 } // namespace owl::inline v0

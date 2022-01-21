@@ -4,6 +4,7 @@
 #include <libowl/chrono.hpp>
 #include <libowl/gui/event/command.hpp>
 #include <libowl/gui/event/focus_event.hpp>
+#include <libowl/gui/event/structure_changed_event.hpp>
 #include <libowl/gui/monitor.hpp>
 #include <libowl/types.hpp>
 #include <libowl/version.hpp>
@@ -39,6 +40,7 @@ namespace owl::inline v0
 
    private:
       void handle_events();
+      void handle_structure_changed_event(const structure_changed_event& event);
       void handle_focus_event(const focus_event& event);
       void handle_command(command cmd);
 

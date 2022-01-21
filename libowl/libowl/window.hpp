@@ -10,6 +10,7 @@
 #define LIBOWL_WINDOW_HPP_
 
 #include <libowl/gfx/render_surface.hpp>
+#include <libowl/gui/event/keyboard_event.hpp>
 #include <libowl/gui/monitor.hpp>
 
 #include <libash/device.hpp>
@@ -38,6 +39,8 @@ namespace owl::inline v0
 
       virtual void render(std::chrono::nanoseconds delta_time);
 
+      void handle_event(const key_event& event);
+
       [[nodiscard]] virtual auto id() const noexcept -> u32 = 0;
 
       /**
@@ -60,6 +63,10 @@ namespace owl::inline v0
        * @brief Get the window's render surface
        */
       [[nodiscard]] auto surface() const noexcept -> const render_surface&;
+      /**
+       * @brief Get the monitor the window currently is on
+       */
+      [[nodiscard]] auto monitor() const noexcept -> const owl::monitor&;
 
    protected:
       window(system& system, std::string_view title, spdlog::logger& logger);
@@ -74,6 +81,8 @@ namespace owl::inline v0
       spdlog::logger& m_logger;
 
       std::string m_title;
+
+      owl::monitor* mp_target_monitor;
 
       render_surface m_surface;
       ash::physical_device m_physical_device;

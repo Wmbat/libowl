@@ -11,6 +11,7 @@
 #include <libowl/gui/event/focus_event.hpp>
 #include <libowl/gui/event/keyboard_event.hpp>
 #include <libowl/gui/event/mouse_event.hpp>
+#include <libowl/gui/event/structure_changed_event.hpp>
 
 #include <libreglisse/maybe.hpp>
 
@@ -18,8 +19,8 @@
 
 namespace owl::inline v0
 {
-   using event_variant =
-      std::variant<key_event, mouse_button_event, mouse_movement_event, focus_event, command>;
+   using event_variant = std::variant<key_event, mouse_button_event, mouse_movement_event,
+                                      structure_changed_event, focus_event, command>;
 
 #if defined(LIBOWL_USE_X11)
    using unique_event = std::unique_ptr<xcb_generic_event_t, void (*)(void *)>;

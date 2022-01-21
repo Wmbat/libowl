@@ -56,6 +56,14 @@ namespace owl::inline v0
          return {.type = type, .mods = modifiers, .time = std::chrono::milliseconds(event.time)};
       }
 
+      auto handle_configure_notify_event(const xcb_configure_notify_event_t &event)
+         -> structure_changed_event
+      {
+         return {
+            .dimension = {.x = event.x, .y = event.y, .width = event.width, .height = event.height},
+            .window_id = event.window};
+      }
+
       template <typename T>
       auto to_event_type(const unique_event &event) -> const T &
       {
@@ -71,31 +79,22 @@ namespace owl::inline v0
 
          if (event_type == XCB_KEY_PRESS)
          {
-            const auto key_press_event = to_event_type<xcb_key_press_event_t>(event);
+            const auto &key_press_event = to_event_type<xcb_key_press_event_t>(event);
             const auto event = handle_key_event(conn, key_press_event, key_event_type::press);
 
             return some(event_variant(event));
          }
          else if (event_type == XCB_KEY_RELEASE)
          {
-            const auto key_release_event = to_event_type<xcb_key_release_event_t>(event);
+            const auto &key_release_event = to_event_type<xcb_key_release_event_t>(event);
             const auto event = handle_key_event(conn, key_release_event, key_event_type::release);
 
             return some(event_variant(event));
          }
-         else if (event_type == XCB_FOCUS_IN)
+         else if (event_type == XCB_MOTION_NOTIFY)
          {
-            const auto focus_in_event = to_event_type<xcb_focus_in_event_t>(event);
-
-            return some(event_variant(
-               focus_event{.type = focus_type::in, .window_id = focus_in_event.event}));
-         }
-         else if (event_type == XCB_FOCUS_OUT)
-         {
-            const auto focus_out_event = to_event_type<xcb_focus_out_event_t>(event);
-
-            return some(event_variant(
-               focus_event{.type = focus_type::out, .window_id = focus_out_event.event}));
+            fmt::print("MOTION EVENT\n");
+            return some(event_variant(command::ignore));
          }
          else if (event_type == XCB_ENTER_NOTIFY)
          {
@@ -105,17 +104,36 @@ namespace owl::inline v0
          {
             return some(event_variant(command::ignore));
          }
+         else if (event_type == XCB_FOCUS_IN)
+         {
+            const auto &focus_in_event = to_event_type<xcb_focus_in_event_t>(event);
+
+            return some(event_variant(
+               focus_event{.type = focus_type::in, .window_id = focus_in_event.event}));
+         }
+         else if (event_type == XCB_FOCUS_OUT)
+         {
+            const auto &focus_out_event = to_event_type<xcb_focus_out_event_t>(event);
+
+            return some(event_variant(
+               focus_event{.type = focus_type::out, .window_id = focus_out_event.event}));
+         }
          else if (event_type == XCB_EXPOSE)
          {
             return some(event_variant(command::render_window));
          }
+         else if (event_type == XCB_CONFIGURE_NOTIFY)
+         {
+            const auto &configure_notify_event = to_event_type<xcb_configure_notify_event_t>(event);
+
+            return some(event_variant(handle_configure_notify_event(configure_notify_event)));
+         }
          else if (event_type == XCB_CLIENT_MESSAGE)
          {
-            // NOLINTNEXTLINE
-            auto *client_message = reinterpret_cast<xcb_client_message_event_t *>(event.get());
-            if (client_message->type == conn.protocol_prop.atom)
+            const auto client_message = to_event_type<xcb_client_message_event_t>(event);
+            if (client_message.type == conn.protocol_prop.atom)
             {
-               if (client_message->data.data32[0] == conn.protocol_prop.delete_atom)
+               if (client_message.data.data32[0] == conn.protocol_prop.delete_atom)
                {
                   return some(event_variant(command::close_window));
                }

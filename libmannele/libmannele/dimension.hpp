@@ -9,7 +9,6 @@
 #ifndef LIBMANNELE_DIMENSION_HPP_
 #define LIBMANNELE_DIMENSION_HPP_
 
-#include "fmt/core.h"
 #include <libmannele/core.hpp>
 #include <libmannele/maths/number.hpp>
 

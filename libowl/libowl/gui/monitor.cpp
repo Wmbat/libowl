@@ -7,10 +7,6 @@
 #include <xcb/randr.h>
 #include <xcb/xcb.h>
 
-using reglisse::err;
-using reglisse::ok;
-using reglisse::result;
-
 namespace rv = ranges::views;
 
 namespace owl::inline v0
@@ -86,12 +82,13 @@ namespace owl::inline v0
       auto to_monitor(output_info&& info) -> monitor
       {
          return {.name = std::move(info.name),
-                 .offset = {info.crtc->x, info.crtc->y},
-                 .size = {info.crtc->width, info.crtc->height}};
+                 .dimensions = {.x = info.crtc->x,
+                                .y = info.crtc->y,
+                                .width = info.crtc->width,
+                                .height = info.crtc->height}};
       }
 
    } // namespace
-
 
    auto list_available_monitors(const x11::connection& conn) -> std::vector<monitor>
    {

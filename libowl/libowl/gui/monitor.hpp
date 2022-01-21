@@ -12,12 +12,26 @@
 
 namespace owl::inline v0
 {
+   /**
+    * @brief Struct used to represent rectangles in monitor related contexts. The data is presented
+    * in pixels
+    */
+   struct monitor_dimensions
+   {
+      i16 x;      ///< The x position of a monitor
+      i16 y;      ///< The y position of a monitor
+      u16 width;  ///< The width of a monitor
+      u16 height; ///< The height of a monitor
+   };
+
+   /**
+    * @brief 
+    */
    struct monitor
    {
       std::string name;
 
-      mannele::position_i16 offset;
-      mannele::dimension_u16 size;
+      monitor_dimensions dimensions;
    };
 
 #if defined(LIBOWL_USE_X11)
@@ -36,6 +50,22 @@ namespace owl::inline v0
 } // namespace owl::inline v0
 
 template <>
+struct fmt::formatter<owl::monitor_dimensions>
+{
+   constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
+   {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const owl::monitor_dimensions& dimensions, FormatContext& ctx) -> decltype(ctx.out())
+   {
+      return format_to(ctx.out(), "{{.x = {}, .y = {}, .width = {}, .height = {}}}", dimensions.x,
+                       dimensions.y, dimensions.width, dimensions.height);
+   }
+};
+
+template <>
 struct fmt::formatter<owl::monitor>
 {
    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin())
@@ -46,9 +76,8 @@ struct fmt::formatter<owl::monitor>
    template <typename FormatContext>
    auto format(const owl::monitor& monitor, FormatContext& ctx) -> decltype(ctx.out())
    {
-      return format_to(ctx.out(), "monitor{{ .name = {} .offset = {{{}, {}}} .size = {{{}, {}}} }}",
-                       monitor.name, monitor.offset.x, monitor.offset.y, monitor.size.width,
-                       monitor.size.height);
+      return format_to(ctx.out(), "monitor{{.name = {}, .dimensions = {}}}", monitor.name,
+                       monitor.dimensions);
    }
 };
 

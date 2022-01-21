@@ -99,13 +99,27 @@ namespace owl::inline v0
          // clang-format off
          std::visit(
             overloaded{
-               [](const key_event&) {}, 
+               [&](const key_event& e) { m_window_in_focus->handle_event(e); }, 
                [](const mouse_button_event&) {},
                [](const mouse_movement_event&) {},
+               [&](const structure_changed_event& e) { handle_structure_changed_event(e); },
                [&](const focus_event& e) { handle_focus_event(e); },
                [&](command cmd) { handle_command(cmd); } },
             event.borrow());
          // clang-format on
+      }
+   }
+
+   void system::handle_structure_changed_event(const structure_changed_event& event)
+   {
+      const auto it = std::ranges::find(m_windows, event.window_id, &window::id);
+      if (it != std::end(m_windows))
+      {
+         m_logger.debug("window \"{}\" has been moved to {}", (*it)->title(), event.dimension);
+      }
+      else
+      {
+         m_logger.warn("window with id {} was not found!", event.window_id);
       }
    }
    void system::handle_focus_event(const focus_event& event)
@@ -119,6 +133,10 @@ namespace owl::inline v0
             m_window_in_focus = it->get();
 
             m_logger.info("window \"{}\" is now in focus", m_window_in_focus->title());
+         }
+         else
+         {
+            m_logger.warn("window with id {} was not found!", event.window_id);
          }
       }
    }

@@ -18,7 +18,7 @@ namespace owl::inline v0
    {
       window::window(window_create_info&& info) :
          super(*info.p_system, info.name, info.logger), mp_connection(info.conn.x_server.get()),
-         m_window_handle(xcb_generate_id(mp_connection)), mp_target_monitor(info.p_target_monitor)
+         m_window_handle(xcb_generate_id(mp_connection))
       {
          assert(info.p_target_monitor != nullptr); // NOLINT
 
@@ -31,17 +31,17 @@ namespace owl::inline v0
             screen_iter.data->black_pixel,
             XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS
                | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_ENTER_WINDOW
-               | XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE
-               | XCB_EVENT_MASK_EXPOSURE};
+               | XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+               | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_EXPOSURE};
 
          xcb_create_window(mp_connection, XCB_COPY_FROM_PARENT, m_window_handle,
-                           screen_iter.data->root, mp_target_monitor->offset.x,
-                           mp_target_monitor->offset.y, mp_target_monitor->size.width,
-                           mp_target_monitor->size.height, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                           screen_iter.data->root, super::monitor().dimensions.x,
+                           super::monitor().dimensions.y, super::monitor().dimensions.width,
+                           super::monitor().dimensions.height, 1, XCB_WINDOW_CLASS_INPUT_OUTPUT,
                            screen_iter.data->root_visual, window_mask,
                            static_cast<const void*>(window_values.data()));
 
-         super::logger().debug("window created on {}", *mp_target_monitor);
+         super::logger().debug("window created on {}", super::monitor());
 
          xcb_change_property(mp_connection, XCB_PROP_MODE_REPLACE, m_window_handle,
                              XCB_ATOM_WM_NAME, XCB_ATOM_STRING, sizeof(char8_t) * CHAR_BIT,
