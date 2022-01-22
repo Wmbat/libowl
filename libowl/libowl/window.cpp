@@ -1,3 +1,11 @@
+/**
+ * @file libowl/window.cpp
+ * @author wmbat-dev@protonmail.com
+ * @date
+ * @brief
+ * @copyright Copyright (C) 2021 wmbat.
+ */
+
 #include <libowl/window.hpp>
 
 #include <libowl/system.hpp>

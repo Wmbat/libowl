@@ -1,3 +1,5 @@
+
+
 #ifndef LIBOWL_SYSTEM_HPP_
 #define LIBOWL_SYSTEM_HPP_
 
@@ -25,15 +27,35 @@ namespace owl::inline v0
       .major = LIBOWL_VERSION_MAJOR, .minor = LIBOWL_VERSION_MINOR, .patch = LIBOWL_VERSION_PATCH};
 
    /**
-    * @brief Initializes
+    * @brief Central starting point of the library. Used for keeping track of all the windows and
+    * events for the GUI
+    *
+    * This class will initialize all the necessary components such as the underlying supported
+    * window architecture (x11) as well as initializing the necessary vulkan components for the GPU
+    * rendering of the GUI.
     */
    class system
    {
    public:
-      system(std::string_view app_name);
+      /**
+       * @brief Initializes the gui system
+       *
+       * @param[in] app_name The name of the app
+       */
+      explicit system(std::string_view app_name);
 
+      /**
+       * @brief The main loop
+       */
       auto run() -> i32;
 
+      /**
+       * @brief Create a new window
+       *
+       * @param[in] name The name of the window
+       *
+       * @return A reference to the newly created window
+       */
       auto make_window(std::string_view name) -> window&;
 
       [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
@@ -46,6 +68,13 @@ namespace owl::inline v0
 
       void render(std::chrono::nanoseconds delta_time);
 
+      /**
+       * @brief Add a window to the list of root windows stored by the system
+       *
+       * @param[in] wnd The window to add_window
+       *
+       * @return A reference to the just added window.
+       */
       auto add_window(unique_window&& wnd) -> window&;
 
    private:

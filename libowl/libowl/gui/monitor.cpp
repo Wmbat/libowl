@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gui/monitor.cpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief 
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #include <libowl/gui/monitor.hpp>
 
 #include <range/v3/range/conversion.hpp>

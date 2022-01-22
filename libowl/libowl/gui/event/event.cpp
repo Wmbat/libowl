@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gui/event/event.cpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief 
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #include <libowl/gui/event/event.hpp>
 
 #include <libowl/gui/keyboard_modifiers.hpp>
@@ -18,8 +26,10 @@ namespace owl::inline v0
 #if defined(LIBOWL_USE_X11)
    namespace
    {
+      using unique_event = std::unique_ptr<xcb_generic_event_t, void (*)(void *)>;
+
       /**
-       * @brief
+       * @brief Convert an xcb state mask to a key_modifier_flags
        */
       auto key_press_state_mask_to_modifiers(u32 state_mask) -> key_modifier_flags
       {

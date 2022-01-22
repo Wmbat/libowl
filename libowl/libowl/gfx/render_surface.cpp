@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gfx/render_surface.cpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief 
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #include <libowl/gfx/render_surface.hpp>
 
 namespace owl::inline v0

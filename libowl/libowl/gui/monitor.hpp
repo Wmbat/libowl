@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gui/monitor.hpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #ifndef LIBOWL_GUI_MONITOR_HPP_
 #define LIBOWL_GUI_MONITOR_HPP_
 
@@ -25,27 +33,24 @@ namespace owl::inline v0
    };
 
    /**
-    * @brief 
+    * @brief Holds the information to identify monitors plugged into the computer
     */
    struct monitor
    {
-      std::string name;
+      std::string name; ///< The name of the monitor
 
-      monitor_dimensions dimensions;
+      monitor_dimensions dimensions; ///< The full dimensions of the monitor
    };
 
 #if defined(LIBOWL_USE_X11)
-
    /**
     * @brief Finds all monitors currently accessible by the X server.
     *
-    * @param[in] conn
-    * @param[in] logger
+    * @param[in] conn The connection to the X server
     *
-    * @return
+    * @return A list of monitors plugged into the computer
     */
    auto list_available_monitors(const x11::connection& conn) -> std::vector<monitor>;
-
 #endif // defined (LIBOWL_USE_X11)
 } // namespace owl::inline v0
 

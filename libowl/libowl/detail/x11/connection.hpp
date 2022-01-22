@@ -19,6 +19,9 @@ namespace owl::inline v0
    {
       using unique_x_connection = std::unique_ptr<xcb_connection_t, void (*)(xcb_connection_t*)>;
 
+      /**
+       * @brief All possible error values from a failure to connect to the X server
+       */
       enum struct server_connection_error_code
       {
          connection_error = 1,

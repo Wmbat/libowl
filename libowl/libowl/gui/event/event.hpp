@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gui/event/event.hpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief Contains everything related to event handling in libowl
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #ifndef LIBOWL_GUI_EVENT_HPP_
 #define LIBOWL_GUI_EVENT_HPP_
 
@@ -19,16 +27,19 @@
 
 namespace owl::inline v0
 {
+   /**
+    * @brief type alias for a union over all supported event types
+    */
    using event_variant = std::variant<key_event, mouse_button_event, mouse_movement_event,
                                       structure_changed_event, focus_event, command>;
 
 #if defined(LIBOWL_USE_X11)
-   using unique_event = std::unique_ptr<xcb_generic_event_t, void (*)(void *)>;
-
    /**
-    * @brief
+    * @brief Check if there are any new events to handle
     *
-    * @param[in] conn
+    * @param[in] conn The connection to the X server
+    *
+    * @return the maybe will be empty if there is no event
     */
    auto poll_for_event(const x11::connection &conn) -> reglisse::maybe<event_variant>;
 #endif // defined (LIBOWL_USE_X11)

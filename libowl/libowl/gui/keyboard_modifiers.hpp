@@ -1,5 +1,9 @@
 /**
- *
+ * @file libowl/gui/keyboard_modifiers.hpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief
+ * @copyright Copyright (C) 2022 wmbat
  */
 
 #ifndef LIBOWL_GUI_KEYBOARD_MODIFIERS_HPP_

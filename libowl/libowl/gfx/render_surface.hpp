@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gfx/render_surface.hpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief 
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #ifndef LIBOWL_GFX_RENDER_SURFACE_HPP_
 #define LIBOWL_GFX_RENDER_SURFACE_HPP_
 

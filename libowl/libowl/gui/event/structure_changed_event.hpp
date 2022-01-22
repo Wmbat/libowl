@@ -1,3 +1,11 @@
+/**
+ * @file libowl/gui/event/structure_changed_event.hpp
+ * @author wmbat wmbat-dev@protonmail.com
+ * @date 22nd of January 2022
+ * @brief 
+ * @copyright Copyright (C) 2022 wmbat
+ */
+
 #ifndef LIBOWL_GUI_EVENT_STRUCTURE_CHANGED_EVENT_HPP_
 #define LIBOWL_GUI_EVENT_STRUCTURE_CHANGED_EVENT_HPP_
 
