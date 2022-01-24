@@ -304,11 +304,14 @@ namespace ash::inline v0
       {
          const auto flags = input.flag;
          const u32 family = input.family;
-         const u32 index = ranges::count(already_selected, family, &desired_queue_data::family);
+         const i64 index = stdr::count(already_selected, family, &desired_queue_data::family);
+
+         // TODO(wmbat) add assertion to make sure `index` is not over numeric_limit<u32>::max()
 
          if (index <= input.count)
          {
-            return some(desired_queue_data{.flags = flags, .family = family, .index = index});
+            return some(desired_queue_data{
+               .flags = flags, .family = family, .index = static_cast<u32>(index)});
          }
          else
          {

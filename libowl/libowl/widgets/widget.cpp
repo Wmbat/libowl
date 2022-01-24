@@ -8,7 +8,7 @@
 
 #include <libowl/widgets/widget.hpp>
 
-#include <assert.hpp>
+#include <libgerbil/assert.hpp>
 
 namespace owl::inline v0
 {

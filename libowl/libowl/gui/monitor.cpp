@@ -2,7 +2,7 @@
  * @file libowl/gui/monitor.cpp
  * @author wmbat wmbat-dev@protonmail.com
  * @date 22nd of January 2022
- * @brief 
+ * @brief
  * @copyright Copyright (C) 2022 wmbat
  */
 
@@ -67,7 +67,9 @@ namespace owl::inline v0
          const i32 count = xcb_randr_get_output_info_name_length(info);
          const u8* p_name = xcb_randr_get_output_info_name(info);
 
-         return std::string_view(reinterpret_cast<const char*>(p_name), count); // NOLINT
+         // NOLINTNEXTLINE
+         return std::string_view(reinterpret_cast<const char*>(p_name),
+                                 static_cast<std::size_t>(count));
       }
       auto query_resources_output_crtc(xcb_connection_t* p_connection,
                                        xcb_randr_get_output_info_reply_t* info) -> crtc_info_reply

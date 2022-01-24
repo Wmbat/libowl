@@ -1,0 +1,3 @@
+# libhawk
+
+C++ library

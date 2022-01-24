@@ -9,7 +9,7 @@
 
 #include <libreglisse/maybe.hpp>
 
-#include <assert.hpp>
+#include <libgerbil/assert.hpp>
 
 #include <compare>
 #include <limits>
@@ -56,9 +56,9 @@ namespace owl::inline v0
             assert(keycode.value() >= conn.min_keycode); // NOLINT
             assert(keycode.value() <= conn.max_keycode); // NOLINT
 
-            const auto keysyms_per_key_code = conn.keysyms_per_keycode;
-            const auto adjusted_key_code = keycode.value() - conn.min_keycode;
-            const auto keysym_offset = detail::compute_keysim_offset(mods);
+            const u32 keysyms_per_key_code = conn.keysyms_per_keycode;
+            const u32 adjusted_key_code = keycode.value() - conn.min_keycode;
+            const u32 keysym_offset = detail::compute_keysim_offset(mods);
 
             m_value = conn.keysyms[keysym_offset + adjusted_key_code * keysyms_per_key_code];
          }

@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libhawk/
+}
+
+export $out_root/libhawk/$import.target

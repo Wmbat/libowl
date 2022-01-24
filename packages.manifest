@@ -3,6 +3,10 @@ location: libmannele/
 :
 location: libash/
 :
+location: libhawk/
+:
 location: libowl/
 :
 location: samples/gui-demo/
+:
+location: libgerbil/

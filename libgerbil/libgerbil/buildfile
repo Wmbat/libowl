@@ -1,14 +1,9 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import intf_libs += libreglisse%lib{reglisse}
-import intf_libs += range-v3%lib{range-v3}
-import intf_libs += magic_enum%lib{magic_enum}
+import intf_libs += fmt%lib{fmt}
 
-lib{mannele}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
-
-if $enable_debug_logging
-    cxx.poptions += -DLIBMANNELE_ENABLE_DEBUG_LOGGING
+lib{gerbil}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that
@@ -26,34 +21,34 @@ hxx{export}@./: cxx.importable = false
 #
 cxx.poptions =+ "-I$out_root" "-I$src_root"
 
-{hbmia obja}{*}: cxx.poptions += -DLIBMANNELE_STATIC_BUILD
-{hbmis objs}{*}: cxx.poptions += -DLIBMANNELE_SHARED_BUILD
+{hbmia obja}{*}: cxx.poptions += -DLIBGERBIL_STATIC_BUILD
+{hbmis objs}{*}: cxx.poptions += -DLIBGERBIL_SHARED_BUILD
 
 # Export options.
 #
-lib{mannele}:
+lib{gerbil}:
 {
   cxx.export.poptions = "-I$out_root" "-I$src_root"
   cxx.export.libs = $intf_libs
 }
 
-liba{mannele}: cxx.export.poptions += -DLIBMANNELE_STATIC
-libs{mannele}: cxx.export.poptions += -DLIBMANNELE_SHARED
+liba{gerbil}: cxx.export.poptions += -DLIBGERBIL_STATIC
+libs{gerbil}: cxx.export.poptions += -DLIBGERBIL_SHARED
 
 # For pre-releases use the complete version to make sure they cannot be used
 # in place of another pre-release or the final version. See the version module
 # for details on the version.* variable values.
 #
 if $version.pre_release
-  lib{mannele}: bin.lib.version = @"-$version.project_id"
+  lib{gerbil}: bin.lib.version = "-$version.project_id"
 else
-  lib{mannele}: bin.lib.version = @"-$version.major.$version.minor"
+  lib{gerbil}: bin.lib.version = "-$version.major.$version.minor"
 
-# Install into the libmannele/ subdirectory of, say, /usr/include/
+# Install into the libgerbil/ subdirectory of, say, /usr/include/
 # recreating subdirectories.
 #
 {hxx ixx txx}{*}:
 {
-  install         = include/libmannele/
+  install         = include/libgerbil/
   install.subdirs = true
 }

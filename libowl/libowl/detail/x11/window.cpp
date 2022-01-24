@@ -4,7 +4,7 @@
 
 #include <libash/detail/vulkan.hpp>
 
-#include <assert.hpp>
+#include <libgerbil/assert.hpp>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
