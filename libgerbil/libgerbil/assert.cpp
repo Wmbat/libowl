@@ -978,17 +978,6 @@ namespace gerbil::inline v0
        * C++ syntax analysis logic
        */
 
-      [[gnu::cold]] highlight_block::highlight_block(std::string_view color, std::string content) :
-         color(color), content(std::move(content))
-      {}
-      [[gnu::cold]] highlight_block::highlight_block(const highlight_block& other) = default;
-      [[gnu::cold]] highlight_block::highlight_block(highlight_block&& other) noexcept = default;
-      [[gnu::cold]] highlight_block::~highlight_block() = default;
-      [[gnu::cold]] auto highlight_block::operator=(const highlight_block&)
-         -> highlight_block& = default;
-      [[gnu::cold]] auto highlight_block::operator=(highlight_block&&) noexcept
-         -> highlight_block& = default;
-
       [[gnu::cold]] auto union_regexes(std::initializer_list<std::string_view> regexes)
          -> std::string
       {
@@ -1339,25 +1328,25 @@ namespace gerbil::inline v0
                      output.push_back({CYAN, token.str});
                      break;
                   case token_e::string:
-                     output.emplace_back(
-                        GREEN, std::regex_replace(token.str, escapes_re, BLUE "$&" GREEN));
+                     output.push_back(
+                        {GREEN, std::regex_replace(token.str, escapes_re, BLUE "$&" GREEN)});
                      break;
                   case token_e::identifier:
                      if (peek().str == "(")
                      {
-                        output.emplace_back(BLUE, token.str);
+                        output.push_back({BLUE, token.str});
                      }
                      else if (peek().str == "::")
                      {
-                        output.emplace_back(YELLOW, token.str);
+                        output.push_back({YELLOW, token.str});
                      }
                      else
                      {
-                        output.emplace_back(BLUE, token.str);
+                        output.push_back({BLUE, token.str});
                      }
                      break;
                   case token_e::whitespace:
-                     output.emplace_back("", token.str);
+                     output.push_back({"", token.str});
                      break;
                }
             }
@@ -1748,17 +1737,6 @@ namespace gerbil::inline v0
       /*
        * stack trace printing
        */
-
-      [[gnu::cold]] column_t::column_t(size_t width, std::vector<highlight_block> blocks,
-                                       bool right_align) :
-         width(width),
-         blocks(std::move(blocks)), right_align(right_align)
-      {}
-      [[gnu::cold]] column_t::column_t(const column_t&) = default;
-      [[gnu::cold]] column_t::column_t(column_t&&) noexcept = default;
-      [[gnu::cold]] column_t::~column_t() = default;
-      [[gnu::cold]] auto column_t::operator=(const column_t&) -> column_t& = default;
-      [[gnu::cold]] auto column_t::operator=(column_t&&) noexcept -> column_t& = default;
 
       [[gnu::cold]] static constexpr auto log10(int n) -> int
       {

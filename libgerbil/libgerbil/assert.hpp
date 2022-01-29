@@ -465,13 +465,6 @@ namespace gerbil::inline v0
       {
          std::string_view color;
          std::string content;
-         // Get as much code into the .cpp as possible
-         highlight_block(std::string_view, std::string);
-         highlight_block(const highlight_block&);
-         highlight_block(highlight_block&&) noexcept;
-         ~highlight_block();
-         auto operator=(const highlight_block&) -> highlight_block&;
-         auto operator=(highlight_block&&) noexcept -> highlight_block&;
       };
 
       auto prettify_type(std::string type) -> std::string;
@@ -679,12 +672,6 @@ namespace gerbil::inline v0
          size_t width;
          std::vector<highlight_block> blocks;
          bool right_align = false;
-         column_t(size_t, std::vector<highlight_block>, bool = false);
-         column_t(const column_t&);
-         column_t(column_t&&) noexcept;
-         ~column_t();
-         auto operator=(const column_t&) -> column_t&;
-         auto operator=(column_t&&) noexcept -> column_t&;
       };
 
       void wrapped_print(const std::vector<column_t>& columns);
