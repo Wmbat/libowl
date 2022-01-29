@@ -6,6 +6,8 @@
 //
 // Adapted by wmbat
 
+#include <fmt/core.h>
+
 #include <bitset>
 #include <cstdio>
 #include <cstdlib>
@@ -627,7 +629,8 @@ namespace assert_detail
                oss << std::showbase << std::oct;
                break;
             case literal_format::binary:
-               oss << "0b" << std::bitset<sizeof(t) * 8>(t);
+               oss << fmt::format("{:0b}", t);
+               // oss << "0b" << std::bitset<sizeof(t) * 8>(t);
                goto r;
             default:
                primitive_assert(false, "unexpected literal format requested for printing");

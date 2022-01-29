@@ -3,6 +3,7 @@
 #include <libgerbil/assert.hpp>
 
 #include <fmt/core.h>
+#include <fmt/printf.h>
 
 // Jeremy Rifkin 2021
 // https://github.com/jeremy-rifkin/asserts
@@ -2123,15 +2124,15 @@ namespace assert_detail
             {
                i += recursion_folded;
                std::string s = stringf("| %d layers of recursion were folded |", recursion_folded);
-               fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
-               fprintf(stderr, BLUE "%s" RESET "\n", s.c_str());
-               fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
+               fmt::fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
+               fmt::fprintf(stderr, BLUE "%s" RESET "\n", s.c_str());
+               fmt::fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
             }
          }
       }
       else
       {
-         fprintf(stderr, "Error while generating stack trace.\n");
+         fmt::fprintf(stderr, "Error while generating stack trace.\n");
       }
    }
 
