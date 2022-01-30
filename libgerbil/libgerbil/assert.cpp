@@ -1067,7 +1067,7 @@ namespace gerbil::inline v0
             {"or_eq", "|="}, {"xor_eq", "^="}, {"not_eq", "!="}};
          std::unordered_set<std::string_view> bitwise_operators = {
             "^", "&", "|", "^=", "&=", "|=", "xor", "bitand", "bitor", "and_eq", "or_eq", "xor_eq"};
-         std::vector<std::pair<std::regex, literal_format>> literal_formats;
+         std::vector<std::pair<std::regex, literal_type>> literal_formats;
 
       private:
          [[gnu::cold]] analysis()
@@ -1189,12 +1189,12 @@ namespace gerbil::inline v0
                rules[i] = {rules_raw[i].first, std::regex(str)};
             }
             // setup literal format rules
-            literal_formats = {{std::regex(int_binary), literal_format::binary},
-                               {std::regex(int_octal), literal_format::octal},
-                               {std::regex(int_decimal), literal_format::dec},
-                               {std::regex(int_hex), literal_format::hex},
-                               {std::regex(float_decimal), literal_format::dec},
-                               {std::regex(float_hex), literal_format::hex}};
+            literal_formats = {{std::regex(int_binary), literal_type::binary},
+                               {std::regex(int_octal), literal_type::octal},
+                               {std::regex(int_decimal), literal_type::decimal},
+                               {std::regex(int_hex), literal_type::hexadecimal},
+                               {std::regex(float_decimal), literal_type::decimal},
+                               {std::regex(float_hex), literal_type::hexadecimal}};
             // generate precedence table
             // bottom few rows of the precedence table:
             const std::unordered_map<int, std::vector<std::string_view>> precedences = {
@@ -1355,18 +1355,6 @@ namespace gerbil::inline v0
          catch (...)
          {
             return {{"", expression}};
-         }
-
-         [[gnu::cold]] auto _get_literal_format(const std::string& expression) -> literal_format
-         {
-            for (auto& [re, type] : literal_formats)
-            {
-               if (std::regex_match(expression, re))
-               {
-                  return type;
-               }
-            }
-            return literal_format::none; // not a literal
          }
 
          [[gnu::cold]] auto find_last_non_ws(const std::vector<token_t>& tokens, size_t i)
@@ -1680,10 +1668,12 @@ namespace gerbil::inline v0
 #endif
       }
 
+      /*
       [[gnu::cold]] auto get_literal_format(const std::string& expression) -> literal_format
       {
          return analysis::get()._get_literal_format(expression);
       }
+      */
 
       [[gnu::cold]] auto trim_suffix(const std::string& expression) -> std::string
       {

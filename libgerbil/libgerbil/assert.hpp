@@ -6,6 +6,7 @@
 //
 // Adapted by wmbat
 
+#include <libgerbil/assert/detail/parser.hpp>
 #include <libgerbil/assert/detail/source_location.hpp>
 
 #include <fmt/core.h>
@@ -452,6 +453,7 @@ namespace gerbil::inline v0
        * C++ syntax analysis logic
        */
 
+      /*
       enum class literal_format
       {
          dec,
@@ -460,6 +462,7 @@ namespace gerbil::inline v0
          binary,
          none
       };
+      */
 
       struct highlight_block
       {
@@ -473,7 +476,7 @@ namespace gerbil::inline v0
 
       auto highlight_blocks(const std::string& expression) -> std::vector<highlight_block>;
 
-      auto get_literal_format(const std::string& expression) -> literal_format;
+      // auto get_literal_format(const std::string& expression) -> literal_format;
 
       auto trim_suffix(const std::string& expression) -> std::string;
 
@@ -555,7 +558,7 @@ namespace gerbil::inline v0
 
       template <typename T>
       [[gnu::cold]] auto stringify(const T& t,
-                                   [[maybe_unused]] literal_format fmt = literal_format::none)
+                                   [[maybe_unused]] std::optional<literal_type> fmt = std::nullopt)
          -> std::string
       {
          // bool and char need to be before std::is_integral
@@ -601,51 +604,54 @@ namespace gerbil::inline v0
          }
          else if constexpr (std::is_integral_v<T>)
          {
-            std::ostringstream oss;
-            switch (fmt)
+            if (fmt)
             {
-               case literal_format::dec:
-                  break;
-               case literal_format::hex:
-                  oss << std::showbase << std::hex;
-                  break;
-               case literal_format::octal:
-                  oss << std::showbase << std::oct;
-                  break;
-               case literal_format::binary:
-                  oss << fmt::format("{:0b}", t);
-                  // oss << "0b" << std::bitset<sizeof(t) * 8>(t);
-                  goto r;
-               default:
-                  primitive_assert(false, "unexpected literal format requested for printing");
+               if (fmt == literal_type::binary)
+               {
+                  return fmt::format("{:#0b}", t);
+               }
+               else if (fmt == literal_type::octal)
+               {
+                  return fmt::format("{:#0}", t);
+               }
+               else if (fmt == literal_type::decimal)
+               {
+                  return fmt::format("{}", t);
+               }
+               else
+               {
+                  return fmt::format("{:#0x}", t);
+               }
             }
-            oss << t;
-         r:
-            return std::move(oss).str();
+            else
+            {
+               primitive_assert(false, "unexpected literal format requested for printing");
+               return "";
+            }
          }
          else if constexpr (std::is_floating_point_v<T>)
          {
-            std::ostringstream oss;
-            switch (fmt)
+            if (fmt)
             {
-               case literal_format::dec:
-                  break;
-               case literal_format::hex:
-                  // apparently std::hexfloat automatically prepends "0x" while std::hex does not
-                  oss << std::hexfloat;
-                  break;
-               case literal_format::octal:
-               case literal_format::binary:
-                  return "";
-               default:
+               if (fmt == literal_type::decimal)
+               {
+                  return fmt::format("{}", t);
+               }
+               else if (fmt == literal_type::hexadecimal)
+               {
+                  return fmt::format("{:#0x}", t);
+               }
+               else
+               {
                   primitive_assert(false, "unexpected literal format requested for printing");
+                  return "";
+               }
             }
-            oss << std::setprecision(std::numeric_limits<T>::max_digits10) << t;
-            std::string s = std::move(oss).str();
-            // std::showpoint adds a bunch of unecessary digits, so manually doing it correctly here
-            if (s.find('.') == std::string::npos)
-               s += ".0";
-            return s;
+            else
+            {
+               primitive_assert(false, "unexpected literal format requested for printing");
+               return "";
+            }
          }
          else
          {
@@ -686,21 +692,24 @@ namespace gerbil::inline v0
                              const std::string& b_str, size_t n_vargs) -> std::string;
 
       template <typename T>
-      [[gnu::cold]] auto generate_stringifications(T&& v, const std::set<literal_format>& formats)
+      [[gnu::cold]] auto generate_stringifications(T&& v, const std::set<literal_type>& formats)
          -> std::vector<std::string>
       {
          if constexpr (std::is_arithmetic<strip<T>>::value && !isa<T, bool> && !isa<T, char>)
          {
             std::vector<std::string> vec;
-            for (literal_format fmt : formats)
+            for (literal_type fmt : formats)
             {
                // TODO: consider pushing empty fillers to keep columns aligned later on? Does not
                // matter at the moment because floats only have decimal and hex literals but could
                // if more formats are added.
                std::string str = stringify(v, fmt);
                if (!str.empty())
+               {
                   vec.push_back(std::move(str));
+               }
             }
+
             return vec;
          }
          else
@@ -719,23 +728,29 @@ namespace gerbil::inline v0
       [[gnu::cold]] void print_binary_diagnostic(A&& a, B&& b, const char* a_str, const char* b_str,
                                                  std::string_view op)
       {
-         // Note: op
-         // figure out what information we need to print in the where clause
-         // find all literal formats involved (literal_format::dec included for everything)
-         auto lformat = get_literal_format(a_str);
-         auto rformat = get_literal_format(b_str);
          // std::set used so formats are printed in a specific order
-         std::set<literal_format> formats = {literal_format::dec, lformat, rformat};
-         formats.erase(
-            literal_format::none); // none is just for when the expression isn't a literal
+         std::set<literal_type> formats = {literal_type::decimal};
+         if (auto lformat = parse_literal_type(a_str))
+         {
+            formats.insert(*lformat);
+         }
+         if (auto rformat = parse_literal_type(b_str))
+         {
+            formats.insert(*rformat);
+         }
+
          if (is_bitwise(op))
-            formats.insert(literal_format::binary); // always display binary for bitwise
+         {
+            formats.insert(literal_type::binary); // always display binary for bitwise
+         }
          primitive_assert(formats.size() > 0);
+
          // generate raw strings for given formats, without highlighting
          std::vector<std::string> lstrings = generate_stringifications(std::forward<A>(a), formats);
          std::vector<std::string> rstrings = generate_stringifications(std::forward<B>(b), formats);
          primitive_assert(lstrings.size() > 0);
          primitive_assert(rstrings.size() > 0);
+
          // pad all columns where there is overlap
          // TODO: Use column printer instead of manual padding.
          for (size_t i = 0; i < std::min(lstrings.size(), rstrings.size()); i++)
@@ -869,7 +884,7 @@ namespace gerbil::inline v0
             }
             else
             {
-               entry.entries.push_back({args_strings[I], stringify(t, literal_format::dec)});
+               entry.entries.push_back({args_strings[I], stringify(t, literal_type::decimal)});
             }
          }
          process_args_step<I + 1>(entry, args_strings, args...);
