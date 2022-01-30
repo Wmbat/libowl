@@ -7,6 +7,7 @@ namespace gerbil::inline v0
 {
    namespace detail
    {
+      auto is_space_character(char c) -> bool;
    } // namespace detail
 } // namespace gerbil::inline v0
 

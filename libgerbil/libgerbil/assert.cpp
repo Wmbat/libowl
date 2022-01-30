@@ -1,9 +1,17 @@
+#include "range/v3/view/concat.hpp"
 #define _0_ASSERT_CPP
 #define _CRT_SECURE_NO_WARNINGS // done only for strerror
 #include <libgerbil/assert.hpp>
 
+#include <libgerbil/assert/detail/string_helpers.hpp>
+
 #include <fmt/core.h>
 #include <fmt/printf.h>
+
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/join.hpp>
+#include <range/v3/view/split.hpp>
+#include <range/v3/view/trim.hpp>
 
 // Jeremy Rifkin 2021
 // https://github.com/jeremy-rifkin/asserts
@@ -39,6 +47,10 @@
 #   define USE_EXECINFO_H
 #endif
 
+#define let const auto
+
+namespace rv = ranges::views;
+
 namespace gerbil::inline v0
 {
    namespace detail
@@ -72,32 +84,6 @@ namespace gerbil::inline v0
       /*
        * string utilities
        */
-
-      [[gnu::cold]] static auto split(std::string_view s, std::string_view delims)
-         -> std::vector<std::string>
-      {
-         std::vector<std::string> vec;
-         size_t old_pos = 0;
-         size_t pos = 0;
-         std::string token;
-         while ((pos = s.find_first_of(delims, old_pos)) != std::string::npos)
-         {
-            token = s.substr(old_pos, pos - old_pos);
-            vec.push_back(token);
-            old_pos = pos + 1;
-         }
-         vec.emplace_back(s.substr(old_pos));
-         return vec;
-      }
-
-      constexpr const char* const ws = " \t\n\r\f\v";
-
-      [[gnu::cold]] static auto trim(const std::string_view s) -> std::string_view
-      {
-         size_t l = s.find_first_not_of(ws);
-         size_t r = s.find_last_not_of(ws) + 1;
-         return s.substr(l, r - l);
-      }
 
       [[gnu::cold]] static void replace_all_dynamic(std::string& str, std::string_view text,
                                                     std::string_view replacement)
@@ -889,7 +875,7 @@ namespace gerbil::inline v0
          return output;
       }
 
-      [[gnu::cold]] static std::optional<std::vector<stacktrace_entry>> get_stacktrace()
+      [[gnu::cold]] static auto get_stacktrace() -> std::optional<std::vector<stacktrace_entry>>
       {
          void* bt[n_frames];
          auto bt_size = static_cast<std::size_t>(backtrace(bt, n_frames));
@@ -943,7 +929,23 @@ namespace gerbil::inline v0
                auto& [addresses, target] = pair;
                // Always two lines per entry?
                // https://kernel.googlesource.com/pub/scm/linux/kernel/git/hjl/binutils/+/hjl/secondary/binutils/addr2line.c
-               auto output = split(trim(resolve_addresses(join(addresses, "\n"), file)), "\n");
+
+               // clang-format off
+
+               let resolved_addresses = 
+                  resolve_addresses(
+                     addresses 
+                        | rv::join('\n') 
+                        | ranges::to<std::string>, 
+                     file);
+
+               let output = resolved_addresses 
+                  | rv::trim(is_space_character) 
+                  | rv::split('\n')
+                  | ranges::to<std::vector<std::string>>;
+
+               // clang-format on
+
                // Cannot wait until we can write ^ that as:
                // join(addresses, "\n") |> resolve_addresses(file) |> trim() |> split("\n");
                primitive_assert(output.size() == 2 * target.size());
@@ -1125,8 +1127,9 @@ namespace gerbil::inline v0
             // https://eel.is/c++draft/lex.pptoken#3.2
             *std::find(std::begin(punctuators), std::end(punctuators), "<:") += "(?!:[^:>])";
             // regular expressions
-            std::string keywords_re = "(?:" + join(keywords, "|") + ")\\b";
-            std::string punctuators_re = join(punctuators, "|");
+            std::string keywords_re =
+               "(?:" + (keywords | rv::join('|') | ranges::to<std::string>()) + ")\\b";
+            std::string punctuators_re = punctuators | rv::join('|') | ranges::to<std::string>();
             // numeric literals
             std::string optional_integer_suffix = "(?:[Uu](?:LL?|ll?|Z|z)?|(?:LL?|ll?|Z|z)[Uu]?)?";
             std::string int_binary = "0[Bb][01](?:'?[01])*" + optional_integer_suffix;
@@ -1602,7 +1605,7 @@ namespace gerbil::inline v0
             // We're only looking for the split, we can just store a set of split indices. No need
             // to store a vector<pair<vector<token_t>, vector<token_t>>>
             std::set<int> candidates;
-            bool success = pseudoparse(std::move(tokens), target_op, 0, 0, 0, -1, 0, candidates);
+            bool success = pseudoparse(tokens, target_op, 0, 0, 0, -1, 0, candidates);
 #ifdef _0_DEBUG_ASSERT_DISAMBIGUATION
             printf("\n%d %d\n", (int)candidates.size(), success);
             for (size_t m : candidates)
@@ -1623,12 +1626,22 @@ namespace gerbil::inline v0
                std::vector<std::string> left_strings;
                std::vector<std::string> right_strings;
                const auto m = static_cast<std::size_t>(*candidates.begin());
+
                for (size_t i = 0; i < m; i++)
+               {
                   left_strings.push_back(tokens[i].str);
+               }
+
                for (size_t i = m + 1; i < tokens.size(); i++)
+               {
                   right_strings.push_back(tokens[i].str);
-               return {std::string(trim(join(left_strings, ""))),
-                       std::string(trim(join(right_strings, "")))};
+               }
+
+               let joined_lefts = left_strings | rv::join("") | ranges::to<std::string>;
+               let joined_rights = right_strings | rv::join("") | ranges::to<std::string>;
+
+               return {joined_lefts | rv::trim(is_space_character) | ranges::to<std::string>,
+                       joined_lefts | rv::trim(is_space_character) | ranges::to<std::string>};
             }
             else
             {
@@ -1770,7 +1783,8 @@ namespace gerbil::inline v0
          // /foo/./x                                foo        x
          // /foo//x                                 f          x
          path_components parts;
-         for (std::string& part : split(path, path_delim))
+         auto paths = path | rv::split(path_delim) | ranges::to<std::vector<std::string>>;
+         for (std::string& part : paths)
          {
             if (parts.empty())
             {
@@ -1805,8 +1819,10 @@ namespace gerbil::inline v0
                }
             }
          }
+
          primitive_assert(!parts.empty());
          primitive_assert(parts.back() != "." && parts.back() != "..");
+
          return parts;
       }
 
@@ -2022,8 +2038,9 @@ namespace gerbil::inline v0
             size_t longest_file_width = 0;
             for (auto& [raw, parsed_path] : parsed_paths)
             {
-               std::string new_path =
-                  join(tries.at(parsed_path.back()).disambiguate(parsed_path), "/");
+               let temp_path = tries.at(parsed_path.back()).disambiguate(parsed_path);
+               std::string new_path = temp_path | rv::join('/') | ranges::to<std::string>;
+
                internal_verify(files.insert({raw, new_path}).second);
                if (new_path.size() > longest_file_width)
                   longest_file_width = new_path.size();
@@ -2038,7 +2055,7 @@ namespace gerbil::inline v0
                         ->line
                      + 1));
             int max_frame_width = log10(int(end) + 1);
-            size_t term_width = size_t(terminal_width()); // will be 0 on error
+            auto term_width = size_t(terminal_width()); // will be 0 on error
             // do the actual trace
             for (size_t i = 0; i <= end; i++)
             {
@@ -2083,7 +2100,7 @@ namespace gerbil::inline v0
                else
                {
                   auto sig = highlight(signature + "("); // hack for the highlighter
-                  sig = sig.substr(0, sig.rfind("("));
+                  sig = sig.substr(0, sig.rfind('('));
                   fmt::print(stderr, "#{} {}\n      at {}:{}\n", frame_number, sig.c_str(),
                              source_path.c_str(), (CYAN + line_number + RESET).c_str());
                   /*
@@ -2115,9 +2132,8 @@ namespace gerbil::inline v0
        * binary diagnostic printing
        */
 
-      [[gnu::cold]] std::string gen_assert_binary(bool verify, const std::string& a_str,
-                                                  const char* op, const std::string& b_str,
-                                                  size_t n_vargs)
+      [[gnu::cold]] auto gen_assert_binary(bool verify, const std::string& a_str, const char* op,
+                                           const std::string& b_str, size_t n_vargs) -> std::string
       {
          return stringf("%s_%s(%s, %s%s);", verify ? "verify" : "assert", op, a_str.c_str(),
                         b_str.c_str(), n_vargs ? ", ..." : "");
@@ -2128,24 +2144,27 @@ namespace gerbil::inline v0
          primitive_assert(vec.size() > 0);
          if (vec.size() == 1)
          {
-            fprintf(stderr, "%s\n", indent(highlight(vec[0]), 8 + lw + 4, ' ', true).c_str());
+            fprintf(stderr, "%s\n", indent(highlight(vec[0]), indent_size + lw + 4, ' ', true).c_str());
          }
          else
          {
             // spacing here done carefully to achieve <expr> =  <a>  <b>  <c>, or similar
             // no indentation done here for multiple value printing
-            fprintf(stderr, " ");
+            fmt::print(stderr, " ");
             for (const auto& str : vec)
             {
                fprintf(stderr, "%s", highlight(str).c_str());
                if (&str != &*--vec.end())
-                  fprintf(stderr, "  ");
+               {
+                  fmt::print(stderr, "  ");
+               }
             }
-            fprintf(stderr, "\n");
+            fmt::print(stderr, "\n");
          }
       }
 
-      [[gnu::cold]] std::vector<highlight_block> get_values(const std::vector<std::string>& vec)
+      [[gnu::cold]] auto get_values(const std::vector<std::string>& vec)
+         -> std::vector<highlight_block>
       {
          primitive_assert(vec.size() > 0);
          if (vec.size() == 1)

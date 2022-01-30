@@ -95,6 +95,8 @@ namespace gerbil::inline v0
 {
    namespace detail
    {
+      static constexpr size_t indent_size = 8;
+
       void primitive_assert_impl(bool c, bool verification, const char* expression,
                                  const char* message = nullptr, source_location location = {});
 
@@ -122,25 +124,6 @@ namespace gerbil::inline v0
 
          std::string str(static_cast<std::size_t>(length), 0);
          snprintf(str.data(), static_cast<size_t>(length) + 1u, args...);
-         return str;
-      }
-
-      template <typename C>
-      [[gnu::cold]] static auto join(const C& container, const std::string_view delim)
-         -> std::string
-      {
-         auto iter = std::begin(container);
-         auto end = std::end(container);
-         std::string str;
-         if (std::distance(iter, end) > 0)
-         {
-            str += *iter;
-            while (++iter != end)
-            {
-               str += delim;
-               str += *iter;
-            }
-         }
          return str;
       }
 
@@ -453,17 +436,6 @@ namespace gerbil::inline v0
        * C++ syntax analysis logic
        */
 
-      /*
-      enum class literal_format
-      {
-         dec,
-         hex,
-         octal,
-         binary,
-         none
-      };
-      */
-
       struct highlight_block
       {
          std::string_view color;
@@ -475,8 +447,6 @@ namespace gerbil::inline v0
       auto highlight(const std::string& expression) -> std::string;
 
       auto highlight_blocks(const std::string& expression) -> std::vector<highlight_block>;
-
-      // auto get_literal_format(const std::string& expression) -> literal_format;
 
       auto trim_suffix(const std::string& expression) -> std::string;
 
@@ -785,19 +755,19 @@ namespace gerbil::inline v0
             // Limit lw to about half the screen. TODO: Re-evaluate what we want to do here.
             if (term_width > 0)
             {
-               lw = std::min(lw, term_width / 2 - 8 /* indent */ - 4 /* arrow */);
+               lw = std::min(lw, term_width / 2 - indent_size - 4 /* arrow */);
             }
 
-            fprintf(stderr, "    Where:\n");
+            fmt::print(stderr, "    Where:\n");
             auto print_clause = [term_width, lw](const char* expr_str,
                                                  std::vector<std::string>& expr_strs) {
                if (term_width >= min_term_width)
                {
                   wrapped_print(
-                     {{7, {{"", ""}}}, // 8 space indent, wrapper will add a space
+                     {{indent_size - 1, {{"", ""}}},
                       {lw, highlight_blocks(expr_str)},
                       {2, {{"", "=>"}}},
-                      {term_width - lw - 8 /* indent */ - 4 /* arrow */, get_values(expr_strs)}});
+                      {term_width - lw - indent_size - 4 /* arrow */, get_values(expr_strs)}});
                }
                else
                {
@@ -930,17 +900,13 @@ namespace gerbil::inline v0
          {
             fmt::print(stderr, "{} failed at {}:{}: {}:\n", action, location.file_name(),
                        location.line(), pretty_func);
-            /*
-            fprintf(stderr, "%s failed at %s:%u: %s:\n", action, location.file_name(),
-                    location.line(), pretty_func);
-                    */
          }
          fprintf(stderr, "    %s\n", highlight(assert_string).c_str());
          assert_printer();
          if (!extra_diagnostics.empty())
          {
-            fprintf(stderr, "    Extra diagnostics:\n");
-            size_t term_width = static_cast<size_t>(terminal_width()); // will be 0 on error
+            fmt::print(stderr, "    Extra diagnostics:\n");
+            auto term_width = static_cast<size_t>(terminal_width()); // will be 0 on error
             size_t lw = 0;
             for (auto& entry : extra_diagnostics)
             {
@@ -950,21 +916,21 @@ namespace gerbil::inline v0
             {
                if (term_width >= min_term_width)
                {
-                  wrapped_print({{7, {{"", ""}}}, // 8 space indent, wrapper will add a space
+                  wrapped_print({{indent_size - 1, {{"", ""}}},
                                  {lw, highlight_blocks(entry.first)},
                                  {2, {{"", "=>"}}},
-                                 {term_width - lw - 8 /* indent */ - 4 /* arrow */,
+                                 {term_width - lw - indent_size - 4 /* arrow */,
                                   highlight_blocks(entry.second)}});
                }
                else
                {
                   fprintf(stderr, "        %s%*s => %s\n", highlight(entry.first).c_str(),
                           int(lw - entry.first.length()), "",
-                          indent(highlight(entry.second), 8 + lw + 4, ' ', true).c_str());
+                          indent(highlight(entry.second), indent_size + lw + 4, ' ', true).c_str());
                }
             }
          }
-         fprintf(stderr, "\nStack trace:\n");
+         fmt::print(stderr, "\nStack trace:\n");
          print_stacktrace();
          if (fatal == ASSERT::FATAL)
          {
