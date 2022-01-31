@@ -10,10 +10,10 @@ namespace gerbil::inline v0
    {
       enum struct literal_type
       {
-         binary,
-         octal,
+         decimal,
          hexadecimal,
-         decimal
+         octal,
+         binary
       };
 
       /**
@@ -36,8 +36,7 @@ namespace gerbil::inline v0
        *
        * @return
        */
-      auto parse_literal_type(const std::string& expr)
-         -> std::optional<literal_type>;
+      auto parse_literal_type(const std::string& expr) -> std::optional<literal_type>;
    } // namespace detail
 } // namespace gerbil::inline v0
 

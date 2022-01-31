@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 #include <fmt/printf.h>
 
+#include <range/v3/action/join.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/split.hpp>
@@ -50,6 +51,7 @@
 #define let const auto
 
 namespace rv = ranges::views;
+namespace ra = ranges::actions;
 
 namespace gerbil::inline v0
 {
@@ -1557,8 +1559,9 @@ namespace gerbil::inline v0
             return true;
          }
 
-         [[gnu::cold]] std::pair<std::string, std::string>
-         _decompose_expression(const std::string& expression, const std::string_view target_op)
+         [[gnu::cold]] auto _decompose_expression(const std::string& expression,
+                                                  const std::string_view target_op)
+            -> std::pair<std::string, std::string>
          {
             // While automatic decomposition allows something like `assert(foo(n) == bar<n> + n);`
             // treated as `assert_eq(foo(n), bar<n> + n);` we only get the full expression's string
@@ -1637,11 +1640,11 @@ namespace gerbil::inline v0
                   right_strings.push_back(tokens[i].str);
                }
 
-               let joined_lefts = left_strings | rv::join("") | ranges::to<std::string>;
-               let joined_rights = right_strings | rv::join("") | ranges::to<std::string>;
+               let joined_lefts = ra::join(left_strings);
+               let joined_rights = ra::join(right_strings);
 
                return {joined_lefts | rv::trim(is_space_character) | ranges::to<std::string>,
-                       joined_lefts | rv::trim(is_space_character) | ranges::to<std::string>};
+                       joined_rights | rv::trim(is_space_character) | ranges::to<std::string>};
             }
             else
             {
@@ -2144,7 +2147,8 @@ namespace gerbil::inline v0
          primitive_assert(vec.size() > 0);
          if (vec.size() == 1)
          {
-            fprintf(stderr, "%s\n", indent(highlight(vec[0]), indent_size + lw + 4, ' ', true).c_str());
+            fprintf(stderr, "%s\n",
+                    indent(highlight(vec[0]), indent_size + lw + 4, ' ', true).c_str());
          }
          else
          {

@@ -96,6 +96,7 @@ namespace gerbil::inline v0
    namespace detail
    {
       static constexpr size_t indent_size = 8;
+      static constexpr size_t arrow_size = 4;
 
       void primitive_assert_impl(bool c, bool verification, const char* expression,
                                  const char* message = nullptr, source_location location = {});
@@ -699,12 +700,14 @@ namespace gerbil::inline v0
                                                  std::string_view op)
       {
          // std::set used so formats are printed in a specific order
-         std::set<literal_type> formats = {literal_type::decimal};
-         if (auto lformat = parse_literal_type(a_str))
+         auto formats = std::set<literal_type>({literal_type::decimal});
+
+         if (const auto lformat = parse_literal_type(a_str))
          {
             formats.insert(*lformat);
          }
-         if (auto rformat = parse_literal_type(b_str))
+
+         if (const auto rformat = parse_literal_type(b_str))
          {
             formats.insert(*rformat);
          }
@@ -713,11 +716,13 @@ namespace gerbil::inline v0
          {
             formats.insert(literal_type::binary); // always display binary for bitwise
          }
+
          primitive_assert(formats.size() > 0);
 
          // generate raw strings for given formats, without highlighting
          std::vector<std::string> lstrings = generate_stringifications(std::forward<A>(a), formats);
          std::vector<std::string> rstrings = generate_stringifications(std::forward<B>(b), formats);
+
          primitive_assert(lstrings.size() > 0);
          primitive_assert(rstrings.size() > 0);
 
@@ -755,7 +760,7 @@ namespace gerbil::inline v0
             // Limit lw to about half the screen. TODO: Re-evaluate what we want to do here.
             if (term_width > 0)
             {
-               lw = std::min(lw, term_width / 2 - indent_size - 4 /* arrow */);
+               lw = std::min(lw, term_width / 2 - indent_size - arrow_size);
             }
 
             fmt::print(stderr, "    Where:\n");
@@ -763,11 +768,11 @@ namespace gerbil::inline v0
                                                  std::vector<std::string>& expr_strs) {
                if (term_width >= min_term_width)
                {
-                  wrapped_print(
-                     {{indent_size - 1, {{"", ""}}},
-                      {lw, highlight_blocks(expr_str)},
-                      {2, {{"", "=>"}}},
-                      {term_width - lw - indent_size - 4 /* arrow */, get_values(expr_strs)}});
+                  wrapped_print({column_t{.width = indent_size - 1, .blocks = {{"", ""}}},
+                                 column_t{.width = lw, .blocks = highlight_blocks(expr_str)},
+                                 column_t{.width = 2, .blocks = {{"", "=>"}}},
+                                 column_t{.width = term_width - lw - indent_size - arrow_size,
+                                          .blocks = get_values(expr_strs)}});
                }
                else
                {

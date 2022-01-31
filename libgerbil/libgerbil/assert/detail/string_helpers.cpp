@@ -8,7 +8,7 @@ namespace gerbil::inline v0
    {
       auto is_space_character(char c) -> bool
       {
-         return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == 'f' || c == '\v';
+         return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
       }
    } // namespace detail
 } // namespace gerbil::inline v0
