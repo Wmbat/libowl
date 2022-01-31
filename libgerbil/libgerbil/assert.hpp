@@ -10,6 +10,7 @@
 #include <libgerbil/assert/detail/source_location.hpp>
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <bitset>
 #include <cstdio>
@@ -113,20 +114,6 @@ namespace gerbil::inline v0
       /*
        * string utilities
        */
-
-      template <typename... T>
-      [[gnu::cold]] auto stringf(T... args) -> std::string
-      {
-         int length = snprintf(0, 0, args...);
-         if (length < 0)
-         {
-            primitive_assert(false, "Invalid arguments to stringf");
-         }
-
-         std::string str(static_cast<std::size_t>(length), 0);
-         snprintf(str.data(), static_cast<size_t>(length) + 1u, args...);
-         return str;
-      }
 
       auto indent(const std::string_view str, size_t depth, char c = ' ', bool ignore_first = false)
          -> std::string;
@@ -579,7 +566,7 @@ namespace gerbil::inline v0
             {
                if (fmt == literal_type::binary)
                {
-                  return fmt::format("{:#0b}", t);
+                  return fmt::format("{:#0{}b}", t, sizeof(t) * CHAR_BIT);
                }
                else if (fmt == literal_type::octal)
                {
@@ -634,8 +621,7 @@ namespace gerbil::inline v0
             }
             else
             {
-               return stringf("<instance of %s>",
-                              prettify_type(std::string(type_name<T>())).c_str());
+               return fmt::format("<instance of {}>", prettify_type(std::string(type_name<T>())));
             }
          }
       }
@@ -854,7 +840,7 @@ namespace gerbil::inline v0
                   // errno will expand to something hideous like (*__errno_location()),
                   // may as well replace it with "errno"
                   entry.entries.push_back(
-                     {"errno", stringf("%2d \"%s\"", t, strerror_wrapper(t).c_str())});
+                     {"errno", fmt::format("{:2} \"{}\"", t, strerror_wrapper(t))});
                }
             }
             else
@@ -967,8 +953,8 @@ namespace gerbil::inline v0
                                           b_str.c_str(), C::op_string);
                }
             },
-            stringf("%s(%s%s);", verify ? "verify" : "assert", expr_str,
-                    sizeof...(args) > 0 ? ", ..." : ""),
+            fmt::format("{}({}{});", verify ? "verify" : "assert", expr_str,
+                        sizeof...(args) > 0 ? ", ..." : ""),
             args_strings, args...);
       }
 

@@ -921,7 +921,7 @@ namespace gerbil::inline v0
                if (entries.count(entry.obj_path) == 0)
                   entries.insert({entry.obj_path, {{}, {}}});
                auto& obj_entry = entries.at(entry.obj_path);
-               obj_entry.first.push_back(stringf("%#tx", addr));
+               obj_entry.first.push_back(fmt::format("{:#0x}", addr));
                obj_entry.second.push_back(&trace[i]);
                trace[i].source_path = entry.obj_path;
             }
@@ -1140,22 +1140,19 @@ namespace gerbil::inline v0
             std::string int_decimal = "(?:0|[1-9](?:'?\\d)*)" + optional_integer_suffix;
             std::string int_hex = "0[Xx](?!')(?:'?[\\da-fA-F])+" + optional_integer_suffix;
             std::string digit_sequence = "\\d(?:'?\\d)*";
-            std::string fractional_constant =
-               stringf("(?:(?:%s)?\\.%s|%s\\.)", digit_sequence.c_str(), digit_sequence.c_str(),
-                       digit_sequence.c_str());
+            std::string fractional_constant = fmt::format("(?:(?:{})?\\.{}|{}\\.)", digit_sequence,
+                                                          digit_sequence, digit_sequence);
             std::string exponent_part = "(?:[Ee][\\+-]?" + digit_sequence + ")";
             std::string suffix = "[FfLl]";
             std::string float_decimal =
-               stringf("(?:%s%s?|%s%s)%s?", fractional_constant.c_str(), exponent_part.c_str(),
-                       digit_sequence.c_str(), exponent_part.c_str(), suffix.c_str());
+               fmt::format("(?:{}{}?|{}{}){}?", fractional_constant, exponent_part, digit_sequence,
+                           exponent_part, suffix);
             std::string hex_digit_sequence = "[\\da-fA-F](?:'?[\\da-fA-F])*";
-            std::string hex_frac_const =
-               stringf("(?:(?:%s)?\\.%s|%s\\.)", hex_digit_sequence.c_str(),
-                       hex_digit_sequence.c_str(), hex_digit_sequence.c_str());
+            std::string hex_frac_const = fmt::format("(?:(?:{})?\\.{}|{}\\.)", hex_digit_sequence,
+                                                     hex_digit_sequence, hex_digit_sequence);
             std::string binary_exp = "[Pp][\\+-]?" + digit_sequence;
-            std::string float_hex =
-               stringf("0[Xx](?:%s|%s)%s%s?", hex_frac_const.c_str(), hex_digit_sequence.c_str(),
-                       binary_exp.c_str(), suffix.c_str());
+            std::string float_hex = fmt::format("0[Xx](?:{}|{}){}{}?", hex_frac_const,
+                                                hex_digit_sequence, binary_exp, suffix);
             // char and string literals
             std::string escapes = R"(\\[0-7]{1,3}|\\x[\da-fA-F]+|\\.)";
             std::string char_literal = R"((?:u8|[UuL])?'(?:)" + escapes + R"(|[^\n'])*')";
@@ -1187,9 +1184,9 @@ namespace gerbil::inline v0
             for (size_t i = 0; i < std::size(rules_raw); i++)
             {
                // [^] instead of . because . does not match newlines
-               std::string str = stringf("^(%s)[^]*", rules_raw[i].second.c_str());
+               std::string str = fmt::format("^({})[^]*", rules_raw[i].second);
 #ifdef _0_DEBUG_ASSERT_LEXER_RULES
-               fprintf(stderr, "%s : %s\n", rules_raw[i].first.c_str(), str.c_str());
+               fmt::print(stderr, "{} : {}\n", rules_raw[i].first, str);
 #endif
                rules[i] = {rules_raw[i].first, std::regex(str)};
             }
@@ -2118,7 +2115,7 @@ namespace gerbil::inline v0
                {
                   i += recursion_folded;
                   std::string s =
-                     stringf("| %d layers of recursion were folded |", recursion_folded);
+                     fmt::format("| {} layers of recursion were folded |", recursion_folded);
                   fmt::fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
                   fmt::fprintf(stderr, BLUE "%s" RESET "\n", s.c_str());
                   fmt::fprintf(stderr, BLUE "|%*s|" RESET "\n", int(s.size() - 2), "");
@@ -2138,8 +2135,8 @@ namespace gerbil::inline v0
       [[gnu::cold]] auto gen_assert_binary(bool verify, const std::string& a_str, const char* op,
                                            const std::string& b_str, size_t n_vargs) -> std::string
       {
-         return stringf("%s_%s(%s, %s%s);", verify ? "verify" : "assert", op, a_str.c_str(),
-                        b_str.c_str(), n_vargs ? ", ..." : "");
+         return fmt::format("{}_{}({}, {}{});", verify ? "verify" : "assert", op, a_str,
+                        b_str, n_vargs ? ", ..." : "");
       }
 
       [[gnu::cold]] void print_values(const std::vector<std::string>& vec, size_t lw)
