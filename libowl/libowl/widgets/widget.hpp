@@ -17,7 +17,7 @@ namespace owl::inline v0
   
       [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
 
-      virtual void render() = 0;
+//      virtual void render() = 0;
 
       // Getters
 

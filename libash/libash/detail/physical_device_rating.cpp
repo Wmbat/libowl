@@ -589,13 +589,13 @@ namespace ash::inline v0
                               const physical_device_select_info& info)
          -> std::pair<std::vector<desired_queue_data>, i32>
       {
-         // clang-format off
-         const auto queue_infos = queue_properties 
-            | rv::enumerate 
-            | rv::transform(to_queue_info)
-            | ranges::to<std::vector>
-            | ra::sort(ranges::greater{}, &queue_family_info::count);
-         // clang-format on
+         std::vector<queue_family_info> queue_infos;
+         for (auto pair : queue_properties | rv::enumerate)
+         {
+            queue_infos.push_back(to_queue_info(pair));
+         }
+
+         stdr::sort(queue_infos, ranges::greater{}, &queue_family_info::count);
 
          return find_all_necessary_queues(queue_infos, info.require_transfer_queue,
                                           info.require_compute_queue);

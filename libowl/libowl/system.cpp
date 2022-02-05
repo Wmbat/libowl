@@ -54,6 +54,7 @@ namespace owl::inline v0
       m_instance({.app_info = {.name = app_name, .version = {}},
                   .eng_info = {.name = "owl", .version = library_version},
                   .enabled_extension_names = {"VK_KHR_surface"},
+                  .enabled_layer_names = {},
                   .logger = m_logger}),
       m_xserver_connection(x11::connect_to_server(m_logger).take()),
       m_monitors(list_available_monitors(m_xserver_connection)),
@@ -195,7 +196,8 @@ namespace owl::inline v0
           .require_transfer_queue = true,
           .require_compute_queue = true,
           .minimum_version = m_instance.version(),
-          .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME})});
+          .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME}),
+          .desired_extensions = {}});
 
       if (phys_device_res.is_err())
       {

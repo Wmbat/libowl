@@ -18,8 +18,27 @@ namespace owl::inline v0
 {
    namespace x11::detail
    {
-      auto compute_keysim_offset(key_modifier_flags flags) -> u32;
-   }
+      constexpr auto compute_keysim_offset(key_modifier_flags flags) -> u32
+      {
+         const bool has_shift =
+            (flags & key_modifiers_flag_bits::shift) == key_modifiers_flag_bits::shift;
+         const bool has_caps_lock =
+            (flags & key_modifiers_flag_bits::caps_lock) == key_modifiers_flag_bits::caps_lock;
+
+         if (has_shift && has_caps_lock)
+         {
+            return 0;
+         }
+         if (has_shift || has_caps_lock)
+         {
+            return 1;
+         }
+         else
+         {
+            return 0;
+         }
+      }
+   } // namespace x11::detail
 
    namespace x11
    {
@@ -53,9 +72,6 @@ namespace owl::inline v0
           */
          constexpr keysym_t(const connection& conn, keycode_t keycode, key_modifier_flags mods)
          {
-            assert(keycode.value() >= conn.min_keycode); // NOLINT
-            assert(keycode.value() <= conn.max_keycode); // NOLINT
-
             const u32 keysyms_per_key_code = conn.keysyms_per_keycode;
             const u32 adjusted_key_code = keycode.value() - conn.min_keycode;
             const u32 keysym_offset = detail::compute_keysim_offset(mods);

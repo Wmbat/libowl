@@ -9,6 +9,7 @@
 #include <libgerbil/assert/detail/parser.hpp>
 #include <libgerbil/assert/detail/source_location.hpp>
 
+#include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 
