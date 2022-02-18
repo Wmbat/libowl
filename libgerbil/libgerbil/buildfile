@@ -4,6 +4,8 @@ impl_libs = # Implementation dependencies.
 import intf_libs += fmt%lib{fmt}
 import intf_libs += range-v3%lib{range-v3}
 
+import impl_libs += ctre%lib{ctre}
+
 lib{gerbil}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 
 # Include the generated version header into the distribution (so that we don't

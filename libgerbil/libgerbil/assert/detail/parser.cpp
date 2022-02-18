@@ -1,16 +1,72 @@
 #include <libgerbil/assert/detail/parser.hpp>
 
+#include <ctre.hpp>
+
 #include <algorithm>
 #include <array>
+#include <ranges>
 
 #if not defined(let)
-#   define let const auto
+#   define let auto const
 #endif
 
 namespace gerbil::inline v0
 {
    namespace
    {
+      static constexpr ctll::fixed_string keywords_re_1 =
+         R"((alignas|constinit|public|alignof|const_cast)"
+         R"(|float|register|try|asm|continue|for|reinterpret_cast)"
+         R"(|typedef|auto|co_await|friend|requires|typeid)"
+         R"(|bool|co_return|goto|return|typename|break|co_yield)\b)";
+      static constexpr ctll::fixed_string keywords_re_2 =
+         R"((if|short|union|case|decltype|inline|signed|unsigned)"
+         R"(|catch|default|int|sizeof|using|char|delete|long|static)"
+         R"(|virtual|char8_t|do|mutable|static_assert|void|char16_t)"
+         R"(|double|namespace|static_cast|volatile|char32_t|dynamic_cast)\b)";
+      static constexpr ctll::fixed_string keywords_re_3 =
+         R"((new|struct|wchar_t|class|else|noexcept|switch|while|concept)"
+         R"(|enum|template|const|explicit|operator|this|consteval|export)"
+         R"(|private|thread_local|constexpr|extern|protected|throw)\b)";
+
+      // numbers
+
+      // (?:[Ee][\\+-]?\d(?:'?\d)*)
+
+      /*
+      static constexpr ctll::fixed_string float_decimal_re = 
+         R"((?:{})"
+         R"((?:[Ee][\\+-]?\d(?:'?\d)*)?|\d(?:'?\d)*(?:[Ee][\\+-]?\d(?:'?\d)*))[FfLl]?)";
+         */
+      static constexpr ctll::fixed_string float_hex_re =
+         R"(0[Xx](?:(?:(?:[\da-fA-F](?:'?[\da-fA-F])*)?\.[\da-fA-F](?:'?[\da-fA-F])*)"
+         R"(|[\da-fA-F](?:'?[\da-fA-F])*\.)|[\da-fA-F](?:'?[\da-fA-F])*))"
+         R"([Pp][\+\-]?\d(?:'?\d)*[FfLl]?)";
+      static constexpr ctll::fixed_string int_binary_re =
+         R"(0[Bb][01](?:'?[01])*(?:[Uu](?:LL?|ll?|Z|z)?|(?:LL?|ll?|Z|z)[Uu]?)?)";
+      static constexpr ctll::fixed_string int_octal_re =
+         R"(0(?:'?[0-7])+(?:[Uu](?:LL?|ll?|Z|z)?|(?:LL?|ll?|Z|z)[Uu]?)?)";
+      static constexpr ctll::fixed_string int_hex_re =
+         R"(0[Xx](?!')(?:'?[\da-fA-F])+(?:[Uu](?:LL?|ll?|Z|z)?|(?:LL?|ll?|Z|z)[Uu]?)?)";
+      static constexpr ctll::fixed_string int_decimal_re =
+         R"((?:0|[1-9](?:'?\d)*)(?:[Uu](?:LL?|ll?|Z|z)?|(?:LL?|ll?|Z|z)[Uu]?)?)";
+
+      // Punctuation
+
+      static constexpr ctll::fixed_string named_literal_re = R"(true|false|nullptr)";
+
+      static constexpr ctll::fixed_string char_literal_re =
+         R"((?:u8|[UuL])?'(?:\\[0-7]{1,3}|\\x[\da-fA-F]+|\\.|[^\n'])*')";
+      static constexpr ctll::fixed_string string_literal_re =
+         R"((?:u8|[UuL])?"(?:\\[0-7]{1,3}|\\x[\da-fA-F]+|\\.|[^\n"])*")";
+      static constexpr ctll::fixed_string raw_string_literal_re =
+         R"((?:u8|[UuL])?R"([^ ()\\t\r\v\n]*)\((?:(?!\)\").)*\)\")";
+
+      static constexpr ctll::fixed_string identifier_re =
+         R"((?!\d+)(?:[\da-zA-Z_\$]|\\u[\da-fA-F]{4}|\\U[\da-fA-F]{8})+)";
+
+      static constexpr ctll::fixed_string whitespace_re = R"(\s+)";
+
       static constexpr char digit_zero = 0x0030;
       static constexpr char digit_one = 0x0031;
       static constexpr char lowest_digit = digit_zero;
@@ -63,78 +119,6 @@ namespace gerbil::inline v0
       {
          return first == digit_zero && is_hexadecimal_token(second);
       }
-
-      // https://eel.is/c++draft/gram.lex
-      //
-
-      consteval auto get_sorted_keywords()
-      {
-         constexpr std::size_t keyword_count = 78;
-
-         auto keywords = std::array<std::string_view, keyword_count>(
-            {"alignas",    "constinit",    "public",        "alignof",
-             "const_cast", "float",        "register",      "try",
-             "asm",        "continue",     "for",           "reinterpret_cast",
-             "typedef",    "auto",         "co_await",      "friend",
-             "requires",   "typeid",       "bool",          "co_return",
-             "goto",       "return",       "typename",      "break",
-             "co_yield",   "if",           "short",         "union",
-             "case",       "decltype",     "inline",        "signed",
-             "unsigned",   "catch",        "default",       "int",
-             "sizeof",     "using",        "char",          "delete",
-             "long",       "static",       "virtual",       "char8_t",
-             "do",         "mutable",      "static_assert", "void",
-             "char16_t",   "double",       "namespace",     "static_cast",
-             "volatile",   "char32_t",     "dynamic_cast",  "new",
-             "struct",     "wchar_t",      "class",         "else",
-             "noexcept",   "switch",       "while",         "concept",
-             "enum",       "template",     "const",         "explicit",
-             "operator",   "this",         "consteval",     "export",
-             "private",    "thread_local", "constexpr",     "extern",
-             "protected",  "throw"});
-
-         const auto cmp = [](const std::string_view a, const std::string_view b) {
-            if (a.length() > b.length())
-               return true;
-            else if (a.length() == b.length())
-               return a < b;
-            else
-               return false;
-         };
-
-         std::sort(std::begin(keywords), std::end(keywords), cmp);
-
-         return keywords;
-      }
-      consteval auto get_sorted_punctuators()
-      {
-         constexpr std::size_t punct_count = 66;
-
-         auto punctuators = std::array<std::string_view, punct_count>{
-            "{",     "}",      "[",     "]",      "(",      ")",  "<:",  ":>",  "<%",     "%>",
-            ";",     ":",      "...",   "?",      "::",     ".",  ".*",  "->",  "->*",    "~",
-            "!",     "+",      "-",     "*",      "/",      "%",  "^",   "&",   "|",      "=",
-            "+=",    "-=",     "*=",    "/=",     "%=",     "^=", "&=",  "|=",  "==",     "!=",
-            "<",     ">",      "<=",    ">=",     "<=>",    "&&", "||",  "<<",  ">>",     "<<=",
-            ">>=",   "++",     "--",    ",",      "and",    "or", "xor", "not", "bitand", "bitor",
-            "compl", "and_eq", "or_eq", "xor_eq", "not_eq", "#"};
-
-         const auto cmp = [](const std::string_view a, const std::string_view b) {
-            if (a.length() > b.length())
-               return true;
-            else if (a.length() == b.length())
-               return a < b;
-            else
-               return false;
-         };
-
-         std::sort(std::begin(punctuators), std::end(punctuators), cmp);
-
-         return punctuators;
-      }
-
-      [[maybe_unused]] constexpr auto keywords = get_sorted_keywords();
-      [[maybe_unused]] constexpr auto punctuators = get_sorted_punctuators();
    } // namespace
 
    namespace detail
@@ -179,6 +163,143 @@ namespace gerbil::inline v0
             {
                return std::nullopt;
             }
+         }
+      } // namespace detail
+
+      auto re_match_string(std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<char_literal_re>(expr))
+         {
+            return parse_token{.type = token_type::string, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<string_literal_re>(expr))
+         {
+            return parse_token{.type = token_type::string, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<raw_string_literal_re>(expr))
+         {
+            return parse_token{.type = token_type::string, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match_whitespace(std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<whitespace_re>(expr))
+         {
+            return parse_token{.type = token_type::identifier, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match_identifier(std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<identifier_re>(expr))
+         {
+            return parse_token{.type = token_type::identifier, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match_keyword(std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<keywords_re_1>(expr))
+         {
+            return parse_token{.type = token_type::keyword, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<keywords_re_2>(expr))
+         {
+            return parse_token{.type = token_type::keyword, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<keywords_re_3>(expr))
+         {
+            return parse_token{.type = token_type::keyword, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match_number(std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<int_decimal_re>(expr))
+         {
+            return parse_token{.type = token_type::number, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<int_hex_re>(expr))
+         {
+            return parse_token{.type = token_type::number, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<int_octal_re>(expr))
+         {
+            return parse_token{.type = token_type::number, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<int_binary_re>(expr))
+         {
+            return parse_token{.type = token_type::number, .str = std::string(m.get<0>())};
+         }
+         else if (auto m = ctre::match<float_hex_re>(expr))
+         {
+            return parse_token{.type = token_type::number, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match_named_literal(const std::string_view expr) -> std::optional<parse_token>
+      {
+         if (auto m = ctre::match<named_literal_re>(expr))
+         {
+            return parse_token{.type = token_type::named_literal, .str = std::string(m.get<0>())};
+         }
+         else
+         {
+            return std::nullopt;
+         }
+      }
+
+      auto re_match(std::string_view expr) -> std::optional<parse_token>
+      {
+         // TODO(wmbat): Use C++23's monadic interface for optional
+         if (auto m = re_match_whitespace(expr))
+         {
+            return m;
+         }
+         else if (auto m = re_match_identifier(expr))
+         {
+            return m;
+         }
+         else if (auto m = re_match_string(expr))
+         {
+            return m;
+         }
+         else if (auto m = re_match_named_literal(expr))
+         {
+            return m;
+         }
+         else if (auto m = re_match_number(expr))
+         {
+            return m;
+         }
+         else if (auto m = re_match_keyword(expr))
+         {
+            return m;
+         }
+         else
+         {
+            return std::nullopt;
          }
       }
    } // namespace detail

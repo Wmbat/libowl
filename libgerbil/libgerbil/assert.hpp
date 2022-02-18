@@ -100,8 +100,8 @@ namespace gerbil::inline v0
       static constexpr size_t indent_size = 8;
       static constexpr size_t arrow_size = 4;
 
-      void primitive_assert_impl(bool c, bool verification, const char* expression,
-                                 const char* message = nullptr, source_location location = {});
+      void primitive_assert_impl(bool c, bool verification, char const* expression,
+                                 char const* message = nullptr, source_location location = {});
 
 #ifdef ASSERT_INTERNAL_DEBUG
 #   define primitive_assert(c, ...) primitive_assert_impl(c, false, #   c, ##__VA_ARGS__)
@@ -116,7 +116,7 @@ namespace gerbil::inline v0
        * string utilities
        */
 
-      auto indent(const std::string_view str, size_t depth, char c = ' ', bool ignore_first = false)
+      auto indent(std::string_view const str, size_t depth, char c = ' ', bool ignore_first = false)
          -> std::string;
 
       /*
@@ -433,22 +433,22 @@ namespace gerbil::inline v0
 
       auto prettify_type(std::string type) -> std::string;
 
-      auto highlight(const std::string& expression) -> std::string;
+      auto highlight(std::string const& expression) -> std::string;
 
-      auto highlight_blocks(const std::string& expression) -> std::vector<highlight_block>;
+      auto highlight_blocks(std::string const& expression) -> std::vector<highlight_block>;
 
-      auto trim_suffix(const std::string& expression) -> std::string;
+      auto trim_suffix(std::string const& expression) -> std::string;
 
       auto is_bitwise(std::string_view op) -> bool;
 
-      auto decompose_expression(const std::string& expression, const std::string_view target_op)
+      auto decompose_expression(std::string const& expression, std::string_view const target_op)
          -> std::pair<std::string, std::string>;
 
       /*
        * stringification
        */
 
-      auto escape_string(const std::string_view str, char quote) -> std::string;
+      auto escape_string(std::string_view const str, char quote) -> std::string;
 
       template <typename T>
       [[gnu::cold]] constexpr auto type_name() -> std::string_view
@@ -500,23 +500,23 @@ namespace gerbil::inline v0
                                                                                          // const
                                                                                          // char(&)[N])
                                                                                          // too
-         || isa<std::decay_t<strip<T>>, const char*>;
+         || isa<std::decay_t<strip<T>>, char const*>;
 
       // test cases
       static_assert(is_string_type<char*>);
-      static_assert(is_string_type<const char*>);
+      static_assert(is_string_type<char const*>);
       static_assert(is_string_type<char[5]>);
-      static_assert(is_string_type<const char[5]>);
+      static_assert(is_string_type<char const[5]>);
       static_assert(!is_string_type<char (*)[5]>);
       static_assert(is_string_type<char (&)[5]>);
-      static_assert(is_string_type<const char (&)[27]>);
+      static_assert(is_string_type<char const (&)[27]>);
       static_assert(!is_string_type<std::vector<char>>);
       static_assert(!is_string_type<int>);
       static_assert(is_string_type<std::string>);
       static_assert(is_string_type<std::string_view>);
 
       template <typename T>
-      [[gnu::cold]] auto stringify(const T& t,
+      [[gnu::cold]] auto stringify(T const& t,
                                    [[maybe_unused]] std::optional<literal_type> fmt = std::nullopt)
          -> std::string
       {
@@ -638,7 +638,7 @@ namespace gerbil::inline v0
          bool right_align = false;
       };
 
-      void wrapped_print(const std::vector<column_t>& columns);
+      void wrapped_print(std::vector<column_t> const& columns);
 
       void print_stacktrace();
 
@@ -646,11 +646,11 @@ namespace gerbil::inline v0
        * binary diagnostic printing
        */
 
-      auto gen_assert_binary(bool verify, const std::string& a_str, const char* op,
-                             const std::string& b_str, size_t n_vargs) -> std::string;
+      auto gen_assert_binary(bool verify, std::string const& a_str, char const* op,
+                             std::string const& b_str, size_t n_vargs) -> std::string;
 
       template <typename T>
-      [[gnu::cold]] auto generate_stringifications(T&& v, const std::set<literal_type>& formats)
+      [[gnu::cold]] auto generate_stringifications(T&& v, std::set<literal_type> const& formats)
          -> std::vector<std::string>
       {
          if constexpr (std::is_arithmetic<strip<T>>::value && !isa<T, bool> && !isa<T, char>)
@@ -676,25 +676,25 @@ namespace gerbil::inline v0
          }
       }
 
-      void print_values(const std::vector<std::string>& vec, size_t lw);
+      void print_values(std::vector<std::string> const& vec, size_t lw);
 
-      auto get_values(const std::vector<std::string>& vec) -> std::vector<highlight_block>;
+      auto get_values(std::vector<std::string> const& vec) -> std::vector<highlight_block>;
 
       constexpr int min_term_width = 50;
 
       template <typename A, typename B>
-      [[gnu::cold]] void print_binary_diagnostic(A&& a, B&& b, const char* a_str, const char* b_str,
+      [[gnu::cold]] void print_binary_diagnostic(A&& a, B&& b, char const* a_str, char const* b_str,
                                                  std::string_view op)
       {
          // std::set used so formats are printed in a specific order
          auto formats = std::set<literal_type>({literal_type::decimal});
 
-         if (const auto lformat = parse_literal_type(a_str))
+         if (auto const lformat = parse_literal_type(a_str))
          {
             formats.insert(*lformat);
          }
 
-         if (const auto rformat = parse_literal_type(b_str))
+         if (auto const rformat = parse_literal_type(b_str))
          {
             formats.insert(*rformat);
          }
@@ -742,7 +742,7 @@ namespace gerbil::inline v0
          {
             size_t lw = std::max(has_useful_where_clause.left ? strlen(a_str) : 0,
                                  has_useful_where_clause.right ? strlen(b_str) : 0);
-            const auto term_width =
+            auto const term_width =
                static_cast<std::size_t>(terminal_width()); // will be 0 on error
             // Limit lw to about half the screen. TODO: Re-evaluate what we want to do here.
             if (term_width > 0)
@@ -751,7 +751,7 @@ namespace gerbil::inline v0
             }
 
             fmt::print(stderr, "    Where:\n");
-            auto print_clause = [term_width, lw](const char* expr_str,
+            auto print_clause = [term_width, lw](char const* expr_str,
                                                  std::vector<std::string>& expr_strs) {
                if (term_width >= min_term_width)
                {
@@ -794,7 +794,7 @@ namespace gerbil::inline v0
 
 #define X(x) #x   // NOLINT
 #define Y(x) X(x) // NOLINT
-      constexpr const std::string_view errno_expansion = Y(errno);
+      constexpr std::string_view const errno_expansion = Y(errno);
 #undef Y
 #undef X
 
@@ -804,21 +804,21 @@ namespace gerbil::inline v0
          std::string message;
          std::vector<std::pair<std::string, std::string>> entries;
          extra_diagnostics();
-         extra_diagnostics(const extra_diagnostics&);
+         extra_diagnostics(extra_diagnostics const&);
          extra_diagnostics(extra_diagnostics&&) noexcept;
          ~extra_diagnostics();
-         auto operator=(const extra_diagnostics&) -> extra_diagnostics&;
+         auto operator=(extra_diagnostics const&) -> extra_diagnostics&;
          auto operator=(extra_diagnostics&&) noexcept -> extra_diagnostics&;
-         auto operator+(const extra_diagnostics& other) -> extra_diagnostics&;
+         auto operator+(extra_diagnostics const& other) -> extra_diagnostics&;
       };
 
       template <size_t I = 0, size_t N>
-      [[gnu::cold]] void process_args_step(extra_diagnostics&, const char* const (&)[N])
+      [[gnu::cold]] void process_args_step(extra_diagnostics&, char const* const (&)[N])
       {}
 
       template <size_t I = 0, size_t N, typename T, typename... Args>
       [[gnu::cold]] void process_args_step(extra_diagnostics& entry,
-                                           const char* const (&args_strings)[N], T& t,
+                                           char const* const (&args_strings)[N], T& t,
                                            Args&... args)
       {
          if constexpr (isa<T, ASSERT>)
@@ -853,7 +853,7 @@ namespace gerbil::inline v0
       }
 
       template <size_t I = 0, size_t N, typename... Args>
-      [[gnu::cold]] auto process_args(const char* const (&args_strings)[N], Args&... args)
+      [[gnu::cold]] auto process_args(char const* const (&args_strings)[N], Args&... args)
          -> extra_diagnostics
       {
          extra_diagnostics entry;
@@ -865,24 +865,24 @@ namespace gerbil::inline v0
       {
          lock();
          ~lock();
-         lock(const lock&) = delete;
+         lock(lock const&) = delete;
          lock(lock&&) = delete;
-         auto operator=(const lock&) -> lock& = delete;
+         auto operator=(lock const&) -> lock& = delete;
          auto operator=(lock&&) -> lock& = delete;
       };
 
       template <size_t N, typename... Args>
-      [[gnu::cold]] void assert_fail_generic(bool verify, const char* pretty_func,
+      [[gnu::cold]] void assert_fail_generic(bool verify, char const* pretty_func,
                                              source_location location,
-                                             const std::function<void()>& assert_printer,
-                                             const std::string& assert_string,
-                                             const char* const (&args_strings)[N], Args&... args)
+                                             std::function<void()> const& assert_printer,
+                                             std::string const& assert_string,
+                                             char const* const (&args_strings)[N], Args&... args)
       {
          lock l;
          static_assert((sizeof...(args) == 0 && N == 2) || N == sizeof...(args) + 1);
          auto [fatal, message, extra_diagnostics] = process_args(args_strings, args...);
          enable_virtual_terminal_processing_if_needed();
-         const char* action = verify ? "Verification" : "Assertion";
+         char const* action = verify ? "Verification" : "Assertion";
          if (message != "")
          {
             fmt::print(stderr, "{} failed at {}:{}: {}: {}\n", action, location.file_name(),
@@ -935,9 +935,9 @@ namespace gerbil::inline v0
 
       template <typename A, typename B, typename C, size_t N, typename... Args>
       [[gnu::cold]] [[gnu::noinline]] void
-      assert_fail(expression_decomposer<A, B, C>& decomposer, const char* expr_str, bool verify,
-                  const char* pretty_func, source_location location,
-                  const char* const (&args_strings)[N], Args&... args)
+      assert_fail(expression_decomposer<A, B, C>& decomposer, char const* expr_str, bool verify,
+                  char const* pretty_func, source_location location,
+                  char const* const (&args_strings)[N], Args&... args)
       {
          assert_fail_generic(
             verify, pretty_func, location,
@@ -961,9 +961,9 @@ namespace gerbil::inline v0
 
       template <typename C, typename A, typename B, size_t N, typename... Args>
       [[gnu::cold]] [[gnu::noinline]] void
-      assert_binary_fail(A&& a, B&& b, const char* a_str, const char* b_str, const char* raw_op,
-                         bool verify, const char* pretty_func, source_location location,
-                         const char* const (&args_strings)[N], Args&... args)
+      assert_binary_fail(A&& a, B&& b, char const* a_str, char const* b_str, char const* raw_op,
+                         bool verify, char const* pretty_func, source_location location,
+                         char const* const (&args_strings)[N], Args&... args)
       {
          assert_fail_generic(
             verify, pretty_func, location,
@@ -979,9 +979,9 @@ namespace gerbil::inline v0
       // these are the only non-cold functions
 
       template <typename A, typename B, typename C, size_t N, typename... Args>
-      void assert_decomposed(expression_decomposer<A, B, C> decomposer, const char* expr_str,
-                             const char* pretty_func, source_location location,
-                             const char* const (&args_strings)[N], Args&&... args)
+      void assert_decomposed(expression_decomposer<A, B, C> decomposer, char const* expr_str,
+                             char const* pretty_func, source_location location,
+                             char const* const (&args_strings)[N], Args&&... args)
       {
          if (!(bool)decomposer.get_value())
          {
@@ -1000,9 +1000,9 @@ namespace gerbil::inline v0
       }
 
       template <typename C, typename A, typename B, size_t N, typename... Args>
-      void assert_binary(A&& a, B&& b, const char* a_str, const char* b_str, const char* raw_op,
-                         const char* pretty_func, source_location location,
-                         const char* const (&args_strings)[N], Args&&... args)
+      void assert_binary(A&& a, B&& b, char const* a_str, char const* b_str, char const* raw_op,
+                         char const* pretty_func, source_location location,
+                         char const* const (&args_strings)[N], Args&&... args)
       {
          if (!(bool)C()(a, b))
          {
@@ -1021,9 +1021,9 @@ namespace gerbil::inline v0
       }
 
       template <typename A, typename B, typename C, size_t N, typename... Args>
-      auto verify_decomposed(expression_decomposer<A, B, C> decomposer, const char* expr_str,
-                             const char* pretty_func, source_location location,
-                             const char* const (&args_strings)[N], Args&&... args)
+      auto verify_decomposed(expression_decomposer<A, B, C> decomposer, char const* expr_str,
+                             char const* pretty_func, source_location location,
+                             char const* const (&args_strings)[N], Args&&... args)
       {
          auto x = decomposer.get_value();
          if (!(bool)x)
@@ -1044,9 +1044,9 @@ namespace gerbil::inline v0
       }
 
       template <typename C, typename A, typename B, size_t N, typename... Args>
-      auto verify_binary(A&& a, B&& b, const char* a_str, const char* b_str, const char* raw_op,
-                         const char* pretty_func, source_location location,
-                         const char* const (&args_strings)[N], Args&&... args)
+      auto verify_binary(A&& a, B&& b, char const* a_str, char const* b_str, char const* raw_op,
+                         char const* pretty_func, source_location location,
+                         char const* const (&args_strings)[N], Args&&... args)
       {
          auto x = C()(a, b);
          if (!(bool)x)

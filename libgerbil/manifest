@@ -13,3 +13,4 @@ depends: * bpkg >= 0.14.0
 
 depends: fmt ^8.0.1
 depends: range-v3 ^0.11.0
+depends: ctre ^3.5.0

@@ -7,17 +7,20 @@
 #include <fmt/core.h>
 #include <fmt/printf.h>
 
-#include <range/v3/view/concat.hpp>
 #include <range/v3/action/join.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/concat.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/split.hpp>
 #include <range/v3/view/trim.hpp>
+
+#include <ctre.hpp>
 
 // Jeremy Rifkin 2021
 // https://github.com/jeremy-rifkin/asserts
 
 #include <mutex>
+#include <ranges>
 #include <regex>
 
 #if IS_WINDOWS
@@ -55,6 +58,52 @@ namespace ra = ranges::actions;
 
 namespace gerbil::inline v0
 {
+   namespace
+   {
+      /*
+      consteval auto get_keywoard_regex()
+      {
+         constexpr std::size_t keyword_count = 78;
+
+         auto keywords = std::array<std::string_view, keyword_count>(
+            {"alignas",    "constinit",    "public",        "alignof",
+             "const_cast", "float",        "register",      "try",
+             "asm",        "continue",     "for",           "reinterpret_cast",
+             "typedef",    "auto",         "co_await",      "friend",
+             "requires",   "typeid",       "bool",          "co_return",
+             "goto",       "return",       "typename",      "break",
+             "co_yield",   "if",           "short",         "union",
+             "case",       "decltype",     "inline",        "signed",
+             "unsigned",   "catch",        "default",       "int",
+             "sizeof",     "using",        "char",          "delete",
+             "long",       "static",       "virtual",       "char8_t",
+             "do",         "mutable",      "static_assert", "void",
+             "char16_t",   "double",       "namespace",     "static_cast",
+             "volatile",   "char32_t",     "dynamic_cast",  "new",
+             "struct",     "wchar_t",      "class",         "else",
+             "noexcept",   "switch",       "while",         "concept",
+             "enum",       "template",     "const",         "explicit",
+             "operator",   "this",         "consteval",     "export",
+             "private",    "thread_local", "constexpr",     "extern",
+             "protected",  "throw"});
+
+         const auto cmp = [](const std::string_view a, const std::string_view b) {
+            if (a.length() > b.length())
+               return true;
+            else if (a.length() == b.length())
+               return a < b;
+            else
+               return false;
+         };
+
+         // TODO(wmbat): Use std::ranges when fully supported by clang
+         std::ranges::sort(std::begin(keywords), std::end(keywords), cmp);
+
+         return keywords;
+      }
+      */
+   } // namespace
+
    namespace detail
    {
       [[gnu::cold]] void primitive_assert_impl(bool c, bool verification, const char* expression,
@@ -1006,23 +1055,6 @@ namespace gerbil::inline v0
 
       class analysis
       {
-         enum class token_e
-         {
-            keyword,
-            punctuation,
-            number,
-            string,
-            named_literal,
-            identifier,
-            whitespace
-         };
-
-         struct token_t
-         {
-            token_e token_type;
-            std::string str;
-         };
-
       public:
          // Analysis singleton, lazy-initialize all the regex nonsense
          // 8 BSS bytes and <512 bytes heap bytes not a problem
@@ -1036,8 +1068,13 @@ namespace gerbil::inline v0
             return *analysis_singleton;
          }
 
+         static constexpr ctll::fixed_string char_lit_re =
+            R"((?:u8|[UuL])?'(?:\\[0-7]{1,3}|\\x[\da-fA-F]+|\\.|[^\n'])*')";
+         static constexpr ctll::fixed_string raw_string_lit_re =
+            R"((?:u8|[UuL])?R"([^ ()\\t\r\v\n]*)\((?:(?!\)\2\").)*\)\2")";
+
          // could all be const but I don't want to try to pack everything into an init list
-         std::vector<std::pair<token_e, std::regex>>
+         std::vector<std::pair<token_type, std::regex>>
             rules; // could be std::array but I don't want to hard-code a size
          std::regex escapes_re;
          std::unordered_map<std::string_view, int> precedence;
@@ -1170,26 +1207,27 @@ namespace gerbil::inline v0
             // named_literal > identifier
             // string > identifier (for R"(foobar)")
             // punctuation > identifier (for "not" and other alternative operators)
-            std::pair<token_e, std::string> rules_raw[] = {
-               {token_e::keyword, keywords_re},
-               {token_e::number, union_regexes({float_decimal, float_hex, int_binary, int_octal,
-                                                int_hex, int_decimal})},
-               {token_e::punctuation, punctuators_re},
-               {token_e::named_literal, "true|false|nullptr"},
-               {token_e::string, union_regexes({char_literal, raw_string_literal, string_literal})},
-               {token_e::identifier,
+
+            std::pair<token_type, std::string> rules_raw[] = {
+               {token_type::keyword, keywords_re},
+               {token_type::number, union_regexes({float_decimal, float_hex, int_binary, int_octal,
+                                                   int_hex, int_decimal})},
+               {token_type::punctuation, punctuators_re},
+               {token_type::named_literal, "true|false|nullptr"},
+               {token_type::string,
+                union_regexes({char_literal, raw_string_literal, string_literal})},
+               {token_type::identifier,
                 R"((?!\d+)(?:[\da-zA-Z_\$]|\\u[\da-fA-F]{4}|\\U[\da-fA-F]{8})+)"},
-               {token_e::whitespace, R"(\s+)"}};
+               {token_type::whitespace, R"(\s+)"}};
+
             rules.resize(std::size(rules_raw));
             for (size_t i = 0; i < std::size(rules_raw); i++)
             {
                // [^] instead of . because . does not match newlines
                std::string str = fmt::format("^({})[^]*", rules_raw[i].second);
-#ifdef _0_DEBUG_ASSERT_LEXER_RULES
-               fmt::print(stderr, "{} : {}\n", rules_raw[i].first, str);
-#endif
                rules[i] = {rules_raw[i].first, std::regex(str)};
             }
+
             // setup literal format rules
             literal_formats = {{std::regex(int_binary), literal_type::binary},
                                {std::regex(int_octal), literal_type::octal},
@@ -1246,10 +1284,33 @@ namespace gerbil::inline v0
          }
 
          [[gnu::cold]] auto _tokenize(const std::string& expression, bool decompose_shr = false)
-            -> std::vector<token_t>
+            -> std::vector<parse_token>
          {
-            std::vector<token_t> tokens;
+            std::vector<parse_token> tokens;
             std::ptrdiff_t i = 0;
+
+            auto begin = std::begin(expression);
+            let end = std::end(expression);
+            while (begin < end)
+            {
+               if (auto match = re_match_identifier({begin, end}))
+               {
+                  std::advance(begin, std::size(match->str));
+
+                  tokens.push_back(std::move(match).value());
+               }
+               else if (auto match = re_match_keyword({begin, end}))
+               {
+                  std::advance(begin, std::size(match->str));
+
+                  tokens.push_back(std::move(match).value());
+               }
+               else
+               {
+                  // error, invalid token
+               }
+            }
+
             while (i < std::ptrdiff_t(expression.length()))
             {
                std::smatch match;
@@ -1258,10 +1319,6 @@ namespace gerbil::inline v0
                {
                   if (std::regex_match(std::begin(expression) + i, std::end(expression), match, re))
                   {
-#ifdef _0_DEBUG_ASSERT_TOKENIZATION
-                     fprintf(stderr, "%s\n", match[1].str().c_str());
-                     fflush(stdout);
-#endif
                      if (decompose_shr && match[1].str() == ">>")
                      { // Do >> decomposition now for templates
                         tokens.push_back({type, ">"});
@@ -1276,6 +1333,7 @@ namespace gerbil::inline v0
                      break;
                   }
                }
+
                if (!at_least_one_matched)
                {
                   throw "error: invalid token";
@@ -1297,7 +1355,7 @@ namespace gerbil::inline v0
                const auto peek = [i, &tokens](size_t j = 1) {
                   for (size_t k = 1; j > 0 && i + k < tokens.size(); k++)
                   {
-                     if (tokens[i + k].token_type != token_e::whitespace)
+                     if (tokens[i + k].type != token_type::whitespace)
                      {
                         if (--j == 0)
                         {
@@ -1306,14 +1364,14 @@ namespace gerbil::inline v0
                      }
                   }
                   primitive_assert(j != 0);
-                  return token_t{token_e::whitespace, ""};
+                  return parse_token{.type = token_type::whitespace, .str = ""};
                };
-               switch (token.token_type)
+               switch (token.type)
                {
-                  case token_e::keyword:
+                  case token_type::keyword:
                      output.push_back({PURPL, token.str});
                      break;
-                  case token_e::punctuation:
+                  case token_type::punctuation:
                      if (highlight_ops.count(token.str))
                      {
                         output.push_back({PURPL, token.str});
@@ -1323,17 +1381,17 @@ namespace gerbil::inline v0
                         output.push_back({"", token.str});
                      }
                      break;
-                  case token_e::named_literal:
+                  case token_type::named_literal:
                      output.push_back({ORANGE, token.str});
                      break;
-                  case token_e::number:
+                  case token_type::number:
                      output.push_back({CYAN, token.str});
                      break;
-                  case token_e::string:
+                  case token_type::string:
                      output.push_back(
                         {GREEN, std::regex_replace(token.str, escapes_re, BLUE "$&" GREEN)});
                      break;
-                  case token_e::identifier:
+                  case token_type::identifier:
                      if (peek().str == "(")
                      {
                         output.push_back({BLUE, token.str});
@@ -1347,7 +1405,7 @@ namespace gerbil::inline v0
                         output.push_back({BLUE, token.str});
                      }
                      break;
-                  case token_e::whitespace:
+                  case token_type::whitespace:
                      output.push_back({"", token.str});
                      break;
                }
@@ -1359,22 +1417,22 @@ namespace gerbil::inline v0
             return {{"", expression}};
          }
 
-         [[gnu::cold]] auto find_last_non_ws(const std::vector<token_t>& tokens, size_t i)
-            -> token_t
+         [[gnu::cold]] auto find_last_non_ws(std::vector<parse_token> const& tokens, size_t i)
+            -> parse_token
          {
-            // returns empty token_e::whitespace on failure
+            // returns empty token_type::whitespace on failure
             while (i--)
             {
-               if (tokens[i].token_type != token_e::whitespace)
+               if (tokens[i].type != token_type::whitespace)
                {
                   return tokens[i];
                }
             }
-            return {token_e::whitespace, ""};
+            return {token_type::whitespace, ""};
          }
 
-         [[gnu::cold]] static auto get_real_op(const std::vector<token_t>& tokens, const size_t i)
-            -> std::string_view
+         [[gnu::cold]] static auto get_real_op(std::vector<parse_token> const& tokens,
+                                               const size_t i) -> std::string_view
          {
             // re-coalesce >> if necessary
             bool is_shr = tokens[i].str == ">" && i < tokens.size() - 1 && tokens[i + 1].str == ">";
@@ -1388,7 +1446,7 @@ namespace gerbil::inline v0
          // Returns true if parse tree traversal was a success, false if depth was exceeded
          static constexpr int max_depth = 10;
          [[gnu::cold]] auto pseudoparse(
-            const std::vector<token_t>& tokens, const std::string_view target_op, size_t i,
+            std::vector<parse_token> const& tokens, std::string_view const target_op, size_t i,
             int current_lowest_precedence, int template_depth,
             int middle_index, // where the split currently is, current op = tokens[middle_index]
             int depth, std::set<int>& output) -> bool
@@ -1410,7 +1468,7 @@ namespace gerbil::inline v0
             } state = expecting_term;
             for (; i < tokens.size(); i++)
             {
-               const token_t& token = tokens[i];
+               let& token = tokens[i];
                // scan forward to matching brace
                // can assume braces are balanced
                const auto scan_forward = [this, &i, &tokens](const std::string_view open,
@@ -1428,7 +1486,7 @@ namespace gerbil::inline v0
                            break;
                         }
                      }
-                     else if (tokens[i].token_type != token_e::whitespace)
+                     else if (tokens[i].type != token_type::whitespace)
                      {
                         empty = false;
                      }
@@ -1437,9 +1495,9 @@ namespace gerbil::inline v0
                      primitive_assert(false, "ill-formed expression input");
                   return empty;
                };
-               switch (token.token_type)
+               switch (token.type)
                {
-                  case token_e::punctuation:
+                  case token_type::punctuation:
                      if (operators.count(token.str))
                      {
                         if (state == expecting_term)
@@ -1451,7 +1509,7 @@ namespace gerbil::inline v0
                            // template can only open with a < token, no need to check << or <<=
                            // also must be preceeded by an identifier
                            if (token.str == "<"
-                               && find_last_non_ws(tokens, i).token_type == token_e::identifier)
+                               && find_last_non_ws(tokens, i).type == token_type::identifier)
                            {
                               // branch 1: this is a template opening
                               bool success =
@@ -1532,13 +1590,13 @@ namespace gerbil::inline v0
                         primitive_assert(false, "unhandled punctuation?");
                      }
                      break;
-                  case token_e::keyword:
-                  case token_e::named_literal:
-                  case token_e::number:
-                  case token_e::string:
-                  case token_e::identifier:
+                  case token_type::keyword:
+                  case token_type::named_literal:
+                  case token_type::number:
+                  case token_type::string:
+                  case token_type::identifier:
                      state = expecting_operator;
-                  case token_e::whitespace:
+                  case token_type::whitespace:
                      break;
                }
             }
@@ -2135,8 +2193,8 @@ namespace gerbil::inline v0
       [[gnu::cold]] auto gen_assert_binary(bool verify, const std::string& a_str, const char* op,
                                            const std::string& b_str, size_t n_vargs) -> std::string
       {
-         return fmt::format("{}_{}({}, {}{});", verify ? "verify" : "assert", op, a_str,
-                        b_str, n_vargs ? ", ..." : "");
+         return fmt::format("{}_{}({}, {}{});", verify ? "verify" : "assert", op, a_str, b_str,
+                            n_vargs ? ", ..." : "");
       }
 
       [[gnu::cold]] void print_values(const std::vector<std::string>& vec, size_t lw)

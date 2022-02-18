@@ -16,7 +16,7 @@ namespace gerbil::inline v0
          std::string text;
       };
 
-      auto extract_text_groups(const std::string& expr) -> std::vector<text_group>;
+      auto extract_text_groups(std::string const& expr) -> std::vector<text_group>;
    } // namespace detail
 } // namespace gerbil::inline v0
 

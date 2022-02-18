@@ -16,6 +16,24 @@ namespace gerbil::inline v0
          binary
       };
 
+      enum struct token_type
+      {
+         keyword,
+         punctuation,
+         number,
+         string,
+         named_literal,
+         identifier,
+         whitespace
+
+      };
+
+      struct parse_token
+      {
+         token_type type;
+         std::string str;
+      };
+
       /**
        * @brief Parse an literals (floats and ints) and finds it's format
        *
@@ -36,9 +54,36 @@ namespace gerbil::inline v0
        *
        * @return
        */
-      auto parse_literal_type(const std::string& expr) -> std::optional<literal_type>;
+      auto parse_literal_type(std::string const& expr) -> std::optional<literal_type>;
 
-      
+      /**
+       *
+       */
+      auto re_match(std::string_view expr) -> std::optional<parse_token>;
+
+      /**
+       *
+       */
+      auto re_match_whitespace(std::string_view expr) -> std::optional<parse_token>;
+
+      /**
+       * @brief
+       *
+       * @param[in] 
+       *
+       * @return 
+       */
+      auto re_match_identifier(std::string_view expr) -> std::optional<parse_token>;
+
+      /**
+       * @brief
+       *
+       * @param[in] 
+       *
+       * @return 
+       */
+      auto re_match_keyword(std::string_view expr) -> std::optional<parse_token>;
+
    } // namespace detail
 } // namespace gerbil::inline v0
 
