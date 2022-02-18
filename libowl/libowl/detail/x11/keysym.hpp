@@ -9,8 +9,6 @@
 
 #include <libreglisse/maybe.hpp>
 
-#include <libgerbil/assert.hpp>
-
 #include <compare>
 #include <limits>
 

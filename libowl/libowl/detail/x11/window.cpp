@@ -4,8 +4,6 @@
 
 #include <libash/detail/vulkan.hpp>
 
-#include <libgerbil/assert.hpp>
-
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
 #include <xcb/xproto.h>
@@ -20,7 +18,7 @@ namespace owl::inline v0
          super(*info.p_system, info.name, info.logger), mp_connection(info.conn.x_server.get()),
          m_window_handle(xcb_generate_id(mp_connection))
       {
-         assert(info.p_target_monitor != nullptr); // NOLINT
+//         assert(info.p_target_monitor != nullptr); // NOLINT
 
          const xcb_setup_t* p_setup = xcb_get_setup(mp_connection);
 
