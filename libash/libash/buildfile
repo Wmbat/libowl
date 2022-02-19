@@ -2,7 +2,6 @@ intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 import intf_libs += libmannele%lib{mannele}
-import intf_libs += libhawk%lib{hawk}
 import intf_libs += Vulkan-Hpp%lib{Vulkan-Hpp}
 import intf_libs += spdlog%lib{spdlog}
 import intf_libs += magic_enum%lib{magic_enum}

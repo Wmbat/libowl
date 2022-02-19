@@ -1,3 +1,0 @@
-import libs = libhawk%lib{hawk}
-
-exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}
