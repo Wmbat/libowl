@@ -1,0 +1,6 @@
+libs =
+import libs += libowl%lib{owl}
+
+exe{gui-demo}: {hxx ixx txx cxx}{**} $libs
+
+cxx.poptions =+ "-I$out_root" "-I$src_root"

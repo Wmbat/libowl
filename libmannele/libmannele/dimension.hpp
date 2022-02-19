@@ -26,9 +26,11 @@ namespace mannele
    using dimension_f32 = dimension<f32>;
    using dimension_f64 = dimension<f64>;
 
+   using dimension_i16 = dimension<i16>;
    using dimension_i32 = dimension<i32>;
    using dimension_i64 = dimension<i64>;
 
+   using dimension_u16 = dimension<u16>;
    using dimension_u32 = dimension<u32>;
    using dimension_u64 = dimension<u64>;
 } // namespace mannele

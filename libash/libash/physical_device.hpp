@@ -1,7 +1,7 @@
 /**
  * @file libash/physical_device.hpp
  * @author wmbat-dev@protonmail.com
- * @date 
+ * @date
  * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
@@ -16,7 +16,7 @@
 
 #include <libreglisse/result.hpp>
 
-namespace ash
+namespace ash::inline v0
 {
    enum struct physical_device_type
    {
@@ -36,7 +36,7 @@ namespace ash
    {
       ash::instance& instance;
 
-      vk::UniqueSurfaceKHR surface;
+      vk::SurfaceKHR surface;
 
       physical_device_type prefered_type = physical_device_type::discrete;
 
@@ -52,16 +52,24 @@ namespace ash
       std::vector<const char*> desired_extensions;
    };
 
+   struct desired_queue_data
+   {
+      vk::QueueFlags flags;
+      u32 family;
+      u32 index;
+   };
+
    struct physical_device
    {
-      vk::PhysicalDevice device;
-      vk::UniqueSurfaceKHR surface;
+      vk::PhysicalDevice device; // NOLINT
 
-      vk::PhysicalDeviceFeatures features;
-      vk::PhysicalDeviceProperties properties;
-      vk::PhysicalDeviceMemoryProperties memory_properties;
+      vk::PhysicalDeviceFeatures features;                  // NOLINT
+      vk::PhysicalDeviceProperties properties;              // NOLINT
+      vk::PhysicalDeviceMemoryProperties memory_properties; // NOLINT
 
-      std::vector<const char*> extensions_to_enable;
+      std::vector<desired_queue_data> queues_to_create; // NOLINT
+
+      std::vector<std::string_view> extensions_to_enable; // NOLINT
 
       operator vk::PhysicalDevice() const;
    };
@@ -76,6 +84,6 @@ namespace ash
     */
    auto find_most_suitable_gpu(physical_device_select_info&& info)
       -> reglisse::result<physical_device, runtime_error>;
-} // namespace ash
+} // namespace ash::inline v0
 
 #endif // LIBASH_PHYSICAL_DEVICE_HPP_

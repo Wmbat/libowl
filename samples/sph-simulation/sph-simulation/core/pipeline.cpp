@@ -232,8 +232,8 @@ namespace detail
 
       const auto colour_blend_attachment_state =
          vk::PipelineColorBlendAttachmentState{}
-            .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                               vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
+            .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+                               | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
             .setBlendEnable(false);
 
       const auto colour_blend_state_create_info =
@@ -295,9 +295,8 @@ detail::pipeline_base::pipeline_base(const cacao::device& device,
    m_push_constants(detail::populate_push_constants(shader_infos)),
    m_pipeline_layout(detail::create_pipeline_layout(device, m_set_layouts, m_push_constants))
 {}
-detail::pipeline_base::pipeline_base(const cacao::device& device,
-                                     const pipeline_shader_data& shader_infos,
-                                     mannele::log_ptr logger)
+detail::pipeline_base::pipeline_base(const cacao::device&, const pipeline_shader_data&,
+                                     mannele::log_ptr)
 {}
 
 [[nodiscard]] auto detail::pipeline_base::layout() const noexcept -> vk::PipelineLayout

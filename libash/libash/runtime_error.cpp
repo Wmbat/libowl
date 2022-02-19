@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ash
+namespace ash::inline v0
 {
    runtime_error::runtime_error(std::error_condition e) : std::runtime_error(e.message()), m_err(e)
    {}
@@ -28,4 +28,4 @@ namespace ash
 
    auto runtime_error::condition() const noexcept -> const std::error_condition& { return m_err; }
    auto runtime_error::what() const noexcept -> const char* { return std::runtime_error::what(); }
-} // namespace ash
+} // namespace ash::inline v0

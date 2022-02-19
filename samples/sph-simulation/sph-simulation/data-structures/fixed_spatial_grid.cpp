@@ -1,4 +1,3 @@
-#include "glm/fwd.hpp"
 #include <sph-simulation/data-structures/fixed_spatial_grid.hpp>
 
 #include <range/v3/range/conversion.hpp>
@@ -8,9 +7,11 @@ namespace rv = ranges::views;
 
 namespace detail
 {
-   auto compute_grid_division(const glm::vec2& bounds_x, const glm::vec2& bounds_y,
-                              const glm::vec2& bounds_z, mannele::f32 unit_size) -> glm::u64vec3
-   {}
+   auto compute_grid_division(const glm::vec2&, const glm::vec2&, const glm::vec2&, mannele::f32)
+      -> glm::u64vec3
+   {
+      return {};
+   }
 } // namespace detail
 
 // clang-format off

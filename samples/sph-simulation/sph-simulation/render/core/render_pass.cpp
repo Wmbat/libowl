@@ -29,7 +29,7 @@ void render_pass::submit_render_calls(vk::CommandBuffer buffer, mannele::u64 ima
                                       vk::Rect2D render_area,
                                       std::span<const vk::ClearValue> clear_colours)
 {
-   assert(image_index < std::size(m_framebuffers)); // NOLINT
+   // assert(image_index < std::size(m_framebuffers)); // NOLINT
 
    buffer.beginRenderPass({.pNext = nullptr,
                            .renderPass = m_render_pass.get(),

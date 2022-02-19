@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libgerbil/
+}
+
+export $out_root/libgerbil/$import.target

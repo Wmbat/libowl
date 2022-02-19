@@ -1,0 +1,90 @@
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import intf_libs += libmannele%lib{mannele}
+import intf_libs += libash%lib{ash}
+import intf_libs += spdlog%lib{spdlog}
+import intf_libs += magic_enum%lib{magic_enum}
+import intf_libs += range-v3%lib{range-v3}
+
+# Library Target
+#
+lib{owl}: {hxx ixx txx cxx}{** -version -detail/x11/** -detail/wayland/**} hxx{version} \
+    $impl_libs $intf_libs
+
+if $use_x11
+    x11_libs += libxcb%lib{xcb}
+    x11_libs += libxcb-randr%lib{xcb-randr}
+    x11_libs += libxcb-keysyms%lib{xcb-keysyms}
+
+    lib{owl}: {hxx ixx txx cxx}{detail/x11/**} $x11_libs
+
+    # Ad-Hoc recipe for generating a X server keysym to UTF-32 table for key presses
+    #
+    ./: hxx{detail/x11/keysym_to_code_point_table}: include = adhoc
+    hxx{detail/x11/keysym_to_code_point_table}: detail/x11/generate_keysym_to_code_point_table.py
+    
+    hxx{detail/x11/keysym_to_code_point_table}: file{detail/x11/generate_keysym_to_code_point_table.py}
+    {{
+       diag python ($<[0])
+    
+       python $path($<[0])
+    }}
+
+    cc.poptions += -DVK_USE_PLATFORM_XCB_KHR
+    cxx.poptions += -DLIBOWL_USE_X11
+
+if $use_wayland
+    wayland_libs = 
+
+    lib{owl}: {hxx ixx txx cxx}{detail/wayland/**} $wayland_libs
+    
+    cxx.poptions += -DLIBOWL_USE_WAYLAND
+
+# Include the generated version header into the distribution (so that we don't
+# pick up an installed one) and don't remove it when cleaning in src (so that
+# clean results in a state identical to distributed).
+#
+hxx{version}: in{version} $src_root/manifest
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+}
+
+hxx{export}@./: cxx.importable = false
+
+# Build options.
+#
+cxx.poptions =+ "-I$out_root" "-I$src_root"
+
+{hbmia obja}{*}: cxx.poptions += -DLIBOWL_STATIC_BUILD
+{hbmis objs}{*}: cxx.poptions += -DLIBOWL_SHARED_BUILD
+
+# Export options.
+#
+lib{owl}:
+{
+  cxx.export.poptions = "-I$out_root" "-I$src_root"
+  cxx.export.libs = $intf_libs
+}
+
+liba{owl}: cxx.export.poptions += -DLIBOWL_STATIC
+libs{owl}: cxx.export.poptions += -DLIBOWL_SHARED
+
+# For pre-releases use the complete version to make sure they cannot be used
+# in place of another pre-release or the final version. See the version module
+# for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{owl}: bin.lib.version = "-$version.project_id"
+else
+  lib{owl}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install into the libowl/ subdirectory of, say, /usr/include/
+# recreating subdirectories.
+#
+{hxx ixx txx}{*}:
+{
+  install         = include/libowl/
+  install.subdirs = true
+}

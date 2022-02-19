@@ -2,11 +2,13 @@ intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 import intf_libs += libreglisse%lib{reglisse}
-import intf_libs += magic_enum%lib{magic_enum}
-import intf_libs += spdlog%lib{spdlog}
 import intf_libs += range-v3%lib{range-v3}
+import intf_libs += magic_enum%lib{magic_enum}
 
 lib{mannele}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
+
+if $enable_debug_logging
+    cxx.poptions += -DLIBMANNELE_ENABLE_DEBUG_LOGGING
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that

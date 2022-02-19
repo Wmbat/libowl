@@ -1,0 +1,16 @@
+: 1
+name: libgerbil
+version: 0.1.0-a.0.z
+project: vermillon
+summary: gerbil C++ library
+license: other: proprietary ; Not free/open source.
+description-file: README.md
+url: https://example.org/vermillon
+email: wmbat@protonmail.com
+#build-error-email: wmbat@protonmail.com
+depends: * build2 >= 0.14.0
+depends: * bpkg >= 0.14.0
+
+depends: fmt ^8.0.1
+depends: range-v3 ^0.11.0
+depends: ctre ^3.5.0

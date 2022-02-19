@@ -3,8 +3,18 @@ impl_libs = # Implementation dependencies.
 
 import intf_libs += libmannele%lib{mannele}
 import intf_libs += Vulkan-Hpp%lib{Vulkan-Hpp}
+import intf_libs += spdlog%lib{spdlog}
+import intf_libs += magic_enum%lib{magic_enum}
+import intf_libs += range-v3%lib{range-v3}
 
 lib{ash}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
+
+# 
+#
+if $use_x11
+   cc.poptions += -DVK_USE_PLATFORM_XCB_KHR
+elif $use_wayland
+   cc.poptions += -DVK_USE_PLATFORM_WAYLAND_KHR
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that

@@ -1,0 +1,3 @@
+# libgerbil
+
+C++ library
