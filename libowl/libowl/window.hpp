@@ -30,16 +30,16 @@ namespace owl::inline v0
    class window
    {
    public:
-      window(const window& other) = delete;
+      window(window const& other) = delete;
       window(window&& other) noexcept = delete;
       virtual ~window() = default;
 
-      auto operator=(const window& other) = delete;
+      auto operator=(window const& other) = delete;
       auto operator=(window&& other) noexcept = delete;
- 
+
       virtual void render(std::chrono::nanoseconds delta_time);
 
-      void handle_event(const key_event& event);
+      void handle_event(key_event const& event);
 
       /**
        * @brief Set the window's physical device used for rendering.
@@ -60,18 +60,19 @@ namespace owl::inline v0
       /**
        * @brief Get the window's render surface
        */
-      [[nodiscard]] auto surface() const noexcept -> const render_surface&;
+      [[nodiscard]] auto surface() const noexcept -> render_surface const&;
       /**
        * @brief Get the monitor the window currently is on
        */
-      [[nodiscard]] auto monitor() const noexcept -> const owl::monitor&;
+      [[nodiscard]] auto monitor() const noexcept -> owl::monitor const&;
       /**
        * @brief Get the id of the window
        */
       [[nodiscard]] virtual auto id() const noexcept -> u32 = 0;
 
    protected:
-      window(system& system, std::string_view title, spdlog::logger& logger);
+      window(system& system, std::string_view title, owl::monitor& target_monitor,
+             spdlog::logger& logger);
 
       /**
        * @brief Get the logger used by the window

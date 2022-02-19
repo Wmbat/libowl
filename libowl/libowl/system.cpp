@@ -70,8 +70,8 @@ namespace owl::inline v0
 
       do
       {
-         const auto new_time = sys_nanosecond(std::chrono::system_clock::now());
-         const auto delta_time = new_time - curr_time;
+         auto const new_time = sys_nanosecond(std::chrono::system_clock::now());
+         auto const delta_time = new_time - curr_time;
          curr_time = new_time;
 
          handle_events();
@@ -95,25 +95,25 @@ namespace owl::inline v0
    {
       using detail::overloaded;
 
-      while (const auto event = poll_for_event(m_xserver_connection))
+      while (auto const event = poll_for_event(m_xserver_connection))
       {
          // clang-format off
          std::visit(
             overloaded{
-               [&](const key_event& e) { m_window_in_focus->handle_event(e); }, 
-               [](const mouse_button_event&) {},
-               [](const mouse_movement_event&) {},
-               [&](const structure_changed_event& e) { handle_structure_changed_event(e); },
-               [&](const focus_event& e) { handle_focus_event(e); },
+               [&](key_event const& e) { m_window_in_focus->handle_event(e); }, 
+               [](mouse_button_event const&) {},
+               [](mouse_movement_event const&) {},
+               [&](structure_changed_event const& e) { handle_structure_changed_event(e); },
+               [&](focus_event const& e) { handle_focus_event(e); },
                [&](command cmd) { handle_command(cmd); } },
             event.borrow());
          // clang-format on
       }
    }
 
-   void system::handle_structure_changed_event(const structure_changed_event& event)
+   void system::handle_structure_changed_event(structure_changed_event const& event)
    {
-      const auto it = std::ranges::find(m_windows, event.window_id, &window::id);
+      auto const it = std::ranges::find(m_windows, event.window_id, &window::id);
       if (it != std::end(m_windows))
       {
          m_logger.debug("window \"{}\" has been moved to {}", (*it)->title(), event.dimension);
@@ -123,11 +123,11 @@ namespace owl::inline v0
          m_logger.warn("window with id {} was not found!", event.window_id);
       }
    }
-   void system::handle_focus_event(const focus_event& event)
+   void system::handle_focus_event(focus_event const& event)
    {
       if (event.type == focus_type::in)
       {
-         const auto it = std::ranges::find(m_windows, event.window_id, &window::id);
+         auto const it = std::ranges::find(m_windows, event.window_id, &window::id);
 
          if (it != std::end(m_windows))
          {
@@ -172,15 +172,13 @@ namespace owl::inline v0
 
    auto system::make_window(std::string_view name) -> window&
    {
-      auto p_window =
+      return add_window(
          std::make_unique<x11::window>(x11::window_create_info{.p_system = this,
                                                                .name = name,
                                                                .conn = m_xserver_connection,
                                                                .instance = m_instance,
-                                                               .p_target_monitor = &m_monitors[0],
-                                                               .logger = m_logger});
-
-      return add_window(std::move(p_window));
+                                                               .target_monitor = m_monitors[0],
+                                                               .logger = m_logger}));
    }
 
    [[nodiscard]] auto system::is_gui_thread() const noexcept -> bool

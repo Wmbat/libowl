@@ -73,7 +73,7 @@ struct fmt::formatter<owl::key_modifier_flags>
    }
 
    template <typename FormatContext>
-   auto format(const owl::key_modifier_flags& flags, FormatContext& ctx) -> decltype(ctx.out())
+   auto format(owl::key_modifier_flags const& flags, FormatContext& ctx) -> decltype(ctx.out())
    {
       using owl::key_modifiers_flag_bits;
 

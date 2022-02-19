@@ -62,8 +62,8 @@ namespace owl::inline v0
 
    private:
       void handle_events();
-      void handle_structure_changed_event(const structure_changed_event& event);
-      void handle_focus_event(const focus_event& event);
+      void handle_structure_changed_event(structure_changed_event const& event);
+      void handle_focus_event(focus_event const& event);
       void handle_command(command cmd);
 
       void render(std::chrono::nanoseconds delta_time);

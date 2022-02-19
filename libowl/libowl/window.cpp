@@ -40,8 +40,10 @@ namespace owl::inline v0
          ash::device(ash::device_create_info{.physical = m_physical_device, .logger = m_logger});
    }
 
-   window::window(system& system, std::string_view title, spdlog::logger& logger) :
-      m_system(system), m_logger(logger), m_title(title), mp_target_monitor(nullptr)
+   window::window(system& system, std::string_view title, owl::monitor& target_monitor,
+                  spdlog::logger& logger) :
+      m_system(system),
+      m_logger(logger), m_title(title), mp_target_monitor(&target_monitor)
    {}
 
    [[nodiscard]] auto window::logger() const noexcept -> spdlog::logger& { return m_logger; }

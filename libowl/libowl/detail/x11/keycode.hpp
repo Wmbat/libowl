@@ -37,8 +37,8 @@ namespace owl::inline v0
           */
          [[nodiscard]] constexpr auto value() const noexcept -> u32 { return m_value; }
 
-         constexpr auto operator<=>(const keycode_t& other) const -> std::strong_ordering = default;
-         constexpr auto operator==(const keycode_t& other) const -> bool = default;
+         constexpr auto operator<=>(keycode_t const& other) const -> std::strong_ordering = default;
+         constexpr auto operator==(keycode_t const& other) const -> bool = default;
 
       private:
          u8 m_value = std::numeric_limits<u8>::max();

@@ -16,7 +16,7 @@ namespace owl::inline v0
          const connection& conn;
          const ash::instance& instance;
 
-         monitor* p_target_monitor;
+         monitor& target_monitor;
 
          spdlog::logger& logger;
       };

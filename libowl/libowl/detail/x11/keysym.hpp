@@ -68,8 +68,11 @@ namespace owl::inline v0
           * @pre \p keycode must be greater than or equal to \p conn.min_keycode
           * @pre \p keycode must be smaller than or equal to \p conn.max_keycode
           */
-         constexpr keysym_t(const connection& conn, keycode_t keycode, key_modifier_flags mods)
+         constexpr keysym_t(connection const& conn, keycode_t keycode, key_modifier_flags mods)
          {
+            assert(keycode.value() >= conn.min_keycode); // NOLINT
+            assert(keycode.value() <= conn.max_keycode); // NOLINT
+
             const u32 keysyms_per_key_code = conn.keysyms_per_keycode;
             const u32 adjusted_key_code = keycode.value() - conn.min_keycode;
             const u32 keysym_offset = detail::compute_keysim_offset(mods);
@@ -86,8 +89,8 @@ namespace owl::inline v0
           */
          [[nodiscard]] constexpr auto value() const noexcept -> u32 { return m_value; }
 
-         constexpr auto operator<=>(const keysym_t& other) const -> std::strong_ordering = default;
-         constexpr auto operator==(const keysym_t& other) const -> bool = default;
+         constexpr auto operator<=>(keysym_t const& other) const -> std::strong_ordering = default;
+         constexpr auto operator==(keysym_t const& other) const -> bool = default;
 
       private:
          u32 m_value;

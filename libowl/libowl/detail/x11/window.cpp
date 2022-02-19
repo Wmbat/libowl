@@ -15,11 +15,9 @@ namespace owl::inline v0
    namespace x11
    {
       window::window(window_create_info&& info) :
-         super(*info.p_system, info.name, info.logger), mp_connection(info.conn.x_server.get()),
-         m_window_handle(xcb_generate_id(mp_connection))
+         super(*info.p_system, info.name, info.target_monitor, info.logger),
+         mp_connection(info.conn.x_server.get()), m_window_handle(xcb_generate_id(mp_connection))
       {
-//         assert(info.p_target_monitor != nullptr); // NOLINT
-
          const xcb_setup_t* p_setup = xcb_get_setup(mp_connection);
 
          xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(p_setup);

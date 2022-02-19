@@ -41,7 +41,7 @@ namespace owl::inline v0
     *
     * @return the maybe will be empty if there is no event
     */
-   auto poll_for_event(const x11::connection &conn) -> reglisse::maybe<event_variant>;
+   auto poll_for_event(x11::connection const& conn) -> reglisse::maybe<event_variant>;
 #endif // defined (LIBOWL_USE_X11)
 } // namespace owl::inline v0
 

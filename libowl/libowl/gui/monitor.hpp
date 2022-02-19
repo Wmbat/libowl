@@ -50,7 +50,7 @@ namespace owl::inline v0
     *
     * @return A list of monitors plugged into the computer
     */
-   auto list_available_monitors(const x11::connection& conn) -> std::vector<monitor>;
+   auto list_available_monitors(x11::connection const& conn) -> std::vector<monitor>;
 #endif // defined (LIBOWL_USE_X11)
 } // namespace owl::inline v0
 
@@ -63,7 +63,7 @@ struct fmt::formatter<owl::monitor_dimensions>
    }
 
    template <typename FormatContext>
-   auto format(const owl::monitor_dimensions& dimensions, FormatContext& ctx) -> decltype(ctx.out())
+   auto format(owl::monitor_dimensions const& dimensions, FormatContext& ctx) -> decltype(ctx.out())
    {
       return format_to(ctx.out(), "{{.x = {}, .y = {}, .width = {}, .height = {}}}", dimensions.x,
                        dimensions.y, dimensions.width, dimensions.height);
@@ -79,7 +79,7 @@ struct fmt::formatter<owl::monitor>
    }
 
    template <typename FormatContext>
-   auto format(const owl::monitor& monitor, FormatContext& ctx) -> decltype(ctx.out())
+   auto format(owl::monitor const& monitor, FormatContext& ctx) -> decltype(ctx.out())
    {
       return format_to(ctx.out(), "monitor{{.name = {}, .dimensions = {}}}", monitor.name,
                        monitor.dimensions);
