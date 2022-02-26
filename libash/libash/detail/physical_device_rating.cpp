@@ -1,6 +1,7 @@
 #include <libash/detail/physical_device_rating.hpp>
 
 #include <libash/queue.hpp>
+#include <libash/detail/tally_ratings.hpp>
 
 #include <libreglisse/maybe.hpp>
 #include <libreglisse/operations/and_then.hpp>
@@ -27,7 +28,6 @@ using reglisse::some;
 
 namespace stdr = std::ranges;
 namespace rv = ranges::views;
-namespace ra = ranges::actions;
 
 namespace ash::inline v0
 {

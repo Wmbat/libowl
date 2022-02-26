@@ -12,8 +12,10 @@ email: wmbat-dev@protonmail.com
 depends: * build2 >= 0.14.0-
 depends: * bpkg >= 0.14.0-
 
-depends: spdlog >= 1.9.1
 depends: libmannele >= 0.0.1
-depends: Vulkan-Hpp >= 1.2.185
-depends: magic_enum >= 0.7.3
-depends: range-v3 >= 0.11.0
+
+depends: spdlog ^1.9.1
+depends: gtest ^1.11.0
+depends: Vulkan-Hpp ^1.2.185
+depends: magic_enum ^0.7.3
+depends: range-v3 ^0.11.0

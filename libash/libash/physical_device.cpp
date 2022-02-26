@@ -1,6 +1,7 @@
 #include <libash/physical_device.hpp>
 
 #include <libash/detail/physical_device_rating.hpp>
+#include <libash/detail/tally_ratings.hpp>
 
 #include <libmannele/core/types.hpp>
 
