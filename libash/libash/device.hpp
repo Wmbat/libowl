@@ -34,7 +34,7 @@ namespace ash::inline v0
       [[nodiscard]] auto api_version() const noexcept -> mannele::semantic_version;
 
    private:
-      spdlog::logger* mp_logger;
+      spdlog::logger* mp_logger{};
 
       mannele::semantic_version m_api_version{};
 

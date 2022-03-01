@@ -1,4 +1,4 @@
 import libs = libash%lib{ash}
 import libs += gtest%lib{gtest}
 
-exe{driver}: {hxx ixx txx cxx}{**} $libs testscript{**}
+./: exe{driver}: {hxx ixx txx cxx}{** -*-compile.cpp} $libs testscript{**}
