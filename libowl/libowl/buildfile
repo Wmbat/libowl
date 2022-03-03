@@ -13,6 +13,7 @@ lib{owl}: {hxx ixx txx cxx}{** -version -detail/x11/** -detail/wayland/**} hxx{v
     $impl_libs $intf_libs
 
 if $use_x11
+{
     x11_libs += libxcb%lib{xcb}
     x11_libs += libxcb-randr%lib{xcb-randr}
     x11_libs += libxcb-keysyms%lib{xcb-keysyms}
@@ -31,15 +32,20 @@ if $use_x11
        python $path($<[0])
     }}
 
-    cc.poptions += -DVK_USE_PLATFORM_XCB_KHR
     cxx.poptions += -DLIBOWL_USE_X11
 
-if $use_wayland
+    config.libash.use_wayland = false
+}
+elif $use_wayland
+{
     wayland_libs = 
 
     lib{owl}: {hxx ixx txx cxx}{detail/wayland/**} $wayland_libs
-    
+
     cxx.poptions += -DLIBOWL_USE_WAYLAND
+
+    config.libash.use_wayland = true
+}
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that

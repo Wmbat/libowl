@@ -87,7 +87,7 @@ namespace ash::inline v0
       if (std::size(rated_devices) == 0 || rated_devices[0].rating < 0)
       {
          const auto err_code = physical_device_selection_error::no_suitable_device_found;
-         const auto err = runtime_error(to_error_condition(err_code));
+         const auto err = runtime_error(to_error_condition(err_code), {});
 
          return reglisse::err(err);
       }
