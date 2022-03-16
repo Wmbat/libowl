@@ -11,8 +11,8 @@
 #include <magic_enum.hpp>
 
 #include <cstring>
-#include <string_view>
 #include <optional>
+#include <string_view>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
 
@@ -126,7 +126,7 @@ namespace ash::inline v0
 #   elif defined(VK_USE_PLATFORM_XLIB_KHR)
          if (is_extension_available("VK_KHR_xlib_surface", properties))
          {
-            return VK_KHR_xlib_surface"sv;
+            return VK_KHR_xlib_surface "sv;
          }
 #   elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
          if (is_extension_available("VK_KHR_wayland_surface", properties))
@@ -235,7 +235,7 @@ namespace ash::inline v0
 
       const auto window_ext = detail::get_windowing_extensions(extension_properties);
 
-      if (not info.is_headless and window_ext)
+      if (!(info.is_headless || window_ext))
       {
          throw runtime_error(to_error_condition(instance_error::window_support_not_found));
       }
