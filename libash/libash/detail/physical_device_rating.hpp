@@ -37,7 +37,7 @@ namespace ash::inline v0
        * @return
        */
       auto rate_properties_support(const vk::PhysicalDeviceProperties& properties,
-                                   const physical_device_select_info& info) -> i32;
+                                   const physical_device_selection_criteria& info) -> i32;
       /**
        * @brief
        *
@@ -47,7 +47,7 @@ namespace ash::inline v0
        * @return
        */
       auto rate_extension_support(std::span<const vk::ExtensionProperties> device_extensions,
-                                  const physical_device_select_info& info)
+                                  const physical_device_selection_criteria& info)
          -> std::pair<std::vector<std::string_view>, i32>;
       /**
        * @brief
@@ -58,7 +58,7 @@ namespace ash::inline v0
        * @return
        */
       auto rate_queue_support(std::span<const vk::QueueFamilyProperties> queue_properties,
-                              const physical_device_select_info& info)
+                              const physical_device_selection_criteria& info)
          -> std::pair<std::vector<desired_queue_data>, i32>;
    } // namespace detail
 } // namespace ash::inline v0

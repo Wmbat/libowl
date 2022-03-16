@@ -4,15 +4,11 @@
 
 #include <libmannele/algorithm/binary_search.hpp>
 
-using reglisse::maybe;
-using reglisse::none;
-using reglisse::some;
-
 namespace owl::inline v0
 {
    namespace x11
    {
-      auto to_code_point(keysym_t keysym) -> maybe<owl::detail::code_point_t>
+      auto to_code_point(keysym_t keysym) -> std::optional<owl::detail::code_point_t>
       {
          // TODO(wmbat): We may be able to optimize this for standard ASCII characters
 
@@ -23,11 +19,11 @@ namespace owl::inline v0
 
          if (it != std::ranges::end(keysym_to_code_point_table))
          {
-            return some(it->code_point);
+            return it->code_point;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
    } // namespace x11

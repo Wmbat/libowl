@@ -3,7 +3,7 @@
 
 #include <libowl/types.hpp>
 
-#include <libreglisse/result.hpp>
+#include <tl/expected.hpp>
 
 #include <spdlog/logger.h>
 
@@ -57,7 +57,7 @@ namespace owl::inline v0
        * @return
        */
       auto connect_to_server(spdlog::logger& logger)
-         -> reglisse::result<connection, server_connection_error_code>;
+         -> tl::expected<connection, server_connection_error_code>;
    } // namespace x11
 } // namespace owl::inline v0
 

@@ -56,10 +56,10 @@ namespace owl::inline v0
 
          const vk::Instance instance = info.instance;
 
-         super::set_surface(
-            render_surface(instance.createXcbSurfaceKHRUnique(vk::XcbSurfaceCreateInfoKHR()
-                                                                 .setConnection(mp_connection)
-                                                                 .setWindow(m_window_handle))));
+         super::set_render_target(
+            render_target(instance.createXcbSurfaceKHRUnique(vk::XcbSurfaceCreateInfoKHR()
+                                                                .setConnection(mp_connection)
+                                                                .setWindow(m_window_handle))));
       }
       window::~window() { xcb_destroy_window(mp_connection, m_window_handle); }
 

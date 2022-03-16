@@ -3,8 +3,6 @@
 #include <libash/core.hpp>
 #include <libash/runtime_error.hpp>
 
-#include <libreglisse/maybe.hpp>
-
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
@@ -14,10 +12,7 @@
 
 #include <cstring>
 #include <string_view>
-
-using reglisse::maybe;
-using reglisse::none;
-using reglisse::some;
+#include <optional>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // NOLINT
 
@@ -118,7 +113,7 @@ namespace ash::inline v0
       }
 
       auto get_windowing_extensions(std::span<const vk::ExtensionProperties> properties)
-         -> reglisse::maybe<std::string_view>
+         -> std::optional<std::string_view>
       {
          using namespace std::literals;
 
@@ -126,32 +121,33 @@ namespace ash::inline v0
 #   if defined(VK_USE_PLATFORM_XCB_KHR)
          if (is_extension_available("VK_KHR_xcb_surface", properties))
          {
-            return some("VK_KHR_xcb_surface"sv);
+            return "VK_KHR_xcb_surface"sv;
          }
 #   elif defined(VK_USE_PLATFORM_XLIB_KHR)
          if (is_extension_available("VK_KHR_xlib_surface", properties))
          {
-            return some("VK_KHR_xlib_surface"sv);
+            return VK_KHR_xlib_surface"sv;
          }
 #   elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
          if (is_extension_available("VK_KHR_wayland_surface", properties))
          {
-            return some("VK_KHR_wayland_surface"sv);
+            return "VK_KHR_wayland_surface"sv;
          }
 #   endif
 
-         return none;
+         return std::nullopt;
+
 #elif defined(_WIN32)
          if (is_extension_available("VK_KHR_win32_surface", properties))
          {
-            return some("VK_KHR_win32_surface"sv);
+            return "VK_KHR_win32_surface"sv;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
 #else
-         return none;
+         return std::nullopt;
 #endif
       }
    } // namespace detail
@@ -239,7 +235,7 @@ namespace ash::inline v0
 
       const auto window_ext = detail::get_windowing_extensions(extension_properties);
 
-      if (!info.is_headless and window_ext.is_none())
+      if (not info.is_headless and window_ext)
       {
          throw runtime_error(to_error_condition(instance_error::window_support_not_found));
       }
@@ -268,9 +264,9 @@ namespace ash::inline v0
          }
       }
 
-      if (window_ext.is_some())
+      if (window_ext)
       {
-         ext_names.push_back(window_ext.borrow().data());
+         ext_names.push_back(window_ext.value().data());
       }
 
       check_for_unsupported_exts(ext_names, extension_properties);

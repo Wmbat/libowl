@@ -9,7 +9,8 @@
 #ifndef LIBOWL_WINDOW_HPP_
 #define LIBOWL_WINDOW_HPP_
 
-#include <libowl/gfx/render_surface.hpp>
+#include <libowl/gfx/device.hpp>
+#include <libowl/gfx/render_target.hpp>
 #include <libowl/gui/event/keyboard_event.hpp>
 #include <libowl/gui/monitor.hpp>
 
@@ -41,12 +42,7 @@ namespace owl::inline v0
 
       void handle_event(key_event const& event);
 
-      /**
-       * @brief Set the window's physical device used for rendering.
-       *
-       * @param[in] device The physical device.
-       */
-      void set_physical_device(ash::physical_device&& device) noexcept;
+      void set_device(gfx::device&& device) noexcept;
 
       /**
        * @brief
@@ -60,7 +56,7 @@ namespace owl::inline v0
       /**
        * @brief Get the window's render surface
        */
-      [[nodiscard]] auto surface() const noexcept -> render_surface const&;
+      [[nodiscard]] auto target() const noexcept -> render_target const&;
       /**
        * @brief Get the monitor the window currently is on
        */
@@ -79,7 +75,7 @@ namespace owl::inline v0
        */
       [[nodiscard]] auto logger() const noexcept -> spdlog::logger&;
 
-      void set_surface(render_surface&& surface);
+      void set_render_target(render_target&& target);
 
    private:
       system& m_system;
@@ -90,9 +86,7 @@ namespace owl::inline v0
 
       owl::monitor* mp_target_monitor;
 
-      render_surface m_surface;
-      ash::physical_device m_physical_device;
-      ash::device m_device;
+      render_target m_render_target;
    };
 
    using unique_window = std::unique_ptr<window>;

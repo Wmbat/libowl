@@ -21,9 +21,8 @@
 #include <libowl/gui/event/mouse_event.hpp>
 #include <libowl/gui/event/structure_changed_event.hpp>
 
-#include <libreglisse/maybe.hpp>
-
 #include <variant>
+#include <optional>
 
 namespace owl::inline v0
 {
@@ -41,7 +40,7 @@ namespace owl::inline v0
     *
     * @return the maybe will be empty if there is no event
     */
-   auto poll_for_event(x11::connection const& conn) -> reglisse::maybe<event_variant>;
+   auto poll_for_event(x11::connection const& conn) -> std::optional<event_variant>;
 #endif // defined (LIBOWL_USE_X11)
 } // namespace owl::inline v0
 

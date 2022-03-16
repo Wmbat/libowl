@@ -1,7 +1,7 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import intf_libs += libreglisse%lib{reglisse}
+import intf_libs += tl-expected%lib{tl-expected}
 import intf_libs += range-v3%lib{range-v3}
 import intf_libs += magic_enum%lib{magic_enum}
 

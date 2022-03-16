@@ -23,7 +23,10 @@ namespace ash::inline v0
 
       u32 family_index{};
       u32 queue_index{};
+
+      friend auto operator==(queue const& lhs, queue const& rhs) noexcept -> bool = default;
    };
+
 } // namespace ash::inline v0
 
 template <>

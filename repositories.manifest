@@ -21,11 +21,11 @@ trust: 70:64:FE:E4:E0:F3:60:F1:B4:51:E1:FA:12:5C:E0:B3:DB:DF:96:\
 
 :
 role: prerequisite
-location: https://github.com/Wmbat/libreglisse.git
+location: https://github.com/build2-packaging/compile-time-regular-expressions.git#main
 
 :
 role: prerequisite
-location: https://github.com/build2-packaging/compile-time-regular-expressions.git#main
+location: https://github.com/Wmbat/build2-tl-expected.git#main
 
 :
 role: prerequisite

@@ -20,7 +20,10 @@ namespace ash::inline v0
 {
    struct device_create_info
    {
-      const physical_device& physical;
+      physical_device const& physical;
+
+      std::span<desired_queue_data const> desired_queues;
+      std::span<std::string_view const> extensions;
 
       spdlog::logger& logger;
    };
@@ -33,8 +36,12 @@ namespace ash::inline v0
 
       [[nodiscard]] auto api_version() const noexcept -> mannele::semantic_version;
 
+      operator vk::Device() const noexcept;
+
+      friend auto operator==(device const& rhs, device const& lhs) noexcept -> bool;
+
    private:
-      spdlog::logger* mp_logger;
+      spdlog::logger* mp_logger{};
 
       mannele::semantic_version m_api_version{};
 
