@@ -180,7 +180,8 @@ namespace ash::inline v0
       {
          if (!detail::is_extension_available(ext_name, extensions))
          {
-            throw runtime_error(to_error_condition(instance_error::extension_support_not_found));
+            throw runtime_error(to_error_condition(instance_error::extension_support_not_found),
+                                {});
          }
       }
    }
@@ -192,7 +193,7 @@ namespace ash::inline v0
       {
          if (!detail::is_layer_available(layer_name, layers))
          {
-            throw runtime_error(to_error_condition(instance_error::layer_support_not_found));
+            throw runtime_error(to_error_condition(instance_error::layer_support_not_found), {});
          }
       }
    }
@@ -237,7 +238,7 @@ namespace ash::inline v0
 
       if (!(info.is_headless || window_ext))
       {
-         throw runtime_error(to_error_condition(instance_error::window_support_not_found));
+         throw runtime_error(to_error_condition(instance_error::window_support_not_found), {});
       }
 
       std::vector ext_names = info.enabled_extension_names;

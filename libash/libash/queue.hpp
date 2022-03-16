@@ -26,7 +26,6 @@ namespace ash::inline v0
 
       friend auto operator==(queue const& lhs, queue const& rhs) noexcept -> bool = default;
    };
-
 } // namespace ash::inline v0
 
 template <>

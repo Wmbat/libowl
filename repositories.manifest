@@ -29,6 +29,10 @@ location: https://github.com/Wmbat/build2-tl-expected.git#main
 
 :
 role: prerequisite
+location: https://github.com/build2-packaging/compile-time-regular-expressions.git#main
+
+:
+role: prerequisite
 location: https://github.com/Wmbat/build2-SPIRV-Cross.git#main
 
 :

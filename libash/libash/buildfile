@@ -12,9 +12,25 @@ lib{ash}: {hxx ixx txx cxx}{** -version} hxx{version} $impl_libs $intf_libs
 # 
 #
 if $use_x11
-   cc.poptions += -DVK_USE_PLATFORM_XCB_KHR
+{
+  # Build options.
+  #
+  cc.poptions =+ -DVK_USE_PLATFORM_XCB_KHR
+
+  # Export options.
+  #
+  cc.export.poptions = -DVK_USE_PLATFORM_XCB_KHR
+}
 elif $use_wayland
-   cc.poptions += -DVK_USE_PLATFORM_WAYLAND_KHR
+{
+  # Build options.
+  #
+  cc.poptions =+ -DVK_USE_PLATFORM_WAYLAND_KHR
+
+  # Export options.
+  #
+  cc.export.poptions = -DVK_USE_PLATFORM_WAYLAND_KHR
+}
 
 # Include the generated version header into the distribution (so that we don't
 # pick up an installed one) and don't remove it when cleaning in src (so that
@@ -39,6 +55,7 @@ cxx.poptions =+ "-I$out_root" "-I$src_root"
 #
 lib{ash}:
 {
+  cc.loptions = -ldl
   cxx.export.poptions = "-I$out_root" "-I$src_root"
   cxx.export.libs = $intf_libs
 }

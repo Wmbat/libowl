@@ -3,6 +3,10 @@
 
 // C++ Standard Library
 
+#include <libmannele/core/source_location.hpp>
+
+#include <source_location>
+
 #include <string>
 #include <system_error>
 
@@ -10,13 +14,10 @@ namespace ash::inline v0
 {
    class runtime_error : public std::runtime_error
    {
+      using super = std::runtime_error;
+
    public:
-      explicit runtime_error(std::error_condition e);
-      runtime_error(std::error_condition e, const std::string& what);
-      runtime_error(std::error_condition e, const std::string_view what);
-      runtime_error(int value, const std::error_category& category);
-      runtime_error(int value, const std::error_category& category, const std::string& what);
-      runtime_error(int value, const std::error_category& category, const std::string_view what);
+      explicit runtime_error(std::error_condition e, mannele::source_location location);
 
       [[nodiscard]] auto condition() const noexcept -> const std::error_condition&;
       [[nodiscard]] auto what() const noexcept -> const char* override;

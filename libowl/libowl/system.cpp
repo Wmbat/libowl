@@ -1,8 +1,8 @@
-#include "libowl/gfx/device.hpp"
 #include <libowl/system.hpp>
 
 #include <libowl/chrono.hpp>
 #include <libowl/detail/visit_helper.hpp>
+#include <libowl/gfx/device.hpp>
 #include <libowl/detail/x11/window.hpp>
 #include <libowl/gui/event/event.hpp>
 #include <libowl/gui/monitor.hpp>
