@@ -59,7 +59,7 @@ jobs:
         run: |
           cd ../ && mkdir build2-build && cd build2-build/
           curl -sSfO https://download.build2.org/0.14.0/build2-install-0.14.0.sh
-          sh build2-install-0.14.0.sh --local --no-check
+          sudo sh build2-install-0.14.0.sh --local --no-check
           cd ../../libowl/
 
       - name: Generate Compilation Database
