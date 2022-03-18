@@ -64,7 +64,7 @@ jobs:
 
       - name: Generate Compilation Database
         run: |
-          bdep init -C ../build-gcc cc config.c=clang config.cxx=clang++
+          bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
           b -vn clean update |& compiledb 
 
       - name: Compile hdoc 
