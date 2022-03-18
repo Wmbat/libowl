@@ -27,7 +27,7 @@ jobs:
             clang-12 libclang-common-12-dev libclang-12-dev lld-12 \
             groff unzip pkg-config \
             git zlib1g-dev libssl-dev libcurl4-openssl-dev \
-            libxcb libxcb-randr0-dev libxcb-xtest0-dev \
+            xcb libxcb-randr0-dev libxcb-xtest0-dev \
             libxcb-xinerama0-dev libxcb-shape0-dev libxcb-xkb-dev
           sudo apt install build-essential manpages-dev software-properties-common
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
