@@ -57,15 +57,15 @@ jobs:
 
       - name: Compile Build2
         run: |
-          cd ../ && mkdir build2 && mkdir build2-build && cd build2-build/
+          cd ../ && mkdir build2-build && cd build2-build/
           curl -sSfO https://download.build2.org/0.14.0/build2-install-0.14.0.sh
-          sudo sh build2-install-0.14.0.sh --no-check ../build2/
-          cd ../../libowl/
+          sudo sh build2-install-0.14.0.sh --no-check --local --yes
+          cd ../libowl/
 
       - name: Generate Compilation Database
         run: |
-          ../build2/bin/bdep init -C ../build-gcc cc config.c=clang config.cxx=clang++
-          ../build2/bin/b -vn clean update |& compiledb 
+          bdep init -C ../build-gcc cc config.c=clang config.cxx=clang++
+          b -vn clean update |& compiledb 
 
       - name: Compile hdoc 
         run: |
