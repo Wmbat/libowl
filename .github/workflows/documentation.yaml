@@ -1,6 +1,9 @@
 name: Documentation
 
-on: [push]
+on:
+  push:
+    branches:
+      - 'docs-ci'
 
 jobs:
   build:
@@ -10,9 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          # sudo add-apt-repository ppa:pioneer19/ppa
           sudo apt update
-          # sudo apt-get install build2 build2-tools
           sudo apt-get remove llvm-11 llvm-10 gcc-9
           sudo apt-get remove clang-11 clang-10
           sudo apt-get -y update
@@ -61,16 +62,16 @@ jobs:
           #       #b -vn clean update |& compiledb 
           #       #cat compile_commands.json
 
-          #   - name: Get hdoc 
-          #     run: |
-          #       git clone https://github.com/hdoc/hdoc
-          #       cd hdoc
-          #       sudo meson build && sudo ninja -C build
-          #       cd ../
-          #       sudo hdoc/build/hdoc 
+          - name: Get hdoc 
+            run: |
+              git clone https://github.com/hdoc/hdoc
+              cd hdoc
+              sudo meson build && sudo ninja -C build
+              cd ../
+              sudo hdoc/build/hdoc 
 
-          #   - name: Publish
-          #     uses: peaceiris/actions-gh-pages@v3
-          #     with:
-          #       github_token: ${{ secrets.GITHUB_TOKEN }}
-          #       publish_dir: ./hdoc-output
+          - name: Publish
+            uses: peaceiris/actions-gh-pages@v3
+            with:
+              github_token: ${{ secrets.GITHUB_TOKEN }}
+              publish_dir: ./hdoc-output
