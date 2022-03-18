@@ -17,7 +17,7 @@ namespace ash::inline v0
       using super = std::runtime_error;
 
    public:
-      explicit runtime_error(std::error_condition e, mannele::source_location location);
+      explicit runtime_error(std::error_condition e, std::string_view reason, mannele::source_location location);
 
       [[nodiscard]] auto condition() const noexcept -> const std::error_condition&;
       [[nodiscard]] auto what() const noexcept -> const char* override;
