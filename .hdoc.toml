@@ -16,7 +16,7 @@ output_dir = "hdoc-output"
 
 [ignore]
 paths = [
-    "libash/tests/basic/"
+    "libash/tests/basic/",
     "libcacao/",
     "libgerbil/",
     "libmannele/tests/basic/",
