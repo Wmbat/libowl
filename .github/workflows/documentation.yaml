@@ -59,7 +59,7 @@ jobs:
         run: |
           cd ../
           curl -sL https://download.build2.org/0.14.0/build2-toolchain-0.14.0.tar.gz | tar xz
-          cd build2-toolchain-0.14.0
+          cd build2-toolchain-0.14.0 && ls
           sh build2-install-0.14.0.sh --local --no-check
           cd ../libowl/
 
