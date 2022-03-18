@@ -55,22 +55,19 @@ jobs:
             --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
           pip install compiledb
 
-          #- name: Get Build2
-          #  run: |
-          #    cd ../
-          #    ls
-          #    mkdir build2-build && cd build2-build
-          #    curl https://download.build2.org/0.14.0/build2-toolchain-0.14.0.tar.gz
-          #    tar –xvzf build2-toolchain-0.14.0.tar.gz
-          #    sh build2-install-X.Y.Z.sh --local --no-check
+      - name: Get Build2
+        run: |
+          cd ../ && mkdir build2-build && cd build2-build
+          curl -sL https://download.build2.org/0.14.0/build2-toolchain-0.14.0.tar.gz | tar xz
+          sh build2-install-X.Y.Z.sh --local --no-check
+          cd ../libowl/
 
-
-          #- name: Get Compilation Database
-          #  run: |
-          #    bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
-          #    #b -v
-          #    #b -vn clean update |& compiledb 
-          #    #cat compile_commands.json
+      - name: Get Compilation Database
+        run: |
+          bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
+          #b -v
+          b -vn clean update |& compiledb 
+          #cat compile_commands.json
 
       - name: Get hdoc 
         run: |
@@ -78,7 +75,7 @@ jobs:
           git clone https://github.com/hdoc/hdoc
           cd hdoc
           sudo meson build && sudo ninja -C build
-          cd libowl/
+          cd ../libowl/
 
       - name: Generate Documentation
         run: |
