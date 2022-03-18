@@ -39,7 +39,8 @@ jobs:
             git \
             zlib1g-dev \
             libssl-dev \
-            libcurl4-openssl-dev
+            libcurl4-openssl-dev \
+            xcb
           sudo apt install build-essential manpages-dev software-properties-common
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt update && sudo apt install gcc-11 g++-11
