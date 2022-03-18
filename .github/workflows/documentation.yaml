@@ -53,13 +53,24 @@ jobs:
             --slave /usr/bin/gcov gcov /usr/bin/gcov-11 \
             --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 \
             --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
+          pip install compiledb
 
-          #   - name: Get Compilation Database
-          #     run: |
-          #       bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
-          #       #b -v
-          #       #b -vn clean update |& compiledb 
-          #       #cat compile_commands.json
+      - name: Get Build2
+        run: |
+          cd ../
+          ls
+          mkdir build2-build && cd build2-build
+          curl https://download.build2.org/0.14.0/build2-toolchain-0.14.0.tar.gz
+          tar –xvzf build2-toolchain-0.14.0.tar.gz
+          sh build2-install-X.Y.Z.sh --local --no-check
+
+
+          #- name: Get Compilation Database
+          #  run: |
+          #    bdep init -C ../vermillon-gcc cc config.c=gcc config.cxx=g++
+          #    #b -v
+          #    #b -vn clean update |& compiledb 
+          #    #cat compile_commands.json
 
       - name: Get hdoc 
         run: |
@@ -67,9 +78,12 @@ jobs:
           cd hdoc
           sudo meson build && sudo ninja -C build
           cd ../
+
+      - name: Generate Documentation
+        run: |
           sudo hdoc/build/hdoc 
 
-      - name: Publish
+      - name: Publish Documentation
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
