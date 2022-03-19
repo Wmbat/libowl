@@ -17,13 +17,16 @@ jobs:
         run: |
           cd ../ && mkdir build2-build && cd build2-build/
           curl -sSfO https://download.build2.org/0.14.0/build2-install-0.14.0.sh
-          sudo sh build2-install-0.14.0.sh --no-check --yes ../build2/
+          sudo sh build2-install-0.14.0.sh --no-check --local --yes
 
       - name: Upload build2
         uses: actions/upload-artifact@v3
         with:
           name: build2-bin
-          path: ../build2/
+          path: | 
+            /usr/local/bin/b
+            /usr/local/bin/bdep
+            /usr/local/bin/bpkg
 
   build-documentation:
     needs: [build-build2]
@@ -85,8 +88,8 @@ jobs:
 
       - name: Generate Compilation Database
         run: |
-          ../build2/bin/bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
-          ../build2/bin/b -vn clean update |& compiledb 
+          ../build2/bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
+          ../build2/b -vn clean update |& compiledb 
       
       - name: Generate Documentation
         run: |
