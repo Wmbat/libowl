@@ -34,8 +34,17 @@ namespace ash::inline v0
     */
    enum struct instance_error
    {
+      /**
+       * @brief Support for window support was required, but not support by the instance.
+       */
       window_support_not_found,
+      /**
+       * @brief A layer was required, but not supported by the instance.
+       */
       layer_support_not_found,
+      /**
+       * @brief An extension was required, but not supported by the instance.
+       */
       extension_support_not_found
    };
 
@@ -51,8 +60,8 @@ namespace ash::inline v0
     */
    struct application_info
    {
-      std::string_view name;
-      mannele::semantic_version version;
+      std::string_view name;             ///< The application's name.
+      mannele::semantic_version version; ///< The applicaton's version.
    };
 
    /**
@@ -60,8 +69,8 @@ namespace ash::inline v0
     */
    struct engine_info
    {
-      std::string_view name;
-      mannele::semantic_version version;
+      std::string_view name;             ///< The engine's name.
+      mannele::semantic_version version; ///< The engine's version.
    };
 
    /**
@@ -69,15 +78,15 @@ namespace ash::inline v0
     */
    struct instance_create_info
    {
-      application_info app_info;
-      engine_info eng_info;
+      application_info app_info; ///< Information about the application
+      engine_info eng_info;      ///< Information about the engine
 
-      bool is_headless = false;
+      bool is_headless = false; ///<
 
-      std::vector<const char*> enabled_extension_names;
-      std::vector<const char*> enabled_layer_names;
+      std::vector<const char*> enabled_extension_names; ///< The instance extensions to enable.
+      std::vector<const char*> enabled_layer_names;     ///<  The instance layers to enable.
 
-      spdlog::logger& logger;
+      spdlog::logger& logger; ///< Logger used for general diagnostics
    };
 
    /**
