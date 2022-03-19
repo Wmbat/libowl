@@ -76,6 +76,12 @@ jobs:
           name: build2-bin
           path: ../build2
 
+      - name: Generate Compilation Database
+        run: |
+          ls ../build2/
+          sudo ../build2/bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
+          sudo ../build2/b -vn clean update |& compiledb 
+
       - name: Clone hdoc
         run: |
           cd ../
@@ -85,12 +91,7 @@ jobs:
         run: |
           cd ../hdoc 
           sudo meson build && sudo ninja -C build
-
-      - name: Generate Compilation Database
-        run: |
-          ../build2/bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
-          ../build2/b -vn clean update |& compiledb 
-      
+   
       - name: Generate Documentation
         run: |
           sudo ../hdoc/build/hdoc 
