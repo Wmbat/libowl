@@ -73,6 +73,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: build2-bin
+          path: /usr/local/bin/
 
       - name: Clone hdoc
         run: |
