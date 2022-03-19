@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'docs-ci'
+      - 'main'
 
 jobs:
   build-build2:
@@ -87,8 +88,8 @@ jobs:
 
       - name: Generate Compilation Database
         run: |
-          bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
-          b -vn clean update |& compiledb 
+          sudo bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
+          sudo b -vn clean update |& compiledb 
       
       - name: Generate Documentation
         run: |
