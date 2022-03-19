@@ -20,7 +20,7 @@ jobs:
           sudo apt-get -y install doxygen
    
       - name: Generate Documentation
-        run: doxygen doxygen-config
+        run: doxygen Doxyfile
 
       - name: Publish Documentation
         uses: peaceiris/actions-gh-pages@v3
