@@ -79,6 +79,8 @@ jobs:
       - name: Generate Compilation Database
         run: |
           ls ../build2/
+          cd ../build/ && b
+          cd ../libowl/
           sudo ../build2/bdep init -C ../build-gcc cc config.c=gcc config.cxx=g++
           sudo ../build2/b -vn clean update |& compiledb 
 
