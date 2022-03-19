@@ -1,4 +1,4 @@
-name: Documentation
+name: Main
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   build-build2:
+    name: Build2
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,7 +22,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build2-bin
-          path: /usr/local/bin/
+          path: |
+            /usr/local/bin/b
+            /usr/local/bin/bdep
+            /usr/local/bin/bpkg
 
   build-documentation:
     needs: [build-build2]
@@ -49,7 +53,7 @@ jobs:
             git zlib1g-dev libssl-dev libcurl4-openssl-dev \
             xcb libxcb-randr0-dev libxcb-xtest0-dev \
             libxcb-xinerama0-dev libxcb-shape0-dev libxcb-xkb-dev \
-            libxcb-keysyms0-dev
+            libxcb-keysyms1
           sudo apt install build-essential manpages-dev software-properties-common
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt update && sudo apt install gcc-11 g++-11
