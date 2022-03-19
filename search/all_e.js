@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['queue_75',['queue',['../structv0_1_1queue.html',1,'v0']]],
-  ['queue_2ehpp_76',['queue.hpp',['../queue_8hpp.html',1,'']]]
+  ['queue_81',['queue',['../structv0_1_1queue.html',1,'v0']]],
+  ['queue_2ehpp_82',['queue.hpp',['../queue_8hpp.html',1,'']]],
+  ['queue_5findex_83',['queue_index',['../structv0_1_1queue.html#a09324b56f49cfe89dfd819ade5ce37ed',1,'v0::queue']]]
 ];
