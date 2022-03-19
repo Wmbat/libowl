@@ -1,10 +1,10 @@
-name: Main
+name: Documentation
 
 on:
   push:
     branches:
-      - 'docs-ci'
       - 'main'
+      - 'docs-ci'
 
 jobs:
   build-documentation:
