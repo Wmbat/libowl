@@ -81,9 +81,8 @@ jobs:
 
       - name: Compile hdoc
         run: |
-          cd hdoc 
+          cd ../hdoc 
           sudo meson build && sudo ninja -C build
-          cd ../libowl/
 
       - name: Generate Compilation Database
         run: |
