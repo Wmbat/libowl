@@ -11,6 +11,6 @@ email: wmbat-dev@protonmail.com
 depends: * build2 >= 0.13.0
 depends: * bpkg >= 0.13.0
 
-depends: libreglisse >= 0.1.3
+depends: tl-expected ^1.0.0
 depends: range-v3 ^0.11.0
-depends: magic_enum >= 0.7.3
+depends: magic_enum ^0.7.3

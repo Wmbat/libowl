@@ -7,10 +7,9 @@
 #include <libowl/gui/keyboard_modifiers.hpp>
 #include <libowl/types.hpp>
 
-#include <libreglisse/maybe.hpp>
-
 #include <compare>
 #include <limits>
+#include <optional>
 
 namespace owl::inline v0
 {
@@ -103,7 +102,7 @@ namespace owl::inline v0
        *
        * @return
        */
-      auto to_code_point(keysym_t keysym) -> reglisse::maybe<owl::detail::code_point_t>;
+      auto to_code_point(keysym_t keysym) -> std::optional<owl::detail::code_point_t>;
    } // namespace x11
 } // namespace owl::inline v0
 

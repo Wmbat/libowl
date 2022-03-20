@@ -2,6 +2,7 @@
 
 #include <libowl/chrono.hpp>
 #include <libowl/detail/visit_helper.hpp>
+#include <libowl/gfx/device.hpp>
 #include <libowl/detail/x11/window.hpp>
 #include <libowl/gui/event/event.hpp>
 #include <libowl/gui/monitor.hpp>
@@ -9,10 +10,6 @@
 #include <libowl/window.hpp>
 
 #include <libmannele/core/semantic_version.hpp>
-
-#include <libreglisse/maybe.hpp>
-#include <libreglisse/operations/and_then.hpp>
-#include <libreglisse/result.hpp>
 
 #include <fmt/chrono.h>
 
@@ -23,10 +20,6 @@
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-
-using reglisse::maybe;
-using reglisse::none;
-using reglisse::some;
 
 namespace owl::inline v0
 {
@@ -56,14 +49,15 @@ namespace owl::inline v0
                   .enabled_extension_names = {"VK_KHR_surface"},
                   .enabled_layer_names = {},
                   .logger = m_logger}),
-      m_xserver_connection(x11::connect_to_server(m_logger).take()),
+      m_physical_devices(ash::enumerate_physical_devices(m_instance)),
+      m_xserver_connection(x11::connect_to_server(m_logger).value()),
       m_monitors(list_available_monitors(m_xserver_connection)),
       m_thread_id(std::this_thread::get_id())
    {}
 
    auto system::run() -> i32
    {
-      maybe<int> exit_code = none;
+      std::optional<int> exit_code = std::nullopt;
 
       // Switch to UTC
       auto curr_time = sys_nanosecond(std::chrono::system_clock::now());
@@ -82,13 +76,13 @@ namespace owl::inline v0
          {
             m_logger.info("No windows open");
 
-            exit_code = some(0);
+            exit_code = 0;
          }
       } while (not exit_code);
 
       m_logger.info("shutting down");
 
-      return exit_code.borrow();
+      return exit_code.value();
    }
 
    void system::handle_events()
@@ -106,7 +100,7 @@ namespace owl::inline v0
                [&](structure_changed_event const& e) { handle_structure_changed_event(e); },
                [&](focus_event const& e) { handle_focus_event(e); },
                [&](command cmd) { handle_command(cmd); } },
-            event.borrow());
+            event.value());
          // clang-format on
       }
    }
@@ -188,25 +182,28 @@ namespace owl::inline v0
 
    auto system::add_window(std::unique_ptr<window>&& wnd) -> window&
    {
-      auto phys_device_res = ash::find_most_suitable_gpu(
-         {.instance = m_instance,
-          .surface = wnd->surface(),
-          .require_transfer_queue = true,
-          .require_compute_queue = true,
-          .minimum_version = m_instance.version(),
-          .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME}),
-          .desired_extensions = {}});
+      auto results = ash::find_most_suitable_physical_device(
+         m_physical_devices, {.surface = wnd->target().surface(),
+                              .require_transfer_queue = true,
+                              .require_compute_queue = true,
+                              .minimum_version = m_instance.version(),
+                              .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME}),
+                              .desired_extensions = {}});
 
-      if (phys_device_res.is_err())
+      if (!results)
       {
          m_logger.error("failed to find suitable GPU");
-         // return an error
+
+         throw std::move(results).error();
       }
 
-      m_logger.info(R"(rendering window "{}" using physical device "{}")", wnd->title(),
-                    phys_device_res.borrow().properties.deviceName);
+      auto const& result_data = results.value();
 
-      wnd->set_physical_device(std::move(phys_device_res).take());
+      m_logger.info(R"(rendering window "{}" using physical device "{}")", wnd->title(),
+                    result_data.p_physical_device->properties.deviceName);
+
+      wnd->set_device(gfx::device(result_data.p_physical_device, result_data.queues_to_create,
+                                  result_data.extension_to_enable, m_logger));
 
       m_windows.push_back(std::move(wnd));
 

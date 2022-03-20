@@ -1,12 +1,8 @@
-#include <sstream>
-#include <stdexcept>
+#include <gtest/gtest.h>
 
-#include <libash/version.hpp>
-
-#undef NDEBUG
-#include <cassert>
-
-auto main() -> int
+auto main(int argc, char** argv) -> int
 {
-   return 0;
+   testing::InitGoogleTest(&argc, argv);
+
+   return RUN_ALL_TESTS();
 }
