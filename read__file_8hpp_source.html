@@ -76,7 +76,7 @@ $(function() {
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="libmannele_2libmannele_2error_2runtime__error_8hpp.html">libmannele/error/runtime_error.hpp</a>&gt;</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;libreglisse/result.hpp&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;tl/expected.hpp&gt;</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;filesystem&gt;</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
@@ -91,7 +91,7 @@ $(function() {
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;   <span class="keyword">auto</span> make_error_condition(file_reading_error e) -&gt; std::error_condition;</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;   <span class="keyword">auto</span> unbuffered_file_read(<span class="keyword">const</span> std::filesystem::path&amp; path)</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      -&gt; reglisse::result&lt;std::string, runtime_error&gt;;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      -&gt; tl::expected&lt;std::string, runtime_error&gt;;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;} <span class="comment">// namespace mannele</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#endif // LIBMANNELE_IO_READ_FILE_HPP_</span></div>

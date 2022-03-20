@@ -82,9 +82,18 @@ Inheritance diagram for v0::runtime_error:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a655d03e19b934bb272d239835eefa603"><td class="memItemLeft" align="right" valign="top"><a id="a655d03e19b934bb272d239835eefa603"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>runtime_error</b> (std::error_condition e, mannele::source_location location)</td></tr>
-<tr class="separator:a655d03e19b934bb272d239835eefa603"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec55f0400d7bb4b1edb3fec6d5c3f5bc"><td class="memItemLeft" align="right" valign="top"><a id="aec55f0400d7bb4b1edb3fec6d5c3f5bc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>runtime_error</b> (std::error_condition e, std::string_view reason, mannele::source_location location)</td></tr>
+<tr class="separator:aec55f0400d7bb4b1edb3fec6d5c3f5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a966fc814034255b9bde101a94a16620e"><td class="memItemLeft" align="right" valign="top"><a id="a966fc814034255b9bde101a94a16620e"></a>
+auto&#160;</td><td class="memItemRight" valign="bottom"><b>condition</b> () const noexcept -&gt; const std::error_condition &amp;</td></tr>
+<tr class="separator:a966fc814034255b9bde101a94a16620e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4920a0b05326658fb0717c6753238ff9"><td class="memItemLeft" align="right" valign="top"><a id="a4920a0b05326658fb0717c6753238ff9"></a>
+auto&#160;</td><td class="memItemRight" valign="bottom"><b>what</b> () const noexcept -&gt; const char *override</td></tr>
+<tr class="separator:a4920a0b05326658fb0717c6753238ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec55f0400d7bb4b1edb3fec6d5c3f5bc"><td class="memItemLeft" align="right" valign="top"><a id="aec55f0400d7bb4b1edb3fec6d5c3f5bc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>runtime_error</b> (std::error_condition e, std::string_view reason, mannele::source_location location)</td></tr>
+<tr class="separator:aec55f0400d7bb4b1edb3fec6d5c3f5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a966fc814034255b9bde101a94a16620e"><td class="memItemLeft" align="right" valign="top"><a id="a966fc814034255b9bde101a94a16620e"></a>
 auto&#160;</td><td class="memItemRight" valign="bottom"><b>condition</b> () const noexcept -&gt; const std::error_condition &amp;</td></tr>
 <tr class="separator:a966fc814034255b9bde101a94a16620e"><td class="memSeparator" colspan="2">&#160;</td></tr>

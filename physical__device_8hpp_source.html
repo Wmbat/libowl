@@ -79,7 +79,7 @@ $(function() {
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;libmannele/core/semantic_version.hpp&gt;</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;libreglisse/result.hpp&gt;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;tl/expected.hpp&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">namespace </span>ash::inline v0</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;{</div>
@@ -94,65 +94,75 @@ $(function() {
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keyword">enum struct</span> physical_device_selection_error</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;   {</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      no_suitable_device_found</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;   };</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="structv0_1_1physical__device__select__info.html">   38</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1physical__device__select__info.html">physical_device_select_info</a></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;   {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      ash::instance&amp; <a class="code" href="classv0_1_1instance.html">instance</a>;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      vk::SurfaceKHR surface;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;      <a class="code" href="physical__device_8hpp.html#a852601a1742bc123fab233c854bc4783">physical_device_type</a> prefered_type = physical_device_type::discrete;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;      no_device_found,</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      no_suitable_device_found</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   };</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="structv0_1_1desired__queue__data.html">   39</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1desired__queue__data.html">desired_queue_data</a></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;   {</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      vk::QueueFlags flags;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      u32 family;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      u32 index;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   };</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;      <span class="keywordtype">bool</span> allow_any_physical_device_type = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;      <span class="keywordtype">bool</span> require_transfer_queue = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;      <span class="keywordtype">bool</span> require_compute_queue = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      <a class="code" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a> desired_version = {1, 0, 0};</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      <a class="code" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a> minimum_version = {1, 0, 0};</div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structv0_1_1physical__device.html">   46</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1physical__device.html">physical_device</a></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;   {</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;      vk::PhysicalDevice <a class="code" href="classv0_1_1device.html">device</a>;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      vk::PhysicalDeviceFeatures features;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      vk::PhysicalDeviceProperties properties;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      vk::PhysicalDeviceMemoryProperties memory_properties;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      std::vector&lt;const char*&gt; required_extensions;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      std::vector&lt;const char*&gt; desired_extensions;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;   };</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="structv0_1_1desired__queue__data.html">   58</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1desired__queue__data.html">desired_queue_data</a></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;   {</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      vk::QueueFlags flags;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;      u32 family;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;      u32 index;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;   };</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="structv0_1_1physical__device.html">   65</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1physical__device.html">physical_device</a></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;   {</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;      vk::PhysicalDevice <a class="code" href="classv0_1_1device.html">device</a>; <span class="comment">// NOLINT</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      std::vector&lt;vk::QueueFamilyProperties&gt; queue_properties;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      std::vector&lt;vk::ExtensionProperties&gt; extension_properties;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;      <span class="keyword">operator</span> vk::PhysicalDevice() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;   };</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;   <span class="keyword">auto</span> enumerate_physical_devices(ash::instance <span class="keyword">const</span>&amp; <a class="code" href="classv0_1_1instance.html">instance</a>) -&gt; std::vector&lt;physical_device&gt;;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;      vk::PhysicalDeviceFeatures features;                  <span class="comment">// NOLINT</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;      vk::PhysicalDeviceProperties properties;              <span class="comment">// NOLINT</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;      vk::PhysicalDeviceMemoryProperties memory_properties; <span class="comment">// NOLINT</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;      std::vector&lt;desired_queue_data&gt; queues_to_create; <span class="comment">// NOLINT</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;      std::vector&lt;std::string_view&gt; extensions_to_enable; <span class="comment">// NOLINT</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;      <span class="keyword">operator</span> vk::PhysicalDevice() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00072"></a><span class="lineno"><a class="line" href="structv0_1_1physical__device__selection__results.html">   72</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1physical__device__selection__results.html">physical_device_selection_results</a></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;   {</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;      <a class="code" href="structv0_1_1physical__device.html">physical_device</a> <span class="keyword">const</span>* p_physical_device;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;      std::vector&lt;desired_queue_data&gt; queues_to_create;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;      std::vector&lt;std::string_view&gt; extension_to_enable;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;   };</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;   <span class="keyword">auto</span> find_most_suitable_gpu(<a class="code" href="structv0_1_1physical__device__select__info.html">physical_device_select_info</a>&amp;&amp; info)</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;      -&gt; reglisse::result&lt;physical_device, runtime_error&gt;;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;} <span class="comment">// namespace ash::inline v0</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="structv0_1_1physical__device__selection__criteria.html">   84</a></span>&#160;   <span class="keyword">struct </span><a class="code" href="structv0_1_1physical__device__selection__criteria.html">physical_device_selection_criteria</a></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;   {</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      vk::SurfaceKHR surface;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;      <a class="code" href="physical__device_8hpp.html#a852601a1742bc123fab233c854bc4783">physical_device_type</a> prefered_type = physical_device_type::discrete;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;      <span class="keywordtype">bool</span> allow_any_physical_device_type = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#endif // LIBASH_PHYSICAL_DEVICE_HPP_</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;      <span class="keywordtype">bool</span> require_transfer_queue = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;      <span class="keywordtype">bool</span> require_compute_queue = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;      <a class="code" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a> desired_version = {1, 0, 0};</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;      <a class="code" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a> minimum_version = {1, 0, 0};</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;      std::vector&lt;const char*&gt; required_extensions;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;      std::vector&lt;const char*&gt; desired_extensions;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;   };</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;   <span class="keyword">auto</span> find_most_suitable_physical_device(std::span&lt;const physical_device&gt; physical_devices,</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                                           <a class="code" href="structv0_1_1physical__device__selection__criteria.html">physical_device_selection_criteria</a>&amp;&amp; info)</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;      -&gt; tl::expected&lt;physical_device_selection_results, runtime_error&gt;;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;} <span class="comment">// namespace ash::inline v0</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="preprocessor">#endif // LIBASH_PHYSICAL_DEVICE_HPP_</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aphysical__device_8hpp_html_a852601a1742bc123fab233c854bc4783"><div class="ttname"><a href="physical__device_8hpp.html#a852601a1742bc123fab233c854bc4783">v0::physical_device_type</a></div><div class="ttdeci">physical_device_type</div><div class="ttdoc">Designates the type of a physical device.</div><div class="ttdef"><b>Definition:</b> physical_device.hpp:24</div></div>
 <div class="ttc" id="aclassv0_1_1instance_html"><div class="ttname"><a href="classv0_1_1instance.html">v0::instance</a></div><div class="ttdoc">Helper class to instantiate a vulkan instance.</div><div class="ttdef"><b>Definition:</b> instance.hpp:95</div></div>
-<div class="ttc" id="astructv0_1_1physical__device_html"><div class="ttname"><a href="structv0_1_1physical__device.html">v0::physical_device</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:65</div></div>
+<div class="ttc" id="astructv0_1_1physical__device_html"><div class="ttname"><a href="structv0_1_1physical__device.html">v0::physical_device</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:46</div></div>
 <div class="ttc" id="astructmannele_1_1semantic__version_html"><div class="ttname"><a href="structmannele_1_1semantic__version.html">mannele::semantic_version</a></div><div class="ttdef"><b>Definition:</b> semantic_version.hpp:10</div></div>
-<div class="ttc" id="astructv0_1_1physical__device__select__info_html"><div class="ttname"><a href="structv0_1_1physical__device__select__info.html">v0::physical_device_select_info</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:38</div></div>
-<div class="ttc" id="aclassv0_1_1device_html"><div class="ttname"><a href="classv0_1_1device.html">v0::device</a></div><div class="ttdef"><b>Definition:</b> device.hpp:28</div></div>
+<div class="ttc" id="aclassv0_1_1device_html"><div class="ttname"><a href="classv0_1_1device.html">v0::device</a></div><div class="ttdef"><b>Definition:</b> device.hpp:31</div></div>
+<div class="ttc" id="astructv0_1_1physical__device__selection__results_html"><div class="ttname"><a href="structv0_1_1physical__device__selection__results.html">v0::physical_device_selection_results</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:72</div></div>
 <div class="ttc" id="ainstance_8hpp_html"><div class="ttname"><a href="instance_8hpp.html">instance.hpp</a></div></div>
-<div class="ttc" id="astructv0_1_1desired__queue__data_html"><div class="ttname"><a href="structv0_1_1desired__queue__data.html">v0::desired_queue_data</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:58</div></div>
+<div class="ttc" id="astructv0_1_1physical__device__selection__criteria_html"><div class="ttname"><a href="structv0_1_1physical__device__selection__criteria.html">v0::physical_device_selection_criteria</a></div><div class="ttdoc">Struct used to group up all criteria that can be used to rate the viability of specific physical devi...</div><div class="ttdef"><b>Definition:</b> physical_device.hpp:84</div></div>
+<div class="ttc" id="astructv0_1_1desired__queue__data_html"><div class="ttname"><a href="structv0_1_1desired__queue__data.html">v0::desired_queue_data</a></div><div class="ttdef"><b>Definition:</b> physical_device.hpp:39</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

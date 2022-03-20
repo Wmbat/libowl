@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['code_5fpoint_5ft_119',['code_point_t',['../classv0_1_1detail_1_1code__point__t.html',1,'v0::detail']]],
-  ['connection_120',['connection',['../structv0_1_1x11_1_1connection.html',1,'v0::x11']]]
+  ['button_129',['button',['../classv0_1_1widget_1_1button.html',1,'v0::widget']]]
 ];

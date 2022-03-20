@@ -81,18 +81,30 @@ $(function() {
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;{</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;   <span class="keyword">namespace </span>detail</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;   {</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      <span class="keyword">auto</span> rate_properties_support(<span class="keyword">const</span> vk::PhysicalDeviceProperties&amp; properties,</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;                                   <span class="keyword">const</span> physical_device_select_info&amp; info) -&gt; i32;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;      <span class="keyword">auto</span> rate_extension_support(std::span&lt;const vk::ExtensionProperties&gt; device_extensions,</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                  <span class="keyword">const</span> physical_device_select_info&amp; info)</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;         -&gt; std::pair&lt;std::vector&lt;std::string_view&gt;, i32&gt;;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      <span class="keyword">auto</span> rate_queue_support(std::span&lt;const vk::QueueFamilyProperties&gt; queue_properties,</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                              <span class="keyword">const</span> physical_device_select_info&amp; info)</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;         -&gt; std::pair&lt;std::vector&lt;desired_queue_data&gt;, i32&gt;;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   } <span class="comment">// namespace detail</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;} <span class="comment">// namespace ash::inline v0</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#endif // LIBASH_DETAIL_PHYSICAL_DEVICE_RATING_HPP_</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;      constexpr <span class="keyword">auto</span> tally_ratings(std::signed_integral <span class="keyword">auto</span>... values) -&gt; decltype((... + values))</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      {</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;         <span class="keywordflow">if</span> ((... || (-1 == values)))</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;         {</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;            <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;         }</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;         <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;         {</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;            <span class="keywordflow">return</span> (... + values);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;         }</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      }</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      <span class="keyword">auto</span> rate_properties_support(<span class="keyword">const</span> vk::PhysicalDeviceProperties&amp; properties,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                                   <span class="keyword">const</span> physical_device_selection_criteria&amp; info) -&gt; i32;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;      <span class="keyword">auto</span> rate_extension_support(std::span&lt;const vk::ExtensionProperties&gt; device_extensions,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                  <span class="keyword">const</span> physical_device_selection_criteria&amp; info)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;         -&gt; std::pair&lt;std::vector&lt;std::string_view&gt;, i32&gt;;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      <span class="keyword">auto</span> rate_queue_support(std::span&lt;const vk::QueueFamilyProperties&gt; queue_properties,</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                              <span class="keyword">const</span> physical_device_selection_criteria&amp; info)</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;         -&gt; std::pair&lt;std::vector&lt;desired_queue_data&gt;, i32&gt;;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;   } <span class="comment">// namespace detail</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;} <span class="comment">// namespace ash::inline v0</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor">#endif // LIBASH_DETAIL_PHYSICAL_DEVICE_RATING_HPP_</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aphysical__device_8hpp_html"><div class="ttname"><a href="physical__device_8hpp.html">physical_device.hpp</a></div></div>
 <!-- start footer part -->

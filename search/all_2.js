@@ -1,11 +1,9 @@
 var searchData=
 [
-  ['desired_5fqueue_5fdata_8',['desired_queue_data',['../structv0_1_1desired__queue__data.html',1,'v0']]],
-  ['device_9',['device',['../classv0_1_1device.html',1,'v0']]],
-  ['device_2ehpp_10',['device.hpp',['../device_8hpp.html',1,'']]],
-  ['device_5fcreate_5finfo_11',['device_create_info',['../structv0_1_1device__create__info.html',1,'v0']]],
-  ['dimension_12',['dimension',['../structmannele_1_1dimension.html',1,'mannele::dimension&lt; Type &gt;'],['../structv0_1_1structure__changed__event.html#af132c0510efab4c6647aab56bb9a78df',1,'v0::structure_changed_event::dimension()']]],
-  ['dimension_2ehpp_13',['dimension.hpp',['../dimension_8hpp.html',1,'']]],
-  ['dimensions_14',['dimensions',['../structv0_1_1monitor.html#a00b08bcf51993d90c027fb182283bbbd',1,'v0::monitor']]],
-  ['driver_2ecpp_15',['driver.cpp',['../driver_8cpp.html',1,'']]]
+  ['chrono_2ehpp_5',['chrono.hpp',['../chrono_8hpp.html',1,'']]],
+  ['code_5fpoint_2ehpp_6',['code_point.hpp',['../code__point_8hpp.html',1,'']]],
+  ['code_5fpoint_5ft_7',['code_point_t',['../classv0_1_1detail_1_1code__point__t.html',1,'v0::detail::code_point_t'],['../classv0_1_1detail_1_1code__point__t.html#aed570c71cc619f69d5d72c85024e5bd6',1,'v0::detail::code_point_t::code_point_t()=default'],['../classv0_1_1detail_1_1code__point__t.html#a501518eab0ec45c7e77ca7db984cf304',1,'v0::detail::code_point_t::code_point_t(u32 value)']]],
+  ['command_2ehpp_8',['command.hpp',['../command_8hpp.html',1,'']]],
+  ['connection_9',['connection',['../structv0_1_1x11_1_1connection.html',1,'v0::x11']]],
+  ['core_2ehpp_10',['core.hpp',['../libmannele_2libmannele_2core_8hpp.html',1,'']]]
 ];

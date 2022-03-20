@@ -1,13 +1,10 @@
 var searchData=
 [
-  ['make_5fwindow_59',['make_window',['../classv0_1_1system.html#ad289a07aa8d5f78b0621a43aefc30561',1,'v0::system']]],
-  ['maths_2ehpp_60',['maths.hpp',['../maths_8hpp.html',1,'']]],
-  ['mods_61',['mods',['../structv0_1_1key__event.html#a647d78766b9f6ee3df534b8c575ab924',1,'v0::key_event']]],
-  ['monitor_62',['monitor',['../structv0_1_1monitor.html',1,'v0::monitor'],['../classv0_1_1window.html#aa116bd8268c2a6bcc4ec92645bf9d444',1,'v0::window::monitor()']]],
-  ['monitor_2ecpp_63',['monitor.cpp',['../monitor_8cpp.html',1,'']]],
-  ['monitor_2ehpp_64',['monitor.hpp',['../monitor_8hpp.html',1,'']]],
-  ['monitor_5fdimensions_65',['monitor_dimensions',['../structv0_1_1monitor__dimensions.html',1,'v0']]],
-  ['mouse_5fbutton_5fevent_66',['mouse_button_event',['../classv0_1_1mouse__button__event.html',1,'v0']]],
-  ['mouse_5fevent_2ehpp_67',['mouse_event.hpp',['../mouse__event_8hpp.html',1,'']]],
-  ['mouse_5fmovement_5fevent_68',['mouse_movement_event',['../classv0_1_1mouse__movement__event.html',1,'v0']]]
+  ['libowl_59',['Libowl',['../index.html',1,'']]],
+  ['label_60',['label',['../classv0_1_1widget_1_1label.html',1,'v0::widget']]],
+  ['label_2ehpp_61',['label.hpp',['../label_8hpp.html',1,'']]],
+  ['logger_62',['logger',['../structv0_1_1instance__create__info.html#a73b6cf500544fd8a385bf810951e3c61',1,'v0::instance_create_info::logger()'],['../classv0_1_1window.html#a68b25857669f583573334d783bfe003c',1,'v0::window::logger()']]],
+  ['libash_63',['libash',['../md_libash_README.html',1,'']]],
+  ['libmannele_64',['libmannele',['../md_libmannele_README.html',1,'']]],
+  ['libowl_65',['libowl',['../md_libowl_README.html',1,'']]]
 ];

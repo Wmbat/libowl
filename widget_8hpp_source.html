@@ -71,33 +71,42 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <a href="widget_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160; </div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="window_8hpp.html">libowl/window.hpp</a>&gt;</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">namespace </span>owl::inline v0</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;{</div>
-<div class="line"><a name="l00013"></a><span class="lineno"><a class="line" href="classv0_1_1widget.html">   13</a></span>&#160;   <span class="keyword">class </span><a class="code" href="classv0_1_1widget.html">widget</a></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;   {</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;   <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;      <a class="code" href="classv0_1_1widget.html">widget</a>(<a class="code" href="classv0_1_1window.html">window</a>&amp; <a class="code" href="classv0_1_1window.html">window</a>, <a class="code" href="classv0_1_1widget.html">widget</a>* p_parent);</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;  </div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;      [[nodiscard]] <span class="keyword">auto</span> is_gui_thread() <span class="keyword">const</span> noexcept -&gt; bool;</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">//      virtual void render() = 0;</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;      <span class="comment">// Getters</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      <span class="keyword">auto</span> parent() -&gt; <span class="keyword">const</span> <a class="code" href="classv0_1_1widget.html">widget</a>&amp;;</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;   <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;      <a class="code" href="classv0_1_1window.html">window</a>&amp; m_window;</div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#ifndef LIBOWL_WIDGETS_WIDGET_HPP_</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#define LIBOWL_WIDGETS_WIDGET_HPP_</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span>owl::inline v0</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;{</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;   <span class="keyword">class </span>window;</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;   <span class="keyword">namespace </span>widget</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;   {</div>
+<div class="line"><a name="l00018"></a><span class="lineno"><a class="line" href="classv0_1_1widget_1_1widget.html">   18</a></span>&#160;      <span class="keyword">class </span><a class="code" href="classv0_1_1widget_1_1widget.html">widget</a></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;      {</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;         <a class="code" href="classv0_1_1widget_1_1widget.html">widget</a>(owl::window&amp; <a class="code" href="classv0_1_1widget_1_1window.html">window</a>, <a class="code" href="classv0_1_1widget_1_1widget.html">widget</a>* p_parent);</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;         [[nodiscard]] <span class="keyword">auto</span> is_gui_thread() <span class="keyword">const</span> noexcept -&gt; bool;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;         <span class="comment">//      virtual void render() = 0;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;         <span class="comment">// Getters</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;      <a class="code" href="classv0_1_1widget.html">widget</a>* mp_parent = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   };</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;} <span class="comment">// namespace owl::inline v0</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;         <span class="comment">// [[nodiscard]] auto parent() const noexcept -&gt; widget const&amp;;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;         [[nodiscard]] <span class="keyword">auto</span> owning_window() <span class="keyword">const</span> noexcept -&gt; <a class="code" href="classv0_1_1widget_1_1window.html">window</a> <span class="keyword">const</span>&amp;;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;         <span class="keyword">auto</span> owning_window() noexcept -&gt; <a class="code" href="classv0_1_1widget_1_1window.html">window</a>&amp;;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;         owl::window&amp; m_window;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;         <a class="code" href="classv0_1_1widget_1_1widget.html">widget</a>* mp_parent = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      };</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;   } <span class="comment">// namespace widget</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;} <span class="comment">// namespace owl::inline v0</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif // LIBOWL_WIDGETS_WIDGET_HPP_</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassv0_1_1widget_html"><div class="ttname"><a href="classv0_1_1widget.html">v0::widget</a></div><div class="ttdef"><b>Definition:</b> widget.hpp:13</div></div>
-<div class="ttc" id="aclassv0_1_1window_html"><div class="ttname"><a href="classv0_1_1window.html">v0::window</a></div><div class="ttdef"><b>Definition:</b> window.hpp:30</div></div>
-<div class="ttc" id="awindow_8hpp_html"><div class="ttname"><a href="window_8hpp.html">window.hpp</a></div></div>
+<div class="ttc" id="aclassv0_1_1widget_1_1window_html"><div class="ttname"><a href="classv0_1_1widget_1_1window.html">v0::widget::window</a></div><div class="ttdef"><b>Definition:</b> window.hpp:18</div></div>
+<div class="ttc" id="aclassv0_1_1widget_1_1widget_html"><div class="ttname"><a href="classv0_1_1widget_1_1widget.html">v0::widget::widget</a></div><div class="ttdef"><b>Definition:</b> widget.hpp:18</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

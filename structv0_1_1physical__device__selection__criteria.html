@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>libowl: v0::physical_device_select_info Struct Reference</title>
+<title>libowl: v0::physical_device_selection_criteria Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,52 +62,56 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>v0</b></li><li class="navelem"><a class="el" href="structv0_1_1physical__device__select__info.html">physical_device_select_info</a></li>  </ul>
+<li class="navelem"><b>v0</b></li><li class="navelem"><a class="el" href="structv0_1_1physical__device__selection__criteria.html">physical_device_selection_criteria</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structv0_1_1physical__device__select__info-members.html">List of all members</a>  </div>
+<a href="structv0_1_1physical__device__selection__criteria-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">v0::physical_device_select_info Struct Reference</div>  </div>
+<div class="title">v0::physical_device_selection_criteria Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Struct used to group up all criteria that can be used to rate the viability of specific physical device.  
+ <a href="structv0_1_1physical__device__selection__criteria.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="physical__device_8hpp_source.html">physical_device.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a90316125d710e40257f0e9b518916116"><td class="memItemLeft" align="right" valign="top"><a id="a90316125d710e40257f0e9b518916116"></a>
-ash::instance &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>instance</b></td></tr>
-<tr class="separator:a90316125d710e40257f0e9b518916116"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7663cb024349567e9bede5b140971057"><td class="memItemLeft" align="right" valign="top"><a id="a7663cb024349567e9bede5b140971057"></a>
+<tr class="memitem:a57c95e5eacbc8662af62737f02721ab5"><td class="memItemLeft" align="right" valign="top"><a id="a57c95e5eacbc8662af62737f02721ab5"></a>
 vk::SurfaceKHR&#160;</td><td class="memItemRight" valign="bottom"><b>surface</b></td></tr>
-<tr class="separator:a7663cb024349567e9bede5b140971057"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a127cd766367e31315c873165808ffda8"><td class="memItemLeft" align="right" valign="top"><a id="a127cd766367e31315c873165808ffda8"></a>
+<tr class="separator:a57c95e5eacbc8662af62737f02721ab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade0052ebcbe34544b4421ff5ecba637a"><td class="memItemLeft" align="right" valign="top"><a id="ade0052ebcbe34544b4421ff5ecba637a"></a>
 <a class="el" href="physical__device_8hpp.html#a852601a1742bc123fab233c854bc4783">physical_device_type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prefered_type</b> = physical_device_type::discrete</td></tr>
-<tr class="separator:a127cd766367e31315c873165808ffda8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c713efa35da43da458f2c303d583903"><td class="memItemLeft" align="right" valign="top"><a id="a8c713efa35da43da458f2c303d583903"></a>
+<tr class="separator:ade0052ebcbe34544b4421ff5ecba637a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf7a4ca1b2971c96d5b36fda7fbbd9b6"><td class="memItemLeft" align="right" valign="top"><a id="adf7a4ca1b2971c96d5b36fda7fbbd9b6"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>allow_any_physical_device_type</b> = true</td></tr>
-<tr class="separator:a8c713efa35da43da458f2c303d583903"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c843dc51a1b52e6cc8e5e0332a55cd6"><td class="memItemLeft" align="right" valign="top"><a id="a1c843dc51a1b52e6cc8e5e0332a55cd6"></a>
+<tr class="separator:adf7a4ca1b2971c96d5b36fda7fbbd9b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1eee532f3001fc48019244bfc4dce84a"><td class="memItemLeft" align="right" valign="top"><a id="a1eee532f3001fc48019244bfc4dce84a"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>require_transfer_queue</b> = false</td></tr>
-<tr class="separator:a1c843dc51a1b52e6cc8e5e0332a55cd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1defa92fb04547b6c4d776b6233f37d"><td class="memItemLeft" align="right" valign="top"><a id="aa1defa92fb04547b6c4d776b6233f37d"></a>
+<tr class="separator:a1eee532f3001fc48019244bfc4dce84a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a109af2db49fa8703989da4a142efac62"><td class="memItemLeft" align="right" valign="top"><a id="a109af2db49fa8703989da4a142efac62"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>require_compute_queue</b> = false</td></tr>
-<tr class="separator:aa1defa92fb04547b6c4d776b6233f37d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aacd3e25109cb3182efc7db5eca26a4c1"><td class="memItemLeft" align="right" valign="top"><a id="aacd3e25109cb3182efc7db5eca26a4c1"></a>
+<tr class="separator:a109af2db49fa8703989da4a142efac62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d4939a303f54aea60ebda9d412388d4"><td class="memItemLeft" align="right" valign="top"><a id="a1d4939a303f54aea60ebda9d412388d4"></a>
 <a class="el" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a>&#160;</td><td class="memItemRight" valign="bottom"><b>desired_version</b> = {1, 0, 0}</td></tr>
-<tr class="separator:aacd3e25109cb3182efc7db5eca26a4c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dd30b39a2c7d8d67fe1ac939fc94416"><td class="memItemLeft" align="right" valign="top"><a id="a0dd30b39a2c7d8d67fe1ac939fc94416"></a>
+<tr class="separator:a1d4939a303f54aea60ebda9d412388d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2ccf44105385b619c2b7b01e9400cdb"><td class="memItemLeft" align="right" valign="top"><a id="aa2ccf44105385b619c2b7b01e9400cdb"></a>
 <a class="el" href="structmannele_1_1semantic__version.html">mannele::semantic_version</a>&#160;</td><td class="memItemRight" valign="bottom"><b>minimum_version</b> = {1, 0, 0}</td></tr>
-<tr class="separator:a0dd30b39a2c7d8d67fe1ac939fc94416"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7e4096fc3c649d29726adc1909efb95"><td class="memItemLeft" align="right" valign="top"><a id="ae7e4096fc3c649d29726adc1909efb95"></a>
+<tr class="separator:aa2ccf44105385b619c2b7b01e9400cdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8f52947b7998375aa5414c2ce27f294"><td class="memItemLeft" align="right" valign="top"><a id="ae8f52947b7998375aa5414c2ce27f294"></a>
 std::vector&lt; const char * &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>required_extensions</b></td></tr>
-<tr class="separator:ae7e4096fc3c649d29726adc1909efb95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2699a196bf7dddb9f57a8a1a75b03a15"><td class="memItemLeft" align="right" valign="top"><a id="a2699a196bf7dddb9f57a8a1a75b03a15"></a>
+<tr class="separator:ae8f52947b7998375aa5414c2ce27f294"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a779e4fa7155452e6df7bbb2b825ec86c"><td class="memItemLeft" align="right" valign="top"><a id="a779e4fa7155452e6df7bbb2b825ec86c"></a>
 std::vector&lt; const char * &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>desired_extensions</b></td></tr>
-<tr class="separator:a2699a196bf7dddb9f57a8a1a75b03a15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a779e4fa7155452e6df7bbb2b825ec86c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Struct used to group up all criteria that can be used to rate the viability of specific physical device. </p>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>libash/libash/<a class="el" href="physical__device_8hpp_source.html">physical_device.hpp</a></li>
 </ul>
 </div><!-- contents -->

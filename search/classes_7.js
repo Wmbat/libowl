@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['monitor_142',['monitor',['../structv0_1_1monitor.html',1,'v0']]],
-  ['monitor_5fdimensions_143',['monitor_dimensions',['../structv0_1_1monitor__dimensions.html',1,'v0']]],
-  ['mouse_5fbutton_5fevent_144',['mouse_button_event',['../classv0_1_1mouse__button__event.html',1,'v0']]],
-  ['mouse_5fmovement_5fevent_145',['mouse_movement_event',['../classv0_1_1mouse__movement__event.html',1,'v0']]]
+  ['instance_148',['instance',['../classv0_1_1instance.html',1,'v0']]],
+  ['instance_5fcreate_5finfo_149',['instance_create_info',['../structv0_1_1instance__create__info.html',1,'v0']]]
 ];

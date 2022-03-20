@@ -95,9 +95,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>render</b> (s
 <tr class="memitem:a44da9293b4edbc44fc7d276fcfe35e1f"><td class="memItemLeft" align="right" valign="top"><a id="a44da9293b4edbc44fc7d276fcfe35e1f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>handle_event</b> (<a class="el" href="structv0_1_1key__event.html">key_event</a> const &amp;event)</td></tr>
 <tr class="separator:a44da9293b4edbc44fc7d276fcfe35e1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae44789678f566b0c597e99d1614ce196"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#ae44789678f566b0c597e99d1614ce196">set_physical_device</a> (ash::physical_device &amp;&amp;<a class="el" href="classv0_1_1device.html">device</a>) noexcept</td></tr>
-<tr class="memdesc:ae44789678f566b0c597e99d1614ce196"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the window's physical device used for rendering.  <a href="classv0_1_1window.html#ae44789678f566b0c597e99d1614ce196">More...</a><br /></td></tr>
-<tr class="separator:ae44789678f566b0c597e99d1614ce196"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8d118bb285f5a816e4b0660446f1bd4"><td class="memItemLeft" align="right" valign="top"><a id="ac8d118bb285f5a816e4b0660446f1bd4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_device</b> (<a class="el" href="classv0_1_1gfx_1_1device.html">gfx::device</a> &amp;&amp;<a class="el" href="classv0_1_1device.html">device</a>) noexcept</td></tr>
+<tr class="separator:ac8d118bb285f5a816e4b0660446f1bd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6efa953b3f0368b39df86a8195a697a3"><td class="memItemLeft" align="right" valign="top"><a id="a6efa953b3f0368b39df86a8195a697a3"></a>
 auto&#160;</td><td class="memItemRight" valign="bottom"><b>is_gui_thread</b> () const noexcept -&gt; bool</td></tr>
 <tr class="separator:a6efa953b3f0368b39df86a8195a697a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,10 +105,10 @@ auto&#160;</td><td class="memItemRight" valign="bottom"><b>is_gui_thread</b> () 
 auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#abb254094a98fac52deebf283be8e82fb">title</a> () const noexcept -&gt; std::string_view</td></tr>
 <tr class="memdesc:abb254094a98fac52deebf283be8e82fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the window title. <br /></td></tr>
 <tr class="separator:abb254094a98fac52deebf283be8e82fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e525948556a775861a5b86986272484"><td class="memItemLeft" align="right" valign="top"><a id="a3e525948556a775861a5b86986272484"></a>
-auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#a3e525948556a775861a5b86986272484">surface</a> () const noexcept -&gt; <a class="el" href="classv0_1_1render__surface.html">render_surface</a> const &amp;</td></tr>
-<tr class="memdesc:a3e525948556a775861a5b86986272484"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the window's render surface. <br /></td></tr>
-<tr class="separator:a3e525948556a775861a5b86986272484"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba41182e320a775a7e3baa56eafccc04"><td class="memItemLeft" align="right" valign="top"><a id="aba41182e320a775a7e3baa56eafccc04"></a>
+auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#aba41182e320a775a7e3baa56eafccc04">target</a> () const noexcept -&gt; <a class="el" href="classv0_1_1render__target.html">render_target</a> const &amp;</td></tr>
+<tr class="memdesc:aba41182e320a775a7e3baa56eafccc04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the window's render surface. <br /></td></tr>
+<tr class="separator:aba41182e320a775a7e3baa56eafccc04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa116bd8268c2a6bcc4ec92645bf9d444"><td class="memItemLeft" align="right" valign="top"><a id="aa116bd8268c2a6bcc4ec92645bf9d444"></a>
 auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#aa116bd8268c2a6bcc4ec92645bf9d444">monitor</a> () const noexcept -&gt; owl::monitor const &amp;</td></tr>
 <tr class="memdesc:aa116bd8268c2a6bcc4ec92645bf9d444"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the monitor the window currently is on. <br /></td></tr>
@@ -127,45 +127,10 @@ Protected Member Functions</h2></td></tr>
 auto&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1window.html#a68b25857669f583573334d783bfe003c">logger</a> () const noexcept -&gt; spdlog::logger &amp;</td></tr>
 <tr class="memdesc:a68b25857669f583573334d783bfe003c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the logger used by the window. <br /></td></tr>
 <tr class="separator:a68b25857669f583573334d783bfe003c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1e42ccff0ddcad441826200c2faf6c2"><td class="memItemLeft" align="right" valign="top"><a id="aa1e42ccff0ddcad441826200c2faf6c2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_surface</b> (<a class="el" href="classv0_1_1render__surface.html">render_surface</a> &amp;&amp;<a class="el" href="classv0_1_1window.html#a3e525948556a775861a5b86986272484">surface</a>)</td></tr>
-<tr class="separator:aa1e42ccff0ddcad441826200c2faf6c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4718ddb21db601f30010c2eda08da2a"><td class="memItemLeft" align="right" valign="top"><a id="ae4718ddb21db601f30010c2eda08da2a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_render_target</b> (<a class="el" href="classv0_1_1render__target.html">render_target</a> &amp;&amp;<a class="el" href="classv0_1_1window.html#aba41182e320a775a7e3baa56eafccc04">target</a>)</td></tr>
+<tr class="separator:ae4718ddb21db601f30010c2eda08da2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae44789678f566b0c597e99d1614ce196"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae44789678f566b0c597e99d1614ce196">&#9670;&nbsp;</a></span>set_physical_device()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void v0::window::set_physical_device </td>
-          <td>(</td>
-          <td class="paramtype">ash::physical_device &amp;&amp;&#160;</td>
-          <td class="paramname"><em>device</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Set the window's physical device used for rendering. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">device</td><td>The physical device. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>libowl/libowl/<a class="el" href="window_8hpp_source.html">window.hpp</a></li>
 <li>libowl/libowl/<a class="el" href="window_8cpp.html">window.cpp</a></li>

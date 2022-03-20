@@ -1,12 +1,7 @@
 var searchData=
 [
-  ['widget_107',['widget',['../classv0_1_1widget.html',1,'v0']]],
-  ['widget_2ecpp_108',['widget.cpp',['../widget_8cpp.html',1,'']]],
-  ['widget_2ehpp_109',['widget.hpp',['../widget_8hpp.html',1,'']]],
-  ['width_110',['width',['../structv0_1_1monitor__dimensions.html#a1acd1e5009494e487772f7b453c0b025',1,'v0::monitor_dimensions']]],
-  ['window_111',['window',['../classv0_1_1window.html',1,'v0::window'],['../classv0_1_1x11_1_1window.html',1,'v0::x11::window']]],
-  ['window_2ecpp_112',['window.cpp',['../window_8cpp.html',1,'']]],
-  ['window_2ehpp_113',['window.hpp',['../window_8hpp.html',1,'']]],
-  ['window_5fcreate_5finfo_114',['window_create_info',['../structv0_1_1x11_1_1window__create__info.html',1,'v0::x11']]],
-  ['window_5fid_115',['window_id',['../structv0_1_1focus__event.html#ae8b30180d7dfb7db76823343fe338f1a',1,'v0::focus_event::window_id()'],['../structv0_1_1structure__changed__event.html#ae861393c2f7d7d81be2a67076d9ed9b7',1,'v0::structure_changed_event::window_id()']]]
+  ['vermillon_113',['vermillon',['../md_README.html',1,'']]],
+  ['value_114',['value',['../structv0_1_1queue.html#a843644d595be101555257eb915f6b61f',1,'v0::queue::value()'],['../classv0_1_1detail_1_1code__point__t.html#a61ed67d0e5d7c31e27b5fc3b4e387b80',1,'v0::detail::code_point_t::value() noexcept -&gt; u32 &amp;'],['../classv0_1_1detail_1_1code__point__t.html#a13b222af8a97b9f085cfa384d7489ee9',1,'v0::detail::code_point_t::value() const noexcept -&gt; u32'],['../classv0_1_1x11_1_1keycode__t.html#aef72c2136001920501ceddbdc8e2bdec',1,'v0::x11::keycode_t::value() noexcept -&gt; u8 &amp;'],['../classv0_1_1x11_1_1keycode__t.html#a7e04be0ddd5c05cde82dc87647f61410',1,'v0::x11::keycode_t::value() const noexcept -&gt; u32'],['../classv0_1_1x11_1_1keysym__t.html#aa59eaa4ad433c49f3c8ee5e33e4f3298',1,'v0::x11::keysym_t::value() noexcept -&gt; u32 &amp;'],['../classv0_1_1x11_1_1keysym__t.html#a4b604ae1b29c694ecc26aad23584cba4',1,'v0::x11::keysym_t::value() const noexcept -&gt; u32']]],
+  ['version_115',['version',['../structv0_1_1application__info.html#a01e931f7fc4a77fccf381114f15f0129',1,'v0::application_info::version()'],['../structv0_1_1engine__info.html#a673695bd9ba013e2d888620e7da84f0b',1,'v0::engine_info::version()'],['../classv0_1_1instance.html#aca9c0e514a3a0bbc72e52b5039acc7f3',1,'v0::instance::version()']]],
+  ['visit_5fhelper_2ehpp_116',['visit_helper.hpp',['../visit__helper_8hpp.html',1,'']]]
 ];

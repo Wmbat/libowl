@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>libowl: Member List</title>
+<title>libowl: libowl/libowl/gfx/render_target.hpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,24 +62,46 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>v0</b></li><li class="navelem"><a class="el" href="structv0_1_1physical__device__decs.html">physical_device_decs</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_c5317769c915a86f100fa802af0c3b04.html">libowl</a></li><li class="navelem"><a class="el" href="dir_5ca42e977af4739ef24f8131f77ce42a.html">libowl</a></li><li class="navelem"><a class="el" href="dir_06749ce58799810a2aa6c48f261dcb86.html">gfx</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#enum-members">Enumerations</a>  </div>
   <div class="headertitle">
-<div class="title">v0::physical_device_decs Member List</div>  </div>
+<div class="title">render_target.hpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>This is the complete list of members for <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>, including all inherited members.</p>
-<table class="directory">
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>device</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>extension_properties</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>features</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>memory_properties</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>properties</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>queue_properties</b> (defined in <a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a>)</td><td class="entry"><a class="el" href="structv0_1_1physical__device__decs.html">v0::physical_device_decs</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<div class="textblock"><code>#include &lt;<a class="el" href="libowl_2libowl_2gfx_2device_8hpp_source.html">libowl/gfx/device.hpp</a>&gt;</code><br />
+<code>#include &lt;optional&gt;</code><br />
+</div>
+<p><a href="render__target_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classv0_1_1render__target.html">v0::render_target</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ad72aab659e3d76ab31f768344bfe1d5d"><td class="memItemLeft" align="right" valign="top"><a id="ad72aab659e3d76ab31f768344bfe1d5d"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>target_status</b> { <br />
+&#160;&#160;<b>no_device</b>, 
+<b>no_surface</b>, 
+<b>no_swapchain</b>, 
+<b>device_lost</b>, 
+<br />
+&#160;&#160;<b>surface_lost</b>, 
+<b>swapchain_lost</b>
+<br />
+ }</td></tr>
+<tr class="separator:ad72aab659e3d76ab31f768344bfe1d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><dl class="section author"><dt>Author</dt><dd>wmbat <a href="#" onclick="location.href='mai'+'lto:'+'wmb'+'at'+'-de'+'v@'+'pro'+'to'+'nma'+'il'+'.co'+'m'; return false;">wmbat<span style="display: none;">.nosp@m.</span>-dev<span style="display: none;">.nosp@m.</span>@prot<span style="display: none;">.nosp@m.</span>onma<span style="display: none;">.nosp@m.</span>il.co<span style="display: none;">.nosp@m.</span>m</a> </dd></dl>
+<dl class="section date"><dt>Date</dt><dd>22nd of January 2022 </dd></dl>
+<dl class="section copyright"><dt>Copyright</dt><dd>Copyright (C) 2022 wmbat </dd></dl>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
