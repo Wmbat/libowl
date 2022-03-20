@@ -46,8 +46,6 @@ documentation/
 
 # Compilation database
 
-compile_commands.json
-
 .cache/
 
 out/

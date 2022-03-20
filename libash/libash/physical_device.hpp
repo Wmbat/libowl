@@ -18,13 +18,16 @@
 
 namespace ash::inline v0
 {
+   /**
+    * @brief Designates the type of a physical device.
+    */
    enum struct physical_device_type
    {
-      other = 0,
-      integrated = 1,
-      discrete = 2,
-      virtual_gpu = 3,
-      cpu = 4
+      other = 0,       ///< Unknown physical device type.
+      integrated = 1,  ///< Integrated physical device.
+      discrete = 2,    ///< Discrete physical device.
+      virtual_gpu = 3, ///< Virtual physical device.
+      cpu = 4          ///< CPU
    };
 
    enum struct physical_device_selection_error

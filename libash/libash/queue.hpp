@@ -16,13 +16,15 @@
 
 namespace ash::inline v0
 {
+   /**
+    * @brief
+    */
    struct queue
    {
-      vk::Queue value;
-      vk::QueueFlags type{};
-
-      u32 family_index{};
-      u32 queue_index{};
+      vk::Queue value;       ///< The vulkan queue handle
+      vk::QueueFlags type{}; ///< The operations supported by the queue
+      u32 family_index{};    ///< The queue's family
+      u32 queue_index{};     ///< The queue's index in the family
 
       friend auto operator==(queue const& lhs, queue const& rhs) noexcept -> bool = default;
    };
