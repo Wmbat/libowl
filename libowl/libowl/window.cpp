@@ -22,9 +22,9 @@ namespace owl::inline v0
    }
 
    [[nodiscard]] auto window::title() const noexcept -> std::string_view { return m_title; }
-   [[nodiscard]] auto window::surface() const noexcept -> const render_surface&
+   [[nodiscard]] auto window::target() const noexcept -> const render_target&
    {
-      return m_surface;
+      return m_render_target;
    }
    [[nodiscard]] auto window::monitor() const noexcept -> const owl::monitor&
    {
@@ -33,11 +33,9 @@ namespace owl::inline v0
       return *mp_target_monitor;
    }
 
-   void window::set_physical_device(ash::physical_device&& device) noexcept
+   void window::set_device(gfx::device&& device) noexcept
    {
-      m_physical_device = std::move(device);
-      m_device =
-         ash::device(ash::device_create_info{.physical = m_physical_device, .logger = m_logger});
+      m_render_target.set_device(std::move(device));
    }
 
    window::window(system& system, std::string_view title, owl::monitor& target_monitor,
@@ -48,5 +46,5 @@ namespace owl::inline v0
 
    [[nodiscard]] auto window::logger() const noexcept -> spdlog::logger& { return m_logger; }
 
-   void window::set_surface(render_surface&& surface) { m_surface = std::move(surface); }
+   void window::set_render_target(render_target&& target) { m_render_target = std::move(target); }
 } // namespace owl::inline v0

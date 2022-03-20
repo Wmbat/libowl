@@ -25,6 +25,8 @@ namespace ash::inline v0
       vk::QueueFlags type{}; ///< The operations supported by the queue
       u32 family_index{};    ///< The queue's family
       u32 queue_index{};     ///< The queue's index in the family
+
+      friend auto operator==(queue const& lhs, queue const& rhs) noexcept -> bool = default;
    };
 } // namespace ash::inline v0
 

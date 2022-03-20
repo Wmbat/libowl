@@ -2,10 +2,6 @@
 
 #include <xcb/xcb.h>
 
-using reglisse::err;
-using reglisse::ok;
-using reglisse::result;
-
 namespace owl::inline v0
 {
    namespace
@@ -44,7 +40,7 @@ namespace owl::inline v0
    namespace x11
    {
       auto connect_to_server(spdlog::logger& logger)
-         -> reglisse::result<connection, server_connection_error_code>
+         -> tl::expected<connection, server_connection_error_code>
       {
          auto* p_connection = xcb_connect(nullptr, nullptr);
          const i32 error_code = xcb_connection_has_error(p_connection);
@@ -62,17 +58,17 @@ namespace owl::inline v0
             const auto protocol_reply = get_protocols_atom_reply(p_connection);
             const auto delete_reply = get_delete_atom_reply(p_connection);
 
-            return ok(connection{
+            return connection{
                .x_server = unique_x_connection(p_connection, xcb_disconnect),
                .protocol_prop = {.atom = protocol_reply->atom, .delete_atom = delete_reply->atom},
                .min_keycode = p_setup->min_keycode,
                .max_keycode = p_setup->max_keycode,
                .keysyms_per_keycode = kbd_mapping->keysyms_per_keycode,
-               .keysyms = {p_keysyms, p_keysyms + keysym_count}}); // NOLINT
+               .keysyms = {p_keysyms, p_keysyms + keysym_count}}; // NOLINT
          }
          else
          {
-            return err(static_cast<server_connection_error_code>(error_code));
+            return tl::unexpected(static_cast<server_connection_error_code>(error_code));
          }
       }
    } // namespace x11

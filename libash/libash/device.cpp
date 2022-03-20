@@ -32,7 +32,7 @@ namespace ash::inline v0
       auto to_queue_priority_info(const std::pair<u64, vk::QueueFamilyProperties>& pair)
          -> queue_priority_info
       {
-         const u32 count = pair.second.queueCount;
+         u32 const count = pair.second.queueCount;
          return {.flags = pair.second.queueFlags,
                  .family = static_cast<u32>(pair.first),
                  .count = count,
@@ -49,19 +49,19 @@ namespace ash::inline v0
 
       auto create_vulkan_device(const device_create_info& info) -> vk::UniqueDevice
       {
-         const auto& features = info.physical.features;
+         auto const& features = info.physical.features;
 
          // clang-format off
-         const auto extension_names = info.physical.extensions_to_enable 
+         const auto extension_names = info.extensions
             | rv::transform(to_cstring) 
             | ranges::to<std::vector>;
    
-         const auto family_properties = info.physical.device.getQueueFamilyProperties();
-         const auto temporary_queue_info = family_properties
+         auto const family_properties = info.physical.device.getQueueFamilyProperties();
+         auto const temporary_queue_info = family_properties
             | rv::enumerate
             | rv::transform(to_queue_priority_info) 
             | ranges::to_vector;
-         const auto queue_create_info = temporary_queue_info
+         auto const queue_create_info = temporary_queue_info
             | rv::transform(to_device_queue_create_info)
             | ranges::to_vector;
          // clang-format on
@@ -74,14 +74,14 @@ namespace ash::inline v0
       }
       auto select_queues(const device_create_info& info, vk::Device device) -> std::vector<queue>
       {
-         const auto to_queue = [device](const desired_queue_data& data) {
+         auto const to_queue = [device](const desired_queue_data& data) {
             return queue{.value = device.getQueue(data.family, data.index),
                          .type = data.flags,
                          .family_index = data.family,
                          .queue_index = data.index};
          };
 
-         return info.physical.queues_to_create | rv::transform(to_queue) | ranges::to<std::vector>;
+         return info.desired_queues | rv::transform(to_queue) | ranges::to<std::vector>;
       }
    } // namespace
 
@@ -97,4 +97,22 @@ namespace ash::inline v0
    }
 
    auto device::api_version() const noexcept -> mannele::semantic_version { return m_api_version; }
+
+   device::operator vk::Device() const noexcept { return m_device.get(); }
+
+   auto operator==(device const& lhs, device const& rhs) noexcept -> bool
+   {
+      if (&lhs != &rhs)
+      {
+         bool const version_check = lhs.m_api_version == rhs.m_api_version;
+         bool const device_check = lhs.m_device.get() == rhs.m_device.get();
+         bool const queue_check = lhs.m_queues == rhs.m_queues;
+
+         return version_check && device_check && queue_check;
+      }
+      else
+      {
+         return true;
+      }
+   }
 } // namespace ash::inline v0

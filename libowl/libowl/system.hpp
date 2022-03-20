@@ -1,5 +1,3 @@
-
-
 #ifndef LIBOWL_SYSTEM_HPP_
 #define LIBOWL_SYSTEM_HPP_
 
@@ -81,6 +79,7 @@ namespace owl::inline v0
       spdlog::logger m_logger;
 
       ash::instance m_instance;
+      std::vector<ash::physical_device> m_physical_devices;
 
       x11::connection m_xserver_connection;
 

@@ -6,26 +6,36 @@
  * @copyright Copyright (C) 2022 wmbat.
  */
 
-#include <libowl/window.hpp>
+#ifndef LIBOWL_WIDGETS_WIDGET_HPP_
+#define LIBOWL_WIDGETS_WIDGET_HPP_
 
 namespace owl::inline v0
 {
-   class widget
+   class window;
+
+   namespace widget
    {
-   public:
-      widget(window& window, widget* p_parent);
-  
-      [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
+      class widget
+      {
+      public:
+         widget(owl::window& window, widget* p_parent);
 
-//      virtual void render() = 0;
+         [[nodiscard]] auto is_gui_thread() const noexcept -> bool;
 
-      // Getters
+         //      virtual void render() = 0;
 
-      auto parent() -> const widget&;
+         // Getters
 
-   private:
-      window& m_window;
+         // [[nodiscard]] auto parent() const noexcept -> widget const&;
+         [[nodiscard]] auto owning_window() const noexcept -> window const&;
+         auto owning_window() noexcept -> window&;
 
-      widget* mp_parent = nullptr;
-   };
+      private:
+         owl::window& m_window;
+
+         widget* mp_parent = nullptr;
+      };
+   } // namespace widget
 } // namespace owl::inline v0
+
+#endif // LIBOWL_WIDGETS_WIDGET_HPP_

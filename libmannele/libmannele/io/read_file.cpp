@@ -2,7 +2,7 @@
  * @file libmannele/io/read_file.cpp
  * @author wmbat wmbat-dev@protonmail.com
  * @date Monday, 22nd of September 2021
- * @brief 
+ * @brief
  * @copyright Copyright (C) 2021 wmbat.
  */
 
@@ -14,10 +14,6 @@
 #include <magic_enum.hpp>
 
 #include <fstream>
-
-using reglisse::result;
-using reglisse::ok;
-using reglisse::err;
 
 struct file_reading_error_category : std::error_category
 {
@@ -38,13 +34,14 @@ namespace mannele
    }
 
    auto unbuffered_file_read(const std::filesystem::path& path)
-      -> result<std::string, runtime_error>
+      -> tl::expected<std::string, runtime_error>
    {
       auto input = std::ifstream(path);
 
       if (!input.is_open())
       {
-         return err(runtime_error(make_error_condition(file_reading_error::e_failed_to_open_file)));
+         return tl::unexpected(
+            runtime_error(make_error_condition(file_reading_error::e_failed_to_open_file)));
       }
 
       input.seekg(0, std::ios::end);
@@ -56,6 +53,6 @@ namespace mannele
 
       data.assign(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());
 
-      return ok(data);
+      return data;
    }
 } // namespace mannele

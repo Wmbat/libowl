@@ -1,11 +1,6 @@
 #include <libash/detail/physical_device_rating.hpp>
 
 #include <libash/queue.hpp>
-#include <libash/detail/tally_ratings.hpp>
-
-#include <libreglisse/maybe.hpp>
-#include <libreglisse/operations/and_then.hpp>
-#include <libreglisse/operations/or_else.hpp>
 
 #include <range/v3/action/sort.hpp>
 #include <range/v3/algorithm/count.hpp>
@@ -18,13 +13,9 @@
 #include <range/v3/view/remove_if.hpp>
 #include <range/v3/view/transform.hpp>
 
-// #include <ranges>
+#include <optional>
 
-using reglisse::and_then;
-using reglisse::maybe;
-using reglisse::none;
-using reglisse::or_else;
-using reglisse::some;
+// #include <ranges>
 
 namespace stdr = std::ranges;
 namespace rv = ranges::views;
@@ -300,7 +291,7 @@ namespace ash::inline v0
        */
       auto adjust_desired_queue_index(const queue_family_info& input,
                                       std::span<const desired_queue_data> already_selected)
-         -> maybe<desired_queue_data>
+         -> std::optional<desired_queue_data>
       {
          const auto flags = input.flag;
          const u32 family = input.family;
@@ -310,12 +301,12 @@ namespace ash::inline v0
 
          if (index <= input.count)
          {
-            return some(desired_queue_data{
-               .flags = flags, .family = family, .index = static_cast<u32>(index)});
+            return desired_queue_data{
+               .flags = flags, .family = family, .index = static_cast<u32>(index)};
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
 
@@ -327,18 +318,18 @@ namespace ash::inline v0
        * @return
        */
       auto find_best_general_queue(std::span<const queue_family_info> infos)
-         -> maybe<queue_family_info>
+         -> std::optional<queue_family_info>
       {
          auto general_queues = infos | rv::filter(does_queue_support_all_ops);
          const auto it = stdr::max_element(general_queues, {}, &queue_family_info::count);
 
          if (it != std::ranges::end(general_queues))
          {
-            return some(*it);
+            return *it;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
 
@@ -352,18 +343,18 @@ namespace ash::inline v0
        * nothing
        */
       auto find_best_dedicated_transfer_queue(std::span<const queue_family_info> available_queues)
-         -> maybe<queue_family_info>
+         -> std::optional<queue_family_info>
       {
          auto transfer_queues = available_queues | rv::filter(is_queue_dedicated_to_transfer);
          const auto it = stdr::max_element(transfer_queues, {}, &queue_family_info::count);
 
          if (it != stdr::end(transfer_queues))
          {
-            return some(*it);
+            return *it;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
       /**
@@ -376,7 +367,7 @@ namespace ash::inline v0
        * nothing
        */
       auto find_best_separated_transfer_queue(std::span<const queue_family_info> available_queues)
-         -> maybe<queue_family_info>
+         -> std::optional<queue_family_info>
       {
          // clang-format off
          auto transfer_queues = available_queues 
@@ -387,11 +378,11 @@ namespace ash::inline v0
 
          if (it != stdr::end(transfer_queues))
          {
-            return some(*it);
+            return *it;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
 
@@ -406,20 +397,24 @@ namespace ash::inline v0
        */
       auto find_best_suited_transfer_queue(std::span<const queue_family_info> available_queues,
                                            std::span<const desired_queue_data> selected_queues)
-         -> maybe<desired_queue_data>
+         -> std::optional<desired_queue_data>
       {
-         // clang-format off
-         return find_best_dedicated_transfer_queue(available_queues) 
-            | or_else([=] {
-                 return find_best_separated_transfer_queue(available_queues);
-              })
-            | or_else([=] {
-                 return find_best_general_queue(available_queues);
-              })
-            | and_then([=](queue_family_info&& info) {
-                 return adjust_desired_queue_index(info, selected_queues);
-              });
-         // clang-format on
+         if (auto queue = find_best_dedicated_transfer_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else if (auto queue = find_best_separated_transfer_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else if (auto queue = find_best_general_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else
+         {
+            return std::nullopt;
+         }
       }
 
       /**
@@ -432,22 +427,22 @@ namespace ash::inline v0
        * nothing
        */
       auto find_best_dedicated_compute_queue(std::span<const queue_family_info> available_queues)
-         -> maybe<queue_family_info>
+         -> std::optional<queue_family_info>
       {
          auto transfer_queues = available_queues | rv::filter(is_queue_dedicated_to_compute);
          const auto it = stdr::max_element(transfer_queues, {}, &queue_family_info::count);
 
          if (it != stdr::end(transfer_queues))
          {
-            return some(*it);
+            return *it;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
       auto find_best_separated_compute_queue(std::span<const queue_family_info> available_queues)
-         -> maybe<queue_family_info>
+         -> std::optional<queue_family_info>
       {
          // clang-format off
          auto transfer_queues = available_queues 
@@ -458,11 +453,11 @@ namespace ash::inline v0
 
          if (it != stdr::end(transfer_queues))
          {
-            return some(*it);
+            return *it;
          }
          else
          {
-            return none;
+            return std::nullopt;
          }
       }
 
@@ -476,20 +471,24 @@ namespace ash::inline v0
        */
       auto find_best_suited_compute_queue(std::span<const queue_family_info> available_queues,
                                           std::span<const desired_queue_data> selected_queues)
-         -> maybe<desired_queue_data>
+         -> std::optional<desired_queue_data>
       {
-         // clang-format off
-         return find_best_dedicated_compute_queue(available_queues) 
-            | or_else([=] {
-                 return find_best_separated_compute_queue(available_queues);
-              })
-            | or_else([=] {
-                 return find_best_general_queue(available_queues);
-              })
-            | and_then([=](queue_family_info&& info) {
-                 return adjust_desired_queue_index(info, selected_queues);
-              });
-         // clang-format on
+         if (auto queue = find_best_dedicated_compute_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else if (auto queue = find_best_separated_compute_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else if (auto queue = find_best_general_queue(available_queues))
+         {
+            return adjust_desired_queue_index(*queue, selected_queues);
+         }
+         else
+         {
+            return std::nullopt;
+         }
       }
 
       /**
@@ -505,23 +504,27 @@ namespace ash::inline v0
          std::vector<desired_queue_data> selected_queues;
          selected_queues.reserve(3);
 
-         if (maybe q =
-                find_best_general_queue(available_queues) | and_then([&](queue_family_info&& info) {
-                   return adjust_desired_queue_index(info, selected_queues);
-                }))
+         if (std::optional q = find_best_general_queue(available_queues))
          {
-            q.borrow().flags = vk::QueueFlagBits::eGraphics;
-            selected_queues.push_back(q.borrow());
+            if (std::optional adjusted = adjust_desired_queue_index(*q, selected_queues))
+            {
+               adjusted.value().flags = vk::QueueFlagBits::eGraphics;
+               selected_queues.push_back(adjusted.value());
+            }
+            else
+            {
+               return {{}, -1};
+            }
          }
          else
          {
             return {{}, -1};
          }
 
-         if (maybe q = find_best_suited_transfer_queue(available_queues, selected_queues))
+         if (std::optional q = find_best_suited_transfer_queue(available_queues, selected_queues))
          {
-            q.borrow().flags = vk::QueueFlagBits::eTransfer;
-            selected_queues.push_back(q.borrow());
+            q.value().flags = vk::QueueFlagBits::eTransfer;
+            selected_queues.push_back(q.value());
          }
          else
          {
@@ -531,10 +534,10 @@ namespace ash::inline v0
             }
          }
 
-         if (maybe q = find_best_suited_compute_queue(available_queues, selected_queues))
+         if (std::optional q = find_best_suited_compute_queue(available_queues, selected_queues))
          {
-            q.borrow().flags = vk::QueueFlagBits::eCompute;
-            selected_queues.push_back(q.borrow());
+            q.value().flags = vk::QueueFlagBits::eCompute;
+            selected_queues.push_back(q.value());
          }
          else
          {
@@ -553,7 +556,7 @@ namespace ash::inline v0
    namespace detail
    {
       auto rate_properties_support(const vk::PhysicalDeviceProperties& properties,
-                                   const physical_device_select_info& info) -> i32
+                                   const physical_device_selection_criteria& info) -> i32
       {
          return tally_ratings(
             rate_property_api_version(properties, info.minimum_version, info.desired_version),
@@ -561,7 +564,7 @@ namespace ash::inline v0
       }
 
       auto rate_extension_support(std::span<const vk::ExtensionProperties> all_device_exts,
-                                  const physical_device_select_info& info)
+                                  const physical_device_selection_criteria& info)
          -> std::pair<std::vector<std::string_view>, i32>
       {
          const auto required_extensions = info.required_extensions | rv::transform(to_string_view);
@@ -586,7 +589,7 @@ namespace ash::inline v0
       }
 
       auto rate_queue_support(std::span<const vk::QueueFamilyProperties> queue_properties,
-                              const physical_device_select_info& info)
+                              const physical_device_selection_criteria& info)
          -> std::pair<std::vector<desired_queue_data>, i32>
       {
          std::vector<queue_family_info> queue_infos;

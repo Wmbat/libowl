@@ -14,7 +14,7 @@
 
 #include <libmannele/core/semantic_version.hpp>
 
-#include <libreglisse/result.hpp>
+#include <tl/expected.hpp>
 
 namespace ash::inline v0
 {
@@ -35,10 +35,53 @@ namespace ash::inline v0
       no_suitable_device_found
    };
 
-   struct physical_device_select_info
+   struct desired_queue_data
    {
-      ash::instance& instance;
+      vk::QueueFlags flags;
+      u32 family;
+      u32 index;
+   };
 
+   struct physical_device
+   {
+      vk::PhysicalDevice device;
+
+      vk::PhysicalDeviceFeatures features;
+      vk::PhysicalDeviceProperties properties;
+      vk::PhysicalDeviceMemoryProperties memory_properties;
+
+      std::vector<vk::QueueFamilyProperties> queue_properties;
+      std::vector<vk::ExtensionProperties> extension_properties;
+
+      operator vk::PhysicalDevice() const;
+   };
+
+   /**
+    * @brief
+    *
+    * @param[in] instance
+    *
+    * @return A list of physical device objects
+    */
+   auto enumerate_physical_devices(ash::instance const& instance) -> std::vector<physical_device>;
+
+   /**
+    * @brief
+    */
+   struct physical_device_selection_results
+   {
+      physical_device const* p_physical_device;
+
+      std::vector<desired_queue_data> queues_to_create;
+      std::vector<std::string_view> extension_to_enable;
+   };
+
+   /**
+    * @brief Struct used to group up all criteria that can be used to rate the viability of specific
+    * physical device.
+    */
+   struct physical_device_selection_criteria
+   {
       vk::SurfaceKHR surface;
 
       physical_device_type prefered_type = physical_device_type::discrete;
@@ -55,38 +98,17 @@ namespace ash::inline v0
       std::vector<const char*> desired_extensions;
    };
 
-   struct desired_queue_data
-   {
-      vk::QueueFlags flags;
-      u32 family;
-      u32 index;
-   };
-
-   struct physical_device
-   {
-      vk::PhysicalDevice device; // NOLINT
-
-      vk::PhysicalDeviceFeatures features;                  // NOLINT
-      vk::PhysicalDeviceProperties properties;              // NOLINT
-      vk::PhysicalDeviceMemoryProperties memory_properties; // NOLINT
-
-      std::vector<desired_queue_data> queues_to_create; // NOLINT
-
-      std::vector<std::string_view> extensions_to_enable; // NOLINT
-
-      operator vk::PhysicalDevice() const;
-   };
-
    /**
-    * @brief Finds a physical device that matches the selection information as well as possible. If
-    * no physical device could be found, the result will hold an error.
+    * @brief
     *
-    * @param [in] info Information used for selection the best suited physical device.
+    * @param [in] physical_devices A list of all available physical devices to choose from.
+    * @param [in] info The criteria used for selection the best suited physical device.
     *
-    * @return
+    * @return 
     */
-   auto find_most_suitable_gpu(physical_device_select_info&& info)
-      -> reglisse::result<physical_device, runtime_error>;
+   auto find_most_suitable_physical_device(std::span<const physical_device> physical_devices,
+                                           physical_device_selection_criteria&& info)
+      -> tl::expected<physical_device_selection_results, runtime_error>;
 } // namespace ash::inline v0
 
 #endif // LIBASH_PHYSICAL_DEVICE_HPP_

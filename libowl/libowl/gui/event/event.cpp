@@ -17,10 +17,6 @@
 #   include <xcb/xcb.h>
 #endif // defined(LIBOWL_USE_X11)
 
-using reglisse::maybe;
-using reglisse::none;
-using reglisse::some;
-
 namespace owl::inline v0
 {
 #if defined(LIBOWL_USE_X11)
@@ -61,7 +57,7 @@ namespace owl::inline v0
          auto const modifiers = key_press_state_mask_to_modifiers(state);
          auto const keycode = x11::keycode_t(event.detail);
          auto const keysym = x11::keysym_t(conn, keycode, modifiers);
-         auto const ucs_value = x11::to_code_point(keysym);
+         [[maybe_unused]] auto const ucs_value = x11::to_code_point(keysym);
 
          return {.type = type, .mods = modifiers, .time = std::chrono::milliseconds(event.time)};
       }
@@ -82,7 +78,7 @@ namespace owl::inline v0
 
    } // namespace
 
-   auto poll_for_event(x11::connection const& conn) -> maybe<event_variant>
+   auto poll_for_event(x11::connection const& conn) -> std::optional<event_variant>
    {
       if (auto const event = unique_event(xcb_poll_for_event(conn.x_server.get()), free))
       {
@@ -93,50 +89,50 @@ namespace owl::inline v0
             auto const& key_press_event = to_event_type<xcb_key_press_event_t>(event);
             auto const event = handle_key_event(conn, key_press_event, key_event_type::press);
 
-            return some(event_variant(event));
+            return event_variant(event);
          }
          else if (event_type == XCB_KEY_RELEASE)
          {
             auto const& key_release_event = to_event_type<xcb_key_release_event_t>(event);
             auto const event = handle_key_event(conn, key_release_event, key_event_type::release);
 
-            return some(event_variant(event));
+            return event_variant(event);
          }
          else if (event_type == XCB_MOTION_NOTIFY)
          {
-            return some(event_variant(command::ignore));
+            return event_variant(command::ignore);
          }
          else if (event_type == XCB_ENTER_NOTIFY)
          {
-            return some(event_variant(command::ignore));
+            return event_variant(command::ignore);
          }
          else if (event_type == XCB_LEAVE_NOTIFY)
          {
-            return some(event_variant(command::ignore));
+            return event_variant(command::ignore);
          }
          else if (event_type == XCB_FOCUS_IN)
          {
             auto const& focus_in_event = to_event_type<xcb_focus_in_event_t>(event);
 
-            return some(event_variant(
-               focus_event{.type = focus_type::in, .window_id = focus_in_event.event}));
+            return event_variant(
+               focus_event{.type = focus_type::in, .window_id = focus_in_event.event});
          }
          else if (event_type == XCB_FOCUS_OUT)
          {
             auto const& focus_out_event = to_event_type<xcb_focus_out_event_t>(event);
 
-            return some(event_variant(
-               focus_event{.type = focus_type::out, .window_id = focus_out_event.event}));
+            return event_variant(
+               focus_event{.type = focus_type::out, .window_id = focus_out_event.event});
          }
          else if (event_type == XCB_EXPOSE)
          {
-            return some(event_variant(command::render_window));
+            return event_variant(command::render_window);
          }
          else if (event_type == XCB_CONFIGURE_NOTIFY)
          {
             auto const& configure_notify_event = to_event_type<xcb_configure_notify_event_t>(event);
 
-            return some(event_variant(handle_configure_notify_event(configure_notify_event)));
+            return event_variant(handle_configure_notify_event(configure_notify_event));
          }
          else if (event_type == XCB_CLIENT_MESSAGE)
          {
@@ -145,24 +141,24 @@ namespace owl::inline v0
             {
                if (client_message.data.data32[0] == conn.protocol_prop.delete_atom)
                {
-                  return some(event_variant(command::close_window));
+                  return event_variant(command::close_window);
                }
                else
                {
-                  return some(event_variant(command::ignore));
+                  return event_variant(command::ignore);
                }
             }
 
-            return some(event_variant(command::ignore));
+            return event_variant(command::ignore);
          }
          else
          {
-            return some(event_variant(command::ignore));
+            return event_variant(command::ignore);
          }
       }
       else
       {
-         return none;
+         return std::nullopt;
       }
    }
 #endif // defined(LIBOWL_USE_X11)

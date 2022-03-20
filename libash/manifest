@@ -12,6 +12,7 @@ email: wmbat-dev@protonmail.com
 depends: * build2 >= 0.14.0-
 depends: * bpkg >= 0.14.0-
 
+depends: spdlog >= 1.9.1
 depends: libmannele >= 0.0.1
 
 depends: spdlog ^1.9.1
