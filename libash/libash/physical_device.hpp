@@ -32,6 +32,7 @@ namespace ash::inline v0
 
    enum struct physical_device_selection_error
    {
+      no_device_found,
       no_suitable_device_found
    };
 
@@ -104,7 +105,7 @@ namespace ash::inline v0
     * @param [in] physical_devices A list of all available physical devices to choose from.
     * @param [in] info The criteria used for selection the best suited physical device.
     *
-    * @return 
+    * @return
     */
    auto find_most_suitable_physical_device(std::span<const physical_device> physical_devices,
                                            physical_device_selection_criteria&& info)
