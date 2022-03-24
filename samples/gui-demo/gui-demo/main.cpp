@@ -3,7 +3,7 @@
 auto main() -> int
 {
    auto gui_system = owl::system("gui-demo");
-   [[maybe_unused]] auto& window_1 = gui_system.make_window("window 1");
+   [[maybe_unused]] auto& window_1 = gui_system.make_window("Main Window");
 
 //   auto& window_2 = gui_system.make_window("window 2");
 

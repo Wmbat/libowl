@@ -1,6 +1,7 @@
 #include <libowl/system.hpp>
 
 #include <libowl/chrono.hpp>
+#include <libowl/runtime_error.hpp>
 #include <libowl/detail/visit_helper.hpp>
 #include <libowl/gfx/device.hpp>
 #include <libowl/detail/x11/window.hpp>
@@ -186,7 +187,7 @@ namespace owl::inline v0
          m_physical_devices, {.surface = wnd->target().surface(),
                               .require_transfer_queue = true,
                               .require_compute_queue = true,
-                              .minimum_version = m_instance.version(),
+                              .desired_version = m_instance.version(),
                               .required_extensions = std::vector({VK_KHR_SWAPCHAIN_EXTENSION_NAME}),
                               .desired_extensions = {}});
 
@@ -194,7 +195,7 @@ namespace owl::inline v0
       {
          m_logger.error("failed to find suitable GPU");
 
-         throw std::move(results).error();
+         throw ash::runtime_error(results.error());
       }
 
       auto const& result_data = results.value();

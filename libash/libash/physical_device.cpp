@@ -57,6 +57,8 @@ namespace ash::inline v0
                                            physical_device_selection_criteria&& info)
       -> tl::expected<physical_device_selection_results, runtime_error>
    {
+      assert(info.minimum_version <= info.desired_version); // NOLINT
+
       const auto rate_device = [&](physical_device const& device) {
          return rate_physical_device(device, std::move(info));
       };

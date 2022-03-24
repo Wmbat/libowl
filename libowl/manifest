@@ -13,7 +13,7 @@ depends: * bpkg >= 0.14.0
 
 depends: libash >= 0.1.0-
 depends: libmannele >= 0.1.0-
-depends: spdlog ^1.9.1
+depends: spdlog == 1.9.1
 depends: magic_enum ^0.7.3
 depends: range-v3 ^0.11.0
 
