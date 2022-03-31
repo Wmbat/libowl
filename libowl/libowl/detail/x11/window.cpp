@@ -59,7 +59,8 @@ namespace owl::inline v0
          super::set_render_target(
             render_target(instance.createXcbSurfaceKHRUnique(vk::XcbSurfaceCreateInfoKHR()
                                                                 .setConnection(mp_connection)
-                                                                .setWindow(m_window_handle))));
+                                                                .setWindow(m_window_handle)),
+                          super::monitor().dimensions, super::logger()));
       }
       window::~window() { xcb_destroy_window(mp_connection, m_window_handle); }
 

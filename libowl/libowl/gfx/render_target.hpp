@@ -10,6 +10,7 @@
 #define LIBOWL_GFX_RENDER_TARGET_HPP_
 
 #include <libowl/gfx/device.hpp>
+#include <libowl/gui/monitor.hpp>
 
 #include <optional>
 
@@ -29,11 +30,13 @@ namespace owl::inline v0
    {
    public:
       render_target() = default;
-      render_target(vk::UniqueSurfaceKHR&& surface);
+      render_target(vk::UniqueSurfaceKHR&& surface, monitor_dimensions const& dimensions,
+                    spdlog::logger& logger);
 
       [[nodiscard]] auto surface() const noexcept -> vk::SurfaceKHR;
 
       void set_device(gfx::device&& device);
+      void update_dimensions(monitor_dimensions const& dimensions);
 
    private:
       auto create_swapchain() -> vk::UniqueSwapchainKHR;
@@ -41,10 +44,14 @@ namespace owl::inline v0
    private:
       target_status m_status = target_status::no_device;
 
+      monitor_dimensions m_dimensions{};
+
       std::optional<gfx::device> m_device;
 
       vk::UniqueSurfaceKHR m_surface;
       vk::UniqueSwapchainKHR m_swapchain;
+
+      [[maybe_unused]] spdlog::logger* mp_logger{};
    };
 } // namespace owl::inline v0
 
