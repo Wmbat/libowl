@@ -97,6 +97,7 @@ namespace ash::inline v0
    }
 
    auto device::api_version() const noexcept -> mannele::semantic_version { return m_api_version; }
+   auto device::queues() const noexcept -> std::span<queue const> { return m_queues; }
 
    device::operator vk::Device() const noexcept { return m_device.get(); }
 

@@ -14,7 +14,7 @@
 
 #include <libmannele/core/semantic_version.hpp>
 
-#include <spdlog/fwd.h>
+#include <spdlog/spdlog.h>
 
 namespace ash::inline v0
 {
@@ -35,6 +35,7 @@ namespace ash::inline v0
       device(device_create_info&& info);
 
       [[nodiscard]] auto api_version() const noexcept -> mannele::semantic_version;
+      [[nodiscard]] auto queues() const noexcept -> std::span<queue const>;
 
       operator vk::Device() const noexcept;
 
