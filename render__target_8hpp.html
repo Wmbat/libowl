@@ -68,12 +68,14 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">render_target.hpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="libowl_2libowl_2gfx_2device_8hpp_source.html">libowl/gfx/device.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="monitor_8hpp_source.html">libowl/gui/monitor.hpp</a>&gt;</code><br />
 <code>#include &lt;optional&gt;</code><br />
 </div>
 <p><a href="render__target_8hpp_source.html">Go to the source code of this file.</a></p>
@@ -96,6 +98,17 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:ad72aab659e3d76ab31f768344bfe1d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ba8bb71ee536aa6184531f61916f1fd"><td class="memItemLeft" align="right" valign="top"><a id="a7ba8bb71ee536aa6184531f61916f1fd"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="render__target_8hpp.html#a7ba8bb71ee536aa6184531f61916f1fd">v0::render_target_error_code</a> { <b>v0::render_target_error_code::no_graphics_queue_found</b>, 
+<b>v0::render_target_error_code::no_present_queue_found</b>
+ }</td></tr>
+<tr class="memdesc:a7ba8bb71ee536aa6184531f61916f1fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Values to designate possible errors from render_target. <br /></td></tr>
+<tr class="separator:a7ba8bb71ee536aa6184531f61916f1fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a9fe67bea9fe13ec6ec4ceb47e5e9a01e"><td class="memItemLeft" align="right" valign="top"><a id="a9fe67bea9fe13ec6ec4ceb47e5e9a01e"></a>
+auto&#160;</td><td class="memItemRight" valign="bottom"><b>v0::to_error_condition</b> (render_target_error_code code) -&gt; std::error_condition</td></tr>
+<tr class="separator:a9fe67bea9fe13ec6ec4ceb47e5e9a01e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>wmbat <a href="#" onclick="location.href='mai'+'lto:'+'wmb'+'at'+'-de'+'v@'+'pro'+'to'+'nma'+'il'+'.co'+'m'; return false;">wmbat<span style="display: none;">.nosp@m.</span>-dev<span style="display: none;">.nosp@m.</span>@prot<span style="display: none;">.nosp@m.</span>onma<span style="display: none;">.nosp@m.</span>il.co<span style="display: none;">.nosp@m.</span>m</a> </dd></dl>
