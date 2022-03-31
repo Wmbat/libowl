@@ -26,6 +26,17 @@ namespace owl::inline v0
       swapchain_lost
    };
 
+   /**
+    * @brief Values to designate possible errors from render_target
+    */
+   enum struct render_target_error_code
+   {
+      no_graphics_queue_found, ///< No graphics queue was found when creating a swapchain.
+      no_present_queue_found   ///< No Present queue was found when creating a swapchain.
+   };
+
+   auto to_error_condition(render_target_error_code code) -> std::error_condition;
+
    class render_target
    {
    public:
